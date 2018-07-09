@@ -12,7 +12,7 @@ This is the website for the _dust_ research project, a new initiative at the [Un
 
  - For the latest news, see the [blog]({{site.baseurl}}/blog.html).
  - For some relevant presentations, see [presentations]({{site.baseurl}}/presentations.html).
- - If you have any questions, or would like to discuss the project, then please contact the Principal Investigator: [Nick Malleson](https://github.com/nickmalleson) ([http://www.geog.leeds.ac.uk/people/n.malleson/](http://www.geog.leeds.ac.uk/people/n.malleson/)).
+ - If you have any questions, or would like to discuss the project, then please contact the Principal Investigator: [Nick Malleson](http://www.geog.leeds.ac.uk/people/n.malleson/).
  - For the model code and other programming work see the [GitHub page](https://github.com/Urban-Analytics/dust)
 
 ## DUST Overview

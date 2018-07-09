@@ -1,0 +1,349 @@
+@import url(https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic);
+
+/** Adapted version of the default reveal.js theme. */
+
+@font-face {
+    font-family: HelveticaNeue;
+    src: url(./HelveticaNeueLight.ttf);
+    font-weight: normal;
+    font-style: normal;
+}
+
+/*********************************************
+ * GLOBAL STYLES
+ *********************************************/
+body {
+
+}
+
+.reveal {
+    /* Font */
+    font-family: 'HelveticaNeue', 'Arial', 'sans-serif';
+    font-size: 32px;
+    /*font-weight: 200;*/
+    letter-spacing: -0.02em;
+    color: #333333;
+    }
+
+
+/*********************************************
+ * HEADERS
+ *********************************************/
+
+
+/* Special headers for the title page (needs class 'title') */
+.reveal .title h1,
+.reveal .title h2,
+.reveal .title h3,
+.reveal .title h4,
+.reveal .title h5,
+.reveal .title h6 {
+    /* text-transform: uppercase; */
+    text-shadow: 0px 0px 6px rgba(0, 0, 0, 0.2);
+    text-align: center;
+ }
+
+.title h4,
+.title h5,
+.title h6 {
+    text-shadow: none;
+    color: #999999;
+}
+
+/* A few tweaks for h1 and h2 (not in the title)*/
+.reveal h1 {
+    color: #444444;
+}
+.reveal h2 {
+    font-size: 42pt;
+    color: #444444;
+    text-align: left;
+}
+
+.reveal h3 {
+    text-align: left;
+}
+
+
+
+
+
+
+/*********************************************
+ * TEXT
+ *********************************************/
+
+.reveal p {
+    text-align: left;
+    margin-top: 0.7em;
+    margin-left: 20px;
+    color: rgb(10,10,70);
+}
+
+/* For sub-paragraphs (e.g. indented bullet points) */
+.reveal P.l2 {
+    margin-top: 0.3em;
+    font-size: 0.8em;
+    padding-left: 4ex;
+    color: #555555;
+}
+
+.reveal P.l3 {
+    margin-top: 0.2em;
+    font-size: 0.7em;
+    padding-left: 8ex;
+    color: #555555;
+}
+
+/* 'level2' for lists: */
+.reveal ul.l2, .reveal ol.l2 {
+    margin-top: 0.3em;
+    margin-left:0px;
+    padding-left:0px;
+    font-size: 0.8em;
+    color: #555555;
+}
+
+/* Some text can be two colums (use e.g. in a <div>) */
+.twocol  {
+    -moz-column-count:2; /* Firefox */
+    -webkit-column-count:2; /* Safari and Chrome */
+    column-count:2;
+    
+    column-gap:20px;
+    -moz-column-gap:20px;
+    -webkit-column-gap:20px;
+}
+
+/* For individual paragraphs that should be small */
+p.small{
+ font-size:70%;
+}
+
+p.verysmall{
+ font-size:40%;
+}
+
+/* For a reference in the slides */
+p.reference {
+    font-size:70%;
+    color: rgb(30,30,50);
+    background-color: rgba(255,255,255,1);
+}
+
+/* For whole slides just with references (use <section id="references"> ... </div>*/
+#references {
+    font-size:60%;
+    -webkit-column-count: 2; /* Chrome, Safari, Opera */
+    -moz-column-count: 2; /* Firefox */
+    column-count: 2;
+}
+
+#references p h2 {
+    font-size:60%;
+}
+
+
+/* Need to override some reveal settings for blockquotes*/
+.reveal blockquote {
+	display:block;
+	position:static;
+	width:90%;
+	margin: 10px;
+	padding: 10px;
+
+	font-style: normal;
+	background: rgba(255, 255, 255, 0.05);
+	
+    box-shadow:1px 5px 5px 1px #aaaaaa;
+    border-radius:15px;
+}
+
+/* This ID can be used for blockquotes that need to be narrower than normal (e.g. if there is an image on the same page */
+#shorter_blockquote{
+    width:57%;
+}
+
+
+
+
+/*********************************************
+ * IMAGES, IFRAMES
+ *********************************************/
+
+
+iframe, iframe.youtube-player, iframe.youtube-player-right, iframe.right, img, img.right, img.left, figure.left, figure.right {
+    width: 960px;
+    height: 700px;
+    frameborder:0;
+    allowfullscreen:1;
+    float:centre;
+    
+    margin:10px 10px 10px 10px;
+    padding: 5px 5px 5px 5px;
+    /*border:1px solid #BFBFBF;*/
+    /* box-shadow:1px 5px 5px 1px #aaaaaa;*/
+    /*border-radius:15px;*/
+}
+
+/* Need to override a couple of reveal styles. Need the '.reveal section' before 'img' otherwise the 
+reveal styles are considered more specific*/
+.reveal section img {
+    height:auto; /* Don't want fixed height in images, but do want everything else that is set above */
+    box-shadow: none;
+}
+
+iframe.right {
+    width:448px;
+    height:270px;
+    float:right;
+}
+
+iframe.youtube-player {
+    width:640px;
+    height:385px;
+    float:none;
+    /*float:left;*/
+}
+
+iframe.youtube-player-right {
+    width:448px;
+    height:270px;
+    float:right;
+}
+
+/* For aligning figures to the left or right of the slide */
+
+img.right, figure.right {
+    float:right;
+    margin-left:35px;
+    /*padding-right: 2%; /* This stops the image box overlapping the figure box */ 
+    width: 45%;
+    height: auto;
+}
+
+img.left, figure.left {
+    float:left;
+    margin-right:35px;
+    /*padding-right: 2%; /* This stops the image box overlapping the figure box */ 
+    width: 45%;
+    height: auto;
+}
+
+/* Special case for when there are two images on the page, they can take up more space 
+and should be the same size. */
+
+img.two-right, figure.two-right{
+    float:right;
+    margin-left:1px;
+    width: 49%;
+    height: auto;
+}
+
+img.two-left, figure.two-left {
+    float:left;
+    margin-left:1px;
+    /*padding-right: 2%; /* This stops the image box overlapping the figure box */ 
+    width: 49%;
+    height: auto; 
+}
+
+
+/* This applies to images within figures (e.g. <figure class="right"> .... </figure> ) */
+.right img, .left img {
+    height:auto; /* (Not sure why these are needed. If not then images in figures get stretched height */
+    box-shadow: none;
+}
+
+img.small {
+    width:30%;
+}
+
+
+img.top {
+    width: 90%;
+    height: auto;
+}
+
+.reveal figcaption {
+    font-size: 50%;
+}
+
+
+.reveal figcaption a {
+/*    color: yellow;*/
+}
+
+
+/* A class for text that appears over a background video. 
+It basically draws a white transparent box behind the text to make it easier to read. */
+.reveal .whitebackground {
+    background-color:rgba(255,255,255,0.6);
+    border-radius: 25px;
+    padding:15px;
+    
+}
+/* Slightly less transparent */
+.reveal .whitebackground2 {
+    background-color:rgba(255,255,255,0.9);
+    border-radius: 25px;
+    padding:15px;
+    
+}
+
+
+
+
+/*********************************************
+ * COLUMNS AND TABLES
+ *********************************************/
+
+/*
+ * For precisely defined columns (e.g. specify exactly what should go in each column ).
+ * Basically the job that <table> used to do. From: http://www.transio.com/content/how-create-text-columns-html
+ * Use as follows:
+ * <div id="columns">
+    <div class="left column"><p>Stuff in left column</p></div>
+    <div class="right column"><p>Stuff in right column</p></div>
+</div>
+
+ * */
+#columns {
+    /* could set max width here. E.g. width: 600px; */
+}
+
+#columns .column {
+    position: relative;
+    width: 46%;
+    padding: 10px;
+    /*border: solid 1px #000; 
+    box-shadow:2px 2px 3px #aaaaaa;
+    background-color: white;*/
+}
+
+#columns .left {
+    float: left;
+}
+
+#columns .right {
+    float: right;
+}
+
+/* Nice border around tables */
+.reveal table {
+    padding:10px 10px 20px 10px;
+    border:1px solid #BFBFBF;
+    background-color:white;
+    box-shadow:2px 2px 3px #aaaaaa;
+    border-radius:15px;
+    border-collapse:separate;
+    border-spacing:20px 5px;
+
+}
+.reaveal td, .reveal th {
+    border-bottom: 1px solid #BFBFBF;
+
+}
+
+
+

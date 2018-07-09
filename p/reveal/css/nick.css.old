@@ -1,0 +1,473 @@
+@import url(https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic);
+
+/** Adapted version of the default reveal.js theme. */
+
+@font-face {
+    font-family: HelveticaNeue;
+    src: url(./HelveticaNeueLight.ttf);
+    font-weight: normal;
+    font-style: normal;
+}
+
+/*********************************************
+ * GLOBAL STYLES
+ *********************************************/
+body {
+
+}
+
+.reveal {
+    /* Font */
+    font-family: 'HelveticaNeue', 'Arial', 'sans-serif';
+    font-size: 32px;
+    /*font-weight: 200;*/
+    letter-spacing: -0.02em;
+    color: #333333;
+    
+    /* Background */
+    background-color: RGB(250,250,250); 
+    
+    transition: transform .3s ease-out;
+    -o-transition: -o-transform .3s ease-out;
+    -moz-transition: -moz-transform .3s ease-out;
+    -webkit-transition: -webkit-transform .3s ease-out;    
+}
+
+/* Styles for slides. Adds a nice box. */
+ .reveal section {
+    border:1px solid #EEEEEE;
+    box-shadow:1px 5px 5px 1px #aaaaaa;
+    border-radius:15px;
+    background-color: white;
+}
+
+::selection {
+  color: white;
+  background: #ff5e99;
+  text-shadow: none; 
+  text-shadow: none; 
+}
+
+/*********************************************
+ * HEADERS
+ *********************************************/
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+  margin: 0px 0px 20px 20px;
+  color: #666666;
+  line-height: 0.9em;
+  letter-spacing: 0.02em;
+  /*font-family: "League Gothic", Impact, sans-serif;*/
+  text-align: left;
+  /* Try to stop hypthnation */
+  -webkit-hyphens: manual;
+  -moz-hyphens: manual;
+  hyphens: manual;
+}
+
+/* A few tweaks for h1 and h2*/
+.reveal h1 {
+    color: #444444;
+}
+.reveal h2 {
+    font-size: 42pt;
+    color: #444444;
+}
+
+
+/* Special headers for the title page (needs class 'title') */
+.title h1,
+.title h2,
+.title h3,
+.title h4,
+.title h5,
+.title h6 {
+    /* text-transform: uppercase; */
+    text-shadow: 0px 0px 6px rgba(0, 0, 0, 0.2);
+    text-align: center;
+ }
+
+.title h4,
+.title h5,
+.title h6 {
+    text-shadow: none;
+    color: #999999;
+}
+
+
+
+
+/*********************************************
+ * TEXT
+ *********************************************/
+
+.reveal p {
+    text-align: left;
+    margin-top: 0.7em;
+    margin-left: 20px;
+    color: rgb(10,10,70);
+}
+
+/* For sub-paragraphs (e.g. indented bullet points) */
+.reveal P.l2 {
+    margin-top: 0.3em;
+    font-size: 0.8em;
+    padding-left: 4ex;
+    color: #555555;
+}
+
+.reveal P.l3 {
+    margin-top: 0.2em;
+    font-size: 0.7em;
+    padding-left: 8ex;
+    color: #555555;
+}
+
+/* 'level2' for lists: */
+.reveal ul.l2, .reveal ol.l2 {
+    margin-top: 0.3em;
+    margin-left:0px;
+    padding-left:0px;
+    font-size: 0.8em;
+    color: #555555;
+}
+
+/* Some text can be two colums (use e.g. in a <div>) */
+.twocol  {
+    -moz-column-count:2; /* Firefox */
+    -webkit-column-count:2; /* Safari and Chrome */
+    column-count:2;
+    
+    column-gap:20px;
+    -moz-column-gap:20px;
+    -webkit-column-gap:20px;
+}
+
+/* For individual paragraphs that should be small */
+p.small{
+ font-size:70%;
+}
+
+
+/* For reference slides (use <section id="references"> ... </div>*/
+#references {
+    font-size:60%;
+    -webkit-column-count: 2; /* Chrome, Safari, Opera */
+    -moz-column-count: 2; /* Firefox */
+    column-count: 2;
+}
+
+#references p h2 {
+    font-size:60%;
+}
+
+
+/* Need to override some reveal settings for blockquotes*/
+.reveal blockquote {
+	display:block;
+	position:static;
+	width:90%;
+	margin: 10px;
+	padding: 10px;
+
+	font-style: normal;
+	background: rgba(255, 255, 255, 0.05);
+	box-shadow:1px 5px 5px 1px #aaaaaa;
+    
+    border-radius:15px;
+}
+
+/* This ID can be used for blockquotes that need to be narrower than normal (e.g. if there is an image on the same page */
+#shorter_blockquote{
+    width:57%;
+}
+
+
+
+
+/*********************************************
+ * IMAGES, IFRAMES
+ *********************************************/
+
+
+iframe, iframe.youtube-player, iframe.youtube-player-right, iframe.right, img, img.right, img.left, figure.left, figure.right {
+    width: 960px;
+    height: 700px;
+    frameborder:0;
+    allowfullscreen:1;
+    float:centre;
+    
+    margin:10px 10px 10px 10px;
+    /*border:1px solid #BFBFBF;*/
+    box-shadow:1px 5px 5px 1px #aaaaaa;
+    /*border-radius:15px;*/
+}
+
+img {
+    height:auto; /* Don't want fixed height in images, but do want everything else that is set above */
+}
+
+iframe.right {
+    width:448px;
+    height:270px;
+    float:right;
+}
+
+iframe.youtube-player {
+    width:640px;
+    height:385px;
+    float:none;
+    /*float:left;*/
+}
+
+iframe.youtube-player-right {
+    width:448px;
+    height:270px;
+    float:right;
+}
+
+
+img.right, figure.right {
+    float:right;
+    margin-left:50px;
+    /*padding-right: 2%; /* This stops the image box overlapping the figure box */ 
+    width: 35%;
+    height: auto;
+}
+img.left, figure.left {
+    float:left;
+    margin-left:50px;
+    /*padding-right: 2%; /* This stops the image box overlapping the figure box */ 
+    width: 45%;
+    height: auto;
+}
+
+/* This applies to images within figures (e.g. <figure class="right"> .... </figure> ) */
+.right img, .left img {
+    height:auto; /* (Not sure why these are needed. If not then images in figures get stretched height */
+    box-shadow: none;
+}
+
+img.small {
+    width:30%;
+}
+
+
+img.top {
+    width: 90%;
+    height: auto;
+}
+
+.reveal figcaption {
+    font-size: 50%;
+}
+
+
+.reveal figcaption a {
+    color: yellow;
+}
+
+
+/*********************************************
+ * SPECIAL STATES
+ *********************************************/
+
+/* For slides that ask the students questions. Use:
+ *    data-state="question"
+ * in the slides tag
+ */
+.question .reveal .state-background{
+    background: rgba( 255, 230, 204, 0.6 );
+}  
+
+/* For different colour slide backgrounds (e.g. for outline slides).
+ * Use:
+ *  data-state="outline"
+ * in the slides tag
+ */
+.outline .reveal .state-background{
+    background: rgba( 255, 255, 204, 0.6 );    
+}
+
+/* Also change the colours of links and lists in 'outline' data state */
+.reveal .outline li a {
+    color: #333333;  
+}
+/* For the list item that shows current place in outline */
+/* For the list item that shows current place in outline */
+.reveal .outline li.current a {
+    color: #999999;
+}
+LI.current {
+    color: #999999;
+}
+
+
+
+/*********************************************
+ * COLUMNS AND TABLES
+ *********************************************/
+
+/*
+ * For precisely defined columns (e.g. specify exactly what should go in each column ).
+ * Basically the job that <table> used to do. From: http://www.transio.com/content/how-create-text-columns-html
+ * Use as follows:
+ * <div id="columns">
+    <div class="left column"><p>Stuff in left column</p></div>
+    <div class="right column"><p>Stuff in right column</p></div>
+</div>
+
+ * */
+#columns {
+    /* could set max width here. E.g. width: 600px; */
+}
+
+#columns .column {
+    position: relative;
+    width: 46%;
+    padding: 10px;
+    /*border: solid 1px #000; 
+    box-shadow:2px 2px 3px #aaaaaa;
+    background-color: white;*/
+}
+
+#columns .left {
+    float: left;
+}
+
+#columns .right {
+    float: right;
+}
+
+/* Nice border around tables */
+.reveal table {
+    padding:10px 10px 20px 10px;
+    /*border:1px solid #BFBFBF;*/
+    background-color:white;
+    box-shadow:2px 2px 3px #aaaaaa;
+    border-radius:15px;
+    border-collapse:separate;
+    border-spacing:20px 5px;
+
+}
+.reaveal td, .reveal th {
+    border-bottom: 1px solid #BFBFBF;
+
+}
+
+
+
+/*********************************************
+ * LINKS
+ *********************************************/
+.reveal a:not(.image) {
+  color: #13daec;
+  text-decoration: none;
+  -webkit-transition: color .15s ease;
+  -moz-transition: color .15s ease;
+  -ms-transition: color .15s ease;
+  -o-transition: color .15s ease;
+  transition: color .15s ease; }
+
+.reveal a:not(.image):hover {
+  color: #71e9f4;
+  text-shadow: none;
+  border: none; }
+
+.reveal .roll span:after {
+  color: #fff;
+  background: #0d99a5; }
+
+
+
+
+
+
+/*********************************************
+ * IMAGES
+ *********************************************/
+/*.reveal section img {
+  margin: 15px 0px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 4px solid #eeeeee;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+  -webkit-transition: all .2s linear;
+  -moz-transition: all .2s linear;
+  -ms-transition: all .2s linear;
+  -o-transition: all .2s linear;
+  transition: all .2s linear; }*/
+
+.reveal a:hover img {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #13daec;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.55); }
+
+
+
+
+
+
+/*********************************************
+ * NAVIGATION CONTROLS
+ *********************************************/
+.reveal .controls div.navigate-left,
+.reveal .controls div.navigate-left.enabled {
+  border-right-color: #13daec; }
+
+.reveal .controls div.navigate-right,
+.reveal .controls div.navigate-right.enabled {
+  border-left-color: #13daec; }
+
+.reveal .controls div.navigate-up,
+.reveal .controls div.navigate-up.enabled {
+  border-bottom-color: #13daec; }
+
+.reveal .controls div.navigate-down,
+.reveal .controls div.navigate-down.enabled {
+  border-top-color: #13daec; }
+
+.reveal .controls div.navigate-left.enabled:hover {
+  border-right-color: #71e9f4; }
+
+.reveal .controls div.navigate-right.enabled:hover {
+  border-left-color: #71e9f4; }
+
+.reveal .controls div.navigate-up.enabled:hover {
+  border-bottom-color: #71e9f4; }
+
+.reveal .controls div.navigate-down.enabled:hover {
+  border-top-color: #71e9f4; }
+
+/*********************************************
+ * PROGRESS BAR
+ *********************************************/
+.reveal .progress {
+  background: rgba(0, 0, 0, 0.2); }
+
+.reveal .progress span {
+  background: #13daec;
+  -webkit-transition: width 800ms cubic-bezier(0.26, 0.86, 0.44, 0.985);
+  -moz-transition: width 800ms cubic-bezier(0.26, 0.86, 0.44, 0.985);
+  -ms-transition: width 800ms cubic-bezier(0.26, 0.86, 0.44, 0.985);
+  -o-transition: width 800ms cubic-bezier(0.26, 0.86, 0.44, 0.985);
+  transition: width 800ms cubic-bezier(0.26, 0.86, 0.44, 0.985); }
+
+/*********************************************
+ * SLIDE NUMBER
+ *********************************************/
+.reveal .slide-number {
+  color: #13daec; }
+
+
+/*********************************************
+ * NOTES
+ *********************************************/
+
+aside.notes {
+    font-size: 0.6em;
+    font-style:italic;
+}

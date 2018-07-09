@@ -1,0 +1,14 @@
+.sass-cache/
+.jekyll-metadata
+_site/
+
+
+*.swp
+
+
+
+# mac crap:
+.DS_Store
+._.DS_Store
+.Trashes
+

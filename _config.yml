@@ -10,8 +10,8 @@ keywords: big data, agent-based modelling, simulation, urban flows, urban analyt
 
 description: > # this means to ignore newlines until "baseurl:"
     This is the website for the dust project, developing methods to support city simulation
-baseurl: "" # the subpath of your site, e.g. /blog/
-url: "https://urban-analytics.github.io/dust/" # the base hostname & protocol for your site
+baseurl: "https://urban-analytics.github.io/dust/" # the subpath of your site, e.g. /blog/
+#url: "https://urban-analytics.github.io/dust/" # the base hostname & protocol for your site
 twitter_username: nickmalleson
 github_username:  nickmalleson
 email: n.s.malleson@leeds.ac.uk

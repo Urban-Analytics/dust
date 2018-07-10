@@ -35,18 +35,19 @@
                          data-background-image="http://surf.leeds.ac.uk/figures/cityscapes/chicago_bw.jpg">
                 -->
                     
-                <section class="title"  id="index">
+                <section class="title"  id="index" data-background-image="../figures/virtual_city.jpeg">
+                    <div class="whitebackground2">
                     
-                    <h1 style="font-size: 60px;">Understanding Input Data Requirements and Quantifying Uncertainty for Successfully Modelling 'Smart' Cities</h1>
+                    <h1 style="font-size: 45px;">Understanding Input Data Requirements and Quantifying Uncertainty for Successfully Modelling 'Smart' Cities</h1>
                     <hr/>
-                    <h2 style="font-size: 40px;"><a href="http://www.geog.leeds.ac.uk/people/n.malleson/">Nick Malleson</a>, 
+                    <h2 style="font-size: 35px;"><a href="http://www.geog.leeds.ac.uk/people/n.malleson/">Nick Malleson</a>, 
                         Jonathan A. Ward, Alison Heppenstall, Michael Adcock, Daniel Tang, Jonathan Coello, and Tomas Crols</h2>
                     <h4>University of Leeds, UK</h4>
                     <h4>Improbable, UK</h4>
-                    <h4><a href="http://nickmalleson.co.uk">nickmalleson.co.uk</a></h4>
                     <h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>
                     <hr/>
-                    <p style="text-align:center;font-size:25px">These slides: <a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+                    <p style="text-align:center;font-size:25px">These slides and abstract: <a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+                    </div>
                 </section>
 
                 <section>
@@ -55,18 +56,338 @@
                 
                 </section>
                 
-                <section class="title"  id="final">
+                
+                <!-- ************************************************************
+                *********************** VISION **********************************
+                ************************************************************ -->
+
+                <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                         data-background-video-loop="loop"
+                         id="Context-UrbanFlows">                     
+                    <div class="whitebackground2 fragment">
+                        <h3>How many people are there in Trafalgar Square right now?</h3>
+                        
+                        <p>We need to better understand urban flows:</p>
+                        
+                        <p class="l2">Crime – how many possible victims?</p>
+                        <p class="l2">Pollution – who is being exposed? Where are the hotspots?</p>
+                        <p class="l2">Economy – can we attract more people to our city centre?</p>
+                        <p class="l2">Health - can we encourage more active travel?</p>
+                        
+                    </div>
+                </section>
+                
+                <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
+                         data-background-video-loop="loop">
+                    <div class="whitebackground2 fragment">
+                        <h3>City Simulation</h3>
+                        <p>Understanding <i>and predicting</i> short-term urban flows</p>
+                    </div>
                     
-                     <h1 style="font-size: 60px;">Understanding Input Data Requirements and Quantifying Uncertainty for Successfully Modelling 'Smart' Cities</h1>
+                </section>
+                
+                <!-- ************************************************************
+                *********************** DATA ************************************
+                ************************************************************ -->
+                
+
+                <section id="Data-Twitter">
+                    <h2>Potential Urban Flow Data</h2>
+                    <h3>Social Media</h3>
+                    <figure>
+                        <img data-src="../figures/paper_figures/example_activity_space1-forStanford-3D.png" alt="Example activity spaces derived from twitter messages"/>
+                        <figcaption>Malleson, N and M. Birkin. (2014) New Insights into Individual Activity Spaces using Crowd-Sourced Big Data. <i>Paper presented at the 2014 <a href="http://www.scienceengineering.org/ase/conference/2014/bigdata/sanjose/website/">BigData conference,</a> Stanford, CA, USA, 27-31 May.</i> [<a href="http://nickmalleson.co.uk/wp-content/uploads/2014/05/bigdata-stanford-final.pdf">paper (pdf)</a>][<a href="http://nickmalleson.co.uk/html/presentations/2014-05-BigData">slides (html)</a>].
+                        </figcaption>
+                    </figure>
+                </section>
+                
+                
+                <section id="Data-MobilePhones">
+                    <figure class="right">
+                        <figcaption>Evaluating aggregate mobile phone population accuracy</figcaption>
+                        <img data-src="../figures/paper_figures/census_mobile-correlation-map.png" alt="Comparing census daytime populations to aggregate mobile phone estimates" />
+                    </figure>
+                    <h2>Urban Flow Data</h2>
+                    <h3>Mobile Communications</h3>
+                    <p>Large population coverage</p>
+                    <img class="left" data-src="../figures/paper_figures/census_mobile-correlation.png" alt="Comparing census daytime populations to aggregate mobile phone estimates" />
+                    <p>Private, unknown methodology, privacy concerns, coarse resolution (?)</p>
+                </section>
+                
+                <section id="Data-Geo-Apps">
+                    <img class="right" data-src="../figures/traces.jpg" alt="Traces of movement from a smart-phone app" />
+                    <h2>Urban Flow Data</h2>
+                    <h3>Geo-Apps</h3>
+                    <p>Smart-phone apps that capture movement / location are becoming ubiquitous</p>
+                    <p>Great potential for understanding (some) urban dynamics</p>
+                </section>
+                
+
+                
+                <section id="Data-Issues">
+                    <h2>Urban Flow Data</h2>
+                    <div id="columns">
+                        <div class="left column">
+                            <h3>Difficulties</h3>
+                            <p>Skewness</p>
+                            <p class="l2">Prolific users distort patterns</p>
+                            <p>Representation</p>
+                            <p class="l2">Online &amp; public &ne; offline &amp; private</p>
+                            <!-- <p class="l2">Device / service only used for certain purposes</p> -->
+                            <p>Spatial accuracy</p>
+                            <p>Bias</p>
+                            <p class="l2">Participation inequality and the digital divide</p>
+                            <p>Complicated!!</p>
+                            <p class="l2">Messy, and "too big for Excel"</p>
+                        </div>
+                        <div class="right column">
+                            <h3>Benefits</h3>
+                            <p>Volume</p>
+                            <p class="l2">Potential for large sub-samples</p>
+                            <p>Velocity</p>
+                            <p class="l2">Streaming / regularly updated</p>
+                            <p class="l2">Potential for dynamic models</p>
+                            <div class="fragment">
+                                <h3 >Need to consolidate diverse sources</h3>
+                                <h3>Solution: Agent-Based Modelling ?</h3>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                
+                
+                
+                <!-- ************************************************************
+                *********************** PROBLEM - Divergence ********************
+                ************************************************************ -->
+                
+                <section id="prob-divergence" 
+                         data-background-video="../videos/BBC_Swarm_Natures_Incredible_Invasions.mp4" 
+                         data-background-video-muted 
+                         data-background-video-loop="loop">
+                    
+                    <div class="whitebackground fragment">
+                        <h2>Problem: Models will Diverge</h2>
+                        <p>Uncertainty abounds</p>
+                        <p class="l2">Inputs (measurement noise)</p>
+                        <p class="l2">Parameter values</p>
+                        <p class="l2">Model structure</p>
+                        <p>Nonlinear models predict near future well, but diverge over time.</p>
+                    </div>
+                </section>
+                
+                <!--
+                <section id="abm-calibration">
+                    
+                    <figure class="right" style="width:30%">
+                        <img data-src="../figures/modelling_process.png" alt="The process of calibration"/>
+                        <figcaption>Typical model development process</figcaption>
+                    </figure>
+                    
+                    <h2>Divergence</h2>
+                    <p>Drawback with the 'typical' model development process</p>
+                    <p>Waterfall-style approach is common</p>
+                    <p>Calibrate until fitness is reasonable, then make predictions</p>
+                    <p>But we can do better:</p>
+                    <p class="l2">Better computers</p>
+                    <p class="l2">More (streaming) data</p>
+                    <p>Methodological gap</p>
+                    
+                </section>
+                -->
+                            
+                <section id="dda" data-background-image="../figures/weather2.jpg" >
+                    <div class="whitebackground fragment">
+                        <h2>Possible Solution: Dynamic Data Assimilation</h2>
+                        <p>Used in meteorology and hydrology to constrain models closer to reality.</p>
+                        <p>Try to improve estimates of the true system state by combining:</p>
+                        <p class="l2">Noisy, real-world observations</p>
+                        <p class="l2">Model estimates of the system state</p>
+                        <p>Should be more accurate than data / observations in isolation.</p>
+                    </div>
+                </section>
+                
+                <section id="abm-dda-overview">
+                    <img data-src="../figures/paper_figures/dda.jpg" alt="Diagram of dynamic data assimilation and an ABM" />
+                </section>
+                
+                
+                
+                <!-- ************************************************************
+                ****************************** DUST *****************************
+                ************************************************************ -->
+                
+                <section id="dust-intro" data-background-image="../figures/the-roaming-platypus-310824-unsplash-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Data Assimilation for Agent-Based Models (DUST)</h2>
+                        <a href="https://erc.europa.eu/">
+                            <img class="right" style="width:200px;" data-src="../figures/erc_logo.jpg" alt="ESRC Logo"/></a>
+                        <p><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></p>
+                        <p>5-year research project (&euro;1.5M)</p>
+                        <p>Funded by the European Research Council (Starting Grant)</p>
+                        <p>Started in January</p>
+                        <p>Main aim: create new methods for dynamically assimilating data into agent-based models.</p>
+                    </div>
+                
+                </section>
+                
+                
+                
+                <!-- ************************************************************
+                ************************ CURRENT QUESTION ***********************
+                ************************************************************ -->
+                
+                <section id="TrainStationCrowds">
+                    
+                    <h2>Current Question:</h2>
+                    <h3>How much data are needed to successfully model a (pedestrian) system?</h3>                    
+                    <img class="right" style="width:30%;" src="../figures/train_station_pedestrian.jpg" alt="people in a train station" />
+                    <p>Example: Crowds in a train station</p>
+                    <p>We want a real-time model to forecast short-term crowding</p>
+                    <p>How much data do we need?</p>
+                    <p class="l2">Counts of people entering?</p>
+                    <p class="l2">Counts at various points in the concourse (e.g. cameras)</p>
+                    <p class="l2">Full traces of all individuals?</p>
+                    
+                    
+                </section>
+                
+                <section id="StationSim">
+                    
+                    <h2>XX StationSim video</h2>
+                    
+                    <p>Random parameters</p>
+                    <p class="l2">Max speed</p>
+                    <p class="l2">Move up or down</p>
+                    
+                </section>
+                
+                
+                <section id="ProbabilisticProgramming">
+                    
+                    <h2>Solution: Probabilistic Modelling</h2>
+                    <p>Use probability theory to express all forms of uncertainty</p>
+                    <p>Synonymous with Bayesian modelling</p>
+                    <p><i>Probabilistic Programming</i>: "a general framework for expressing probabilistic models as computer programs" (<a href="http://www.nature.com/articles/nature14541">Ghahramani, 2015</a>)</p>
+                    <p class="l2"></p>
+                    
+                </section>
+                
+                
+                <section id="XX">
+                    
+                    <h2>XX</h2>
+                    
+                    <p>XX</p>
+                    <p class="l2"></p>
+                    
+                </section>
+                
+                
+                
+                
+                <!-- ************************************************************
+                ************************ PROGRESS ***********************
+                ************************************************************ -->
+                
+                <section id="XX">
+                    
+                    <h2>XX</h2>
+                    
+                    <p>XX</p>
+                    <p class="l2"></p>
+                    
+                </section>
+                
+                
+                
+                
+                <!-- ************************************************************
+                ************************ RESULTS ***********************
+                ************************************************************ -->
+                
+                <section id="ObsVSNoObs">
+                    
+                    <img src="../figures/paper_figures/ABMUS2018/no_obs_vs_obs.png" 
+                         alt="Comparing the results with and without constraining to observations"/>
+                    
+                </section>
+                
+                <section id="XX">
+                    
+                    <h2>XX</h2>
+                    
+                    <p>XX</p>
+                    <p class="l2"></p>
+                    
+                </section>
+                
+                <section id="XX">
+                    
+                    <h2>XX</h2>
+                    
+                    <p>XX</p>
+                    <p class="l2"></p>
+                    
+                </section>
+                
+                <section id="XX">
+                    
+                    <h2>XX</h2>
+                    
+                    <p>XX</p>
+                    <p class="l2"></p>
+                    
+                </section>
+                
+                <section id="XX">
+                    
+                    <h2>XX</h2>
+                    
+                    <p>XX</p>
+                    <p class="l2"></p>
+                    
+                </section>
+                
+                <section id="conclusions2" data-background-image="../figures/shutterstock_615414464-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Conclusion</h2>
+                        <p>Lots of new smart cities / agent-based modelling work</p>
+                        <p class="l2">Leeds Institute for Data Analytics</p>
+                        <p class="l2">Alan Turing Institute</p>
+                        <p>You've seen some of the projects that I'm interested in, Leeds
+                        colleagues are presenting throughout the day.</p>
+                    </div>
+                </section>
+                
+                <section id="PhDOpportunities" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Opportunity: Fully-Funded PhD Scholarship (Leeds, UK)</h2>
+                        <p><strong>Agent-Based Modelling of Smart Cities</strong></p>
+                        <p>Start: October 2018</p>
+                        <p>Fully-funded (fees and stipend) for four years</p>
+                        <p><a href="https://www.findaphd.com/search/ProjectDetails.aspx?PJID=96795">
+                        www.findaphd.com/search/ProjectDetails.aspx?PJID=96795</a></p>
+                    </div>
+                </section>
+
+                </section>
+                
+                
+                <section class="title"  id="final" data-background-image="../figures/virtual_city.jpeg">
+                    <div class="whitebackground2">
+                    
+                     <h1 style="font-size: 45px;">Understanding Input Data Requirements and Quantifying Uncertainty for Successfully Modelling 'Smart' Cities</h1>
                     <hr/>
-                    <h2 style="font-size: 40px;"><a href="http://www.geog.leeds.ac.uk/people/n.malleson/">Nick Malleson</a>, 
+                    <h2 style="font-size: 35px;"><a href="http://www.geog.leeds.ac.uk/people/n.malleson/">Nick Malleson</a>, 
                         Jonathan A. Ward, Alison Heppenstall, Michael Adcock, Daniel Tang, Jonathan Coello, and Tomas Crols</h2>
                     <h4>Schools of Geography &amp; Mathematics, University of Leeds, UK</h4>
                     <h4>Improbable, UK</h4>
-                    <h4><a href="http://nickmalleson.co.uk">nickmalleson.co.uk</a></h4>
                     <h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>
                     <hr/>
                     <p style="text-align:center;font-size:25px">These slides: <a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+                    </div>
                 </section>
 
                 

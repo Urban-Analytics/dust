@@ -235,14 +235,14 @@
                 
                 
                 <!-- ************************************************************
-                ************************ CURRENT QUESTION ***********************
+                ***************** CURRENT QUESTION + PROGRESS *******************
                 ************************************************************ -->
                 
                 <section id="TrainStationCrowds">
                     
                     <h2>Current Question:</h2>
                     <h3>How much data are needed to successfully model a (pedestrian) system?</h3>                    
-                    <img class="right" style="width:30%;" src="../figures/train_station_pedestrian.jpg" alt="people in a train station" />
+                    <img class="right" style="width:30%;" data-src="../figures/train_station_pedestrian.jpg" alt="people in a train station" />
                     <p>Example: Crowds in a train station</p>
                     <p>We want a real-time model to forecast short-term crowding</p>
                     <p>How much data do we need?</p>
@@ -266,39 +266,53 @@
                 
                 <section id="ProbabilisticProgramming">
                     
-                    <h2>Solution: Probabilistic Modelling</h2>
+                    <h2>Probabilistic Modelling</h2>
                     <p>Use probability theory to express all forms of uncertainty</p>
-                    <p>Synonymous with Bayesian modelling</p>
-                    <p><i>Probabilistic Programming</i>: "a general framework for expressing probabilistic models as computer programs" (<a href="http://www.nature.com/articles/nature14541">Ghahramani, 2015</a>)</p>
-                    <p class="l2"></p>
+                    <p class="l2">Synonymous with Bayesian modelling</p>
+                    <p><i>Probabilistic Programming:</i> "a general framework for expressing probabilistic models as computer programs" (<a href="http://www.nature.com/articles/nature14541">Ghahramani, 2015</a>)</p>
+                    <p>By expressing the model probabilistically (i.e. with variables represented as 
+                        <i>probability distributions</i>), we can explore the impacts of uncertainty and 
+                    (importantly) begin to assimilate data.</p>
+                    <p class="l2">(hopefully)</p>
+                </section>
+                
+               <section id="ProbabilisticProgramming2">
                     
+                    <h2>Current Progress</h2>
+                    <p>Work with a new probabilistic programming library <i>(keanu)</i>.</p>
+                    <p>Experiment with different amounts of observation data: how
+                    well can the probabilistic model find solutions that fit our 'real world' observations</p>
+                </section>
+                
+                <section id="OverallProcess">
+                    
+                    <h2>Experimental setup</h2>
+                    <p>1. Configure the model: only <i>input</i> is a list of random numbers</p>
+                    <p class="l2">Every time the model needs a random number, chose the next in this list</p>
+                    <p class="l2">Model is stochastic with respect to these numbers</p>
+                    <p>2. Choose some random numbers and run the model to generate some hypothetical
+                    <i>truth data</i></p>
+                    <p class="l2">Pretend that this represents a 'real' train station</p>
+                    <p>3. Use the probabilistic model to find solutions that fit the observations</p>
+                    <p class="l2">Can we estimate the original random numbers that were input into
+                        the model?</p>
+                    <p class="l2">How many observations of the 'real' data do we need?</p>
+
+                </section>
+                
+                <section>
+                    <h2>Model Output</h2>
+                    <img style="width:80%" src="../figures/paper_figures/ABMUS2018/model_output.png" 
+                         alt="Graph of model output: no. agents at each iteration" />
                 </section>
                 
                 
-                <section id="XX">
+                <section id="ProcedureDiagram">
                     
-                    <h2>XX</h2>
-                    
-                    <p>XX</p>
-                    <p class="l2"></p>
-                    
+                    <img data-src="../figures/paper_figures/ABMUS2018/procedure_diagram2.png" 
+                         alt="Diagram of the probabilistic modelling process" />
                 </section>
                 
-                
-                
-                
-                <!-- ************************************************************
-                ************************ PROGRESS ***********************
-                ************************************************************ -->
-                
-                <section id="XX">
-                    
-                    <h2>XX</h2>
-                    
-                    <p>XX</p>
-                    <p class="l2"></p>
-                    
-                </section>
                 
                 
                 
@@ -307,57 +321,74 @@
                 ************************ RESULTS ***********************
                 ************************************************************ -->
                 
-                <section id="ObsVSNoObs">
+                <section id="Results:ObsVSNoObs">
                     
-                    <img src="../figures/paper_figures/ABMUS2018/no_obs_vs_obs.png" 
+                    <h3>Results: Sampling the posterior with and without observations</h3>
+                    
+                    <img style="width:80%;" data-src="../figures/paper_figures/ABMUS2018/no_obs_vs_obs.png" 
                          alt="Comparing the results with and without constraining to observations"/>
                     
                 </section>
                 
-                <section id="XX">
+                <section id="Results:VaryingObs">
                     
-                    <h2>XX</h2>
+                    <h3>Results: Varying the number of observations</h3>
                     
-                    <p>XX</p>
-                    <p class="l2"></p>
-                    
-                </section>
-                
-                <section id="XX">
-                    
-                    <h2>XX</h2>
-                    
-                    <p>XX</p>
-                    <p class="l2"></p>
+                    <img style="width:80%;" data-src="../figures/paper_figures/ABMUS2018/varying_observations.png" 
+                         alt="Comparing the results with and without constraining to observations"/>
                     
                 </section>
                 
-                <section id="XX">
+                <section id="Results:VaryingObs2">
                     
-                    <h2>XX</h2>
+                    <h2>Results: Varying the number of observations</h2>
+                    <h3>Spread of the samples</h3>
                     
-                    <p>XX</p>
-                    <p class="l2"></p>
+                    <table>
+                        
+                        <tr>
+                            <th>Observation Interval</th>
+                            <th>Mean Range</th>
+                        </tr>
+                        <tr><td>0 (prior)</td><td>254</td></tr>
+                        <tr><td>1</td><td>91</td></tr>
+                        <tr><td>5</td><td>130</td></tr>
+                        <tr><td>10</td><td>136</td></tr>
+                        <tr><td>50</td><td>116</td></tr>
+                    </table>
                     
                 </section>
+
                 
-                <section id="XX">
+                <section id="NextSteps">
                     
-                    <h2>XX</h2>
+                    <h2>Immediate Next Steps</h2>
                     
-                    <p>XX</p>
+                    <p>Explain the relationship between observations and sample spread</p>
+                    <p>Experiment with different types of observations, e.g.</p>
+                    <p class="l2">Cameras that count the passers-by in a single place</p>
+                    <p class="l2">Full traces of all agents</p>
+                    <p class="l2"><i>Basically: how much do we need to find solutions that fit the observations</i></p>
                     <p class="l2"></p>
+                    <p>Move towards <i>data assimilation</i> (actually adjust the state of the 
+                    model while it is running in response to external data).</p>
+                    <p></p>
+                    <p></p>
+                    <p></p>
                     
                 </section>
+         
                 
                 <section id="conclusions2" data-background-image="../figures/shutterstock_615414464-small.jpg">
                     <div class="whitebackground2">
                         <h2>Conclusion</h2>
-                        <p>Lots of new smart cities / agent-based modelling work</p>
-                        <p class="l2">Leeds Institute for Data Analytics</p>
-                        <p class="l2">Alan Turing Institute</p>
-                        <p>You've seen some of the projects that I'm interested in, Leeds
-                        colleagues are presenting throughout the day.</p>
+                        <p>Overall aim: data assimilation for agent-based models</p>
+                        <p class="l2">We want to be able to simulate cities, assimilating real time
+                        'smart city' data as they emerge to reduce uncertainty (and prevent divergence).</p>
+                        <p>Current goal: use a new probabilistic programming library to:</p>
+                        <p class="l2">Experiment with the amount of data needed to simulate a system</p>
+                        <p class="l2">Perform Bayesian inference on an ABM</p>
+                        <p class="l2">Implement data assimilation</p>
                     </div>
                 </section>
                 
@@ -370,8 +401,6 @@
                         <p><a href="https://www.findaphd.com/search/ProjectDetails.aspx?PJID=96795">
                         www.findaphd.com/search/ProjectDetails.aspx?PJID=96795</a></p>
                     </div>
-                </section>
-
                 </section>
                 
                 

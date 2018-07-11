@@ -1,0 +1,56 @@
+
+# Main .gitignore file. Don't use any others!
+
+# ********** Global stuff **********
+
+# Mac crap
+.DS_Store
+
+# Vim swap files
+*.swp
+
+# All build directories
+build
+target
+classes
+out
+
+# R stuff
+*.Rhistory
+.Rproj.user
+
+# Python stuff:
+
+__pycache__/
+.ipynb_checkpoints/
+
+# Compiled python modules.
+*.pyc
+
+# Setuptools distribution folder.
+/dist/
+
+# Python egg metadata, regenerated from source files by setuptools.
+/*.egg-info
+
+
+
+
+# ********** FOR IDEA / netbeans  **********
+
+
+.idea
+.gradle
+nbproject
+*.iml
+
+
+#
+#
+#
+# ********** **********
+# ********** **********
+# ********** **********
+# ********** **********
+# ********** **********
+# ********** **********

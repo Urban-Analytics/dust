@@ -13,7 +13,7 @@ description: > # this means to ignore newlines until "baseurl:"
 
 #baseurl: "https://urban-analytics.github.io/dust" # the subpath of your site, e.g. /blog/
 baseurl: /dust
-url: https://urban-analytics.github.io
+#url: https://urban-analytics.github.io
 
 twitter_username: nickmalleson
 github_username:  nickmalleson

@@ -1,0 +1,55 @@
+// Code to run the probabilistic programming tutorial at: https://www.cs.cornell.edu/courses/cs4110/2016fa/lectures/lecture33.html 
+// Needs to be run in a browser for the visualisation libraries. I.e. copy the code into: http://webppl.org/
+
+// Class attendance model.
+var attendance = function(i_pl, i_stats, busy) {
+  var attendance = function (interest, busy) {
+    if (interest) {
+      return busy ? flip(0.3) : flip(0.8);
+    } else {
+      return flip(0.1);
+    } 
+  }
+  var a_4110 = attendance(i_pl, busy);
+  var a_4780 = attendance(i_stats, busy);
+  var a_4242 = attendance(i_pl && i_stats, busy);
+  return {cs4110: a_4110, cs4780: a_4780, cs4242: a_4242};
+}
+// Relevance of our three papers.
+var relevance = function(i_pl, i_stats) {
+  var rel1 = i_pl && i_stats;
+  var rel2 = i_pl;
+  var rel3 = i_stats;
+  return {paper1: rel1, paper2: rel2, paper3: rel3};
+}
+// A combined model.
+var model = function() {
+  // Some even random priors for our "student profile."
+  var i_pl = flip(0.5);
+  var i_stats = flip(0.5);
+  var busy = flip(0.5);
+  return [relevance(i_pl, i_stats), attendance(i_pl, i_stats, busy)];
+}
+var dist = Enumerate(model);
+viz.auto(dist);
+
+// A model query that describes my class attendance.
+var rec = function() {
+  var i_pl = flip(0.5);
+  var i_stats = flip(0.5);
+  var busy = flip(0.5);
+  // Require my conference attendance.
+  var att = attendance(i_pl, i_stats, busy);
+  var require = function(x) {
+    return x ?  x : factor(-Infinity);
+  }
+  require(att.cs4242 && att.cs4110 && !att.cs4780);
+  return relevance(i_pl, i_stats).paper2;
+}
+var dist = Enumerate(rec);
+viz.auto(dist);
+
+// Try sampling. If you reduce the number of samples the sampled results
+// move away from the inferred ones.
+var sampled = ParticleFilter(rec, 10000);
+viz.auto(sampled);

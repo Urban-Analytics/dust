@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="author" content="Nick Malleson">
+        <meta name="keywords" content="ABM, dynamic data assimilation, probabilistic programming">
+
+		<title>Simulating cities with streaming (big?) data and agent-based modelling</title>
+
+		<link rel="stylesheet" href="reveal/css/reveal.css">
+		<link rel="stylesheet" href="reveal/css/theme/white.css">
+        
+        <!-- Some extra bits added by Nick -->
+        <link rel="stylesheet" href="reveal/css/nick.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+                
+                <!--
+                <section data-markdown id="index"
+                         data-background-image="http://surf.leeds.ac.uk/figures/cityscapes/chicago_bw.jpg">
+                -->
+                    
+                <section class="title"  id="index" data-background-image="../figures/virtual_city.jpeg">
+                    <div class="whitebackground2">
+                    
+                    <h1 style="font-size: 45px;">Simulating cities with streaming (big?) data and agent-based modelling</h1>
+                    <hr/>
+                    <h2 style="font-size: 35px;"><a href="http://www.geog.leeds.ac.uk/people/n.malleson/">Nick Malleson</a></h2>
+                    <h2 style="font-size: 35px;">Jonathan A. Ward, Alison Heppenstall, Michael Adcock, Daniel Tang, Jonathan Coello, Tomas Crols and Minh Kieu</h2>
+                    <h4>Leeds Institute for Data Analytics (University of Leeds)</h4>
+                    <h4>Improbable, UK</h4>
+                    <h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>
+                    <hr/>
+                    <p style="text-align:center;font-size:25px">These slides and abstract: <a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+                    </div>
+                </section>
+
+   
+                
+
+                
+			</div>
+		</div>
+
+		<script src="reveal/lib/js/head.min.js"></script>
+		<script src="reveal/js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'reveal/plugin/markdown/marked.js' },
+					{ src: 'reveal/plugin/markdown/markdown.js' },
+					{ src: 'reveal/plugin/notes/notes.js', async: true },
+					{ src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>

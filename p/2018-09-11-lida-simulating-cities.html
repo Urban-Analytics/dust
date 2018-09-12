@@ -62,7 +62,7 @@
                          data-background-video-loop="loop"
                          id="Context-UrbanFlows">                     
                     <div class="whitebackground2 fragment">
-                        <h3>How many people are there in the city centreTrafalgar Square right now?</h3>
+                        <h2>How many people are there in the city centre?</h2>
                         
                         <p>We need to better understand urban flows:</p>
                         
@@ -79,10 +79,20 @@
                 <section id="CitySimulation" data-background-video="../videos/skylines_mov-long.mp4"
                          data-background-video-loop="loop">
                     <div class="whitebackground2 fragment">
-                        <h3>City Simulation</h3>
+                        <h2>City Simulation</h2>
                         <p>Making use of diverse (real time) data streams to</p>
                         <p>Understand <i>and predict</i> short-term urban flows</p>
                     </div>
+                    
+                </section>
+                
+                <section id="outline" >
+                    <h2>Outline</h2>
+                    <p>City simulation with agent-based modelling</p>
+                    <p>Some problems with applying ABM to urban simulation</p>
+                    <p>Examples:</p>
+                    <p class="l2">Modelling dynamic commuting behaviour</p>
+                    <p class="l2">Incorporating real time (big?) data</p>
                     
                 </section>
                 
@@ -94,32 +104,36 @@
 
                     <img class="right" style="width:40%" data-src="../figures/sims.png"
                      alt="Diagram of the sims" />
-                    <h2>Our approach: Agent-Based Modelling</h2>
+                    <h2>Ciry Simulation with Agent-Based Modelling</h2>
                     <p>Systems are driven by individuals</p>
                     <p class="l2">(cars, people, ants, trees, whatever)</p>
-                    <p>Bottom-up modelling</p>
-                    <p class="l2">Try to represent the individuals</p>
-                    <p class="l2">Account for system behaviour directly</p>
                     <p>Autonomous, interacting agents</p>
                     <p>Represent individuals or groups</p>
                     <p>Situated in a virtual environment</p>
+                    <p>Bottom-up modelling</p>
+                    <p class="l2">Account for system behaviour <i>directly</i></p>
+                    
                     
                 </section>   
                 
-                <!-- ************************************************************
-                *********************** PROBLEM - Divergence ********************
-                ************************************************************ -->
-
                            
                 <section data-background-image="../figures/shutterstock_788457058-small.jpg">                     
                     <div class="whitebackground2">
-                        <h3>Using Agent-Based Modelling to Simulate Cities</h3>
-                        <p>Implement virtual 'people' (agents)</p>
-                        <p>Incorporate diverse data (census, loyalty cards, public transport,
-                        social media, etc.).</p>
-                        <p>Try to simulate the real world</p>                     
+                        <h2>Ciry Simulation with Agent-Based Modelling</h2>
+                        <p>Problem: diverse data that describe urban dynamics</p>
+                        <p class="l2">Payment/loyalth cards, transport smart cards, mobile phone
+                        interactions, footfall/traffic counters, etc., etc.</p>
+                        <p>How to combine to create a <i>hollistic</i> representation</p>
+                        <p>Solution: build an agent-based model</p>
+                        <p class="l2">Implement virtual 'people' (agents)</p>
+                        <p class="l2">Optimise different aspects using all available data</p>
                     </div>
                 </section>
+                
+                <!-- ************************************************************
+                *********************** PROBLEMS with ABM ********************
+                ************************************************************ -->
+
                 
 
                 
@@ -166,8 +180,9 @@
                     (e.g. as part of a larger ensemble).</p>
                     
                 </section>
+                                
                 
-                   <section id="prob-divergence" 
+                <section id="prob-divergence" 
                          data-background-video="../videos/BBC_Swarm_Natures_Incredible_Invasions.mp4" 
                          data-background-video-muted 
                          data-background-video-loop="loop">
@@ -201,7 +216,10 @@
                 
                 
                 
-                
+                <!-- ************************************************************
+                *********************** SURF ********************
+                ************************************************************ -->
+
                 
                 
                 <section id="current_research-surf" data-background-image="../figures/cityscapes/chicago_bw.jpg">
@@ -219,20 +237,18 @@
                 </section>
                 
                                 
-                <!--
                 <section id="surf-model-otley-environment">
                     
                     <h2>Modelling Footfall</h2>
-                    <p>Wi-Fi footfall counters (CDRC). Case study: Otley, West Yorkshire</p>
+                    <p>Wi-Fi footfall counters (Noggin, CDRC). Case study: Otley, West Yorkshire</p>
                     
                     <img class="left" data-src="../figures/surf-model/otley_environment1.png" 
                          alt="The surf model environment in Otley" />
                     
-                    <img class="right" data-src="../figures/surf-model/otley_environment2.png" 
+                    <img class="right" data-src="../figures/surf-model/site_locations.png" 
                          alt="The surf model environment in Otley (zoom in)" />
                 
                 </section>
--->
                 
                 
                 <section id="surf-model-otley-video">
@@ -274,8 +290,7 @@
                             <img class="right" style="width:200px;" data-src="../figures/erc_logo.jpg" alt="ESRC Logo"/></a>
                         <p><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></p>
                         <p>5-year research project (&euro;1.5M)</p>
-                        <p>Funded by the European Research Council (Starting Grant)</p>
-                        <p>Started in January</p>
+                        <p>Funded by the European Research Council</p>
                         <p>Main aim: create new methods for dynamically assimilating data into agent-based models.</p>
                     </div>
                 
@@ -388,7 +403,7 @@
                 
                 <section id="Results:ObsVSNoObs">
                     
-                    <h3>Results: Sampling the posterior with and without observations</h3>
+                    <h2>Results: Sampling the posterior with and without observations</h2>
                     
                     <img style="width:80%;" data-src="../figures/paper_figures/ABMUS2018/no_obs_vs_obs.png" 
                          alt="Comparing the results with and without constraining to observations"/>
@@ -398,7 +413,7 @@
                 <!--
                 <section id="Results:VaryingObs">
                     
-                    <h3>Results: Varying the number of observations</h3>
+                    <h2>Results: Varying the number of observations</h2>
                     
                     <img style="width:80%;" data-src="../figures/paper_figures/ABMUS2018/varying_observations.png" 
                          alt="Comparing the results with and without constraining to observations"/>
@@ -425,13 +440,13 @@
                     </table>
                     
                 </section>
-                
+                -->
                 
                 <section id="NextSteps">
                     
                     <h2>Immediate Next Steps</h2>
                     
-                    <p>Explain the relationship between observations and sample spread</p>
+                
                     <p>Experiment with different types of observations, e.g.</p>
                     <p class="l2">Cameras that count the passers-by in a single place</p>
                     <p class="l2">Full traces of all agents</p>
@@ -439,12 +454,10 @@
                     <p class="l2"></p>
                     <p>Move towards <i>data assimilation</i> (actually adjust the state of the 
                     model while it is running in response to external data).</p>
-                    <p></p>
-                    <p></p>
-                    <p></p>
+
                     
                 </section>
-                -->
+                
                 
                 <section id="conclusions2" data-background-image="../figures/shutterstock_615414464-small.jpg">
                     <div class="whitebackground2">

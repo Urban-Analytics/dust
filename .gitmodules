@@ -2,3 +2,6 @@
 	path = Projects/DataAssimilation/Kalman-and-Bayesian-Filters-in-Python
 	url = https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python.git
 	branch = master
+[submodule "Projects/keanu-post-hackathon"]
+	path = Projects/keanu-post-hackathon
+	url = https://github.com/nickmalleson/keanu-post-hackathon.git

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.6.20)  18 OCT 2018 11:56
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.6.20)  18 OCT 2018 14:20
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -206,8 +206,7 @@ tempboxa \hfil }\fi \vskip \belowcaptionskip .
 \c@lotdepth=\count124
 \sf@top=\skip48
 \sf@bottom=\skip49
-)
-No file mikes_model.aux.
+) (./mikes_model.aux)
 \openout1 = `mikes_model.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 23.
@@ -222,6 +221,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 23.
 LaTeX Font Info:    ... okay on input line 23.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 23.
 LaTeX Font Info:    ... okay on input line 23.
+
 (/usr/local/texlive/2017/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count125
@@ -297,135 +297,98 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <9> on input line 62.
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <6> on input line 62.
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 71.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 74.
 
 (/usr/local/texlive/2017/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <9> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 71.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 74.
  [1
 
 {/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+Overfull \hbox (0.48824pt too wide) in paragraph at lines 106--107
+[]\OT1/cmr/m/n/10 Individual-level mod-elling ap-proaches, such as agent-based 
+mod-elling (ABM),
+ []
 
-LaTeX Warning: Reference `fig:pedestrian_model_environment' on page 2 undefined
- on input line 82.
+[2]
 
-
-LaTeX Warning: Citation `malleson_forecasting_2017' on page 2 undefined on inpu
-t line 92.
-
-
-LaTeX Warning: Citation `ward_dynamic_2016' on page 2 undefined on input line 9
-2.
+LaTeX Warning: Citation `malleson_forecasting_2017' on page 3 undefined on inpu
+t line 118.
 
 
-LaTeX Warning: Citation `flotterod_bayesian_2011' on page 2 undefined on input 
-line 92.
+LaTeX Warning: Citation `ward_dynamic_2016' on page 3 undefined on input line 1
+18.
 
 
-LaTeX Warning: Citation `wang_data_2015' on page 2 undefined on input line 92.
+LaTeX Warning: Citation `flotterod_bayesian_2011' on page 3 undefined on input 
+line 118.
 
 
-LaTeX Warning: Citation `wang_data_2015' on page 2 undefined on input line 92.
+LaTeX Warning: Citation `wang_data_2015' on page 3 undefined on input line 118.
 
 
-LaTeX Warning: Citation `kalnay_atmospheric_2003' on page 2 undefined on input 
-line 92.
 
-<figures/pedestrian_model_environment.png, id=18, 767.11594pt x 428.35031pt>
+LaTeX Warning: Citation `wang_data_2015' on page 3 undefined on input line 118.
+
+
+
+LaTeX Warning: Citation `kalnay_atmospheric_2003' on page 3 undefined on input 
+line 118.
+
+<figures/pedestrian_model_environment.png, id=24, 767.11594pt x 428.35031pt>
 File: figures/pedestrian_model_environment.png Graphic file (type png)
 
 <use figures/pedestrian_model_environment.png>
 Package pdftex.def Info: figures/pedestrian_model_environment.png used on input
- line 99.
+ line 125.
 (pdftex.def)             Requested size: 347.12354pt x 193.8343pt.
- [2]
 
-LaTeX Warning: Citation `helbing_social_1995' on page 3 undefined on input line
- 110.
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
+ [3 <./figures/pedestrian_model_environment.png>]
 
-LaTeX Warning: Reference `fig:pedestrian_model_environment' on page 3 undefined
- on input line 110.
-
-
-LaTeX Warning: Reference `objectives:current' on page 3 undefined on input line
- 116.
+LaTeX Warning: Citation `helbing_social_1995' on page 4 undefined on input line
+ 136.
 
 
-LaTeX Warning: Citation `ghahramani_probabilistic_2015' on page 3 undefined on 
-input line 121.
+LaTeX Warning: Citation `ghahramani_probabilistic_2015' on page 4 undefined on 
+input line 147.
 
-
-LaTeX Warning: Reference `objectives:da' on page 3 undefined on input line 121.
-
-
-
-LaTeX Warning: Reference `fig:procedure_diagram' on page 3 undefined on input l
-ine 121.
-
-[3 <./figures/pedestrian_model_environment.png>]
 <figures/procedure_diagram2.pdf, id=28, 816.04875pt x 517.935pt>
 File: figures/procedure_diagram2.pdf Graphic file (type pdf)
 
 <use figures/procedure_diagram2.pdf>
-Package pdftex.def Info: figures/procedure_diagram2.pdf used on input line 129.
+Package pdftex.def Info: figures/procedure_diagram2.pdf used on input line 155.
 
 (pdftex.def)             Requested size: 347.12354pt x 220.31308pt.
-
-
-LaTeX Warning: Reference `fig:model_uncertainty' on page 4 undefined on input l
-ine 139.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [4 <./figures/procedure_diagram2.pdf>]
-<figures/results-with_obs.pdf, id=160, 794.97pt x 614.295pt>
+ [4]
+<figures/results-with_obs.pdf, id=32, 794.97pt x 614.295pt>
 File: figures/results-with_obs.pdf Graphic file (type pdf)
 
 <use figures/results-with_obs.pdf>
-Package pdftex.def Info: figures/results-with_obs.pdf used on input line 149.
+Package pdftex.def Info: figures/results-with_obs.pdf used on input line 175.
 (pdftex.def)             Requested size: 170.09244pt x 131.43346pt.
 
-<figures/results-no_obs.pdf, id=161, 794.97pt x 614.295pt>
+<figures/results-no_obs.pdf, id=33, 794.97pt x 614.295pt>
 File: figures/results-no_obs.pdf Graphic file (type pdf)
 
 <use figures/results-no_obs.pdf>
-Package pdftex.def Info: figures/results-no_obs.pdf used on input line 150.
+Package pdftex.def Info: figures/results-no_obs.pdf used on input line 176.
 (pdftex.def)             Requested size: 170.09244pt x 131.43346pt.
 
-
-LaTeX Warning: Reference `fig:results:with_obs' on page 5 undefined on input li
-ne 151.
-
-
-LaTeX Warning: Reference `fig:results:no_obs' on page 5 undefined on input line
- 151.
-
-
-LaTeX Warning: Reference `fig:results:with_obs' on page 5 undefined on input li
-ne 151.
-
-
-LaTeX Warning: Reference `fig:results:no_obs' on page 5 undefined on input line
- 151.
-
 No file mikes_model.bbl.
-[5 <./figures/results-with_obs.pdf> <./figures/results-no_obs.pdf>]
-(./mikes_model.aux)
-
-LaTeX Warning: There were undefined references.
-
+[5 <./figures/procedure_diagram2.pdf>] [6 <./figures/results-with_obs.pdf> <./f
+igures/results-no_obs.pdf>] (./mikes_model.aux)
 
 LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
 
  ) 
 Here is how much of TeX's memory you used:
- 3207 strings out of 492995
- 50039 string characters out of 6132704
- 120157 words of memory out of 5000000
+ 3209 strings out of 492995
+ 50071 string characters out of 6132704
+ 121235 words of memory out of 5000000
  6728 multiletter control sequences out of 15000+600000
  11209 words of font info for 39 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -445,10 +408,10 @@ ve/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive
 017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/20
 17/texmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb></usr/local/texlive/2017
 /texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on mikes_model.pdf (5 pages, 1162613 bytes).
+Output written on mikes_model.pdf (6 pages, 1164500 bytes).
 PDF statistics:
- 231 PDF objects out of 1000 (max. 8388607)
- 155 compressed objects within 2 object streams
+ 234 PDF objects out of 1000 (max. 8388607)
+ 157 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  21 words of extra memory for PDF output out of 10000 (max. 10000000)
 

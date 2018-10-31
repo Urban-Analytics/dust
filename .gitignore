@@ -33,6 +33,11 @@ __pycache__/
 /*.egg-info
 
 
+# Gradle stuff (from https://github.com/github/gitignore/blob/master/Gradle.gitignore )
+.gradle
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
 
 
 # ********** FOR IDEA / netbeans  **********

@@ -14,3 +14,12 @@ Version control:
   
   No state trasition capabilities (not DA-ready)
   
+-  v1.3 8th Nov 2018
+    
+    Demand comes from an OD table instead of completely random
+    
+    Bus stop also stores visited bus and headways
+    
+    Export bus positions data with noise
+    
+    Export bus positions ground truth data without noise

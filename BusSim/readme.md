@@ -14,7 +14,7 @@ Version control:
   
   No state trasition capabilities (not DA-ready)
   
--  v1.3 8th Nov 2018
+-  v1.3: 8th Nov 2018
     
     Demand comes from an OD table instead of completely random
     

@@ -460,10 +460,13 @@ class ParticleFilter:
         return
 
     def reweight(self):
-        self.states += random.np_gaussian(0, self.particle_std**2, shape=self.states.shape)
-        measured_state = self.base_model.agents2state() + random.np_gaussian(0, self.model_std**2, shape=self.states.shape)
+        if self.particle_std:
+            self.states += random.np_gaussian(0, self.particle_std**2, shape=self.states.shape)
+        measured_state = self.base_model.agents2state()
+        if self.model_std:
+            measured_state += random.np_gaussian(0, self.model_std**2, shape=measured_state.shape)
         distance = np.linalg.norm(self.states - measured_state, axis=1)
-        self.weights = 1 / np.fmax(distance, 1e-10)  # to avoid fp_err
+        self.weights = 1 / np.fmax(distance, 1e-99)  # to avoid fp_err
         self.weights /= np.sum(self.weights)
         return
 
@@ -484,13 +487,13 @@ class ParticleFilter:
         return
 
     def predict(self):
-        self.time += 1
         self.base_model.step()
         for particle in range(self.number_of_particles):
             if self.time:
                 self.models[particle].state2agents(self.states[particle])
             self.models[particle].step()
             self.states[particle] = self.models[particle].agents2state()
+        self.time += 1
         return
 
     def save(self, truth_state):
@@ -509,13 +512,10 @@ class ParticleFilter:
             if agent.active == 1:
                 plt.plot(*agent.location, '.k')
         particle = 0
-        if np.all(np.isnan(self.weights)):
-            print(self.weights)
-            error()
-            markersizes = self.weights
-            markersizes *= 4 / np.std(markersizes)   # revar
-            markersizes += 4 - np.mean(markersizes)  # remean
-            markersizes = np.clip(markersizes, .5, 8)
+        markersizes = self.weights
+        markersizes *= 4 / np.std(markersizes)     # revar
+        markersizes += 4 - np.mean(markersizes)    # remean
+        markersizes = np.clip(markersizes, .5, 8)  # clip
         for model in self.models:
             for agent in model.agents[:4]:
                 if agent.active == 1:
@@ -549,7 +549,7 @@ if __name__ == '__main__':
         'do_ani': False,
         'do_kd_tree': True
     }
-    if True:  # Run the model
+    if not True:  # Run the model
         Model(model_params).batch()
     else:  # Run the particle filter
         model_params['do_save'] = False

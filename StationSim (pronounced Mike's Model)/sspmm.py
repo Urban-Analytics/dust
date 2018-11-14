@@ -4,18 +4,97 @@ StationSim (aka Mike's model) converted into python.
 
 Todos:
 multiprocessing
+kd-tree close enough
 profile functions
 '''
 import numpy as np
-import matplotlib.pyplot as plt
 from copy import deepcopy
+import matplotlib.pyplot as plt
 
 
+# A simple error function used for debugging.
 def error(text='Self created error.'):
     from sys import exit
     print()
     exit(text)
     return
+
+
+# An approximate method for calculating the p=2-norm.
+sqrt_2 = 1 / np.sqrt(2)
+def cheap_norm(array, axis=None):
+    n = np.sum(np.abs(array), axis) * sqrt_2
+    return n
+
+
+class KD_Tree:
+
+    def __init__(self, k):
+        self.k = k
+        return
+
+    def build(self, points, depth=0):
+        n = len(points)
+        if n:
+            axis = depth % self.k
+            sorted_points = sorted(points, key=lambda point: point[axis])
+            tree = {
+                'point': sorted_points[n // 2],
+                'left': self.build(sorted_points[:n // 2], depth + 1),
+                'right': self.build(sorted_points[n // 2 + 1:], depth + 1),
+            }
+        else:
+            tree = None
+        return tree
+
+    def search_square(self, tree, point, depth=0, best=None):
+        if tree is not None:
+            axis = depth % self.k
+            next_best = None
+            next_branch = None
+            if best is None or self.distance(point, tree['point']) < self.distance(point, best):
+                next_best = tree['point']
+            else:
+                next_best = best
+            if point[axis] < tree['point'][axis]:
+                next_branch = tree['left']
+            else:
+                next_branch = tree['right']
+            best = self.search_square(next_branch, point, depth + 1, next_best)
+        return best
+
+    def search_radius(self, tree, point, depth=0):
+        if tree is None:
+            best = None
+        else:
+            axis = depth % self.k
+            next_branch = None
+            opposite_branch = None
+            if point[axis] < tree['point'][axis]:
+                next_branch = tree['left']
+                opposite_branch = tree['right']
+            else:
+                next_branch = tree['right']
+                opposite_branch = tree['left']
+            best = self.closer_distance(point, self.search_radius(next_branch, point, depth + 1), tree['point'])
+            if self.distance(point, best) > abs(point[axis] - tree['point'][axis]):
+                best = self.closer_distance(point, self.search_radius(opposite_branch, point, depth + 1), best)
+        return best
+
+    def distance(self, p1, p2):
+        d = cheap_norm(p1 - p2)
+        return d
+
+    def closer_distance(self, pivot, p1, p2):
+        if p1 is None:
+            p = p2
+        elif p2 is None:
+            p = p1
+        elif self.distance(pivot, p1) < self.distance(pivot, p2):
+            p = p1
+        else:
+            p = p2
+        return p
 
 
 class NextRandom:
@@ -151,7 +230,7 @@ class Agent:
             collide = False
         return collide
 
-    def neighbourhood(self, model, new_location, just_one=True, forward_vision=True):
+    def neighbourhood(self, model, new_location, do_kd_tree=True, just_one=True, forward_vision=True):
         '''
         Description:
             Get agents within the defined separation.
@@ -181,17 +260,21 @@ class Agent:
                 <agent object>s
                 A set of agents in a region
         '''
-        neighbours = []
-        for agent in model.agents:
-            if agent.active == 1:
-                if forward_vision and agent.location[0] < new_location[0]:
-                    distance = self.separation + 1
-                else:
-                    distance = np.linalg.norm(new_location - agent.location)
-                if distance < self.separation and agent.unique_id != self.unique_id:
-                    neighbours.append(agent)
-                    if just_one:
-                        break
+        if model.do_kd_tree:
+            location = model.kd.search_radius(model.tree, new_location)
+            neighbours = self.separation < cheap_norm(location - new_location)
+        else:
+            neighbours = []
+            for agent in model.agents:
+                if agent.active == 1:
+                    if forward_vision and agent.location[0] < new_location[0]:
+                        distance = self.separation + 1
+                    else:
+                        distance = cheap_norm(new_location - agent.location)
+                    if distance < self.separation and agent.unique_id != self.unique_id:
+                        neighbours.append(agent)
+                        if just_one:
+                            break
         return neighbours
 
     def lerp(self, loc1, loc2, speed):
@@ -254,7 +337,8 @@ class Model:
 
     def step(self):
         self.time += 1
-        if self.time > 2:  # For animation purposes
+        if self.pop_finished < self.pop_total and self.delay < self.time:
+            self.kdtree_build()
             for agent in self.agents:
                 agent.step(self)
         return
@@ -279,6 +363,14 @@ class Model:
     def initialise_agents(self):
         self.agent_count = 0
         self.agents = list([Agent(self) for _ in range(self.pop_total)])
+        return
+
+    def kdtree_build(self):
+        self.kd = KD_Tree(2)
+        locs = []
+        for agent in self.agents:
+            locs.append(agent.location)
+        self.tree = self.kd.build(locs)
         return
 
     def agents2state(self):
@@ -395,7 +487,7 @@ class ParticleFilter:
         self.time += 1
         self.base_model.step()
         for particle in range(self.number_of_particles):
-            if not self.time < 2:
+            if self.time:
                 self.models[particle].state2agents(self.states[particle])
             self.models[particle].step()
             self.states[particle] = self.models[particle].agents2state()
@@ -413,35 +505,37 @@ class ParticleFilter:
     def ani(self):
         plt.figure(1)
         plt.clf()
-        particle = -1
         for agent in self.base_model.agents:
             if agent.active == 1:
                 plt.plot(*agent.location, '.k')
-        markersizes = self.weights
-        markersizes *= 4 / np.std(markersizes)   # revar
-        markersizes += 4 - np.mean(markersizes)  # remean
+        particle = 0
+        if np.all(np.isnan(self.weights)):
+            print(self.weights)
+            error()
+            markersizes = self.weights
+            markersizes *= 4 / np.std(markersizes)   # revar
+            markersizes += 4 - np.mean(markersizes)  # remean
+            markersizes = np.clip(markersizes, .5, 8)
         for model in self.models:
-            particle += 1
-            markersize = np.clip(markersizes[particle], .5, 8)
             for agent in model.agents[:4]:
                 if agent.active == 1:
-                    unique_id = agent.unique_id
-                    locs = np.array([self.base_model.agents[unique_id].location, agent.location]).T
+                    locs = np.array([self.base_model.agents[agent.unique_id].location, agent.location]).T
                     plt.plot(*locs, '-k', alpha=.1, linewidth=.3)
-                    plt.plot(*agent.location, '.r', alpha=.3, markersize=markersize)
+                    plt.plot(*agent.location, '.r', alpha=.3, markersize=markersizes[particle])
+            particle += 1
         plt.axis(np.ravel(self.base_model.boundaries, 'F'))
-        plt.pause(1 / 4)
+        plt.pause(1 / 30)
         return
 
 
 if __name__ == '__main__':
     random = NextRandom()
     model_params = {
-        'width': 400,
+        'width': 200,
         'height': 100,
-        'pop_total': 10,
+        'pop_total': 300,
         'entrances': 3,
-        'entrance_space': 2,
+        'entrance_space': 1,
         'exits': 2,
         'exit_space': 2,
         'speed_min': .1,
@@ -449,18 +543,19 @@ if __name__ == '__main__':
         'speed_desire_max': 2,
         'initial_separation': 1,
         'separation': 5,
+        'delay': 2,
         'batch_iterations': 50,
-        'do_save': True,
-        'do_ani': True
+        'do_save': False,
+        'do_ani': False,
+        'do_kd_tree': True
     }
-    if not True:
-        # Run the model
+    if True:  # Run the model
         Model(model_params).batch()
-    else:
-        # Run the particle filter
+    else:  # Run the particle filter
+        model_params['do_save'] = False
         filter_params = {
-            'number_of_particles': 20,
-            'particle_std': 1,
+            'number_of_particles': 10,
+            'particle_std': 0,
             'model_std': 0,
             'do_copies': True,
             'do_neff': False,
@@ -468,5 +563,5 @@ if __name__ == '__main__':
             'do_ani': True
         }
         pf = ParticleFilter(Model, model_params, filter_params)
-        for _ in range(100):
+        for _ in range(model_params['batch_iterations']):
             pf.step()

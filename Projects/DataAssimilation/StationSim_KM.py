@@ -16,9 +16,8 @@ profile functions
 import numpy as np
 import matplotlib.pyplot as plt
 from copy import deepcopy
-from multiprocessing import Pool # new
-from functools import partial # new
-#import random as rrrr
+from multiprocessing import Pool
+from functools import partial
 
 def error(text='Self created error.'):
     from sys import exit
@@ -443,8 +442,7 @@ class ParticleFilter:
 
             if self.do_save:
                 self.save()
-            #if self.do_ani:
-            if self.do_ani and (self.time % self.resample_window == 0 or self.time % self.resample_window == self.resample_window -1):
+            if self.do_ani:
                 self.ani()
                 
         if self.do_save:
@@ -516,15 +514,12 @@ class ParticleFilter:
             else:
                 j += 1
                 
-        #print(0.1,self.states,self.weights)
         self.states[:] = self.states[indexes]
         self.weights[:] = self.weights[indexes]
-        #print(0.2,self.states,self.weights)
         
         asign_agents_p = partial(assign_agents, self = self)    
-        #print(1,[self.models[i].agents2state() for i in range(self.number_of_particles)])
         self.models = pool.map(asign_agents_p,range(self.number_of_particles))
-        #print(2,[self.models[i].agents2state() for i in range(self.number_of_particles)])
+
         return
 
     '''
@@ -657,8 +652,3 @@ if __name__ == '__main__':
         }
         pf = ParticleFilter(Model, model_params, filter_params)
         pf.step()
-
-        
-
-
-        

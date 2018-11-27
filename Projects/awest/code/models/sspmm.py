@@ -20,7 +20,9 @@ class Agent:
         self.loc_desire = model.loc_exits[np.random.randint(model.exits)]
         # Parameters
         self.time_activate = np.random.exponential(model.entrance_speed)
-        self.speed_desire = max(np.random.normal(model.speed_desire_mean, model.speed_desire_std), 2*model.speed_min)
+        self.speed_desire = 0
+        while self.speed_desire <= model.speed_min:
+            self.speed_desire = np.random.normal(model.speed_desire_mean, model.speed_desire_std)
         self.speeds = np.arange(self.speed_desire, model.speed_min, -model.speed_step)
         if model.do_save:
             self.history_loc = []
@@ -51,10 +53,10 @@ class Agent:
             elif speed == self.speeds[-1]:
                 # Wiggle
                 new_location = self.location + np.random.randint(-1, 1+1, 2)
-        # Rebound
-        within_bounds = all(model.boundaries[0] <= new_location) and all(new_location <= model.boundaries[1])
-        if not within_bounds:
-            new_location = np.clip(new_location, model.boundaries[0], model.boundaries[1])
+                # Rebound
+                within_bounds = all(model.boundaries[0] <= new_location) and all(new_location <= model.boundaries[1])
+                if not within_bounds:
+                    new_location = np.clip(new_location, model.boundaries[0], model.boundaries[1])
         # Move
         self.location = new_location
         return
@@ -247,7 +249,7 @@ def easy_model():
         'speed_desire_mean': 1,
         'speed_desire_std': 1,
         'separation': 2,
-        'batch_iterations': 400,
+        'batch_iterations': 200,
         'do_save': False,
         'do_ani': True,
         }

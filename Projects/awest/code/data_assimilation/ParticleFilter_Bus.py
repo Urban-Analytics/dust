@@ -59,7 +59,7 @@ class ParticleFilter:
         # Save
         self.do_save = do_save
         if self.do_save:
-            self.datum_per_agent = int(self.dimensions / len(model.agents))
+            self.datum_per_agent = int(self.dimensions / len(model.buses))
             self.active = []
             self.mean = []
             self.var = []
@@ -134,8 +134,8 @@ class ParticleFilter:
         activity_mask = np.zeros(states.shape, dtype='b')
         active = 0
         for particle in range(self.number_of_particles):
-            for unique_id in range(len(self.models[particle].agents)):
-                if self.models[particle].agents[unique_id].active == 1:
+            for unique_id in range(len(self.models[particle].buses)):
+                if self.models[particle].buses[unique_id].status in (1, 2):
                     activity_mask[particle, unique_id * self.datum_per_agent:unique_id * self.datum_per_agent + self.datum_per_agent] = True
                     active += 1
         states = np.ma.masked_where(activity_mask, states)
@@ -144,11 +144,11 @@ class ParticleFilter:
         variances = np.average((states - means)**2, weights=self.weights, axis=0)
         # Save
         self.active.append(active / self.number_of_particles)
-        self.mean.append(np.linalg.norm(means - true_state, axis=0))
         self.var.append(np.average(variances))
+        self.mean.append(np.linalg.norm(means - true_state, axis=0))
         return
 
-    def save_plot(self, do_save_to_file=False, name='', formatting='.pdf', t=None):
+    def save_plot(self, do_save=False, name='', formatting='.jpg', t=None):
         '''
         Call this function to plot the statistics
         '''
@@ -159,22 +159,22 @@ class ParticleFilter:
             plt.figure(1, figsize=(16 / 2, 9 / 2))
             plt.plot(self.active)
             plt.ylabel('Active agents')
-            if do_save_to_file:
+            if do_save:
                 plt.savefig(name + ' Active' + formatting)
 
             _, ax1 = plt.subplots(1, figsize=(16 / 2, 9 / 2))
             x = self.mean
-            l1, = ax1.plot(t, x, '-m')
+            l1, = ax1.plot(x, '-m')
             ax1.set_ylabel('Particle Mean Error')
 
             ax2 = plt.twinx()
             x = self.var
-            l2, = ax2.plot(t, x, '--b')
+            l2, = ax2.plot(x, '--b')
             ax2.set_ylabel('Particle Variance Error')
 
             plt.xlabel('Time (s)')
             plt.legend([l1, l2], ['Mean Error', 'Mean Variance'], loc=0)
-            if do_save_to_file:
+            if do_save:
                 plt.savefig(name + ' Analysis' + formatting)
 
             print('Max mean error = ', max(self.mean))
@@ -210,9 +210,9 @@ class ParticleFilter:
             markersizes = 8 * np.ones(self.weights.shape)
 
         for m in self.models:
-            for a in m.agents[:pf_agents]:
+            for a in m.buses[:pf_agents]:
                 if a.active == 1:
-                    loc0 = model.agents[a.unique_id].location
+                    loc0 = model.buses[a.unique_id].location
                     loc = a.location
                     locs = np.array([loc0, loc]).T
                     plt.plot(*locs, '-k', alpha=.1, linewidth=.3)

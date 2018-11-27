@@ -4,11 +4,14 @@ Todo:
 filter
     measure the pf efficiency
     liturature review for pf
-    multiprocessing
+    multiprocessing (on seperate file)
 sspmm
     save data
 BusSim
     last model error
+    bus pf (agents = set(buses) where agent.active=boolean)
+    status
+    line thickness
 '''
 from data_assimilation.ParticleFilter import ParticleFilter
 import numpy as np
@@ -17,6 +20,7 @@ from jupyterthemes.jtplot import style as jtstyle
 # jtstyle('gruvbox')
 import time
 from copy import deepcopy
+from multiprocessing import Pool
 
 
 if 0:  # basic
@@ -30,46 +34,47 @@ if 0:  # basic
         'particle_std': 0,
         'resample_window': 1,
         'do_copies': False,
-        'do_save': False
+        'do_save': True
         }
     pf = ParticleFilter(model, **filter_params)
 
-    for _ in range(400):
+    for _ in range(200):
         model.step()
         true_state = model.agents2state()
         measured_state = true_state + np.random.normal(0, 0., true_state.shape)
         pf.step(measured_state)
         pf.ani(model, 2)
-    plt.plot_save()
+    pf.save_plot()
+    plt.show()
 
 
-if 1:  # sspmm
+if 0:  # sspmm
 
     from models.sspmm import easy_model
     model = easy_model()
 
-    if True:  # Run the model
+    if not True:  # Run the model
         model.batch()
     else:  # Run the particle filter
         model.do_save = False
         filter_params = {
             'number_of_particles': 10,
-            'particle_std': 0,
+            'particle_std': .1,
             'resample_window': 1,
-            'do_copies': False,
-            'do_save': False
+            'do_copies': True,
+            'do_save': True
             }
         pf = ParticleFilter(model, **filter_params)
-        for _ in range(model_params['batch_iterations']):
+        for _ in range(model.batch_iterations):
             model.step()
             true_state = model.agents2state()
             measured_state = true_state + np.random.normal(0, 0., true_state.shape)
             pf.step(measured_state, true_state)
-            pf.ani(model, 2)
-        pf.plot_save()
+            pf.ani(model)
+        pf.save_plot()
 
 
-if 0:  # BusSim
+if 1:  # BusSim
 
     from models.BusSim_truth import pickle_Model
     pickle_Model()
@@ -77,9 +82,9 @@ if 0:  # BusSim
     model0, GroundTruth = unpickle_Model()
     t = np.arange(0, 10*len(GroundTruth), 10)
 
-    for p in (20,):
-        for std in (0, .01):
-            for w in (1, 401):
+    for p in (10, 100):
+        for std in (.01,):
+            for w in (1,):
                 print(p, std, w)
                 name = '../images/BusSim/' + 'p{}std{}w{}'.format(p, std, w)
                 formatting = '.pdf'
@@ -92,6 +97,7 @@ if 0:  # BusSim
                     'do_save': True
                     }
                 model = deepcopy(model0)
+                from data_assimilation.ParticleFilter_Bus import ParticleFilter
                 pf = ParticleFilter(model, **filter_params)
 
                 for niter in range(len(GroundTruth)):
@@ -109,27 +115,27 @@ if 0:  # BusSim
                         plt.figure(3, figsize=(16 / 2, 9 / 2))
                         plt.clf()
                         for particle in range(len(pf.models)-1):
-                            x = np.array([bus.trajectory for bus in pf.models[particle].buses]).T
+                            x = np.asfarray([bus.trajectory for bus in pf.models[particle].buses]).T
                             x[x <= 0] = np.nan
-                            plt.plot(t, x, linewidth=.5)
+                            plt.plot(x, linewidth=.5)
                         x = GroundTruth[:niter+1, 1::4]
                         x[x <= 0] = np.nan
-                        plt.plot(t, x, 'k')
+                        plt.plot(x, 'k')
                         plt.xlabel('Time (s)')
                         plt.ylabel('Distance (m)')
                         if do_ani:
                             plt.pause(1/30)
 
 
-                do_save = False
+                do_save = True
                 if do_save:
                     plt.savefig(name + ' Trails' + formatting)
                     time.sleep(.1)
 
-                    pf.plot_save(do_save, name, formatting, t)
+                    pf.save_plot(do_save, name, formatting, t)
                     time.sleep(.1)
                 else:
-                    pf.plot_save(do_save, name, formatting, t)
+                    pf.save_plot(do_save, name, formatting, t)
                     time.sleep(.1)
 
                     plt.show()

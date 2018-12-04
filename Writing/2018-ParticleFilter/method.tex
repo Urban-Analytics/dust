@@ -7,7 +7,7 @@
 \item Outline of experiments, including criteria to measure `success' of the PF
 \end{itemize}
 
-\subsection{StationSim}
+\subsection{The Agent-Based Model: StationSim}
 
 XXXX outline stations sim
 
@@ -16,6 +16,8 @@ XXXX outline stations sim
 
 XXXX Outline how data assimilation method works broadly (e.g. \textit{update} and \textit{predict}) and define general concepts / objects.
 
+
+\subsection{The Particle Filter}
 
 Here, the \textit{state vector} contains all the information that a transition function needs to iterative the model forward by one step, including all of the agent ($i = \{ 0, 1, \dots, N \} $) parameters ($\overrightarrow{p_i}$) and variables ($\overrightarrow{v_i}$) as well as global model parameters $\overrightarrow{P}$:
 
@@ -33,14 +35,13 @@ x_0 & y_0 & x_1 & y_1 & \dots & x_n & y_n
 \end{array} \right]
 \end{equation} 
 
-In this paper, the particle filter is not used to estimate the state of the models variables ($\overrightarrow{v_i}$), not any of the parameters ($\overrightarrow{p_i}$ and \overrightarrow{P}) -- although it is worth noting that parameter estimation is technically feasible and will be experimented with in later iterations of this work. Here a further vector is required to map the observations to the state vector that the particle can actually manipulate. We define the partial state vector $S_\textrm{partial}$ to match the shape of $O$, i.e.:
+In this paper, the particle filter is not used to estimate the state of the models variables ($\overrightarrow{v_i}$), not any of the parameters ($\overrightarrow{p_i}$ and \overrightarrow{P}) -- although it is worth noting that parameter estimation is technically feasible and will be experimented with in later iterations of this work. Therefore in the experiments conducted here, all parameters are fixed. Hence a further vector is required to map the observations to the state vector that the particle can actually manipulate. We define the partial state vector $S_\textrm{partial}$ to match the shape of $O$, i.e.:
 
 \begin{equation}
   S_\textrm{partial}  = \left[ \begin{array}{ccccccc}
 x_0 & y_0 & x_1 & y_1 & \dots & x_n & y_n 
 \end{array} \right]
 \end{equation} 
-
 
 
 

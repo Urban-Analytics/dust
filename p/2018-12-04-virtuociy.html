@@ -1,0 +1,335 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="author" content="Nick Malleson">
+        <meta name="keywords" content="ABM, dynamic data assimilation, probabilistic programming">
+
+		<title>Simulating cities with streaming data and a suite of (agent-based?) models</title>
+
+		<link rel="stylesheet" href="reveal/css/reveal.css">
+		<link rel="stylesheet" href="reveal/css/theme/white.css">
+        
+        <!-- Some extra bits added by Nick -->
+        <link rel="stylesheet" href="reveal/css/nick.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+                
+                <!--
+                <section data-markdown id="index"
+                         data-background-image="http://surf.leeds.ac.uk/figures/cityscapes/chicago_bw.jpg">
+                -->
+                    
+                <section class="title"  id="index" data-background-image="../figures/shutterstock_615414464-small.jpg">
+                    
+                    <div class="whitebackground2">
+                    
+                    <h1 style="font-size: 45px;">Simulating cities with streaming data and a suite of (agent-based?) models</h1>
+                    <hr/>
+                    <h2 style="font-size: 35px;"><a href="http://www.geog.leeds.ac.uk/people/n.malleson/">Nick Malleson</a>, 
+                        Stelios Theophanous, Rich Romano, Nik Lomax</h2>
+                    <hr/>
+                    <p style="text-align:center;font-size:25px">These slides: <a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+                    </div>
+                </section>
+
+                
+                <!-- ************************************************************
+                *********************** VISION **********************************
+                ************************************************************ -->
+
+                <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                         data-background-video-loop="loop"
+                         id="Context-UrbanFlows">                     
+                    <div class="whitebackground2 fragment">
+                        <h2>How many people are there in the city centre?</h2>
+                        
+                        <p>We need to better understand urban flows:</p>
+                        
+                        <p class="l2">Crime – how many possible victims?</p>
+                        <p class="l2">Pollution – who is being exposed? Where are the hotspots?</p>
+                        <p class="l2">Economy – can we attract more people to our city centre?</p>
+                        <p class="l2">Health – can we encourage more active travel?</p>
+                        
+                        <p class="fragment">More broadly: <strong>Understanding urban dynamics</strong></p>
+                        
+                    </div>
+                </section>
+                
+                
+                <section id="outline"
+                         data-background-image="../figures/cityscapes/ny_night3.jpg">
+                    <div class="whitebackground2 fragment">
+                    <h2>Outline</h2>
+                    <p>Simulating urban flows with three models:</p>
+                    <p class="l2">Surf: <a href="http://surf.leeds.ac.uk/">surf.leeds.ac.uk</a></p>
+                    <p class="l2">Aimsun: <a href="https://www.aimsun.com/">www.aimsun.com</a></p>
+                    <p class="l2">Mistral: <a href="https://www.itrc.org.uk/">www.itrc.org.uk</a></p>
+                    <p>Incorporating streams of data:</p>
+                    <p class="l2">Dust: <a href="https://dust.leeds.ac.uk/">dust.leeds.ac.uk</a></p>
+                        </div>
+                </section>
+                
+                
+                
+        
+                
+                
+                <!-- ************************************************************
+                *********************** SURF ********************
+                ************************************************************ -->
+
+                
+                
+                <section id="current_research-surf" data-background-image="../figures/cityscapes/chicago_bw.jpg">
+                    
+                    <div class="whitebackground">
+                        <h2>Simulating Urban Flows (<a href="http://surf.leeds.ac.uk">surf</a>)</h2>       
+                        
+                        <a href="https://esrc.ukri.org/">
+                            <img class="right" style="width:200px;" data-src="../figures/LOGO_ESRC.jpg" alt="ESRC Logo"/></a>
+
+                        <p>3 year research project funded by the UK ESRC</p>
+                        <p>Modelling a small town, using real footfall counters</p>
+                        <p>Ultimately stream real-time data into the model dynamically</p>
+                    </div>
+                </section>
+                
+                                
+                <section id="surf-model-otley-environment">
+                    
+                    <h2>Modelling Footfall</h2>
+                    <p>Wi-Fi footfall counters (Noggin, CDRC). Case study: Otley, West Yorkshire</p>
+                    
+                    <img class="left" data-src="../figures/surf-model/otley_environment1.png" 
+                         alt="The surf model environment in Otley" />
+                    
+                    <img class="right" data-src="../figures/surf-model/site_locations.png" 
+                         alt="The surf model environment in Otley (zoom in)" />
+                
+                </section>
+                
+                
+                <section id="surf-model-otley-video">
+                    
+                    <!--<h2>Modelling Footfall</h2>-->
+                    
+                    <img style="width:70%;" data-src="../videos/surf-otley-video.gif" />
+                                
+                    <!--
+                    <video autoplay>
+                        <source src="movie.mp4" type="video/mp4">
+                        <source src="movie.ogg" type="video/ogg">
+                        Your browser does not support the video tag.
+                    </video> -->
+                
+                </section>
+                
+                
+                
+                 <!-- ************************************************************
+                *********************** AIMSUN ********************
+                ************************************************************ -->
+                
+               <section id="aimsun">
+                   <h2>Aimsun</h2>
+                   <img class="right" src="../figures/aimsun.jpg" alt="Aimsun website picture"/>
+                   <p>Traffic modelling tool</p>
+                   <p class="l2">"Your Personal Mobility Modeling Lab"</p>
+                   <p>Surf does not allow for congestion, driving behaviour, 
+                       traffic lights, etc</p>
+                   <p>Aim: Surf will create the journeys, Aimsun will model them</p>
+                   <p class="fragment">But who are the agents?</p>
+                </section>
+                
+                
+                
+                
+                
+                
+                <!-- ************************************************************
+                *********************** MISTRAL ********************
+                ************************************************************ -->
+                
+                
+                <section id="mistral">
+                    
+                    <img class="right" src="../figures/logo-mistral.png" alt="MISTRAL logo" />
+                    <h2>Mistral (ITRC)</h2>
+                    <p>Large, multi-institution project (7 universities &amp; 50 other partners)</p>
+                    <p>"Provides concepts, models and evidence to inform the analysis, planning and design of national infrastructure."</p>
+                    <p>Leeds is creating high-resolution population projections</p>
+                    <p>Aim: integrate Mistral to seed the individual-level synthetic population, and 
+                        use it to <i>forecast</i> future population demographics and volume</p>
+                
+                </section>
+                
+                
+                                
+                <!-- ************************************************************
+                ****************************** DUST *****************************
+                ************************************************************ -->
+                
+                <section id="dust-intro" data-background-image="../figures/the-roaming-platypus-310824-unsplash-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Data Assimilation for Agent-Based Models (DUST)</h2>
+                        <a href="https://erc.europa.eu/">
+                            <img class="right" style="width:200px;" data-src="../figures/erc_logo.jpg" alt="ESRC Logo"/></a>
+                        <p><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></p>
+                        <p>5-year research project (&euro;1.5M)</p>
+                        <p>Funded by the European Research Council</p>
+                        <p>Main aim: create new methods for dynamically assimilating data into agent-based models.</p>
+                    </div>
+                
+                </section>
+                
+        
+                
+                
+                
+                           
+                <section data-background-image="../figures/shutterstock_788457058-small.jpg">                     
+                    <div class="whitebackground2">
+                        <h2>City Simulation with Agent-Based Modelling</h2>
+                        <p>Problem: diverse data that describe urban dynamics</p>
+                        <p class="l2">Payment/loyalty cards, transport smart cards, mobile phone
+                        interactions, footfall/traffic counters, etc., etc.</p>
+                        <p>How to combine to create a <i>holistic</i> representation</p>
+                        <p>Solution: build an agent-based model</p>
+                        <p class="l2">Implement virtual 'people' (agents)</p>
+                        <p class="l2">Optimise different aspects using all available data</p>
+                    </div>
+                </section>
+                
+                
+                <section id="prob-divergence" 
+                         data-background-video="../videos/BBC_Swarm_Natures_Incredible_Invasions.mp4" 
+                         data-background-video-muted 
+                         data-background-video-loop="loop">
+                    
+                    <div class="whitebackground fragment">
+                        <h2>Problem: Models diverge from reality</h2>
+                        <p>Cities are complex</p>
+                        <p>Human behaviour is difficult to predict</p>
+                        <p>A model will quickly diverge from reality</p>
+                        <p>We need a way to <i>assimilate</i> up to date data into models...</p>
+                    </div>
+                </section>
+                
+                
+                <section id="dda" data-background-image="../figures/weather2.jpg" >
+                    <div class="whitebackground fragment">
+                        <h2>Dynamic Data Assimilation</h2>
+                        <p>Used in meteorology and hydrology to constrain models closer to reality.</p>
+                        <p>Try to improve estimates of the true system state by combining:</p>
+                        <p class="l2">Noisy, real-world observations</p>
+                        <p class="l2">Model estimates of the system state</p>
+                        <p>Should be more accurate than data / observations in isolation.</p>
+                    </div>
+                </section>
+                
+                <!--
+                
+                <section id="abm-dda-overview">
+                    <img data-src="../figures/paper_figures/dda.jpg" alt="Diagram of dynamic data assimilation and an ABM" />
+                </section>
+                -->
+                
+                <section id="enkf-darsos_diagram">
+                    
+                    <h2>Ensemble Kalman Filter (EnKF)</h2>
+                    <figure>
+                        <img data-src="../figures/paper_figures/darsos-fig2a.png"/>
+                        <figcaption>
+                            Ward, J., A. Evans, N. Malleson (2016) Dynamic calibration of agent-based models using data assimilation. <i>Royal Society Open Science</i>. 3:150703. (open access). [DOI: <a href="https://dx.doi.org/10.1098/rsos.150703">10.1098/rsos.150703</a>]
+                        </figcaption>
+                    </figure>                
+                </section>
+                
+                
+                
+                
+
+                
+                
+            
+      
+            
+                
+                
+                
+                
+                <!-- ************************************************************
+                *********************** CONCLUSIONS ********************
+                ************************************************************ -->
+   
+                
+                
+                <section id="conclusions2" data-background-image="../figures/shutterstock_615414464-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Conclusion</h2>
+                        <p>Overall aim: simulating cities using streams of (real time) data and a
+                        suite of models</p>
+                        <p class="l2">We want to be able to simulate cities, assimilating real time
+                        'smart city' data as they emerge to reduce uncertainty (and prevent divergence).</p>
+                        <p>Integrate three disparate models:</p>
+                        <p class="l2">Surf: estimates the behaviour of the individuals</p>
+                        <p class="l2">Aimsun: simulates traffic</p>
+                        <p class="l2">Mistral: generates the synthetic population</p>
+                    </div>
+                </section>
+                
+
+                
+                <section class="title"  id="finish" data-background-image="../figures/shutterstock_615414464-small.jpg">
+                    
+                    <div class="whitebackground2">
+                    
+                    <h1 style="font-size: 45px;">Simulating cities with streaming data and a suite of (agent-based?) models</h1>
+                    <hr/>
+                    <h2 style="font-size: 35px;"><a href="http://www.geog.leeds.ac.uk/people/n.malleson/">Nick Malleson</a>, 
+                        Stelios Theophanous, Rich Romano, Nik Lomax</h2>
+                    <hr/>
+                    <p style="text-align:center;font-size:25px">These slides: <a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+                    </div>
+                </section>
+
+                
+			</div>
+		</div>
+
+		<script src="reveal/lib/js/head.min.js"></script>
+		<script src="reveal/js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'reveal/plugin/markdown/marked.js' },
+					{ src: 'reveal/plugin/markdown/markdown.js' },
+					{ src: 'reveal/plugin/notes/notes.js', async: true },
+					{ src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>
+

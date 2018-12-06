@@ -21,14 +21,18 @@ there is also no data of the surrounding traffic
 Can we use Data Assimilation to both update BusSim in real time, and also provide these missing information?
 
 Written by: Minh Kieu, University of Leeds
-    Update v1.2
+    Update v1.3 5th Dec 2018
+    - BusSim_model should use arrival_rate and departure_rate parameters from BusSim_model_calibration.py results (BusSim_model_calibration)
+    - BusSim_model should use model_params and fixed_params
+    
 
 """
 # Import
 import numpy as np
 import matplotlib.pyplot as plt
+from ParticleFilter import ParticleFilter
 from copy import deepcopy
-
+#import time
 
 class Bus:
 
@@ -39,7 +43,6 @@ class Bus:
         self.visited = 0  # visited bus stop
         self.trajectory = []  # store the location of each buses
         return
-
     def move(self):
         self.position += self.velocity * self.dt
         return
@@ -50,12 +53,11 @@ class BusStop:
     def __init__(self, position, busstopID, arrival_rate, departure_rate):
         self.busstopID = busstopID
         self.position = position
-        self.headway = []  # store departure times of buses
+        self.actual_headway = []  # store departure times of buses
         self.arrival_time = [0]  # store arrival time of buses
-        self.visited = []  # store all visited buses
         self.arrival_rate = arrival_rate
         self.departure_rate = departure_rate
-
+        #self.activation = activation
 
 class Model:
 
@@ -72,10 +74,9 @@ class Model:
         self.current_step = 0
         self.initialise_busstops()
         self.initialise_buses()
-        # self.initialise_states()
         return
 
-    def agents2state(self, do_measurement=False):
+    def agents2state(self, do_measurement=True):
         '''
         This function stores the system state of all agents in a state vector with format:
             [bus_status1,bus_position1,bus_velocity1,...,bus_statusN,bus_positionN,bus_velocityN,busstop_arrivalrate1,busstop_departurerate1,...,busstop_arrivalrateM,busstop_departurerateM,TrafficSpeed]
@@ -107,6 +108,9 @@ class Model:
         # traffic speed
         self.TrafficState = state[-1]
         return
+    
+    def mask(self):
+        return 1, None
 
     def step(self):
         '''
@@ -123,7 +127,6 @@ class Model:
                 # if the bus is dispatched at the next time step
                 if self.current_time >= (bus.dispatch_time - self.dt):
                     bus.status = 1  # change the status to moving bus
-                    #print('bus no: ',bus.busID, ' start moving at time: ',self.current_time)
                     bus.velocity = min(self.TrafficSpeed, bus.velocity + bus.acceleration * self.dt)
 
             if bus.status == 1:  # moving bus
@@ -138,41 +141,42 @@ class Model:
                 if min(dns(self.StopList, bus.position)) <= self.GeoFence:  # reached a bus stop
                     # Investigate the info from the current stop
                     Current_StopID = int(min(range(len(self.StopList)), key=lambda x: abs(self.StopList[x] - bus.position)))  # find the nearest bus stop
-                    # passenger arrival rate
-                    arrival_rate = self.busstops[Current_StopID].arrival_rate
-                    # passenger departure rate
-                    departure_rate = self.busstops[Current_StopID].departure_rate
-                    self.busstops[Current_StopID].visited.extend([bus.busID])  # store the visited bus ID
-
-                    # Now calculate the number of boarding and alighting
-                    boarding_count = 0
-                    # if the bus is the first bus to arrive at the bus stop
-                    if self.busstops[Current_StopID].arrival_time == 0:
-                        boarding_count = min(np.random.poisson(arrival_rate * self.BurnIn), (bus.size - bus.occupancy))
-                        alighting_count = int(bus.occupancy * departure_rate)
-                    else:
-                        # Relace Arrivate Rate with Arrival Data
-                        '''
-                        '''
-                        for tmp_a in range(len(self.ArrivalData[Current_StopID])):
-                            if self.ArrivalData[Current_StopID][tmp_a] < self.current_time:
-                                tmp_b = self.ArrivalData[Current_StopID][tmp_a]
-                                break
-                        tmp_c = arrival_rate * (self.current_time - tmp_b)
-                        tmp_d = np.random.poisson(max(0, tmp_c))
-                        boarding_count = min(tmp_d, bus.size - bus.occupancy)
-                        #boarding_count = min(np.random.poisson(arrival_rate * (self.current_time - self.ArrivalData[Current_StopID][[i for i in range(len(self.ArrivalData[Current_StopID])) if self.ArrivalData[Current_StopID][i] < self.current_time][-1]])), (bus.size - bus.occupancy))
-                        alighting_count = int(bus.occupancy * departure_rate)
-                    # If there is at least 1 boarding or alighting passenger
-                    if boarding_count > 0 or alighting_count > 0:  # there is at least 1 boarding or alighting passenger
-                        # change the bus status to dwelling
-                        bus.status = 2  # change the status of the bus to dwelling
-                        bus.velocity = 0
-                        #print('Bus ',bus.busID, 'stopping at stop: ',Current_StopID,' at time:', self.current_time)
-                        bus.leave_stop_time = self.current_time + boarding_count * self.BoardTime + alighting_count * self.AlightTime + self.StoppingTime  # total time for dwelling
-                        # storing data
-                        self.busstops[Current_StopID].headway.extend([bus.leave_stop_time - self.busstops[Current_StopID].arrival_time[-1]])  # store the headway to the previous bus
-                        bus.occupancy = min(bus.occupancy - alighting_count + boarding_count, bus.size)
+                    
+                    if Current_StopID != bus.visited:
+                        #Store the visited stop                         
+                        bus.visited = Current_StopID                                            
+                        # passenger arrival rate
+                        arrival_rate = self.busstops[Current_StopID].arrival_rate
+                        print('Arrival rate: ',arrival_rate)
+                        # passenger departure rate
+                        departure_rate = self.busstops[Current_StopID].departure_rate
+                        print('Departure rate: ',departure_rate)
+    
+                        # Now calculate the number of boarding and alighting
+                        boarding_count = 0
+                        # if the bus is the first bus to arrive at the bus stop
+                        if self.busstops[Current_StopID].arrival_time == 0:
+                            if self.busstops[Current_StopID].activation <= self.current_time:
+                                #boarding_count = min(np.random.poisson(arrival_rate * self.BurnIn), (bus.size - bus.occupancy))
+                                boarding_count = min(np.random.poisson(arrival_rate * (self.current_time-self.busstops[Current_StopID].activation)), (bus.size - bus.occupancy))
+                            alighting_count = int(bus.occupancy * departure_rate)
+                        else:
+                            timegap = self.current_time - self.busstops[Current_StopID].arrival_time[-1]
+                            boarding_count = min(np.random.poisson(arrival_rate*timegap/2), bus.size - bus.occupancy)                        
+                            #print(boarding_count)
+                            alighting_count = int(bus.occupancy * departure_rate)
+                        # If there is at least 1 boarding or alighting passenger
+                        if boarding_count > 0 or alighting_count > 0:  # there is at least 1 boarding or alighting passenger
+                            # change the bus status to dwelling
+                            bus.status = 2  # change the status of the bus to dwelling
+                            bus.velocity = 0                            
+                            bus.leave_stop_time = self.current_time + boarding_count * self.BoardTime + alighting_count * self.AlightTime + self.StoppingTime  # total time for dwelling
+                            bus.occupancy = min(bus.occupancy - alighting_count + boarding_count, bus.size)
+                        # store the headway and arrival times
+                        if self.busstops[Current_StopID].arrival_time[-1] != 0:
+                            #print([self.current_time - self.busstops[Current_StopID].arrival_time[-1]])
+                            self.busstops[Current_StopID].actual_headway.extend([self.current_time - self.busstops[Current_StopID].arrival_time[-1]])# store the headway to the previous bus                            
+                        self.busstops[Current_StopID].arrival_time.extend([self.current_time])  # store the arrival time of the bus
 
             # CASE 3: DWELLING BUS (waiting for people to finish boarding and alighting)
             if bus.status == 2:
@@ -192,8 +196,9 @@ class Model:
             arrival_rate = self.ArrivalRate[busstopID]
             # set up bus stop location
             departure_rate = self.DepartureRate[busstopID]
+            activation = busstopID * int(self.LengthBetweenStop/self.TrafficSpeed_mean) - 2*60
             # define the bus stop object and add to the model
-            busstop = BusStop(position, busstopID, arrival_rate, departure_rate)
+            busstop = BusStop(position, busstopID, arrival_rate, departure_rate,activation)
             self.busstops.append(busstop)
         return
 
@@ -210,7 +215,7 @@ class Model:
                 "acceleration": self.BusAcceleration / self.dt,
                 "velocity": 0,  # staring speed is 0
                 "leave_stop_time": 9999,  # this shouldn't matter but just in case
-                "dispatch_time": busID * self.Headway,
+                "dispatch_time": busID * self.Headway,                
                 "status": 0  # 0 for inactive bus, 1 for moving bus, and 2 for dwelling bus, 3 for finished bus
                 }
             # define the bus object and add to the model
@@ -224,54 +229,73 @@ def unpickle_Model():
     import pickle
 
     if __name__ == '__main__':
-        with open('BusSim_data.pkl', 'rb') as f:
+        with open('BusSim_data.pkl', 'rb') as f: #load data from BusSim_truth
             model_params, fixed_params, ArrivalRate, ArrivalData, DepartureRate, StateData, GroundTruth = pickle.load(f)
-    else:
-        with open('models/BusSim_data.pkl', 'rb') as f:
-            model_params, fixed_params, ArrivalRate, ArrivalData, DepartureRate, StateData, GroundTruth = pickle.load(f)
-    TrafficSpeed = 14
-
+            
+        with open('BusSim_model_calibration.pkl', 'rb') as f: #load data from BusSim_model_calibration
+            model_params, fixed_params,best_mean,Sol_archived,PI_archived = pickle.load(f)
+        
+        ArrivalRate = np.concatenate([[0],best_mean[0:(model_params['NumberOfStop']-2)],[0]])
+        DepartureRate = np.concatenate([[0,0],best_mean[(model_params['NumberOfStop']-2):-1],[1]])
+        TrafficSpeed = best_mean[-1]
+                
     model = Model(model_params, fixed_params, ArrivalRate, ArrivalData, DepartureRate, TrafficSpeed)
 
-    return model, GroundTruth
+    return model, GroundTruth, ArrivalRate_std, DepartureRate_std, TrafficSpeed_std
 
-
-if __name__ == '__main__':
-    model, GroundTruth = unpickle_Model()
-    model.agents2state()
-
-
-if 0 and __name__ == '__main__':  # Let's run the model
-
-    '''
-    Step 0: load precomputed data from the realistic model
-    '''
-    import pickle
-    # Load precomputed data from the realistic model
-    # with open('C:/Users/geomlk/Dropbox/Minh_UoL/DA/ABM/BusSim/BusSim_data.pkl','rb') as f:
-    with open('/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/BusSim_data.pkl', 'rb') as f:
-        StateData, GroundTruth, ArrivalRate, DepartureRate, model_params, fixed_params = pickle.load(f)
-    '''
-    Step 1: Model initiation
-    '''
-    TrafficSpeed = 14  # make a guess of the TrafficSpeed
-    model = Model(model_params, fixed_params, TrafficSpeed, ArrivalRate, DepartureRate)
-    pf = ParticleFilter(model, number_of_particles=200, particle_std=.0, resample_window=1, do_copies=False)
+do_PF = True
+#if __name__ == '__main__':  # Let's run the model
+if do_PF == True:
     '''
     Step 2: Model runing and plotting
     '''
-    _plot = False  # make _plot=True if you want to plot
+    model0, GroundTruth, ArrivalRate_std, DepartureRate_std, TrafficSpeed_std = unpickle_Model()
+    t = np.arange(0, 10*len(GroundTruth), 10)
 
-    if _plot:
-        for time_step in range(len(GroundTruth)):
-            measured_state = GroundTruth[time_step, :]
-            pf.step(measured_state)
-            for model in pf.models:
-                for bus in model.buses:
-                    plt.plot(bus.trajectory)
+    for p in (100,):
+        for std in (.1,):
+            for w in (1,):
+                print(p, std, w)
+                name = '../images/BusSim/' + 'p{}std{}w{}'.format(p, std, w)
+                formatting = '.pdf'
 
-    else:
-        for time_step in range(len(GroundTruth)):
-            measured_state = GroundTruth[time_step, :]
-            pf.step(measured_state)
-            print(max(pf.weights))
+                filter_params = {
+                    'number_of_particles': p,
+                    'particle_std': std,
+                    'resample_window': w,
+                    'do_copies': True,
+                    'do_save': True
+                    }
+                model = deepcopy(model0)
+                pf = ParticleFilter(model, **filter_params)
+
+                for niter in range(len(GroundTruth)):
+                    model.step()
+                    if 0:  # Use Model
+                        true_state = model.agents2state()
+                        measured_state = true_state + np.random.normal(0, 0., true_state.shape)
+                    else:  # Use Truth
+                        true_state = GroundTruth[niter]
+                        measured_state = true_state + np.random.normal(0, 0., true_state.shape)
+                    pf.step(measured_state, true_state)
+
+                    do_ani = False
+                    if niter == len(GroundTruth)-1 or do_ani:
+                        plt.figure(3, figsize=(16 / 2, 9 / 2))
+                        plt.clf()
+                        for particle in range(len(pf.models)-1):
+                            x = np.array([bus.trajectory for bus in pf.models[particle].buses]).T
+                            x[x <= 0] = np.nan
+                            plt.plot(t, x, linewidth=.5)
+                        x = GroundTruth[:niter+1, 1::4]
+                        x[x <= 0] = np.nan
+                        plt.plot(t, x, 'k')
+                        plt.xlabel('Time (s)')
+                        plt.ylabel('Distance (m)')
+                        if do_ani:
+                            plt.pause(1/30)
+
+                    plt.show()
+
+
+    

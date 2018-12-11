@@ -17,6 +17,12 @@ Purpose here is basically to see how the particle filter behaves when we give it
 
 \begin{enumerate}
 \item Reduce the amount of information given to the particle filter (e.g. only allow it to optimise half of the state vector).
-\item Aggregate the measurements (e.g. counts per area rather than individual traces).
+\item Aggregate the measurements (e.g. counts per area rather than individual traces) (?) (maybe this is too much)
+\end{enumerate}
+
+\subsection{Experiments with Parameter and State Estimation}
+
+\begin{enumerate}
+\item Remove the knowledge about where the agents should be going. Instead, include these as variables in the state vector. Now the model, in its entirety, can be described by the state vector. Does it still work?
 \end{enumerate}
 

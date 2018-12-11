@@ -6,6 +6,7 @@ Aim: How good is a particle filter at doing DA in a pedestrian/crowd ABM?
 Structure / argument:
 \begin{itemize}
 \item Context: importance modelling people in environments, including whole cities.
-\item What data assimilation is (\citet{wang_data_2015} have a nice, clear outline).
-\item Difference between particle filtering approaches (that do not dynamically change the model \textit{state}) and others (e.g. EnKF) that do. Also note that this is not parameter estimation, although it could be.
+\item What the motivation behind data assimilation is (e.g. sparse data + model -> clearest representation of system state) (\citet{wang_data_2015} have a nice, clear outline) and (briefly) how it works.
+\item About particle filters. Also, the difference between particle filtering approaches (that do not dynamically change the model \textit{state}) and others (e.g. EnKF) that do, and possible advantage offered by PFs.\footnote{``A unique feature of the agent-based simulation model is that the model is specified by behaviors or rules and lacks the analytic structures (e.g., those in partial differential equation models) from which functional forms of probability distributions can be derived. This makes it difficult to apply conventional state estimation techniques such as Kalman filter and its variances.''\citep{wang_data_2015} } Also note that this is not parameter estimation, although it could be.
+\item About the model: deliberately simple because the aim is to test the particle filter
 \end{itemize}

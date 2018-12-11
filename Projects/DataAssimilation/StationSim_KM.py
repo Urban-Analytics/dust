@@ -14,6 +14,7 @@ multiprocessing
 profile functions
 '''
 import numpy as np
+from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 from copy import deepcopy
 from multiprocessing import Pool
@@ -26,43 +27,23 @@ def error(text='Self created error.'):
     return
 
 
-class NextRandom:
-    # To find random number useage type 'random.np_', or even 'random'
-
-    def __init__(self):
-        np.random.seed(303)
-        self.random_number_usage = 0
-        return
-
-    def np_uniform(self, high=1, low=0, shape=1):
-        r = np.random.random(shape)
-        r = r * (high - low)
-        self.random_number_usage += np.size(r)
-        return r
-
-    def np_gaussian(self, mu=0, sigma=1, shape=1):
-        r = np.random.standard_normal(shape)
-        r = r * sigma + mu #r * sigma**2 + mu
-        self.random_number_usage += np.size(r)
-        return r
-
-    def np_integer(self, high=1, low=0, shape=1):
-        r = np.random.randint(low, high + 1, shape)
-        self.random_number_usage += np.size(r)
-        return r
-
-
 class Agent:
 
-    def __init__(self, model):
-        self.unique_id = model.agent_count
-        model.agent_count += 1
-        self.active = 0  # 0 = not started, 1 = started, 2 = finished
+    def __init__(self, model, unique_id):
+        # Required
+        self.unique_id = unique_id
+        self.active = 0  # 0 Not Started, 1 Active, 2 Finished
+        model.pop_active += 1
         # Location
-        entrance = random.np_integer(model.entrances - 1)
-        self.location = model.loc_entrances[entrance][0]
+        self.location = model.loc_entrances[np.random.randint(model.entrances)]
+        self.location[1] += model.entrance_space * (np.random.uniform() - .5)
+        self.loc_desire = model.loc_exits[np.random.randint(model.exits)]
         # Parameters
-        self.loc_desire = model.loc_exits[random.np_integer(model.exits - 1)][0]
+        self.time_activate = np.random.exponential(model.entrance_speed)
+        self.speed_desire = max(np.random.normal(model.speed_desire_mean, model.speed_desire_std), 2*model.speed_min)
+        self.speeds = np.arange(self.speed_desire, model.speed_min, -model.speed_step)
+        if model.do_save:
+            self.history_loc = []
         return
 
     def step(self, model):
@@ -70,57 +51,27 @@ class Agent:
             self.activate(model)
         elif self.active == 1:
             self.move(model)
-            if model.do_save:
-                self.save()
             self.exit_query(model)
+            self.save(model)
         return
 
     def activate(self, model):
-        self.speed_desire = max(random.np_gaussian(model.speed_desire_max), model.speed_desire_min)
-        new_location = self.location
-        new_location[1] += model.entrance_space * random.np_uniform(-.5, +.5)
-        # Empty space to step off of 'train'
-        self.separation = model.initial_separation
-        if not self.collision(model, new_location):
+        if not self.active and model.time_id > self.time_activate:
             self.active = 1
-            model.pop_active += 1
-            self.location = new_location
-            self.separation = model.separation
-            # Save
-            if model.do_save:
-                self.start_time = model.time
-                self.history_loc = []
+            self.time_start = model.time_id
+            self.time_expected = np.linalg.norm(self.location - self.loc_desire) / self.speed_desire
         return
 
     def move(self, model):
-        '''
-        Description:
-            This mechanism moves the agent. It checks certain conditions for collisions at decreasing speeds.
-            First check for direct new_location in the desired direction.
-            Second check for a new_location in a varied desired direction.
-            Third check for a new_location with a varied current direction.
-
-        Dependencies:
-            collision - any agents in radius
-                neighbourhood - find neighbours in radius
-            lerp      - linear extrapolation
-
-        Arguments:
-            self
-
-        Returns:
-            new_location
-        '''
-        # Decreasing Speeds
-        speeds = np.linspace(self.speed_desire, model.speed_min, 15)
-        for speed in speeds:
+        for speed in self.speeds:
+            # Direct
             new_location = self.lerp(self.loc_desire, self.location, speed)
             if not self.collision(model, new_location):
                 break
-        # Wiggle
-        if speed == model.speed_min:
-            new_location = self.location + random.np_integer(low=-1, high=+1, shape=2)
-        # Boundary check
+            elif speed == self.speeds[-1]:
+                # Wiggle
+                new_location = self.location + np.random.randint(-1, 1+1, 2)
+        # Rebound
         within_bounds = all(model.boundaries[0] <= new_location) and all(new_location <= model.boundaries[1])
         if not within_bounds:
             new_location = np.clip(new_location, model.boundaries[0], model.boundaries[1])
@@ -129,27 +80,6 @@ class Agent:
         return
 
     def collision(self, model, new_location):
-        '''
-        Description:
-            Determine whether or not there is another object at this location.
-            Requires get neighbour from mesa?
-
-        Dependencies:
-            neighbourhood - find neighbours in radius
-
-        Arguments:
-            model.boundaries
-                ((f, f), (f, f))
-                A pair of tuples defining the lower limits and upper limits to the rectangular world.
-            new_location
-                (f, f)
-                The potential location of an agent.
-
-        Returns:
-            collide
-                b
-                The answer to whether this position is blocked
-        '''
         within_bounds = all(model.boundaries[0] <= new_location) and all(new_location <= model.boundaries[1])
         if not within_bounds:
             collide = True
@@ -159,78 +89,20 @@ class Agent:
             collide = False
         return collide
 
-    def neighbourhood(self, model, new_location, just_one=True, forward_vision=True):
-        '''
-        Description:
-            Get agents within the defined separation.
-
-        Arguments:
-            self.unique_id
-                i
-                The current agent's unique identifier
-            self.separation
-                f
-                The radius in which to search
-            model.agents
-                <agent object>s
-                The set of all agents
-            new_location
-                (f, f)
-                A location tuple
-            just_one
-                b
-                Defines if more than one neighbour is needed.
-            forward_vision
-                b
-                Restricts separation radius to only infront.
-
-        Returns:
-            neighbours
-                <agent object>s
-                A set of agents in a region
-        '''
-        neighbours = []
-        for agent in model.agents:
-            if agent.active == 1:
-                if forward_vision and agent.location[0] < new_location[0]:
-                    distance = self.separation + 1
-                else:
-                    distance = np.linalg.norm(new_location - agent.location)
-                if distance < self.separation and agent.unique_id != self.unique_id:
-                    neighbours.append(agent)
-                    if just_one:
-                        break
+    def neighbourhood(self, model, new_location, do_kd_tree=True):
+        neighbours = False
+        neighbouring_agents = model.tree.query_ball_point(new_location, model.separation)
+        for neighbouring_agent in neighbouring_agents:
+            agent = model.agents[neighbouring_agent]
+            if agent.active == 1 and new_location[0] <= agent.location[0]:
+                neighbours = True
+                break
         return neighbours
 
     def lerp(self, loc1, loc2, speed):
-        '''
-        Description:
-            Linear extrapolation at a constant rate
-            https://en.wikipedia.org/wiki/Linear_interpolation
-
-        Arguments:
-            loc1
-                (f, f)
-                Point One defining the destination position
-            loc2
-                (f, f)
-                Point Two defining the agent position
-            speed
-                f
-                The suggested speed of the agent
-
-        Returns:
-            loc
-                (f, f)
-                The location if travelled at this speed
-        '''
         distance = np.linalg.norm(loc1 - loc2)
         loc = loc2 + speed * (loc1 - loc2) / distance
         return loc
-
-    def save(self):
-        self.history_loc.append(self.location)
-        return
 
     def exit_query(self, model):
         if np.linalg.norm(self.location - self.loc_desire) < model.exit_space:
@@ -238,33 +110,45 @@ class Agent:
             model.pop_active -= 1
             model.pop_finished += 1
             if model.do_save:
-                model.time_taken.append(model.time - self.start_time)
+                time_delta = model.time_id - self.time_start
+                model.time_taken.append(time_delta)
+                time_delta -= self.time_expected
+                model.time_delayed.append(time_delta)
+        return
+
+    def save(self, model):
+        if model.do_save:
+            self.history_loc.append(self.location)
         return
 
 
 class Model:
 
     def __init__(self, params):
-        for key, value in params.items():
-            setattr(self, key, value)
+        self.params = (params,)
+        [setattr(self, key, value) for key, value in params.items()]
+        self.speed_step = (self.speed_desire_mean - self.speed_min) / 3  # Average number of speeds to check
         # Batch Details
-        self.time = 0
+        self.time_id = 0
+        self.step_id = 0
         if self.do_save:
             self.time_taken = []
+            self.time_delayed = []
         # Model Parameters
         self.boundaries = np.array([[0, 0], [self.width, self.height]])
         self.pop_active = 0
         self.pop_finished = 0
         # Initialise
         self.initialise_gates()
-        self.initialise_agents()
+        self.agents = list([Agent(self, unique_id) for unique_id in range(self.pop_total)])
         return
 
     def step(self):
-        self.time += 1
-        if self.time > 2:  # For animation purposes
-            for agent in self.agents:
-                agent.step(self)
+        if self.pop_finished < self.pop_total and self.step:
+            self.kdtree_build()
+            [agent.step(self) for agent in self.agents]
+        self.time_id += 1
+        self.step_id += 1
         return
 
     def initialise_gates(self):
@@ -284,13 +168,17 @@ class Model:
             self.loc_exits[:, 1] = np.linspace(self.height / 4, 3 * self.height / 4, self.exits)
         return
 
-    def initialise_agents(self):
-        self.agent_count = 0
-        self.agents = list([Agent(self) for _ in range(self.pop_total)])
+    def kdtree_build(self):
+        state = self.agents2state(do_ravel=False)
+        self.tree = cKDTree(state)
         return
 
-    def agents2state(self):
-        state = np.ravel([agent.location for agent in self.agents])
+    def agents2state(self, do_ravel=True):
+        state = [agent.location for agent in self.agents]
+        if do_ravel:
+            state = np.ravel(state)
+        else:
+            state = np.array(state)
         return state
 
     def state2agents(self, state):
@@ -302,43 +190,65 @@ class Model:
         for i in range(self.batch_iterations):
             self.step()
             if self.do_ani:
-                self.ani_agents()
+                self.ani()
             if self.pop_finished == self.pop_total:
                 print('Everyone made it!')
                 break
         if self.do_save:
-            self.stats()
-            self.plot_subplots()
+            self.save_stats()
+            self.save_plot()
         return
 
-    def ani_agents(self):
+    def ani(self):
         plt.figure(1)
         plt.clf()
         for agent in self.agents:
             if agent.active == 1:
-                plt.plot(*agent.location, '.k')
+                plt.plot(*agent.location, '.k')#, markersize=4)
         plt.axis(np.ravel(self.boundaries, 'F'))
+        plt.xlabel('Corridor Width')
+        plt.ylabel('Corridor Height')
         plt.pause(1 / 30)
         return
 
-    def plot_subplots(self):
-        _, (ax1, ax2) = plt.subplots(2)
+    def save_ani(self):
+
+
+
+        return
+
+    def save_plot(self):
+        # Trails
+        plt.figure()
         for agent in self.agents:
-            if agent.active == 2 and agent.unique_id < 50:
-                locs = np.array(agent.history_loc).T
-                ax1.plot(locs[0], locs[1], linewidth=.5)
-        ax1.axis(np.ravel(self.boundaries, 'F'))
-        ax2.hist(self.time_taken)
+            if agent.active == 0:
+                colour = 'r'
+            elif agent.active == 1:
+                colour = 'b'
+            else:
+                colour = 'm'
+            locs = np.array(agent.history_loc).T
+            plt.plot(locs[0], locs[1], color=colour, linewidth=.5)
+        plt.axis(np.ravel(self.boundaries, 'F'))
+        plt.xlabel('Corridor Width')
+        plt.ylabel('Corridor Height')
+        plt.legend(['Agent trails'])
+        # Time Taken, Delay Amount
+        plt.figure()
+        plt.hist(self.time_taken, alpha=.5, label='Time taken')
+        plt.hist(self.time_delayed, alpha=.5, label='Time delay')
+        plt.xlabel('Time')
+        plt.ylabel('Number of Agents')
+        plt.legend()
+
         plt.show()
         return
 
-    def stats(self):
+    def save_stats(self):
         print()
         print('Stats:')
-        print('Finish Time: ' + str(self.time))
-        print('Random number usage: ' + str(random.random_number_usage))
-        print('Active / Finished / Total agents: ' + str(self.pop_active) +
-              '/' + str(self.pop_finished) + '/' + str(self.pop_total))
+        print('Finish Time: ' + str(self.time_id))
+        print('Active / Finished / Total agents: ' + str(self.pop_active) + '/' + str(self.pop_finished) + '/' + str(self.pop_total))
         print('Average time taken: ' + str(np.mean(self.time_taken)) + 's')
         return
 
@@ -370,8 +280,8 @@ def assign_agents(particle,self):
 def step_particles(particle,self):
     self.models[particle].step()
     self.states[particle] = (self.models[particle].agents2state()
-                           + random.np_gaussian(0, self.particle_std**2, 
-                                                 shape=self.states[particle].shape))
+                           + np.random.normal(0, self.particle_std**2, 
+                                                 size=self.states[particle].shape))
     self.models[particle].state2agents(self.states[particle])
     return self.models[particle], self.states[particle]
 
@@ -395,6 +305,9 @@ Parameters:
 '''
 class ParticleFilter: 
     
+    # check mean error calculation
+    # Update to only measure a certain percentage of the base model
+    
     '''
     Initialise Particle Filter
     
@@ -414,15 +327,16 @@ class ParticleFilter:
         self.dimensions = len(self.base_model.agents2state())
         self.states = np.zeros((self.number_of_particles, self.dimensions))
         self.weights = np.ones(self.number_of_particles)
+        self.indexes = np.zeros(self.number_of_particles, 'i')
         if self.do_save:
             self.active_agents = []
             self.means = []
             self.mean_errors = []
             self.variances = []
+            self.unique_particles = []
         
-        initial_state_p = partial(initial_state, self = self) # Set self to a constant in initial_state  
-        self.states = np.array(pool.map(initial_state_p, range(self.number_of_particles)))
-      
+        self.states = np.array(pool.starmap(initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
+            
     '''
     Step Particle Filter
     
@@ -434,20 +348,28 @@ class ParticleFilter:
     '''
     def step(self):
         
-        for _ in range(self.number_of_iterations):
-            self.predict()
-            if self.time % self.resample_window == 0:
-                self.reweight()
-                self.resample()
-
-            if self.do_save:
-                self.save()
-            if self.do_ani:
-                self.ani()
+        while self.time < self.number_of_iterations:
+            self.time += 1
+            
+            if any([agent.active != 2 for agent in self.base_model.agents]):
+                #print(self.time/self.number_of_iterations)
+                self.predict()
                 
-        if self.do_save:
-            self.plot_save()
-        return
+                if self.time % self.resample_window == 0:
+                    self.reweight()
+                    self.resample()
+    
+                if self.do_save:
+                    self.save()
+                if self.do_ani:
+                    self.ani()
+              
+        if self.plot_save:
+            self.p_save()
+            
+        
+        return max(self.mean_errors), np.average(self.mean_errors), max(self.variances), np.average(self.variances)
+    
 
     '''
     Predict
@@ -464,12 +386,11 @@ class ParticleFilter:
     model and the particle filter.
     '''
     def predict(self):
-        self.time += 1
+        
         self.base_model.step()
-        
-        step_particles_p = partial(step_particles,self = self)
-        stepped_particles = pool.map(step_particles_p,range(self.number_of_particles))
-        
+
+        stepped_particles = pool.starmap(step_particles,list(zip(range(self.number_of_particles),[self]*self.number_of_particles)))
+            
         self.models = [stepped_particles[i][0] for i in range(len(stepped_particles))]
         self.states = np.array([stepped_particles[i][1] for i in range(len(stepped_particles))])
         
@@ -485,9 +406,9 @@ class ParticleFilter:
     '''
     def reweight(self):
         measured_state = (self.base_model.agents2state() 
-                          + random.np_gaussian(0, self.model_std**2, shape=self.states.shape))
+                          + np.random.normal(0, self.model_std**2, size=self.states.shape))
         distance = np.linalg.norm(self.states - measured_state, axis=1)
-        self.weights = 1 / (distance + 1e-99)
+        self.weights = 1 / (distance + 1e-99)**2
         self.weights /= np.sum(self.weights)
         return
 
@@ -503,22 +424,22 @@ class ParticleFilter:
     '''
     def resample(self):
         offset_partition = ((np.arange(self.number_of_particles) 
-                             + random.np_uniform()) / self.number_of_particles)
+                             + np.random.uniform()) / self.number_of_particles)
         cumsum = np.cumsum(self.weights)
         i, j = 0, 0
-        indexes = np.zeros(self.number_of_particles, 'i')
         while i < self.number_of_particles:
             if offset_partition[i] < cumsum[j]:
-                indexes[i] = j
+                self.indexes[i] = j
                 i += 1
             else:
                 j += 1
                 
-        self.states[:] = self.states[indexes]
-        self.weights[:] = self.weights[indexes]
+        self.states[:] = self.states[self.indexes]
+        self.weights[:] = self.weights[self.indexes]
         
-        asign_agents_p = partial(assign_agents, self = self)    
-        self.models = pool.map(asign_agents_p,range(self.number_of_particles))
+        self.unique_particles.append(len(np.unique(self.states,axis=0)))
+
+        self.models = pool.starmap(assign_agents,list(zip(range(self.number_of_particles),[self]*self.number_of_particles)))
 
         return
 
@@ -534,18 +455,21 @@ class ParticleFilter:
         
         self.active_agents.append(sum([agent.active == 1 for agent in self.base_model.agents]))
         
-        mean = np.average(self.states, weights=self.weights, axis=0)
-        variance = np.average((self.states - mean)**2, weights=self.weights, axis=0)
+        active_states = [agent.active == 1 for agent in self.base_model.agents for _ in range(2)]
         
-        self.means.append(mean[:])
-        self.variances.append(np.average(variance))
-        
-        truth_state = self.base_model.agents2state()
-        self.mean_errors.append(np.linalg.norm(mean - truth_state, axis=0))
+        if any(active_states):
+            mean = np.average(self.states[:,active_states], weights=self.weights, axis=0)
+            variance = np.average((self.states[:,active_states] - mean)**2, weights=self.weights, axis=0)
+            
+            self.means.append(mean)
+            self.variances.append(np.average(variance))
+
+            truth_state = self.base_model.agents2state()
+            self.mean_errors.append(np.linalg.norm(mean - truth_state[active_states], axis=0))
         
         return
     
-    def plot_save(self):
+    def p_save(self):
         plt.figure(2)
         plt.plot(self.active_agents)
         plt.ylabel('Active agents')
@@ -561,10 +485,15 @@ class ParticleFilter:
         plt.ylabel('Mean Variance')
         plt.show()
         
+        plt.figure(5)
+        plt.plot(self.unique_particles)
+        plt.ylabel('Unique Particles')
+        plt.show()
+        
         print('Max mean error = ',max(self.mean_errors))
         print('Average mean error = ',np.average(self.mean_errors))
-        print('Max mean variance = ',max(self.variances))
-        print('Average mean variance = ',np.average(self.variances))
+        print('Max mean variance = ',max(self.variances[2:]))
+        print('Average mean variance = ',np.average(self.variances[2:]))
 
     '''
     Animate
@@ -587,7 +516,7 @@ class ParticleFilter:
             markersizes = self.weights
             if np.std(markersizes) != 0:
                 markersizes *= 4 / np.std(markersizes)   # revar
-            markersizes += 4 - np.mean(markersizes)  # remean
+            markersizes += 8 - np.mean(markersizes)  # remean
 
             particle = -1
             for model in self.models:
@@ -596,21 +525,17 @@ class ParticleFilter:
                 for agent in model.agents[:self.agents_to_visualise]:
                     if agent.active == 1:
                         unique_id = agent.unique_id
-                        if self.base_model.agents[unique_id].active == 1:
+                        if self.base_model.agents[unique_id].active == 1:     
                             locs = np.array([self.base_model.agents[unique_id].location, agent.location]).T
                             plt.plot(*locs, '-k', alpha=.1, linewidth=.3)
-                            plt.plot(*agent.location, '.r', alpha=.3, markersize=markersize)
+                            plt.plot(*agent.location, 'or', alpha=.3, markersize=markersize)
             
-            for agent in self.base_model.agents:
+            for agent in self.base_model.agents:                
                 if agent.active == 1:
-                    plt.plot(*agent.location, '+k')
+                    plt.plot(*agent.location, 'sk',markersize = 4)
             
             plt.axis(np.ravel(self.base_model.boundaries, 'F'))
             plt.pause(1 / 4)
-        return
-
-# random is needed here for multiprocessing
-random = NextRandom()
 
 if __name__ == '__main__':
     __spec__ = None
@@ -621,34 +546,100 @@ if __name__ == '__main__':
     model_params = {
         'width': 200,
         'height': 100,
-        'pop_total': 10,
+        'pop_total': 1,
         'entrances': 3,
         'entrance_space': 2,
+        'entrance_speed': .1,
         'exits': 2,
-        'exit_space': 2,
+        'exit_space': 1,
         'speed_min': .1,
-        'speed_desire_min': .5,
-        'speed_desire_max': 2,
-        'initial_separation': 1,
-        'separation': 5,
-        'batch_iterations': 50,
+        'speed_desire_mean': 1,
+        'speed_desire_std': 1,
+        'separation': 2,
+        'batch_iterations': 900,
         'do_save': True,
-        'do_ani': True
-    }
+        'do_ani': False,
+        }
     if not True:
         # Run the model
         Model(model_params).batch()
     else:
-        # Run the particle filter
-        filter_params = {
-            'number_of_particles': 100,
-            'number_of_iterations': 100,
-            'resample_window': 20,
-            'agents_to_visualise': 2,
-            'particle_std': 0,
-            'model_std': 0,
-            'do_save': False,
-            'do_ani': True
-        }
-        pf = ParticleFilter(Model, model_params, filter_params)
-        pf.step()
+        std_max = 2
+        measure_max = 2
+        sample = 10
+        runs = 10
+        
+        stds = np.linspace(0, std_max, num=sample)
+        measures = np.linspace(0, measure_max, num=sample)
+        results = np.zeros((sample*sample*runs,6))
+
+        for i in range(sample):
+            for j in range(sample):
+                for k in range(runs):
+                    print('std sample',i,'measure sample',j,'run',k)
+                    
+                    results[i*(runs+sample) + j*runs + k,0] = stds[i]
+                    results[i*(runs+sample) + j*runs + k,1] = measures[j]
+                    
+                    # Run the particle filter
+                    filter_params = {
+                        'number_of_particles': 10,
+                        'number_of_iterations':20,
+                        'resample_window': 10,
+                        'agents_to_visualise': 2,
+                        'particle_std': stds[i],
+                        'model_std': measures[j],
+                        'do_save': True,
+                        'plot_save':False,
+                        'do_ani': False,
+                    }
+                    pf = ParticleFilter(Model, model_params, filter_params)
+                    results[i*(runs*sample) + j*runs + k,2:] = pf.step()
+
+        averages = np.zeros((sample*sample,4))
+        for i in range(sample*sample):
+            averages[i,:] = np.average(results[i*runs:(i+1)*runs,2:],axis=0)  
+        
+        X,Y = np.meshgrid(stds,measures)
+        
+#        parameter_text = ('pop_total = {}, sample = {}, runs = {}, particles = {},'
+#        ' iterations = {}, window = {}'.format(
+#                  model_params['pop_total'],
+#                  sample,
+#                  runs,
+#                  filter_params['number_of_particles'],
+#                  filter_params['number_of_iterations'],
+#                  filter_params['resample_window']))
+        
+        plt.figure(1)
+        p = plt.gca().pcolor(X,Y,averages[:,0].reshape((sample,sample)).T)
+        plt.ylabel('measure std')
+        plt.xlabel('particle std')
+        plt.title('max error')
+#        plt.gcf().text(.5, .05, parameter_text, ha='center')
+        cb = plt.gcf().colorbar(p)
+        
+        plt.figure(2)
+        p = plt.gca().pcolor(X,Y,averages[:,1].reshape((sample,sample)).T)
+        plt.ylabel('measure std')
+        plt.xlabel('particle std')
+        plt.title('ave error')
+#        plt.gcf().text(.5, .05, parameter_text, ha='center')
+        cb = plt.gcf().colorbar(p)
+        
+        plt.figure(3)
+        p = plt.gca().pcolor(X,Y,averages[:,2].reshape((sample,sample)).T)
+        plt.ylabel('measure std')
+        plt.xlabel('particle std')
+        plt.title('max var')
+#        plt.gcf().text(.5, .05, parameter_text, ha='center')
+        cb = plt.gcf().colorbar(p)
+        
+        plt.figure(4)
+        p = plt.gca().pcolor(X,Y,averages[:,3].reshape((sample,sample)).T)
+        plt.ylabel('measure std')
+        plt.xlabel('particle std')
+        plt.title('ave var')
+#        plt.gcf().text(.5, .05, parameter_text, ha='center')
+        cb = plt.gcf().colorbar(p)
+        plt.show

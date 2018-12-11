@@ -1,262 +1,174 @@
-# Particle Filter
+# Particle Filter for Agent-Based Modelling
 '''
-A particle filter designed to work with agent base models.
-model requires: agents2state(), state2agents()
-model requests: boundaries, agents[:].active
-step requires: measured_state
-save requests: true_state
-'''
-import numpy as np
-from copy import deepcopy
-import matplotlib.pyplot as plt
+Requirement:
+    model0                         is your agent-based model
+    model.step()                   advance the model
+    state = model.agents2state()   get a state vector of the abm equivalent to the observation vector
+    model.state2agents(state)      give a state vector to the particle-model maybe with added noise
+    mask, activity = model.mask()  often agents are inactive in abms, because state vector shouldn't change size a boolean mask is required for statistics generation
+Requests:
+    model.params                   for reinitialising models (if there is initial randomness) the parameters will need reloading
+    model.unique_id                is applied with this filter, maybe this
+    model.ani()                    is used for animation
 
+
+TODO:
+mask ani
+readme
+'''
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from copy import deepcopy
+from multiprocessing.dummy import Pool
 
 class ParticleFilter:
-    '''
-    A particle filter to model the dynamics of the
-    state of the model as it develops in time.
 
-    Parameters:
-
-    'number_of_particles': The number of particles used to simulate the model
-    'number_of_iterations': The number of iterations to run the model/particle filter
-    'resample_window': The number of iterations between resampling particles
-    'agents_to_visualise': The number of agents to plot particles for
-    'particle_std': The standard deviation of the noise added to particle states
-    'model_std': The standard deviation of the noise added to model observations
-    'do_save': Boolean to determine if data should be saved and stats printed
-    'do_ani': Boolean to determine if particle filter data should be animated
-        and displayed
-    '''
-    def __init__(self, model, number_of_particles, particle_std=0, resample_window=10, do_copies=True, do_save=False):
-        '''
-        Initialise Particle Filter
-
-        Firstly, set all attributes using filter parameters. Set time and
-        initialise base model using model parameters. Initialise particle
-        models using a deepcopy of base model. Determine particle filter
-        dimensions, set state of particles to the state of the base model,
-        and then initialise all remaining arrays.
-        '''
-        self.time = 0
-        # Dimensions
-        self.number_of_particles = number_of_particles
-        self.dimensions = len(model.agents2state().T)
-        # Models
-        self.models = list([deepcopy(model) for _ in range(self.number_of_particles)])
-        for unique_id in range(len(self.models)):
-            self.models[unique_id].unique_id = unique_id
-        if not do_copies:
-            # Only relevent if there is randomness in the initialisation of the model.
-            for model in self.models:
-                model.__init__(*model.params)
-        # Filter
-        self.states = np.empty((self.number_of_particles, self.dimensions))
-        for particle in range(self.number_of_particles):
-            self.states[particle] = self.models[particle].agents2state()
-        self.weights = np.ones(self.number_of_particles)
+    def __init__(self, model0, particles=10, window=1, do_copies=True, do_save=False):
+        self.step_id = 0
         # Params
-        self.particle_std = particle_std
-        self.resample_window = resample_window
+        self.window = window
+        self.particles = particles
+        # Model
+        self.models = [deepcopy(model0) for _ in range(self.particles)]
+        if not do_copies:
+            [model.__init__(*model.params) for model in self.models]
+            for unique_id in range(self.particles):
+                self.models[unique_id].unique_id = unique_id
         # Save
-        self.do_save = do_save
+        self.do_save = do_save  # save stats
         if self.do_save:
             self.active = []
-            self.means = []
-            self.mean_errors = []
-            self.variances = []
+            self.mask = []
+            self.mean = []
+            self.var = []
+            self.err = []
         return
 
-    def step(self, measured_state, true_state=None):
-        '''
-        Step Particle Filter
+    def step(self, state_obs):
+        self.step_id += self.window
+        states = np.array([model.agents2state() for model in self.models])
+        states = self.predict(states)
+        weights = self.reweight(states, state_obs)
+        states, weights = self.resample(states, weights)
+        if self.do_save: self.save(states, weights, state_obs)
+        return
 
-        Loop through process. Predict the base model and particles
-        forward. If the resample window has been reached,
-        reweight particles based on distance to base model and resample
-        particles choosing particles with higher weights. Then save
-        and animate the data. When done, plot save figures.
-        '''
-        self.predict()
-        self.reweight(measured_state)
-        self.resample()
+    def predict(self, states):
+        [self.models[i].state2agents(states[i]) for i in range(self.particles)]
+        Pool().map(lambda model: [model.step() for _ in range(self.window)], self.models)
+        states = np.array([model.agents2state() for model in self.models])
+        return states
+
+    def reweight(self, states, state_obs):
+        if states.shape[1] != state_obs.shape[0]:
+            print('Warning - Not equal states and state_obs lengths.\nSee documentation.\n\nShortening quick fix applied.')
+            states = states[:, :len(state_obs)]
+        distance = np.linalg.norm(states - state_obs, axis=1)
+        weights = 1 / np.fmax(1e-99, distance)
+        weights /= np.sum(weights)
+        return weights
+
+    def resample(self, states, weights):
+        offset = (np.arange(self.particles) + np.random.uniform()) / self.particles
+        cumsum = np.cumsum(weights)
+        i, j = 0, 0
+        indexes = np.empty(self.particles, 'i')
+        while i < self.particles and j < self.particles:
+            if offset[i] < cumsum[j]:
+                indexes[i] = j
+                i += 1
+            else:
+                j += 1
+        states = states[indexes]
+        weights = weights[indexes]
+        return states, weights
+
+    def save(self, states, weights, state_obs):
+        active = np.array([model.mask()[1] for model in self.models], 'i')
+        self.active.append(active)
+        mask = np.array([model.mask()[0] for model in self.models], 'b')
+        self.mask.append(mask)
+        mean = np.average(np.where(mask, states, np.nan), weights=weights[mask], axis=0)
+        self.mean.append(np.average(mean))
+        var = np.average((states - mean)**2, weights=weights, axis=0)
+        self.var.append(np.average(var))
+        err = np.linalg.norm(mean - state_obs)
+        self.err.append(err)
+        return
+
+    def file(self, do_file=True):
         if self.do_save:
-            self.save(true_state)
-        return
-
-    def reweight(self, measured_state):
-        '''
-        Reweight
-
-        Add noise to the base model state to get a measured state. Calculate
-        the distance between the particle states and the measured base model
-        state and then calculate the new particle weights as 1/distance.
-        Add a small term to avoid dividing by 0. Normalise the weights.
-        '''
-        states = self.states[:, :len(measured_state)]  # For shorter measurements to state vectors
-        distance = np.linalg.norm(states - measured_state, axis=1)
-        self.weights = 1 / np.fmax(distance, 1e-99)  # to avoid fp_err
-        self.weights /= np.sum(self.weights)
-        return
-
-    def resample(self):  # systematic sampling
-        '''
-        Resample
-
-        Calculate a random partition of (0,1) and then
-        take the cumulative sum of the particle weights.
-        Carry out a systematic resample of particles.
-        Set the new particle states and weights and then
-        update agent locations in particle models.
-        '''
-        if not self.time % self.resample_window:
-            offset = (np.arange(self.number_of_particles) + np.random.uniform()) / self.number_of_particles
-            cumsum = np.cumsum(self.weights)
-            i, j = 0, 0
-            indexes = np.zeros(self.number_of_particles, 'i')
-            while i < self.number_of_particles and j < self.number_of_particles:
-                if offset[i] < cumsum[j]:  # reject
-                    indexes[i] = j
-                    i += 1
-                else:
-                    j += 1
-            self.states = self.states[indexes]
-            self.weights = self.weights[indexes]
-        if self.particle_std:
-            self.states += np.random.normal(0, self.particle_std, self.states.shape)
-        return
-
-    def predict(self):
-        '''
-        Predict
-
-        Increment time. Step the base model. For each particle,
-        step the particle model and then set the particle states
-        as the agent locations with some added noise. Reassign the
-        locations of the particle agents using the new particle
-        states.
-
-        This is the main interaction between the
-        model and the particle filter.
-        '''
-        for particle in range(self.number_of_particles):
-            self.models[particle].state2agents(self.states[particle])
-            self.models[particle].step()
-            self.states[particle] = self.models[particle].agents2state()
-        self.time += 1
-        return
-
-    def predict_one(self, particle):  # not working
-        map(self.predict_one, np.arange(self.number_of_particles))
-        self.models[particle].state2agents(self.states[particle])
-        self.models[particle].step()
-        self.states[particle] = self.models[particle].agents2state()
-        return
-
-    def save(self, true_state):
-        '''
-        Save and Plot Save
-
-        Calculate number of active agents, mean, and variance
-        of particles and calculate mean error between the mean
-        and the true base model state. Plot active agents,mean
-        error and mean variance.
-        '''
-        states = self.states[:, :len(true_state)]  # For shorter measurements to state vectors
-
-        try:
-            activity = sum([agent.active for agent in self.model.agents])
-            print('act')
-        except AttributeError:
-            activity = None
-        self.active.append(activity)
-
-        mean = np.average(states, weights=self.weights, axis=0)
-        self.means.append(mean)
-
-        variance = np.average((states - mean)**2, weights=self.weights, axis=0)
-        self.variances.append(np.average(variance))
-
-        if true_state is None:
-            self.rmse.append(None)
+            mask = np.array(self.mask, 'b')
+            mean = np.array(self.mean, 'f')
+            var = np.array(self.var, 'f')
+            if np.any(var) < 0: print('Warning - Negative variance')
+            if np.any(var) == np.nan: print('Warning - A NaN variance')
+            err = np.array(self.err, 'f')
+            if np.any(err) < 0: print('Warning - Negative error')
+            if np.any(err) == np.nan: print('Warning - A NaN variance')
+            if not do_file:
+                return mask, mean, var, err
+            else:
+                np.savez('pf_data', mask, mean, var, err)
         else:
-            self.rsme.append(np.linalg.norm(mean - true_state, axis=0))
+            print('Warning - Cannot file as do_save is: ', self.do_save)
         return
 
-    def plot_save(self, do_save=False, name='', formatting='.jpg', t=None):
-        if t is None:
-            t = np.arange(self.time)
+    def plot(self, do_plot=True):
+        if self.do_save:
+            mask, mean, var, err = self.file(False)
 
-        try:  # Plot Active Agents
-            plt.figure(1, figsize=(16/2,9/2))
-            plt.plot(self.active)
-            plt.ylabel('Active agents')
-            if do_save:
-                plt.savefig(name + ' Active' + formatting)
-        except ValueError:
-            pass
+            plt.figure()
+            plt.plot(mean)
+            plt.xlabel('step id')
+            plt.ylabel('mean')
 
-        _, ax1 = plt.subplots(1, figsize=(16/2,9/2))
-        x = self.rsme
-        l1, = ax1.plot(t, x, '-m')
-        ax1.set_ylabel('Particle Mean Error')
+            plt.figure()
+            plt.plot(err)
+            plt.fill_between(range(len(err)), err-var, err+var, alpha=.5)
+            plt.xlabel('step id')
+            plt.ylabel('error')
 
-        ax2 = plt.twinx()
-        x = self.variances
-        l2, = ax2.plot(t, x, '--b')
-        ax2.set_ylabel('Particle Variance Error')
+            fig = plt.figure()
+            plt.title('mask (white = active, black = inactive)')
+            plt.ylabel('particle')
+            plt.xlabel('state')
+            plt.set_cmap('gray')
+            func = lambda i: plt.imshow(mask[i])
+            frames = len(mask)
+            ani = FuncAnimation(fig, func, frames, repeat=False)
 
-        plt.xlabel('Time (s)')
-        plt.legend([l1, l2], ['Mean Error', 'Mean Variance'], loc=0)
-        if do_save:
-            plt.savefig(name + ' Analysis' + formatting)
-
-        print('Max mean error = ',max(self.rsme))
-        print('Average mean error = ',np.average(self.rsme))
-        print('Max mean variance = ',max(self.variances))
-        print('Average mean variance = ',np.average(self.variances))
+            plt.show()
+        else:
+            print('Warning - Cannot do_plot as do_save is: ', self.do_save)
         return
 
-    def ani(self, model, pf_agents=2):
-        '''
-        Animate
+    def batch(self, model0, iterations=11, do_ani=False, agents=None):
+        for i in range(iterations):
+            model0.step()
+            self.step(model0.agents2state())
+            if do_ani:
+                self.ani(model0, agents)
+        self.plot()
+        # self.file()  # not needed example batching
+        return
 
-        Plot the base model state and some of the
-        particles. Only do this if there is at least 1 active
-        agent in the base model. We adjust the markersizes of
-        each particle to represent the weight of that particle.
-        We then plot some of the agent locations in the particles
-        and draw lines between the particle agent location and
-        the agent location in the base model.
-        '''
-        plt.figure(1)
+    def ani(self, model0, agents=None):
         plt.clf()
-
-        # pf
-        if np.std(self.weights):
-            markersizes = self.weights
-            markersizes *= 4 / np.std(markersizes)    # revar
-            markersizes += 4 - np.mean(markersizes)   # remean
-            markersizes = np.clip(markersizes, 1, 8)  # clip
-        else:
-            markersizes = 8*np.ones(self.weights.shape)
-
-        for unique_id in range(pf_agents):
-            for particle in range(self.number_of_particles):
-
-                loc0 = model.agents[unique_id].location
-                loc = self.models[particle].agents[unique_id].location
-                locs = np.array([loc0, loc]).T
-
-                plt.plot(*locs, '-k', alpha=.1, linewidth=.3)
-                plt.plot(*loc, '+r', alpha=.3, markersize=markersizes[particle])
-
-        # model
-        state = model.agents2state(do_ravel=False).T
-        plt.plot(state[0], state[1], '.k')
-        try:
-            plt.axis(np.ravel(model.boundaries, 'F'))
-        except:
-            pass
+        fig = plt.figure(1)
+        [model.ani(agents=agents, colour='r', alpha=.3) for model in self.models]
+        model0.ani()
         plt.pause(1/30)
         return
+
+
+if __name__ == '__main__':
+    import sys
+    sys.path.append("..")
+    from models.screensaver import Model
+    model = Model()
+    pf = ParticleFilter(model, particles=10, window=2, do_copies=False, do_save=True)
+    pf.batch(model, iterations=1056, do_ani=False, agents=1)

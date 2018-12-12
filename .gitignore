@@ -53,7 +53,7 @@ nbproject
 *.aux
 *.bbl
 *.log
-*.synctex
+*.synctex.gz
 
 
 

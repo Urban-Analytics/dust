@@ -57,9 +57,9 @@ nbproject
 
 
 
-# ********** NativeModel stuff **********
-Improbable/NativeModel-keanu/results/
-
+# ********** NativeModel **********
+Improbable/NativeModel-keanu/results/*.csv
+Improbable/NativeModel-keanu/results/*.dot
 
 
 # ********** **********

@@ -7,6 +7,7 @@ import io.improbable.keanu.network.BayesianNetwork;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
 import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
+import io.improbable.keanu.vertices.dbl.DoubleVertexSamples;
 import io.improbable.keanu.vertices.dbl.KeanuRandom;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.UniformVertex;
@@ -176,7 +177,7 @@ public class NativeModel {
              ************ OPTIMISE ************
              */
 
-
+            /*
             System.out.println("\t\tOptimising with Max A Posteriori");
             System.out.println("\t\tPrevious state value: " + state.getValue(0));
 
@@ -185,7 +186,7 @@ public class NativeModel {
             netOptimiser.maxAPosteriori();
 
             System.out.println("\t\tNew state value: " + state.getValue(0));
-
+            */
 
             /*
              ************ SAMPLE FROM THE POSTERIOR ************
@@ -199,11 +200,12 @@ public class NativeModel {
             parameters.add(threshold);
             parameters.add(state);
 
-
+            
             NetworkSamples sampler = MetropolisHastings.withDefaultConfig().getPosteriorSamples(
                     net,
                     parameters,
                     NUM_SAMPLES);
+
 
             /*
             NetworkSamples sampler = NUTS.withDefaultConfig().getPosteriorSamples(
@@ -250,6 +252,11 @@ public class NativeModel {
             List<DoubleTensor> stateSamples = sampler.get(state).asList();
             stateSamplesHistory.addAll(stateSamples);
 
+            // Convert List<DoubleTensor> into DoubleVertexSamples
+            // Keep for later when devs have produced DoubleVertexSamples.asTensor()
+            // Should allow for vertex of shape (a x b) with n samples to become tensor of shape (a x b x n)
+            DoubleVertexSamples stateVertexSamples = new DoubleVertexSamples(stateSamples);
+
             List<Double> stateSamplesDouble = stateSamples.stream()
                     .map( (d) -> d.getValue(0)).collect(Collectors.toList());
 
@@ -278,9 +285,17 @@ public class NativeModel {
             //System.out.println("\tPosterior: " + posterior.getValue(0));
             //System.out.println("\tcurrentStateEstimate: " + currentStateEstimate);
 
+            /*
+             ************ CALCULATE ERROR ************
+             */
+
+            // Initialise error var
+            double error = Math.sqrt(Math.pow(truthData.get(iter).getValue(0) - posterior.scalar(), 2));
+            System.out.println("\tError: " + error);
+
         } // Update window
 
-        /*
+
         System.out.println("totalStateHistory information:");
         System.out.println("totalStateHistory.size() == " + totalStateHistory.size());
 
@@ -299,7 +314,7 @@ public class NativeModel {
         Set<Double> thresholdSamplesHistorySet = new HashSet<>(thresholdSamplesHistory);
         System.out.println("thresholdSamplesHistorySet information:");
         System.out.println("thresholdSamplesHistorySet.size() == " + thresholdSamplesHistorySet.size());
-        */
+
 
         NativeModel.writeResults(totalStateHistory, truthData);
         thresholdWriter.close();

@@ -16,7 +16,6 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 
     compile 'io.improbable:keanu:0.0.16'
-    compile (":GraphViz")
 }
 
 compileKotlin {

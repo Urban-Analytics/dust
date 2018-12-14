@@ -90,7 +90,7 @@ spag_plot(samples, truth.results)
 
 ```
 
-<!--
+
 ## Density plot
 
 Create the plots
@@ -164,6 +164,6 @@ print(xtable(
   params
   ), type = "html")
 ```
--->
+
 
 

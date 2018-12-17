@@ -26,7 +26,7 @@ public class NativeModel {
     private static final int WINDOW_SIZE = 200; // Number of iterations per update window
     private static final int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE; // Number of update windows
     private static final double SIGMA_NOISE = 1.0; // Noise added to observations
-    private static final int NUM_SAMPLES = 2000; // Number of samples to MCMC
+    private static final int NUM_SAMPLES = 2000; // Number of samples to MCMC - MH: 100000, HMC: 2000, NUTS: 2000
     private static final int DROP_SAMPLES = 1; // Burn in period
     private static final int DOWN_SAMPLE = 5; // Only keep every x sample
 
@@ -35,13 +35,11 @@ public class NativeModel {
     //private static final VertexBackedRandomGenerator RAND_GENERATOR =
     //        new VertexBackedRandomGenerator(NUM_RANDOM_DOUBLES, 0, 0);
     private static final KeanuRandom RAND_GENERATOR = new KeanuRandom();
-    // TODO: Talk to Nick about this random generator (replace with something else? MersenneTwister from MASON?)
 
     /* Admin parameters */
     private static String dirName = "results/"; // Place to store results
 
     /* Bookkeeping parameters */
-    private static Writer thresholdWriter; // Writer for the threshold estimates
     private static Writer stateWriter; // Writer for the state estimates (i.e. results)
 
 
@@ -66,9 +64,7 @@ public class NativeModel {
         System.out.println("Making truth data");
 
         // Generate truth data
-
         List<DoubleVertex> truthData = new ArrayList<>();
-        // TODO: Replace this sigma with SIGMA_NOISE?
         DoubleVertex currentTruthState = new GaussianVertex(0, 1.0);
         for (int i=0; i < NUM_ITER; i++) {
             currentTruthState =
@@ -94,14 +90,11 @@ public class NativeModel {
         double currentStateEstimate = 0.0; // Save our estimate of the state at the end of the window. Initially 0
         double currentThresholdEstimate = -1.0; //  Interesting to see what the threshold estimate is (not used in assimilation)
         double priorMu = 0.0;
-        //List<List<DoubleVertex>> totalStateHistory = new ArrayList<>();
-        //List<List<DoubleTensor>> stateSamplesHistory = new ArrayList<>();
         List<DoubleVertex> totalStateHistory = new ArrayList<>(); // Store history from each iteration
         List<DoubleTensor> stateSamplesHistory = new ArrayList<>(); // Store state samples
-        List<Double> thresholdSamplesHistory = new ArrayList<>(); // Store threshold samples
+        List<Double> errorHistory = new ArrayList<>(); // Store error values for each iteration
 
 
-        // TODO: Replace this loop with a while loop (Need to calculate error w/ each iteration and stop loop when error is low enough)
         for (int window=0; window < NUM_WINDOWS; window++) {
 
             System.out.println(String.format("Entering update window: %s (iterations %s -> %s)", window, iter, iter+WINDOW_SIZE));
@@ -131,7 +124,6 @@ public class NativeModel {
             for (int i=0; i < WINDOW_SIZE; i++) {
 
                 // Temporarily imagine that we know the threshold (later try to estimate this)
-                // TODO: Try to estimate threshold here and not pass explicitly
                 state = RAND_GENERATOR.nextGaussian() > truthThreshold ? state.plus(1) : state.minus(1);
                 // add state to history
                 history.add(state);
@@ -142,6 +134,9 @@ public class NativeModel {
             // Collect history from each iteration
             //totalStateHistory.add(history);
             totalStateHistory.addAll(history);
+
+            // Don't know if this should be here or above STEP?
+            state.setAndCascade(priorMu);
 
             /*
              ************ OBSERVE SOME TRUTH DATA ************
@@ -177,7 +172,7 @@ public class NativeModel {
              ************ OPTIMISE ************
              */
 
-            /*
+
             System.out.println("\t\tOptimising with Max A Posteriori");
             System.out.println("\t\tPrevious state value: " + state.getValue(0));
 
@@ -186,7 +181,7 @@ public class NativeModel {
             netOptimiser.maxAPosteriori();
 
             System.out.println("\t\tNew state value: " + state.getValue(0));
-            */
+
 
             /*
              ************ SAMPLE FROM THE POSTERIOR ************
@@ -197,7 +192,6 @@ public class NativeModel {
 
             // Collect all the parameters that we want to sample
             List<Vertex> parameters = new ArrayList<>();
-            parameters.add(threshold);
             parameters.add(state);
 
 
@@ -228,26 +222,6 @@ public class NativeModel {
              ************ GET THE INFORMATION OUT OF THE SAMPLES ************
              */
 
-            // ****** The threshold ******
-            // Get the threshold estimates as a list (Convert from Tensors to Doubles)
-            List<Double> thresholdSamples = sampler.get(threshold).asList().
-                    stream().map( (d) -> d.getValue(0)).collect(Collectors.toList());
-            // Add thresholdSamples to history
-            thresholdSamplesHistory.addAll(thresholdSamples);
-
-            // Find the mean threshold estimate (for info, not used)
-            currentThresholdEstimate = thresholdSamples.stream().reduce(0d, (a,b) -> a+b) / thresholdSamples.size();
-
-            // Write the threshold distribution
-            NativeModel.writeThresholds(thresholdSamples, window, iter);
-
-            // ****** The model states (out of the box) ******
-            /*
-            List<DoubleTensor> stateSamples = sampler.get(state).asList();
-            List<Double> stateSamplesDouble = sampler.get(state).asList().
-                    stream().map( (d) -> d.getValue(0)).collect(Collectors.toList());
-            */
-
             // Getting stateSamples
             List<DoubleTensor> stateSamples = sampler.get(state).asList();
             stateSamplesHistory.addAll(stateSamples);
@@ -263,8 +237,6 @@ public class NativeModel {
             // Get mean of stateSamples to compare to truthValue and posterior
             double stateSum = stateSamplesDouble.stream().mapToDouble(Double::doubleValue).sum();
             double stateSamplesMean = stateSum / stateSamplesDouble.size();
-
-            assert stateSamples.size() == thresholdSamples.size();
 
             /*
              ************ ASSIGN VALUES FOR NEXT PRIOR AND PRINT RESULTS ************
@@ -293,6 +265,8 @@ public class NativeModel {
             double error = Math.sqrt(Math.pow(truthData.get(iter).getValue(0) - posterior.scalar(), 2));
             System.out.println("\tError: " + error);
 
+            errorHistory.add(error);
+
         } // Update window
 
 
@@ -309,15 +283,12 @@ public class NativeModel {
         System.out.println("stateSamplesHistorySet information:");
         System.out.println("stateSamplesHistorySet.size() == " + stateSamplesHistorySet.size());
 
-        System.out.println("thresholdSamplesHistory information:");
-        System.out.println("thresholdSamplesHistory.size() == " + thresholdSamplesHistory.size());
-        Set<Double> thresholdSamplesHistorySet = new HashSet<>(thresholdSamplesHistory);
-        System.out.println("thresholdSamplesHistorySet information:");
-        System.out.println("thresholdSamplesHistorySet.size() == " + thresholdSamplesHistorySet.size());
-
 
         NativeModel.writeResults(totalStateHistory, truthData);
-        thresholdWriter.close();
+
+        for (double error : errorHistory) {
+            System.out.println(error);
+        }
 
     } // main()
 
@@ -328,14 +299,6 @@ public class NativeModel {
     private static void initFiles(Double truthThreshold, List<DoubleVertex> truthData) throws IOException {
         // So files have unique names
         String theTime = String.valueOf(System.currentTimeMillis());
-
-        // Open Params file to hold threshold data
-        thresholdWriter = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(dirName + "Params_" + theTime + ".csv"), "utf-8"));
-
-        // Write header and truth data at start
-        thresholdWriter.write("Window, Iteration, Threshold,\n");
-        thresholdWriter.write("-1,-1," + truthThreshold + "\n");
 
         // Open Results file to hold state data
         stateWriter = new BufferedWriter(new OutputStreamWriter(
@@ -364,20 +327,6 @@ public class NativeModel {
 
         } catch (IOException ex) {
             System.err.println("Error writing states to file: " + ex.getMessage());
-            ex.printStackTrace();
-        }
-    }
-
-
-    private static void writeThresholds(List<Double> thresholdSamples, int window, int iteration) {
-
-        try {
-            for (double sample : thresholdSamples) {
-                thresholdWriter.write(String.format("%s,%s,%s, ", window, iteration, sample));
-                thresholdWriter.write("\n");
-            }
-        } catch (IOException ex) {
-            System.err.println("Error writing thresholds to file: " + ex.getMessage());
             ex.printStackTrace();
         }
     }

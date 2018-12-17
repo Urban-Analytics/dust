@@ -136,17 +136,22 @@ Look at how the threshold parameter changed.
 Start with a histogram.
 
 ```{r randPosterior, fig.width=7, fig.height=5}
-i <- 1
-for (column in names(params)) {
-  plot(density(params[,column][[1]]), col="blue", main="Threshold parameter posterior")
-  hist(params[,column][[1]], xlim=c(-1.1,1.1), prob=TRUE, breaks="Scott", add=T, border="gray")
-  abline(v=truth.params[i[[1]]], col="red")
-#abline(v=0.0, col="blue", lty="dashed")
+param_hist <- function(params, truth.params) {
   
-  ylab("Density")
-  i <- i + 1
+  x_range <- unlist(c(truth.params[1[[1]]], params[,1][[1]]))
+  x_min <- min(x_range)
+  x_max <- max(x_range)
+  
+  x_lim <- c(x_min-.2, x_max+.2)
+  
+  plot(density(params[,1][[1]]), col='blue', main='Threshold parameter posterior', xlim=x_lim)
+  hist(params[,1][[1]], xlim=c(-1.1,1.1), prob=TRUE, breaks='Scott', add=TRUE, border='gray')
+  abline(v=truth.params[1[[1]]], col='red')
+  
+  legend('topright', legend=c('True threshold value', 'Posterior'), lty=c(1,1), col=c('red', 'blue'))
 }
-legend("topright", legend = c("True threshold value", "Posterior"), lty=c(1,1), col=c("red","blue"))
+
+param_hist(params, truth.params)
 ```
 
 ## 'True' parameter value(s)

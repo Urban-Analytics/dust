@@ -200,7 +200,7 @@ public class NativeModel {
             parameters.add(threshold);
             parameters.add(state);
 
-            
+
             NetworkSamples sampler = MetropolisHastings.withDefaultConfig().getPosteriorSamples(
                     net,
                     parameters,

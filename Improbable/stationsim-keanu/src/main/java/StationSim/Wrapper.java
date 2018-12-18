@@ -9,6 +9,7 @@ import io.improbable.keanu.research.randomfactory.VertexBackedRandomGenerator;
 import io.improbable.keanu.research.visualisation.GraphvizKt;
 import io.improbable.keanu.research.vertices.IntegerArrayIndexingVertex;
 import io.improbable.keanu.research.vertices.RandomFactoryVertex;
+import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.KeanuRandom;
 import io.improbable.keanu.vertices.dbl.nonprobabilistic.CastDoubleVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
@@ -109,6 +110,41 @@ public class Wrapper{
         //RandomFactoryVertex random = new RandomFactoryVertex (numRandomDoubles, 0, 0);
         KeanuRandom random = new KeanuRandom();
 
+
+        System.out.println("Initialising state and state history");
+        // Initialise state as probabilistic variable
+        DoubleVertex state = new GaussianVertex(0.0, 1.0);
+        // Init state history
+        List<DoubleVertex> stateHistory = new ArrayList<>();
+
+        // Run model and collect state information
+        Integer[] results = run(random);
+
+        // Loop through results and assign value of each to state
+        // Then collect state in stateHistory
+        for (int i=0; i<results.length; i++) {
+            //DoubleVertex state = new GaussianVertex(results[i], sigmaNoise);
+            state.setValue(results[i]);
+            stateHistory.add(state);
+        }
+
+        if (obInterval > 0) {
+            System.out.println("Observing truth data. Adding noise with standard dev: " + sigmaNoise);
+            for (int i=0; i<numTimeSteps; i++) {
+                if ((i+1) % numOutputs != 0) {
+
+                    DoubleVertex currentHist = stateHistory.get(i);
+
+                    GaussianVertex observedVertex = new GaussianVertex(currentHist, sigmaNoise);
+
+                    observedVertex.observe(truth[i]);
+                }
+            }
+        } else {
+            System.out.println("Not observing truth data");
+        }
+
+        /*
         // This is the 'black box' vertex that runs the model. It's input is the random numbers and
         // output is a list of Integer(tensor)s (the number of agents in the model at each iteration).
         System.out.println("Initialising black box model");
@@ -134,8 +170,10 @@ public class Wrapper{
         else {
             System.out.println("Not observing truth data");
         }
+        */
 
         System.out.println("Creating BayesNet");
+        //BayesianNetwork testNet = new BayesianNetwork(box.getConnectedGraph());
         BayesianNetwork testNet = new BayesianNetwork(box.getConnectedGraph());
 
         // Create a graph and write it out
@@ -244,7 +282,8 @@ public class Wrapper{
 
         // Make truth data
         System.out.println("Making truth data");
-        VertexBackedRandomGenerator truthRandom = new VertexBackedRandomGenerator(numRandomDoubles, 0, 0);
+        //VertexBackedRandomGenerator truthRandom = new VertexBackedRandomGenerator(numRandomDoubles, 0, 0);
+        KeanuRandom truthRandom = new KeanuRandom();
         Integer[] truth = Wrapper.run(truthRandom);
         System.out.println("Truth data length: " + truth.length);
 

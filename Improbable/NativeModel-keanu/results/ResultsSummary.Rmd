@@ -32,33 +32,21 @@ setwd(homedir)
 
 # Find files
 samples.files <- grep("Results.*csv", list.files(path = "."), value=TRUE)
-params.files <- grep("Params.*csv", list.files(path = "."), value=TRUE)
 
-if (length(samples.files) != length(params.files)) {
-  stop("For some reason there are a different number of results files and random number files.
-       This is weird so I'm not continuing.")
-}
 
 if (length(samples.files) != 1) {
   message("Found multiple samples files. Using the most recent one.")
   samples.files <- tail(sort(samples.files), n=1)
-  params.files  <- tail(sort(params.files),  n=1)
 }
 
 # Read the file in
 samples <- read_csv(samples.files[1], col_names=FALSE)
-params  <- read_csv(params.files[1])
 
 samples[,ncol(samples)] <- NULL # Last column is NA because I lazily write too many commas
-params[,ncol(params)] <- NULL # Last column is NA because I lazily write too many commas
 
 # Truth data are the first line
 truth.results <- samples[1,]
 samples <- samples[-1,]
-
-# Truth data are the first entry in the "Threshold" column
-truth.params <- params[1,"Threshold"]
-params <- params[-1,"Threshold"]
 
 ```
 
@@ -89,86 +77,3 @@ spag_plot <- function(samples, truth) {
 spag_plot(samples, truth.results)
 
 ```
-
-
-## Density plot
-
-Create the plots
-
-```{r density.plot-create}
-
-# Returns a single ggplot2 density plot
-density_plot <- function(s, truth) {
-
-  # Y values for this sample (num people per iteration)
-  y <- t(s[1,])[,1]
-  # X values
-  x <- 1:length(y)
-  # A long two-column matrix will have number of people at every iteration across all samples
-  scatter <- cbind(x, y)
-  # Now add the rest of the samples
-  for (i in 2:nrow(s)) {
-    scatter <- rbind(scatter, cbind(1:length(y), t(s[i,])[,1]) )
-  }
-  scatter <- as.data.frame(scatter)
-
-  the.plot <- ggplot(data=scatter, mapping=aes(x,y)) +
-    geom_hex(bins=35, show.legend = FALSE) +
-    geom_line(data = data.frame("x"=1:length(truth), "y"=t(truth)), mapping=aes(x,y), colour="red") + # Truth
-    #geom_smooth(method="loess", se=TRUE, level=0.95, color="orange") +
-    #geom_point(size=0.1, color="white") + # individual points
-    ylab("Number of agents in the system")+
-    xlab("Iteration")
-    #ggtitle(paste("Observation Interval =", obs, sep =' '))
-
-  return(the.plot)
-}
-
-#plots <- map2(samples, obIntervals, function(x, obInterval) density_plot(x, truth, obInterval))
-density_plot(samples, truth.results)
-
-```
-
-# Plot parameters
-
-Look at how the threshold parameter changed.
-
-Start with a histogram.
-
-```{r randPosterior, fig.width=7, fig.height=5}
-param_hist <- function(params, truth.params) {
-  
-  x_range <- unlist(c(truth.params[1[[1]]], params[,1][[1]]))
-  x_min <- min(x_range)
-  x_max <- max(x_range)
-  
-  x_lim <- c(x_min-.2, x_max+.2)
-  
-  plot(density(params[,1][[1]]), col='blue', main='Threshold parameter posterior', xlim=x_lim)
-  hist(params[,1][[1]], xlim=c(-1.1,1.1), prob=TRUE, breaks='Scott', add=TRUE, border='gray')
-  abline(v=truth.params[1[[1]]], col='red')
-  
-  legend('topright', legend=c('True threshold value', 'Posterior'), lty=c(1,1), col=c('red', 'blue'))
-}
-
-param_hist(params, truth.params)
-```
-
-## 'True' parameter value(s)
-
-```{r randTruthTable, results="asis"}
-print(xtable(
-  truth.params
-  ), type = "html")
-```
-
-## Parameter samples
-
-```{r randTable, results="asis"}
-print(xtable(
-  params
-  ), type = "html")
-```
-
-
-

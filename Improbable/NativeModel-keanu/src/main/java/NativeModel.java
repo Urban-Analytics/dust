@@ -81,7 +81,8 @@ public class NativeModel {
         }
         System.out.println("\nTruth threshold is: "+ truthThreshold);
 
-        initFiles(truthThreshold, truthData); // Open necessary files and write truthThreshold data
+        initFiles(truthData); // Open necessary files and write truthThreshold data
+
 
         /*
          ************ START THE MAIN LOOP ************
@@ -89,10 +90,10 @@ public class NativeModel {
         int iter = 0; // Record the total number of iterations we have been through
         double currentStateEstimate = 0.0; // Save our estimate of the state at the end of the window. Initially 0
         double currentThresholdEstimate = -1.0; //  Interesting to see what the threshold estimate is (not used in assimilation)
-        double priorMu = 0.0;
+        //double priorMu = 0.0;
+        DoubleVertex priorMu = new GaussianVertex(0.0, SIGMA_NOISE);
         List<DoubleVertex> totalStateHistory = new ArrayList<>(); // Store history from each iteration
         List<DoubleTensor> stateSamplesHistory = new ArrayList<>(); // Store state samples
-        List<Double> errorHistory = new ArrayList<>(); // Store error values for each iteration
 
 
         for (int window=0; window < NUM_WINDOWS; window++) {
@@ -113,7 +114,7 @@ public class NativeModel {
              */
 
             // state is probabilistic variable
-            DoubleVertex state = new GaussianVertex(priorMu, 1.0);
+            DoubleVertex state = new GaussianVertex(priorMu, SIGMA_NOISE);
 
             List<DoubleVertex> history = new ArrayList<>();
 
@@ -129,14 +130,12 @@ public class NativeModel {
                 history.add(state);
             }
 
-            //state.setAndCascade(0); // Sets state value to 0 (known at start of model)
-
             // Collect history from each iteration
             //totalStateHistory.add(history);
             totalStateHistory.addAll(history);
 
             // Don't know if this should be here or above STEP?
-            state.setAndCascade(priorMu);
+            state.setAndCascade(priorMu.getValue(0));
 
             /*
              ************ OBSERVE SOME TRUTH DATA ************
@@ -194,19 +193,19 @@ public class NativeModel {
             List<Vertex> parameters = new ArrayList<>();
             parameters.add(state);
 
-
+            /*
             NetworkSamples sampler = MetropolisHastings.withDefaultConfig().getPosteriorSamples(
                     net,
                     parameters,
                     NUM_SAMPLES);
+            */
 
-
-            /*
+            ///*
             NetworkSamples sampler = NUTS.withDefaultConfig().getPosteriorSamples(
                     net,
                     parameters,
                     NUM_SAMPLES);
-            */
+            //*/
 
             /*
             NetworkSamples sampler = MetropolisHastings.withDefaultConfig().getPosteriorSamples(
@@ -243,33 +242,24 @@ public class NativeModel {
              */
 
             // Get posterior distribution, extract and assign Mu
-            DoubleTensor posterior = state.getValue();
-            priorMu = posterior.scalar();
-            // TODO: Find a way to convert DoubleTensor posterior into DoubleVertex
+            //DoubleTensor posterior = state.getValue();
+            //priorMu = posterior.scalar();
 
+            // Assign state posterior distribution to priorMu
+            priorMu = state;
+
+            // Find current state estimate
             currentStateEstimate = state.getValue(0);
 
 
             // Print out interesting values
             System.out.println("\tstateSamplesMean: " + stateSamplesMean);
-            System.out.println("\tposterior == priorMu == currentStateEstimate == " + priorMu);
+            System.out.println("\tcurrentStateEstimate == " + currentStateEstimate);
             System.out.println("\tCurrent truth state: " + truthData.get(iter).getValue(0));
-            //System.out.println("\tPosterior: " + posterior.getValue(0));
-            //System.out.println("\tcurrentStateEstimate: " + currentStateEstimate);
-
-            /*
-             ************ CALCULATE ERROR ************
-             */
-
-            // Initialise error var
-            double error = Math.sqrt(Math.pow(truthData.get(iter).getValue(0) - posterior.scalar(), 2));
-            System.out.println("\tError: " + error);
-
-            errorHistory.add(error);
 
         } // Update window
 
-
+        /*
         System.out.println("totalStateHistory information:");
         System.out.println("totalStateHistory.size() == " + totalStateHistory.size());
 
@@ -282,13 +272,9 @@ public class NativeModel {
         Set<DoubleTensor> stateSamplesHistorySet = new HashSet<>(stateSamplesHistory);
         System.out.println("stateSamplesHistorySet information:");
         System.out.println("stateSamplesHistorySet.size() == " + stateSamplesHistorySet.size());
-
+        */
 
         NativeModel.writeResults(totalStateHistory, truthData);
-
-        for (double error : errorHistory) {
-            System.out.println(error);
-        }
 
     } // main()
 
@@ -296,7 +282,7 @@ public class NativeModel {
      **************** ADMIN STUFF ****************
      */
 
-    private static void initFiles(Double truthThreshold, List<DoubleVertex> truthData) throws IOException {
+    private static void initFiles(List<DoubleVertex> truthData) throws IOException {
         // So files have unique names
         String theTime = String.valueOf(System.currentTimeMillis());
 

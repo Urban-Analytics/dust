@@ -3,10 +3,13 @@ package StationSim;
 import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.mcmc.MetropolisHastings;
 import io.improbable.keanu.network.BayesianNetwork;
+import io.improbable.keanu.randomfactory.RandomDoubleFactory;
+import io.improbable.keanu.randomfactory.RandomFactory;
 import io.improbable.keanu.research.randomfactory.VertexBackedRandomGenerator;
 import io.improbable.keanu.research.visualisation.GraphvizKt;
 import io.improbable.keanu.research.vertices.IntegerArrayIndexingVertex;
 import io.improbable.keanu.research.vertices.RandomFactoryVertex;
+import io.improbable.keanu.vertices.dbl.KeanuRandom;
 import io.improbable.keanu.vertices.dbl.nonprobabilistic.CastDoubleVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
@@ -51,7 +54,7 @@ public class Wrapper{
 
 
 
-    public static Integer[] run(RandomGenerator rand) {
+    public static Integer[] run(KeanuRandom rand) {
         Station stationSim = new Station(System.currentTimeMillis());
         System.out.println("Model "+ Station.modelCount++ +" starting");
         stationSim.start(rand);
@@ -103,12 +106,15 @@ public class Wrapper{
 
         System.out.println("Initialising random number stream");
         //VertexBackedRandomFactory random = new VertexBackedRandomFactory(numInputs,, 0, 0);
-        RandomFactoryVertex random = new RandomFactoryVertex (numRandomDoubles, 0, 0);
+        //RandomFactoryVertex random = new RandomFactoryVertex (numRandomDoubles, 0, 0);
+        KeanuRandom random = new KeanuRandom();
 
         // This is the 'black box' vertex that runs the model. It's input is the random numbers and
         // output is a list of Integer(tensor)s (the number of agents in the model at each iteration).
         System.out.println("Initialising black box model");
-        UnaryOpLambda<VertexBackedRandomGenerator, Integer[]> box = new UnaryOpLambda<>( random, Wrapper::run);
+        //UnaryOpLambda<VertexBackedRandomGenerator, Integer[]> box = new UnaryOpLambda<>( random, Wrapper::run);
+        UnaryOpLambda<KeanuRandom, Integer[]> box = new UnaryOpLambda<>(random, Wrapper::run);
+
 
         // Observe the truth data plus some noise?
         if (obInterval > 0) {
@@ -134,6 +140,7 @@ public class Wrapper{
 
         // Create a graph and write it out
         // Write out samples
+        /*
         try {
             System.out.println("Writing out graph");
             Writer graphWriter = new BufferedWriter(new OutputStreamWriter(
@@ -144,13 +151,16 @@ public class Wrapper{
         } catch (IOException ex) {
             System.out.println("Error writing graph to file");
         }
+        */
 
+        /*
         // If just creating a graph then don't do anything further
         if (createGraph) {
             System.out.println("\n\n\n" + GraphvizKt.toGraphvizString(testNet, new HashMap<>()) + "\n\n\n");
             System.out.println("Have created graph. Not sampling");
             return new ArrayList<Integer[]>();
         }
+        */
 
         // Workaround for too many evaluations during sample startup
         random.setAndCascade(random.getValue());
@@ -238,7 +248,7 @@ public class Wrapper{
         Integer[] truth = Wrapper.run(truthRandom);
         System.out.println("Truth data length: " + truth.length);
 
-        //Run kenanu
+        //Run keanu
         ArrayList<Integer> obIntervals = new ArrayList<>(Arrays.asList(0,1));
         obIntervals.parallelStream().forEach(i -> keanu(truth, i, timestamp, justCreateGraphs));
 

@@ -25,6 +25,7 @@ import sim.util.Double2D;
 import sim.util.Interval;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Simulates a very simple train station with a given number of entrances and exits which are set through
@@ -142,7 +143,12 @@ public class Station extends SimState{
         analysis = new Analysis(this);
         schedule.scheduleRepeating(analysis, 3, 1.0);
 
+
+
+
+
     }
+
 
     /** Call appropriate analysis methods and cleans up
      */

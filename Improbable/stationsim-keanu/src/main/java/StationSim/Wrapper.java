@@ -29,7 +29,6 @@ import java.util.List;
 public class Wrapper{
 
     private static int numTimeSteps = 1000;
-    public static int numRandomDoubles = 10;
     private static int numSamples = 500;
     private static int dropSamples = 200;
     private static int downSample = 3;
@@ -37,7 +36,7 @@ public class Wrapper{
 
     // Options are used to set what is *observed* and what is *output*. See createOptions() for details.
     private static HashMap<Integer, Integer> optionsMap = createOptions();
-    private static int option = 3;
+    private static int option = 1;
     private static int numOutputs = optionsMap.get(option);
 
     private static boolean justCreateGraphs = false; // Create graphs and then exit, no sampling

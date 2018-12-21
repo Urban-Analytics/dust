@@ -1,4 +1,4 @@
-/* Created by Micahel Adcock on 17/04/2018.
+/* Created by Michael Adcock on 17/04/2018.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,7 +73,20 @@ public class Entrance extends Agent {
                 double y = location.getY();
                 Double2D spawnLocation = new Double2D(x + 1,
                         (y + i) - ((size / 2.0) - personSize / 2.0)); // need to add a buffer
-                Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exitProbs, this);
+
+                // Assign exit from exit probs
+                double randDouble = station.random.nextDouble();
+                station.numRandoms++;
+                double cumulativeProb = 0.0;
+                for (int j = 0; j < exitProbs.length; j++) {
+                    if(randDouble < exitProbs[j] + cumulativeProb) {
+                        exit = station.exits.get(j);
+                    } else {
+                        cumulativeProb += exitProbs[j];
+                    }
+                }
+                //Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exitProbs, this);
+                Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exit, this);
                 if (!person.collision(spawnLocation)) {
                     station.area.setObjectLocation(person, spawnLocation);
                     addedCount++;

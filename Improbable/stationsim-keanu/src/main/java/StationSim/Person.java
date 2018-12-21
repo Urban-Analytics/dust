@@ -36,6 +36,8 @@ public class Person extends Agent {
     private double currentSpeed;
 
 
+
+
     public Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
         super(size, location, name);
         this.station = station;
@@ -57,6 +59,18 @@ public class Person extends Agent {
                 cumulativeProb += exitProbs[i];
             }
         }
+    }
+
+    // New Person constructor to accept Exit object instead of exitProbs. Easier to build state vector with.
+    public Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance) {
+        super(size, location, name);
+        this.station = station;
+        this.entrance = entrance;
+        this.exit = exit;
+        radius = size / 2.0;
+        desiredSpeed = station.random.nextDouble() + minSpeed;
+        station.numRandoms++;
+        currentSpeed = 0.0;
     }
 
     public double getCurrentSpeed() {

@@ -5,10 +5,10 @@ import io.improbable.keanu.algorithms.mcmc.MetropolisHastings;
 import io.improbable.keanu.network.BayesianNetwork;
 import io.improbable.keanu.randomfactory.RandomDoubleFactory;
 import io.improbable.keanu.randomfactory.RandomFactory;
-import io.improbable.keanu.research.randomfactory.VertexBackedRandomGenerator;
-import io.improbable.keanu.research.visualisation.GraphvizKt;
-import io.improbable.keanu.research.vertices.IntegerArrayIndexingVertex;
-import io.improbable.keanu.research.vertices.RandomFactoryVertex;
+//import io.improbable.keanu.research.randomfactory.VertexBackedRandomGenerator;
+//import io.improbable.keanu.research.visualisation.GraphvizKt;
+//import io.improbable.keanu.research.vertices.IntegerArrayIndexingVertex;
+//import io.improbable.keanu.research.vertices.RandomFactoryVertex;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.KeanuRandom;
 import io.improbable.keanu.vertices.dbl.nonprobabilistic.CastDoubleVertex;
@@ -98,11 +98,13 @@ public class Wrapper{
         return results;
     }
 
-    public static List<Integer[]> keanu(Integer[] truth, int obInterval, long timestamp, boolean createGraph) {
+    //public static List<Integer[]> keanu(Integer[] truth, int obInterval, long timestamp, boolean createGraph) {
+    public static void keanu(Integer[] truth, int obInterval, long timestamp, boolean createGraph) {
 
         // (Useful string for writing results)
         int totalNumPeople = new Station(System.currentTimeMillis()).getNumPeople();
-        String params = "obInterval" + obInterval + "_numSamples" + numSamples + "_numTimeSteps" + numTimeSteps + "_numRandomDoubles" + numRandomDoubles + "_totalNumPeople" + totalNumPeople + "_dropSamples" + dropSamples + "_downSample" + "_sigmaNoise" + sigmaNoise + "_downsample" + downSample + "_timeStamp" + timestamp;
+        //String params = "obInterval" + obInterval + "_numSamples" + numSamples + "_numTimeSteps" + numTimeSteps + "_numRandomDoubles" + numRandomDoubles + "_totalNumPeople" + totalNumPeople + "_dropSamples" + dropSamples + "_downSample" + "_sigmaNoise" + sigmaNoise + "_downsample" + downSample + "_timeStamp" + timestamp;
+        String params = "obInterval" + obInterval + "_numSamples" + numSamples + "_numTimeSteps" + numTimeSteps + "_totalNumPeople" + totalNumPeople + "_dropSamples" + dropSamples + "_downSample" + "_sigmaNoise" + sigmaNoise + "_downsample" + downSample + "_timeStamp" + timestamp;
 
         System.out.println("Initialising random number stream");
         //VertexBackedRandomFactory random = new VertexBackedRandomFactory(numInputs,, 0, 0);
@@ -173,7 +175,7 @@ public class Wrapper{
 
         System.out.println("Creating BayesNet");
         //BayesianNetwork testNet = new BayesianNetwork(box.getConnectedGraph());
-        BayesianNetwork testNet = new BayesianNetwork(box.getConnectedGraph());
+        //BayesianNetwork testNet = new BayesianNetwork(box.getConnectedGraph());
 
         // Create a graph and write it out
         // Write out samples
@@ -200,20 +202,20 @@ public class Wrapper{
         */
 
         // Workaround for too many evaluations during sample startup
-        random.setAndCascade(random.getValue());
+        //random.setAndCascade(random.getValue());
 
         // Sample: feed each randomNumber in and runModel the model
         System.out.println("Sampling");
-        NetworkSamples sampler = MetropolisHastings.getPosteriorSamples(testNet, Arrays.asList(box), numSamples);
+        //NetworkSamples sampler = MetropolisHastings.getPosteriorSamples(testNet, Arrays.asList(box), numSamples);
 
         // Interrogate the samples
 
         // Get the number of people per iteration (an array of IntegerTensors) for each sample
-        List<Integer[]> samples = sampler.drop(dropSamples).downSample(downSample).get(box).asList();
+        //List<Integer[]> samples = sampler.drop(dropSamples).downSample(downSample).get(box).asList();
 
-        writeResults(samples, truth, params);
+        //writeResults(samples, truth, params);
 
-        return samples;
+        //return samples;
     }
 
     public static void writeResults(List<Integer[]> samples, Integer[] truth, String params) {

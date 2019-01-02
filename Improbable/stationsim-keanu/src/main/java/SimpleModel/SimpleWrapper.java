@@ -3,10 +3,10 @@ package SimpleModel;
 import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.mcmc.MetropolisHastings;
 import io.improbable.keanu.network.BayesianNetwork;
-import io.improbable.keanu.research.randomfactory.VertexBackedRandomGenerator;
-import io.improbable.keanu.research.vertices.IntegerArrayIndexingVertex;
-import io.improbable.keanu.research.vertices.RandomFactoryVertex;
-import io.improbable.keanu.research.visualisation.GraphvizKt;
+//import io.improbable.keanu.research.randomfactory.VertexBackedRandomGenerator;
+//import io.improbable.keanu.research.vertices.IntegerArrayIndexingVertex;
+//import io.improbable.keanu.research.vertices.RandomFactoryVertex;
+//import io.improbable.keanu.research.visualisation.GraphvizKt;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
 import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.dbl.nonprobabilistic.CastDoubleVertex;
@@ -68,22 +68,22 @@ public class SimpleWrapper {
      * Run the probabilistic model
      **/
     public static void run() {
-        System.out.println("Starting. Number of iterations: " + NUM_ITER);
+/*        System.out.println("Starting. Number of iterations: " + NUM_ITER);
 
         /*
                 ************ CREATE THE TRUTH DATA ************
          */
-
+/*
         System.out.println("Making truth data");
         System.out.println("Initialising random number stream for truth data");
-        VertexBackedRandomGenerator truthRandom = new VertexBackedRandomGenerator(NUM_RAND_DOUBLES, 0, 0);
+        //VertexBackedRandomGenerator truthRandom = new VertexBackedRandomGenerator(NUM_RAND_DOUBLES, 0, 0);
 
         // Store the random numbers used (for comparison later)
         List<Double> truthRandomNumbers = new ArrayList<>(NUM_RAND_DOUBLES);
-        for (int i=0; i<NUM_RAND_DOUBLES; i++) truthRandomNumbers.add(truthRandom.nextGaussian());
+        //for (int i=0; i<NUM_RAND_DOUBLES; i++) truthRandomNumbers.add(truthRandom.nextGaussian());
 
         // Run the model
-        Integer[] truth = SimpleWrapper.runModel(truthRandom);
+        //Integer[] truth = SimpleWrapper.runModel(truthRandom);
 
         System.out.println("Truth data length: " + truth.length);
         System.out.println("Truth data: "+Arrays.asList(truth).toString() + "\n\n");
@@ -97,7 +97,7 @@ public class SimpleWrapper {
         /*
          ************ INITIALISE THE BLACK BOX MODEL ************
          */
-
+/*
         System.out.println("Initialising new random number stream");
         RandomFactoryVertex random = new RandomFactoryVertex(NUM_RAND_DOUBLES, 0, 0);
 
@@ -113,7 +113,7 @@ public class SimpleWrapper {
          ************ OBSERVE SOME TRUTH DATA ************
          */
 
-
+/*
         // Observe the truth data plus some noise?
         System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
         System.out.print("Observing at iterations: ");
@@ -132,7 +132,7 @@ public class SimpleWrapper {
         /*
          ************ CREATE THE BAYES NET ************
          */
-
+/*
         // Create the BayesNet
         System.out.println("Creating BayesNet");
         BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
@@ -145,10 +145,10 @@ public class SimpleWrapper {
         /*
          ************ SAMPLE FROM THE POSTERIOR************
          */
-
+/*
         // Sample from the posterior
         System.out.println("Sampling");
-
+/*
         // These objectcs represent the random numbers used in the probabilistic model
         List<GaussianVertex> randNumbers = new ArrayList(random.getValue().randDoubleSource);
 
@@ -179,9 +179,9 @@ public class SimpleWrapper {
             })
             .average().getAsDouble();
             */
-
+/*
         System.out.println("Finished running MCMC.");
-
+/*
         // Downsample etc
         sampler = sampler.drop(DROP_SAMPLES).downSample(DOWN_SAMPLE);
 
@@ -189,7 +189,7 @@ public class SimpleWrapper {
         /*
          ************ GET THE INFORMATION OUT OF THE SAMPLES ************
          */
-
+/*
         // Get the random numbers. A 2D list. First dimension holds the random number, second dimensions holds its samples.
         List<List<Double>> randomNumberSamples = new ArrayList<List<Double>>(NUM_SAMPLES);
         // Add each random number parameter to the list
@@ -218,7 +218,7 @@ public class SimpleWrapper {
     /*
     **************** ADMIN STUFF ****************
      */
-
+/*
     private static void writeRandomNumbers(List<List<Double>> randomNumberSamples, List<Double> truthRandomNumbers, String name) {
 
         // Write out random numbers used and the actual results
@@ -258,6 +258,7 @@ public class SimpleWrapper {
         }
     }
 
+/*
     private static void writeResults(List<Integer[]> samples, Integer[] truth, String name) {
 
         // Write out the model results (people per iteration)
@@ -288,5 +289,5 @@ public class SimpleWrapper {
     public static void main (String[] args) {
 
         SimpleWrapper.run();
-    }
+/*  */  }
 }

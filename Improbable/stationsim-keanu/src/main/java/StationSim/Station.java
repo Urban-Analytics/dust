@@ -118,7 +118,7 @@ public class Station extends SimState{
      */
     @Override
     public void start() {
-        System.out.println("WARNING! This should not be called unless using the GUI.");
+        System.out.println("WARNING! This should not be called unless using the GUI. Station Class start()");
         super.start();
         area.clear();
         doorways.clear();
@@ -142,11 +142,6 @@ public class Station extends SimState{
         // Analysis and outputs from the model are contained in this agent
         analysis = new Analysis(this);
         schedule.scheduleRepeating(analysis, 3, 1.0);
-
-
-
-
-
     }
 
 
@@ -448,7 +443,7 @@ public class Station extends SimState{
      */
     public static void main(String[] args) {
         doLoop(Station.class, args);
-        System.exit(0);
+        //System.exit(0);
     }
 }
 

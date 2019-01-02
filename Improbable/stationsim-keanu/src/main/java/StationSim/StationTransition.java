@@ -1,6 +1,7 @@
 package StationSim;
 
 import sim.util.Bag;
+import sim.util.Double2D;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,30 +19,38 @@ public class StationTransition {
 
     public static void runDataAssimilation(String[] args) {
 
+        System.out.println("Does any of this run?");
         // Run the truth model
         truthModel.start();
+
+        System.out.println("truthModel.start() has executed successfully");
 
         // XXXX RUN UNTIL FINISHED (doLoop??)
         truthModel.doLoop(Station.class, args);
 
+        System.out.println("StationTransition doLoop finished");
+
+        //truthModel.finish();
 
         // Start data assimilation window
             // update
             // predict
             // for 1000 iterations
 
+        System.out.println("Starting DA window");
         // Start data assimilation window
         for (int iter = 0; iter < NUM_ITER; iter++) {
 
+            System.out.println("Entered DA iteration " + iter);
             // ****************** Update ******************
             Bag people = truthModel.area.getAllObjects();
 
-            List<Person> currentState = new ArrayList<>();
-            currentState.addAll(people);
+            List<Person> currentState = new ArrayList<>(people);
 
-            update(currentState);
+            currentState = update(currentState);
 
             // predict
+            predict(currentState);
 
             // for 1000 iterations
 
@@ -50,6 +59,7 @@ public class StationTransition {
 
 
     public static List<Person> update(List<Person> currentState) {
+        System.out.println("UPDATING");
 
         // Find all the people
         Bag people = truthModel.area.getAllObjects();
@@ -84,9 +94,32 @@ public class StationTransition {
         return personList;
     }
 
+
+    public static void predict(List<Person> currentState) {
+        System.out.println("PREDICTING");
+
+        List<Double> stateVector = new ArrayList<>();
+
+        // Build state vector [[x, y, exit, currentSpeed],...]
+        for (Person person : currentState) {
+            Double2D loc = person.getLocation();
+            Double xLoc = loc.x;
+            Double yLoc = loc.y;
+            Double currentSpeed = person.getCurrentSpeed();
+
+            Exit exit = person.exit;
+            String exitName = exit.name;
+            System.out.println(exitName);
+        }
+
+
+    }
+
     public static void main(String[] args) {
 
         StationTransition.runDataAssimilation(args);
+        System.out.println("Happy days, runDataAssimilation has run properly!");
 
+        System.exit(0);
     }
 }

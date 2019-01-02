@@ -27,7 +27,7 @@ public class MHTest {
         return numPeople;
     }
 
-
+/*
     public static void main(String[] args) {
         DoubleVertex input = new GaussianVertex(0.0,1.0);
         UnaryOpLambda<DoubleTensor,Double []> box = new UnaryOpLambda<>( input, MHTest::run);
@@ -42,7 +42,7 @@ public class MHTest {
         BayesianNetwork testNet = new BayesianNetwork(box.getConnectedGraph());
         NetworkSamples samples = MetropolisHastings.getPosteriorSamples( testNet, Arrays.asList(box), 40 );
 
-    }
+    } */
 
 
 

@@ -31,7 +31,7 @@ public class Person extends Agent {
     public Exit exit;
     private double desiredSpeed;
     private double minSpeed = 0.05;
-    private double speedMultilpler = 1.0;
+    private double speedMultiplier = 1.0;
     private double radius;
     private double currentSpeed;
 

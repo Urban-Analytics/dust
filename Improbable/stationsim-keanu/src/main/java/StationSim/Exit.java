@@ -30,10 +30,21 @@ public class Exit extends Agent {
     private int exitInterval;
     public int totalRemoved;
 
+    // Added explicitly assigned exitNumber to help StationTransition
+    public int exitNumber;
+
+    /* NEW CONSTRUCTOR ADDED BELOW TO MAKE USE OF exitNumber
     public Exit(int size, Double2D location, String name, int exitInterval) {
         super(size, location, name);
         this.exitInterval = exitInterval;
         this.totalRemoved = 0;
+    }
+    */
+    public Exit(int size, Double2D location, String name, int exitInterval, int exitNumber) {
+        super(size, location, name);
+        this.exitInterval = exitInterval;
+        this.totalRemoved = 0;
+        this.exitNumber = exitNumber;
     }
 
 

@@ -198,7 +198,8 @@ public class Station extends SimState{
         for (int i = 0; i < numExits; i++) {
             y += intervalSpacer;
             position = new Double2D(areaWidth, y);
-            Exit exit =  new Exit(exitSize, position, "Exit: " + (i + 1), exitInterval);
+            //Exit exit =  new Exit(exitSize, position, "Exit: " + (i + 1), exitInterval);
+            Exit exit =  new Exit(exitSize, position, "Exit: " + (i + 1), exitInterval, (i+1));
             doorways.setObjectLocation(exit, position);
             schedule.scheduleRepeating(exit, 0, 1.0);
             exits.add(exit);
@@ -443,7 +444,7 @@ public class Station extends SimState{
      */
     public static void main(String[] args) {
         doLoop(Station.class, args);
-        //System.exit(0);
+        System.exit(0);
     }
 }
 

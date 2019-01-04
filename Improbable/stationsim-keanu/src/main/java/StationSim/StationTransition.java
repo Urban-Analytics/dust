@@ -18,16 +18,22 @@ public class StationTransition {
     // Create truth model
     static Station truthModel = new Station(System.currentTimeMillis());
 
-    public static void runDataAssimilation(String[] args) {
+    // Create state vector
+    static double[][] stateVector;
+
+    public static void runDataAssimilation() {
 
         // Run the truth model
         truthModel.start();
         System.out.println("truthModel.start() has executed successfully");
 
+        // The following to replace doLoop() due to premature exit of simulation
         do
             if (!truthModel.schedule.step(truthModel)) break;
         while (truthModel.schedule.getSteps() < 1000);
         truthModel.finish();
+
+        // Should I run for only 1 step to get the agents into the simulation? Then go from there?
 
         System.out.println("Executed truthModel.finish()");
 
@@ -45,7 +51,6 @@ public class StationTransition {
 
         Bag people = truthModel.area.getAllObjects();
         List<Person> currentState = new ArrayList<>(people);
-        double[][] stateVector;
 
         // Start data assimilation window
         for (int iter = 0; iter < NUM_ITER; iter++) {
@@ -98,8 +103,8 @@ public class StationTransition {
 
             stateVector[counter][0] = xLoc;
             stateVector[counter][1] = yLoc;
-            stateVector[counter][2] = currentSpeed;
-            stateVector[counter][3] = exitNum;
+            stateVector[counter][2] = exitNum;
+            stateVector[counter][3] = currentSpeed;
 
             counter++;
         }
@@ -149,8 +154,10 @@ public class StationTransition {
 
     public static void main(String[] args) {
 
-        StationTransition.runDataAssimilation(args);
+        StationTransition.runDataAssimilation();
         System.out.println("Happy days, runDataAssimilation has run properly!");
+
+        System.out.println(stateVector);
 
         System.exit(0);
     }

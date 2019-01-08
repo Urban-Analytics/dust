@@ -30,7 +30,7 @@ public class StationTransition {
         // The following to replace doLoop() due to premature exit of simulation
         do
             if (!truthModel.schedule.step(truthModel)) break;
-        while (truthModel.schedule.getSteps() < 1000);
+        while (truthModel.schedule.getSteps() < 2000);
         truthModel.finish();
 
         // Should I run for only 1 step to get the agents into the simulation? Then go from there?
@@ -55,7 +55,7 @@ public class StationTransition {
         // Start data assimilation window
         for (int iter = 0; iter < NUM_ITER; iter++) {
 
-            System.out.println("Entered DA iteration " + iter);
+            //System.out.println("Entered DA iteration " + iter);
 
             // ****************** Predict ******************
 
@@ -72,7 +72,7 @@ public class StationTransition {
 
 
     public static double[][] predict(List<Person> currentState) {
-        System.out.println("PREDICTING");
+        //System.out.println("PREDICTING");
 
         //List<double[]> stateVector = new ArrayList<>();
         double[][] stateVector = new double[currentState.size()][4];
@@ -115,7 +115,7 @@ public class StationTransition {
 
 
     public static List<Person> update(List<Person> currentState) {
-        System.out.println("UPDATING");
+        //System.out.println("UPDATING");
 
         // Find all the people
         Bag people = truthModel.area.getAllObjects();

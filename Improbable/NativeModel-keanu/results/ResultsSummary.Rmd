@@ -57,19 +57,25 @@ samples <- samples[-1,]
 ```{r spag.plot, fig.width=11, fig.height=9}
 # Define a fucntion to plot the samples
 spag_plot <- function(samples, truth) {
-
+  
   x_axis <- 1:ncol(samples)
-  sample_col <- alpha("#ADD8E6", 0.9)
+  sample_col <- alpha("#196fe8", 0.8) # #ADD8E6
   truth_col <- "red"
-
+  
   #create plot
   plot(1, xlim=c(0, max(x_axis)), ylim=c(min(rbind(truth,samples)), max(rbind(truth,samples))), type='l',
-       xlab="Number of iterations", ylab = "Number of agents" )
+       xlab="Number of iterations", ylab = "State" )
   map(1:nrow(samples), function(x) lines(x_axis, samples[x,], type='l', col=sample_col))
-  lines(x_axis, truth, type='l', lwd=2.5, col = truth_col)
-  abline(v = c(seq(0, 2000, by=200)), lty=2, col='green4')
-
-  legend("bottomright", c("Sample", "Truth"), lty=c(1,1), lwd=c(2.5,2.5),col=c(sample_col, truth_col))
+  lines(x_axis, truth, type='l', lwd=2, col = truth_col)
+  abline(v = c(seq(0, 2000, by=200)), lty=2, col='grey')
+  
+  if(truth.results[1999] < 0) {
+    position <- 'topright'
+  } else {
+    position <- 'bottomright'
+  }
+  
+  legend(position, c("Sample", "Truth"), lty=c(1,1), lwd=c(2.5,2.5),col=c(sample_col, truth_col))
 }
 
 

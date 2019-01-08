@@ -1,5 +1,6 @@
 import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.VertexSamples;
+import io.improbable.keanu.algorithms.mcmc.Hamiltonian;
 import io.improbable.keanu.algorithms.mcmc.MetropolisHastings;
 import io.improbable.keanu.algorithms.mcmc.NUTS;
 import io.improbable.keanu.algorithms.variational.optimizer.Optimizer;
@@ -193,22 +194,22 @@ public class NativeModel {
             List<Vertex> parameters = new ArrayList<>();
             parameters.add(state);
 
-            /*
-            NetworkSamples sampler = MetropolisHastings.withDefaultConfig().getPosteriorSamples(
-                    net,
-                    parameters,
-                    NUM_SAMPLES);
-            */
-
             ///*
-            NetworkSamples sampler = NUTS.withDefaultConfig().getPosteriorSamples(
+            NetworkSamples sampler = MetropolisHastings.withDefaultConfig().getPosteriorSamples(
                     net,
                     parameters,
                     NUM_SAMPLES);
             //*/
 
             /*
-            NetworkSamples sampler = MetropolisHastings.withDefaultConfig().getPosteriorSamples(
+            NetworkSamples sampler = NUTS.withDefaultConfig().getPosteriorSamples(
+                    net,
+                    parameters,
+                    NUM_SAMPLES);
+            */
+
+            /*
+            NetworkSamples sampler = Hamiltonian.withDefaultConfig().getPosteriorSamples(
                     net,
                     net.getLatentVertices(),
                     NUM_SAMPLES);

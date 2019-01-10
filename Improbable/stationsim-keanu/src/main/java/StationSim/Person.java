@@ -61,6 +61,7 @@ public class Person extends Agent {
         }
     }
 
+
     // New Person constructor to accept Exit object instead of exitProbs. Easier to build state vector with.
     public Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance) {
         super(size, location, name);
@@ -73,9 +74,25 @@ public class Person extends Agent {
         currentSpeed = 0.0;
     }
 
+
+    // New Person constructor to accept Exit object instead of exitProbs. Easier to build state vector with.
+    public Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance, double desiredSpeed) {
+        super(size, location, name);
+        this.station = station;
+        this.entrance = entrance;
+        this.exit = exit;
+        radius = size / 2.0;
+        this.desiredSpeed = desiredSpeed;
+        station.numRandoms++;
+        currentSpeed = 0.0;
+    }
+
+
     public double getCurrentSpeed() {
         return currentSpeed;
     }
+
+    public double getDesiredSpeed() { return desiredSpeed; }
 
     public Exit getExit() {
         return exit;

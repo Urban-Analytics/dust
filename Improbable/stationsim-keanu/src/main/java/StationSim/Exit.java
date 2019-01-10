@@ -48,7 +48,6 @@ public class Exit extends Agent {
     }
 
 
-
     /** Removes person agents from the simulation that are touching the exit. The number
      * of people that can be removed per step is bounded by the exit size.
      * @param state

@@ -118,7 +118,7 @@ public class Station extends SimState{
      */
     @Override
     public void start() {
-        System.out.println("WARNING! This should not be called unless using the GUI. Station Class start()");
+        System.out.println("WARNING! This should not be called unless using the GUI.");
         super.start();
         area.clear();
         doorways.clear();

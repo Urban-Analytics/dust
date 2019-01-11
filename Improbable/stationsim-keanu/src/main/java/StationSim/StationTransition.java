@@ -90,6 +90,11 @@ public class StationTransition {
             System.out.println("Current State rebuilt");
 
             // for 1000 iterations
+
+            /*
+            Try building box inside runDataAssimilation() with output from predict() (first method)
+            Might need to buildStateVector() inside predict()
+             */
         }
     }
 

@@ -1,11 +1,9 @@
 package StationSim;
 
-import io.improbable.keanu.tensor.TensorShape;
-import io.improbable.keanu.tensor.dbl.DoubleTensor;
+import io.improbable.keanu.KeanuSavedBayesNet;
 import io.improbable.keanu.tensor.generic.GenericTensor;
 import io.improbable.keanu.vertices.dbl.nonprobabilistic.ConstantDoubleVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
-import org.yaml.snakeyaml.scanner.Constant;
 import sim.util.Bag;
 import sim.util.Double2D;
 
@@ -13,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 public class StationTransition {
@@ -26,8 +23,10 @@ public class StationTransition {
     private static int WINDOW_SIZE = 200; // 200
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE;
 
+    GenericTensor stateHistory;
 
-    public static void runDataAssimilation() {
+
+    private static void runDataAssimilation() {
 
         // Run the truth model
         truthModel.start();
@@ -61,6 +60,7 @@ public class StationTransition {
         assert(currentState.size() != 0);
 
         // Start data assimilation window
+        // Should be i<NUM_WINDOWS
         for (int i = 0; i < 3; i++) {
 
             System.out.println("Entered DA window " + i);
@@ -94,12 +94,14 @@ public class StationTransition {
             /*
             Try building box inside runDataAssimilation() with output from predict() (first method)
             Might need to buildStateVector() inside predict()
+            i.e.
+            UnaryOpLambda<GenericTensor, GenericTensor??> box = new UnaryOpLambda<>(stateVector, StationTransition.predict())|
              */
         }
     }
 
 
-    public static List<Person> predict(List<Person> currentState, int window_size) {
+    private static List<Person> predict(List<Person> currentState, int window_size) {
         /*
         During prediction, the prior state is propagated forward in time (i.e. stepped) by window_size iterations
          */
@@ -120,6 +122,7 @@ public class StationTransition {
             tempModel.area.setObjectLocation(p, p.getLocation()); // DOES THIS ADD A NEW AGENT AND MOVE THEM AT THE SAME TIME??
         }
 
+        // Propagate the model
         for (int i=0; i < window_size; i++) {
             // Step all the people window_size times
             tempModel.schedule.step(truthModel);
@@ -129,6 +132,7 @@ public class StationTransition {
         List<Person> personList = new ArrayList<>();
         personList.addAll(tempModel.area.getAllObjects());
 
+        // Check personList is not empty, then that it is same size as Bag people
         assert(personList.size() > 0);
         assert(people.size() == personList.size());
 
@@ -137,7 +141,7 @@ public class StationTransition {
 
 
     // Swap back to double[][] when not using GenericTensor
-    public static void update(GenericTensor stateVector) {
+    private static void update(GenericTensor stateVector) {
         /*
         During the update, the estimate of the state is updated using the observations from truthModel
 
@@ -153,18 +157,25 @@ public class StationTransition {
         //System.out.println("UPDATING");
 
         // INITIALISE THE BLACK BOX MODEL
-        //UnaryOpLambda<GenericTensor, Integer[]> box = new UnaryOpLambda<>(stateVector, stateHistory???);
-        //UnaryOpLambda<GenericTensor, Integer[]> box = new UnaryOpLambda<>(stateVector, tempModel.schedule.step(tempModel));
+
+        //UnaryOpLambda<GenericTensor, GenericTensor> box = new UnaryOpLambda<>(stateVector, stateHistory???);
+        //UnaryOpLambda<GenericTensor, ???> box = new UnaryOpLambda<>(stateVector, tempModel.schedule.step(tempModel));
+
+        //UnaryOpLambda<GenericTensor, Integer[]> box = new UnaryOpLambda<>(stateVector, tempModel.area.getAllObjects())
+
         // RUN FOR XX ITERATIONS
         // Are both of these done in predict() or runDataAssim...?
 
         // OBSERVE TRUTH DATA
-
+        // Loop through and apply observations
+        for (int i=0; i < WINDOW_SIZE; i++) {
+            // NativeModel style observations (without ...OpLambda) or SimpleWrapperC?
+        }
 
     }
 
 
-    public static double[][] buildPrimitiveStateVector(List<Person> currentState) {
+    private static double[][] buildPrimitiveStateVector(List<Person> currentState) {
 
         double[][] stateVector = new double[currentState.size()][4];
 
@@ -193,9 +204,12 @@ public class StationTransition {
     }
 
 
-    public static GenericTensor buildTensorStateVector(List<Person> currentState) {
+    private static GenericTensor buildTensorStateVector(List<Person> currentState) {
 
-        GenericTensor stateVector = GenericTensor.createFilled(0, new long[] {currentState.size(), 4});
+        ConstantDoubleVertex[] data = new ConstantDoubleVertex[currentState.size() * 4];
+
+        //GenericTensor stateVector = GenericTensor.createFilled(0, new long[] {currentState.size(), 4});
+        GenericTensor<ConstantDoubleVertex> stateVector = GenericTensor.create(data, new long[] {currentState.size(), 4});
 
         // Build state vector [[x, y, exit, desiredSpeed],...]
         int counter = 0;
@@ -209,10 +223,11 @@ public class StationTransition {
             Exit exit = person.getExit();
             ConstantDoubleVertex exitNum = new ConstantDoubleVertex(exit.exitNumber);
 
-            stateVector.setValue(xLoc, counter, 0);
-            stateVector.setValue(yLoc, counter, 1);
-            stateVector.setValue(exitNum, counter, 2);
-            stateVector.setValue(desiredSpeed, counter, 3);
+            stateVector.setValue(xLoc, counter, 0)
+                    .setValue(yLoc, counter, 1)
+                    .setValue(exitNum, counter, 2)
+                    .setValue(desiredSpeed, counter, 3);
+
 
             counter++;
         }
@@ -221,7 +236,7 @@ public class StationTransition {
     }
 
 
-    public static List<Person> rebuildCurrentState(double[][] stateVector) {
+    private static List<Person> rebuildCurrentState(double[][] stateVector) {
 
         List<Person> personList = new ArrayList<>();
 
@@ -252,7 +267,7 @@ public class StationTransition {
     }
 
 
-    public static List<Person> rebuildCurrentState (GenericTensor stateVector) {
+    private static List<Person> rebuildCurrentState (GenericTensor stateVector) {
 
         List<Person> personList = new ArrayList<>();
 

@@ -1,6 +1,7 @@
 package StationSim;
 
 import io.improbable.keanu.KeanuSavedBayesNet;
+import io.improbable.keanu.tensor.Tensor;
 import io.improbable.keanu.tensor.generic.GenericTensor;
 import io.improbable.keanu.vertices.dbl.nonprobabilistic.ConstantDoubleVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
@@ -23,7 +24,8 @@ public class StationTransition {
     private static int WINDOW_SIZE = 200; // 200
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE;
 
-    GenericTensor stateHistory;
+    // Tensor to hold history of stateVector (i.e. Tensor of GenericTensors
+    Tensor stateHistory;
 
 
     private static void runDataAssimilation() {
@@ -50,11 +52,11 @@ public class StationTransition {
             // update
             // for 1000 iterations
 
-        //tempModel.start();
-        //tempModel.schedule.step(tempModel);
-        //Bag people = tempModel.area.getAllObjects();
+        tempModel.start();
+        tempModel.schedule.step(tempModel);
+        Bag people = tempModel.area.getAllObjects();
 
-        Bag people = truthModel.area.getAllObjects();
+        //Bag people = tempModel.area.getAllObjects();
         List<Person> currentState = new ArrayList<>(people);
 
         assert(currentState.size() != 0);
@@ -125,7 +127,7 @@ public class StationTransition {
         // Propagate the model
         for (int i=0; i < window_size; i++) {
             // Step all the people window_size times
-            tempModel.schedule.step(truthModel);
+            tempModel.schedule.step(tempModel);
         }
 
         // Create personList and populate
@@ -169,7 +171,7 @@ public class StationTransition {
         // OBSERVE TRUTH DATA
         // Loop through and apply observations
         for (int i=0; i < WINDOW_SIZE; i++) {
-            // NativeModel style observations (without ...OpLambda) or SimpleWrapperC?
+            // NativeModel style observations (without ...OpLambda) or SimpleWrapperC style?
         }
 
     }

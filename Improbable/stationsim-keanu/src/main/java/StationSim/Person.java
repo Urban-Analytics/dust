@@ -15,6 +15,7 @@
  */
 
 package StationSim;
+import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import sim.engine.SimState;
 import sim.util.Bag;
 import sim.util.Double2D;
@@ -34,8 +35,6 @@ public class Person extends Agent {
     private double speedMultiplier = 1.0;
     private double radius;
     private double currentSpeed;
-
-
 
 
     public Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
@@ -85,6 +84,20 @@ public class Person extends Agent {
         this.desiredSpeed = desiredSpeed;
         station.numRandoms++;
         currentSpeed = 0.0;
+    }
+
+
+    // New Person constructor that allows probabilistic representation of x and y position
+    public Person(int size, DoubleVertex xLoc, DoubleVertex yLoc, String name, Station station, Exit exit, Entrance entrance, double desiredSpeed) {
+        super(size, xLoc, yLoc, name);
+        this.station = station;
+        this.entrance = entrance;
+        this.exit = exit;
+        radius = size / 2.0;
+        station.numRandoms++;
+        currentSpeed = 0.0;
+
+        this.desiredSpeed = desiredSpeed;
     }
 
 

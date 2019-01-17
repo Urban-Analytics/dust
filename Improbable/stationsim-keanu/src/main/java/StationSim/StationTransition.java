@@ -68,19 +68,16 @@ public class StationTransition {
             System.out.println("Entered DA window " + i);
 
             // ****************** Predict ******************
+            //currentState = predict(currentState, WINDOW_SIZE);
+            //System.out.println("Predict finished");
 
-            currentState = predict(currentState, WINDOW_SIZE);
-
-            System.out.println("Predict finished");
-
-            // ****************** Update ******************
-
-            // Create state vector
+            // ****************** Initialise Black Box Model ******************
 
             //double[][] stateVector = buildPrimitiveStateVector(currentState);
             GenericTensor stateVector = buildTensorStateVector(currentState);
+            UnaryOpLambda<GenericTensor, List<Person>> box = new UnaryOpLambda<>(stateVector, predict(currentState, WINDOW_SIZE));
 
-            System.out.println("State Vector built.");
+            // ****************** Update ******************
 
             update(stateVector);
 

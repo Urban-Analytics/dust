@@ -16,6 +16,7 @@
 
 package StationSim;
 
+import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import sim.engine.SimState;
 import sim.engine.Steppable;
 import sim.util.Double2D;
@@ -25,7 +26,14 @@ import sim.util.Double2D;
 public abstract class Agent implements Steppable {
 
     private static final long serialVersionUID = 1;
+
+    // Old location
     protected Double2D location;
+
+    // New location
+    protected DoubleVertex xLoc;
+    protected DoubleVertex yLoc;
+
     protected int size;
     protected Station station;
     protected String name;
@@ -36,8 +44,25 @@ public abstract class Agent implements Steppable {
         this.name = name;
     }
 
+
+    public Agent(int size, DoubleVertex xLoc, DoubleVertex yLoc, String name) {
+        this.size = size;
+        this.xLoc = xLoc;
+        this.yLoc = yLoc;
+        this.name = name;
+    }
+
     public Double2D getLocation() {
         return location;
+    }
+
+    public Double2D getLocation() {
+        double xVal = xLoc.getValue(0);
+        double yVal = yLoc.getValue(0);
+
+        Double2D position = new Double2D(xVal, yVal);
+
+        return position;
     }
 
     @Override

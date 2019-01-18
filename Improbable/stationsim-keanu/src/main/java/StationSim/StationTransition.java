@@ -1,6 +1,21 @@
+/* Created by Luke Archer on 16/12/2018.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package StationSim;
 
-import io.improbable.keanu.KeanuSavedBayesNet;
 import io.improbable.keanu.tensor.Tensor;
 import io.improbable.keanu.tensor.generic.GenericTensor;
 import io.improbable.keanu.vertices.dbl.nonprobabilistic.ConstantDoubleVertex;
@@ -90,12 +105,22 @@ public class StationTransition {
 
             // for 1000 iterations
 
-            /*
-            Try building box inside runDataAssimilation() with output from predict() (first method)
-            Might need to buildStateVector() inside predict()
-            i.e.
-            UnaryOpLambda<GenericTensor, GenericTensor??> box = new UnaryOpLambda<>(stateVector, StationTransition.predict())|
+            /**
+             * To Do for new idea:
+             *      Replace x and y position doubles with DoubleVertex's                        DONE
+             *      Modify how position is treated in agent.class                               DONE
+             *      Modify step method in Person.class
+             *      Modify lerp() method in Person.class
+             *      How does the slowing distance work? And do I need to alter how this works?
+             *      Make desiredSpeed probabilistic, then alter step functions/functions that figure
+             *          out how far an agent will move
+             *      Figure out (and write down somewhere) how MASON represents agents,
+             *          i.e. what information it needs (just x,y?)
+             *
+             *      COMMENT OUT ALL NON-PROBABILISTIC CONSTRUCTORS: Find out where errors arise and fix
+             *          (should be able to uncomment after with no ill effects)
              */
+
         }
     }
 

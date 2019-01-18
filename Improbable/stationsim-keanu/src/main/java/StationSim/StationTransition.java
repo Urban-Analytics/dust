@@ -75,7 +75,7 @@ public class StationTransition {
 
             //double[][] stateVector = buildPrimitiveStateVector(currentState);
             GenericTensor stateVector = buildTensorStateVector(currentState);
-            UnaryOpLambda<GenericTensor, List<Person>> box = new UnaryOpLambda<>(stateVector, predict(currentState, WINDOW_SIZE));
+            //UnaryOpLambda<GenericTensor, List<Person>> box = new UnaryOpLambda<>(stateVector, predict(currentState, WINDOW_SIZE));
 
             // ****************** Update ******************
 

@@ -36,6 +36,9 @@ public class Person extends Agent {
     private double radius;
     private double currentSpeed;
 
+    private DoubleVertex xLoc;
+    private DoubleVertex yLoc;
+
 
     public Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
         super(size, location, name);
@@ -113,6 +116,14 @@ public class Person extends Agent {
 
     public double getRadius() {
         return radius;
+    }
+
+    @Override
+    public Double2D getLocation() {
+        double xVal = xLoc.getValue(0);
+        double yVal = yLoc.getValue(0);
+        Double2D position = new Double2D(xVal, yVal);
+        return position;
     }
 
     /** Moves the Person closer to their exit and interacts with other Person agents if necessary.

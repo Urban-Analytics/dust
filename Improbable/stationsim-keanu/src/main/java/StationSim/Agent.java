@@ -52,18 +52,21 @@ public abstract class Agent implements Steppable {
         this.name = name;
     }
 
+
     public Double2D getLocation() {
         return location;
     }
 
+    /*
+    Moved this method to Person to be overridden, just in case replacing this method in agent caused any trouble
+
     public Double2D getLocation() {
         double xVal = xLoc.getValue(0);
         double yVal = yLoc.getValue(0);
-
         Double2D position = new Double2D(xVal, yVal);
-
         return position;
     }
+    */
 
     @Override
     public void step(SimState state) {

@@ -136,7 +136,10 @@ public class NativeModel {
             totalStateHistory.addAll(history);
 
             // Don't know if this should be here or above STEP?
-            state.setAndCascade(priorMu.getValue(0));
+            if (window == 0) {
+                state.setAndCascade(priorMu.getValue(0));
+            }
+
 
             /*
              ************ OBSERVE SOME TRUTH DATA ************

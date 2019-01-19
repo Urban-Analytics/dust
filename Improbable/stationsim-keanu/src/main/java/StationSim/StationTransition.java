@@ -18,6 +18,7 @@ package StationSim;
 
 import io.improbable.keanu.tensor.Tensor;
 import io.improbable.keanu.tensor.generic.GenericTensor;
+import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.nonprobabilistic.ConstantDoubleVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
 import sim.util.Bag;
@@ -39,8 +40,9 @@ public class StationTransition {
     private static int WINDOW_SIZE = 200; // 200
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE;
 
-    // Tensor to hold history of stateVector (i.e. Tensor of GenericTensors
-    Tensor stateHistory;
+    // List of agent exits to use when rebuilding from stateVector
+    static DoubleVertex[][] stateVector;
+    static Exit[] agentExits;
 
 
     private static void runDataAssimilation() {
@@ -72,9 +74,9 @@ public class StationTransition {
         Bag people = tempModel.area.getAllObjects();
 
         //Bag people = tempModel.area.getAllObjects();
-        List<Person> currentState = new ArrayList<>(people);
+        List<Person> personList = new ArrayList<>(people);
 
-        assert(currentState.size() != 0);
+        assert(personList.size() != 0);
 
         // Start data assimilation window
         // Should be i<NUM_WINDOWS
@@ -83,23 +85,42 @@ public class StationTransition {
             System.out.println("Entered DA window " + i);
 
             // ****************** Predict ******************
-            //currentState = predict(currentState, WINDOW_SIZE);
+            //personList = predict(personList, WINDOW_SIZE);
             //System.out.println("Predict finished");
 
             // ****************** Initialise Black Box Model ******************
 
-            //double[][] stateVector = buildPrimitiveStateVector(currentState);
-            GenericTensor stateVector = buildTensorStateVector(currentState);
-            //UnaryOpLambda<GenericTensor, List<Person>> box = new UnaryOpLambda<>(stateVector, predict(currentState, WINDOW_SIZE));
+            //double[][] stateVector = buildPrimitiveStateVector(personList);
+            //GenericTensor stateVector = buildTensorStateVector(personList);
+            //UnaryOpLambda<GenericTensor, List<Person>> box = new UnaryOpLambda<>(stateVector, predict(personList, WINDOW_SIZE));
 
             // ****************** Update ******************
+
+
+            // Step model
+            for (int j=0; j<WINDOW_SIZE; j++) {
+                tempModel.schedule.step(tempModel);
+            }
+
+            // Build stateVector
+            stateVector = buildProbableStateVector(personList);
+
+            // Observe truth data
+
+
+
+
+
+
+
+
 
             update(stateVector);
 
             System.out.println("Update finished");
 
-            // Rebuild currentState from stateVector
-            currentState = rebuildCurrentState(stateVector);
+            // Rebuild personList from stateVector
+            personList = rebuildCurrentState(stateVector);
 
             System.out.println("Current State rebuilt");
 
@@ -112,8 +133,8 @@ public class StationTransition {
              *      Modify step method in Person.class
              *      Modify lerp() method in Person.class
              *      How does the slowing distance work? And do I need to alter how this works?
-             *      Make desiredSpeed probabilistic, then alter step functions/functions that figure
-             *          out how far an agent will move
+             *      Make new probableSpeed Vertex for Person                                    Done
+             *      Alter all methods in agent movement
              *      Figure out (and write down somewhere) how MASON represents agents,
              *          i.e. what information it needs (just x,y?)
              *
@@ -165,7 +186,7 @@ public class StationTransition {
 
 
     // Swap back to double[][] when not using GenericTensor
-    private static void update(GenericTensor stateVector) {
+    private static void update(DoubleVertex[][] stateVector) {
         /*
         During the update, the estimate of the state is updated using the observations from truthModel
 
@@ -199,30 +220,24 @@ public class StationTransition {
     }
 
 
-    private static double[][] buildPrimitiveStateVector(List<Person> currentState) {
+    private static DoubleVertex[][] buildProbableStateVector(List<Person> personList) {
 
-        double[][] stateVector = new double[currentState.size()][4];
+        DoubleVertex[][] stateVector = new DoubleVertex[personList.size()][3];
 
-        // Build state vector [[x, y, exit, desiredSpeed],...]
+        // Build state vector [[x, y, probableSpeed],...]
         int counter = 0;
-        for (Person person : currentState) {
-            Double2D loc = person.getLocation();
-            double xLoc = loc.x;
-            double yLoc = loc.y;
-            double desiredSpeed = person.getDesiredSpeed();
+        for (Person person : personList) {
+            stateVector[counter][0] = person.xLoc;
+            stateVector[counter][1] = person.yLoc;
+            stateVector[counter][2] = person.probableSpeed;
 
-            // Get exit and exitNumber as double
-            Exit exit = person.getExit();
-            double exitNum = exit.exitNumber;
+            // Add agent exits to list to use when rebuilding
+            agentExits[counter] = person.getExit();
 
-            stateVector[counter][0] = xLoc;
-            stateVector[counter][1] = yLoc;
-            stateVector[counter][2] = exitNum;
-            stateVector[counter][3] = desiredSpeed;
 
             counter++;
         }
-        assert(currentState.size() == stateVector.length);
+        assert(personList.size() == stateVector.length);
 
         return stateVector;
     }

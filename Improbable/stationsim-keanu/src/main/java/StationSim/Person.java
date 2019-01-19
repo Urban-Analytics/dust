@@ -36,10 +36,12 @@ public class Person extends Agent {
     private double radius;
     private double currentSpeed;
 
-    private DoubleVertex xLoc;
-    private DoubleVertex yLoc;
+    // Probabilistic variables and params
+    public DoubleVertex xLoc;
+    public DoubleVertex yLoc;
+    public DoubleVertex probableSpeed;
 
-
+    /*
     public Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
         super(size, location, name);
         this.station = station;
@@ -77,7 +79,7 @@ public class Person extends Agent {
     }
 
 
-    // New Person constructor to accept Exit object instead of exitProbs. Easier to build state vector with.
+    // Constructor with desiredSpeed included
     public Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance, double desiredSpeed) {
         super(size, location, name);
         this.station = station;
@@ -88,10 +90,11 @@ public class Person extends Agent {
         station.numRandoms++;
         currentSpeed = 0.0;
     }
+    */
 
 
     // New Person constructor that allows probabilistic representation of x and y position
-    public Person(int size, DoubleVertex xLoc, DoubleVertex yLoc, String name, Station station, Exit exit, Entrance entrance, double desiredSpeed) {
+    public Person(int size, DoubleVertex xLoc, DoubleVertex yLoc, String name, Station station, Exit exit, Entrance entrance, DoubleVertex probableSpeed) {
         super(size, xLoc, yLoc, name);
         this.station = station;
         this.entrance = entrance;
@@ -100,7 +103,7 @@ public class Person extends Agent {
         station.numRandoms++;
         currentSpeed = 0.0;
 
-        this.desiredSpeed = desiredSpeed;
+        this.probableSpeed = probableSpeed;
     }
 
 
@@ -109,6 +112,8 @@ public class Person extends Agent {
     }
 
     public double getDesiredSpeed() { return desiredSpeed; }
+
+    public DoubleVertex getProbableSpeed() { return probableSpeed; }
 
     public Exit getExit() {
         return exit;

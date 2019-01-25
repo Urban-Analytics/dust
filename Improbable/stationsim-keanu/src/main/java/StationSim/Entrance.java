@@ -85,6 +85,7 @@ public class Entrance extends Agent {
                         cumulativeProb += exitProbs[j];
                     }
                 }
+                // Use new person constructor to assign exit and not exitProbability
                 //Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exitProbs, this);
                 Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exit, this);
                 if (!person.collision(spawnLocation)) {

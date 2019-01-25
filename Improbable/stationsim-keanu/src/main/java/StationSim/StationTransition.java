@@ -17,16 +17,16 @@
 package StationSim;
 
 import io.improbable.keanu.tensor.Tensor;
+import io.improbable.keanu.tensor.dbl.DoubleTensor;
 import io.improbable.keanu.tensor.generic.GenericTensor;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
+import io.improbable.keanu.vertices.dbl.KeanuRandom;
 import io.improbable.keanu.vertices.dbl.nonprobabilistic.ConstantDoubleVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
 import sim.util.Bag;
 import sim.util.Double2D;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -40,15 +40,18 @@ public class StationTransition {
     private static int WINDOW_SIZE = 200; // 200
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE;
 
+    // random generator for start() method
+    private static KeanuRandom rand;
+
     // List of agent exits to use when rebuilding from stateVector
-    static DoubleVertex[][] stateVector;
+    //static DoubleVertex[][] stateVector;
     static Exit[] agentExits;
 
 
     private static void runDataAssimilation() {
 
         // Run the truth model
-        truthModel.start();
+        truthModel.start(rand);
         System.out.println("truthModel.start() has executed successfully");
 
         // The following to replace doLoop() due to premature exit of simulation
@@ -69,60 +72,56 @@ public class StationTransition {
             // update
             // for 1000 iterations
 
-        tempModel.start();
+        tempModel.start(rand);
         tempModel.schedule.step(tempModel);
         Bag people = tempModel.area.getAllObjects();
 
         //Bag people = tempModel.area.getAllObjects();
         List<Person> personList = new ArrayList<>(people);
-
         assert(personList.size() != 0);
 
+        // Build stateVector
+        Tensor<DoubleVertex> stateVector = buildProbableStateVector(personList);
+
         // Start data assimilation window
-        // Should be i<NUM_WINDOWS
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < NUM_WINDOWS; i++) {
 
             System.out.println("Entered DA window " + i);
 
             // ****************** Predict ******************
-            //personList = predict(personList, WINDOW_SIZE);
+
+            //personList = predict(personList);
             //System.out.println("Predict finished");
 
             // ****************** Initialise Black Box Model ******************
 
             //double[][] stateVector = buildPrimitiveStateVector(personList);
             //GenericTensor stateVector = buildTensorStateVector(personList);
-            //UnaryOpLambda<GenericTensor, List<Person>> box = new UnaryOpLambda<>(stateVector, predict(personList, WINDOW_SIZE));
+            //UnaryOpLambda<GenericTensor, List<Person>> box = new UnaryOpLambda<>(stateVector, predict(personList));
+
+            //UnaryOpLambda<Tensor<DoubleVertex>, Integer[]> box = new UnaryOpLambda<Tensor<DoubleVertex>, Integer[]>(stateVector, StationTransition::runModel);
 
             // ****************** Update ******************
 
 
-            // Step model
+/*            // Step model
             for (int j=0; j<WINDOW_SIZE; j++) {
                 tempModel.schedule.step(tempModel);
-            }
+            }*/
 
-            // Build stateVector
-            stateVector = buildProbableStateVector(personList);
+
 
             // Observe truth data
 
 
+            //update(stateVector);
 
-
-
-
-
-
-
-            update(stateVector);
-
-            System.out.println("Update finished");
+            //System.out.println("Update finished");
 
             // Rebuild personList from stateVector
-            personList = rebuildCurrentState(stateVector);
+            //personList = rebuildCurrentState(stateVector);
 
-            System.out.println("Current State rebuilt");
+            //System.out.println("Current State rebuilt");
 
             // for 1000 iterations
 
@@ -146,7 +145,19 @@ public class StationTransition {
     }
 
 
-    private static List<Person> predict(List<Person> currentState, int window_size) {
+    private static Integer[] runModel() {
+        // Create output array
+        Integer[] output = new Integer[WINDOW_SIZE];
+        // Step the model
+        for (int i=9; i<WINDOW_SIZE; i++) {
+            tempModel.schedule.step(tempModel);
+            output[i] = tempModel.area.getAllObjects().size();
+        }
+        return output;
+    }
+
+
+    private static List<Person> predict(List<Person> currentState) {
         /*
         During prediction, the prior state is propagated forward in time (i.e. stepped) by window_size iterations
          */
@@ -168,7 +179,7 @@ public class StationTransition {
         }
 
         // Propagate the model
-        for (int i=0; i < window_size; i++) {
+        for (int i=0; i < WINDOW_SIZE; i++) {
             // Step all the people window_size times
             tempModel.schedule.step(tempModel);
         }
@@ -220,28 +231,86 @@ public class StationTransition {
     }
 
 
-    private static DoubleVertex[][] buildProbableStateVector(List<Person> personList) {
+    private static Tensor buildProbableStateVector(List<Person> personList) {
 
-        DoubleVertex[][] stateVector = new DoubleVertex[personList.size()][3];
+        // Initialise Tensor to hold DoubleVertex's
+        DoubleVertex[] data = new DoubleVertex[personList.size() * 3];
+        Tensor<DoubleVertex> stateVector = Tensor.create(data, new long[] { personList.size(), 3 });
+
+        System.out.println("Length: " + stateVector.getLength());
+        System.out.println("Rank: " + stateVector.getRank());
+        System.out.println("Shape: " + stateVector.getShape().toString());
+
+        assert(stateVector.isMatrix());
 
         // Build state vector [[x, y, probableSpeed],...]
         int counter = 0;
         for (Person person : personList) {
-            stateVector[counter][0] = person.xLoc;
-            stateVector[counter][1] = person.yLoc;
-            stateVector[counter][2] = person.probableSpeed;
+            // Assign important features to stateVector
+            stateVector.setValue(person.xLoc, counter, 0)
+                    .setValue(person.yLoc, counter, 1)
+                    .setValue(person.probableSpeed, counter, 2);
 
             // Add agent exits to list to use when rebuilding
-            agentExits[counter] = person.getExit();
 
+            System.out.println(person.getExit());
+            //agentExits[counter] = person.getExit();
 
             counter++;
         }
-        assert(personList.size() == stateVector.length);
+        assert(personList.size() == stateVector.getLength());
+        assert(agentExits.length == stateVector.getLength());
 
         return stateVector;
     }
 
+
+    private static List<Person> rebuildPersonList (DoubleVertex[][] stateVector) {
+
+        List<Person> personList = new ArrayList<>();
+
+        int halfwayPoint = stateVector.length / 2;
+        int entrance = 0;
+
+        for (int i=0; i<stateVector.length; i++) {
+            DoubleVertex xLoc = stateVector[i][0];
+            DoubleVertex yLoc = stateVector[i][1];
+            DoubleVertex probableSpeed = stateVector[i][2];
+
+            Exit exit = agentExits[i];
+
+            String name = "Person " + (i+1);
+
+            if (i > halfwayPoint) { entrance = 1; }
+
+            ArrayList<Entrance> entrances = tempModel.getEntrances();
+
+            Person person = new Person(tempModel.getPersonSize(), xLoc, yLoc, name, tempModel, exit, entrances.get(entrance), probableSpeed);
+
+            personList.add(person);
+        }
+        return personList;
+    }
+
+
+    private static void makeSomeGraphs () {
+
+    }
+
+
+    public static void main(String[] args) {
+
+        StationTransition.runDataAssimilation();
+        System.out.println("Happy days, runDataAssimilation has executed successfully!");
+
+        System.exit(0);
+    }
+}
+
+
+
+
+    /*
 
     private static GenericTensor buildTensorStateVector(List<Person> currentState) {
 
@@ -337,22 +406,7 @@ public class StationTransition {
                     entrances.get(entrance), desiredSpeedD);
 
             personList.add(person);
-
-            /*
-            if (i % 10 == 0) {
-                System.out.println("Built person number " + i);
-            }
-            */
         }
         return personList;
     }
-
-
-    public static void main(String[] args) {
-
-        StationTransition.runDataAssimilation();
-        System.out.println("Happy days, runDataAssimilation has executed successfully!");
-
-        System.exit(0);
-    }
-}
+    */

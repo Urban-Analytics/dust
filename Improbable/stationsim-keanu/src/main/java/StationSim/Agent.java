@@ -38,13 +38,12 @@ public abstract class Agent implements Steppable {
     protected Station station;
     protected String name;
 
-    /*
+
     public Agent(int size, Double2D location, String name) {
         this.size = size;
         this.location = location;
         this.name = name;
     }
-    */
 
 
     public Agent(int size, DoubleVertex xLoc, DoubleVertex yLoc, String name) {

@@ -41,7 +41,7 @@ public class Person extends Agent {
     public DoubleVertex yLoc;
     public DoubleVertex probableSpeed;
 
-    /*
+
     public Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
         super(size, location, name);
         this.station = station;
@@ -90,7 +90,7 @@ public class Person extends Agent {
         station.numRandoms++;
         currentSpeed = 0.0;
     }
-    */
+
 
 
     // New Person constructor that allows probabilistic representation of x and y position
@@ -125,10 +125,13 @@ public class Person extends Agent {
 
     @Override
     public Double2D getLocation() {
+        /*
         double xVal = xLoc.getValue(0);
         double yVal = yLoc.getValue(0);
         Double2D position = new Double2D(xVal, yVal);
         return position;
+        */
+        return location;
     }
 
     /** Moves the Person closer to their exit and interacts with other Person agents if necessary.

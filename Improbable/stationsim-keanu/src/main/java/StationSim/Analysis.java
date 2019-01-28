@@ -41,7 +41,7 @@ public class Analysis implements Steppable {
     int[][] temporalOccupancyMatrix = new int[numRows][numCols];
     int[][] currentOccupancyMatrix = new int[numRows][numCols];
 
-    private List<List<String>> stateDataFrame;
+    public List<List<String>> stateDataFrame;
     private List<List<String>> aggregateDataFrame;
 
     private int writeInterval = 50;

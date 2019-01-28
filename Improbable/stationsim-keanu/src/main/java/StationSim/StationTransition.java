@@ -26,6 +26,8 @@ import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.Una
 import sim.util.Bag;
 import sim.util.Double2D;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,13 +42,18 @@ public class StationTransition {
     private static int WINDOW_SIZE = 200; // 200
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE;
 
+    // Writing to file
+    private static Writer stateWriter; // To write stateVectorHistory
+
     // random generator for start() method
     private static KeanuRandom rand;
 
     // List of agent exits to use when rebuilding from stateVector
     //static DoubleVertex[][] stateVector;
-    static Exit[] agentExits;
+    private static Exit[] agentExits;
 
+    // Arraylist to hold state history
+    private static List<Tensor<DoubleVertex>> stateVectorHistory;
 
     private static void runDataAssimilation() {
 
@@ -60,8 +67,6 @@ public class StationTransition {
             if (!truthModel.schedule.step(truthModel)) break;
         while (truthModel.schedule.getSteps() < 2000);
         truthModel.finish();
-
-        // Should I run for only 1 step to get the agents into the simulation? Then go from there?
 
         System.out.println("Executed truthModel.finish()");
 
@@ -77,71 +82,39 @@ public class StationTransition {
         Bag people = tempModel.area.getAllObjects();
 
         //Bag people = tempModel.area.getAllObjects();
-        List<Person> personList = new ArrayList<>(people);
+        List<Person> personList = new ArrayList<Person>(people);
         assert(personList.size() != 0);
 
         // Build stateVector
         Tensor<DoubleVertex> stateVector = buildProbableStateVector(personList);
+        stateVectorHistory.add(stateVector);
 
         // Start data assimilation window
         for (int i = 0; i < NUM_WINDOWS; i++) {
 
-            System.out.println("Entered DA window " + i);
+            System.out.println("Entered Data Assimilation window " + i);
 
-            // ****************** Predict ******************
+            // Step the model
+            for (int j=0; j<WINDOW_SIZE; j++) {
+                tempModel.schedule.step(tempModel);
+            }
 
-            //personList = predict(personList);
-            //System.out.println("Predict finished");
+            // Build new stateVector
+            personList = new ArrayList<Person>(tempModel.area.getAllObjects());
+            stateVector = buildProbableStateVector(personList);
+            stateVectorHistory.add(stateVector);
 
             // ****************** Initialise Black Box Model ******************
 
-            //double[][] stateVector = buildPrimitiveStateVector(personList);
-            //GenericTensor stateVector = buildTensorStateVector(personList);
-            //UnaryOpLambda<GenericTensor, List<Person>> box = new UnaryOpLambda<>(stateVector, predict(personList));
-
-            //UnaryOpLambda<Tensor<DoubleVertex>, Integer[]> box = new UnaryOpLambda<Tensor<DoubleVertex>, Integer[]>(stateVector, StationTransition::runModel);
+            //UnaryOpLambda<DoubleTensor, Integer[]> box = new UnaryOpLambda<DoubleTensor, Integer[]>(stateVector, StationTransition::runModel);
 
             // ****************** Update ******************
 
-
-/*            // Step model
-            for (int j=0; j<WINDOW_SIZE; j++) {
-                tempModel.schedule.step(tempModel);
-            }*/
-
-
-
-            // Observe truth data
-
-
-            //update(stateVector);
-
-            //System.out.println("Update finished");
-
-            // Rebuild personList from stateVector
-            //personList = rebuildCurrentState(stateVector);
-
-            //System.out.println("Current State rebuilt");
-
             // for 1000 iterations
 
-            /**
-             * To Do for new idea:
-             *      Replace x and y position doubles with DoubleVertex's                        DONE
-             *      Modify how position is treated in agent.class                               DONE
-             *      Modify step method in Person.class
-             *      Modify lerp() method in Person.class
-             *      How does the slowing distance work? And do I need to alter how this works?
-             *      Make new probableSpeed Vertex for Person                                    Done
-             *      Alter all methods in agent movement
-             *      Figure out (and write down somewhere) how MASON represents agents,
-             *          i.e. what information it needs (just x,y?)
-             *
-             *      COMMENT OUT ALL NON-PROBABILISTIC CONSTRUCTORS: Find out where errors arise and fix
-             *          (should be able to uncomment after with no ill effects)
-             */
-
         }
+        writeModelHistory(tempModel, "tempModel" + System.currentTimeMillis());
+        writeStateVectorHistory(stateVectorHistory);
     }
 
 
@@ -196,8 +169,7 @@ public class StationTransition {
     }
 
 
-    // Swap back to double[][] when not using GenericTensor
-    private static void update(DoubleVertex[][] stateVector) {
+    private static void update(Tensor<DoubleVertex> stateVector) {
         /*
         During the update, the estimate of the state is updated using the observations from truthModel
 
@@ -293,8 +265,26 @@ public class StationTransition {
     }
 
 
-    private static void makeSomeGraphs () {
+    private static void writeStateVectorHistory(List<Tensor<DoubleVertex>> stateVectorHistory) {
 
+        /*
+        Problem with this method? Writes out full stateVector for every iteration that has been stored in history
+
+        Do I need something that will write out the number of
+         */
+        try {
+            for (Tensor vector : stateVectorHistory) {
+                stateWriter.write(vector.asFlatIntegerArray().toString());
+            }
+        } catch (IOException ex) {
+            System.err.println("Error writing history to file: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+
+    private static void writeModelHistory(Station model, String fileName) {
+        model.analysis.writeDataFrame(model.analysis.stateDataFrame, "results/" + fileName);
     }
 
 
@@ -308,6 +298,24 @@ public class StationTransition {
 }
 
 
+
+
+
+    /*
+    To Do for new idea:
+             *      Replace x and y position doubles with DoubleVertex's                        DONE
+             *      Modify how position is treated in agent.class                               DONE
+             *      Modify step method in Person.class
+             *      Modify lerp() method in Person.class
+             *      How does the slowing distance work? And do I need to alter how this works?
+             *      Make new probableSpeed Vertex for Person                                    Done
+             *      Alter all methods in agent movement
+             *      Figure out (and write down somewhere) how MASON represents agents,
+             *          i.e. what information it needs (just x,y?)
+             *
+             *      COMMENT OUT ALL NON-PROBABILISTIC CONSTRUCTORS: Find out where errors arise and fix
+             *          (should be able to uncomment after with no ill effects)
+     */
 
 
     /*

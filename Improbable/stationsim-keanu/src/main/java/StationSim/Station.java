@@ -16,6 +16,7 @@
 package StationSim;
 
 //import io.improbable.keanu.research.randomfactory.VertexBackedRandomGenerator;
+import io.improbable.keanu.randomfactory.RandomDoubleFactory;
 import io.improbable.keanu.vertices.dbl.KeanuRandom;
 //import org.apache.commons.math3.random.RandomGenerator;
 import sim.engine.SimState;
@@ -31,7 +32,7 @@ import java.util.List;
  * Simulates a very simple train station with a given number of entrances and exits which are set through
  * GUI or command line arguments. People move from the entrance to a given exit, interacting on the way.
  */
-public class Station extends SimState{
+public class Station extends SimState {
 
     public int numRandoms = 0;
 
@@ -64,6 +65,7 @@ public class Station extends SimState{
 
     //public RandomGenerator random;
     public KeanuRandom random;
+    //public RandomDoubleFactory random;
 
     //Bag of people who have finished the simulation
     public Bag finishedPeople = new Bag();
@@ -78,10 +80,10 @@ public class Station extends SimState{
     // Run with default settings only
     private boolean hideParameters = false;
 
+
     public Station(long seed) {
         super(seed);
     }
-
 
 
     /**

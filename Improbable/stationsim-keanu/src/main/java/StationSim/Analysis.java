@@ -358,6 +358,7 @@ public class Analysis implements Steppable {
         File dir = new File(dirName);
         if (!dir.exists()) {
             dir.mkdir();
+            System.out.println("Dir created.");
         }
 
         Writer writer = null;
@@ -371,11 +372,13 @@ public class Analysis implements Steppable {
             }
         } catch (IOException ex) {
             System.out.println("Error writing to file");
+            ex.printStackTrace();
         } finally {
             try {
                 writer.close();
             } catch (Exception ex) {
                 System.out.println("Error closing file");
+                ex.printStackTrace();
             }
         }
     }

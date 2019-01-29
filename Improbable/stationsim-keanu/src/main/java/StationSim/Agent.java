@@ -27,12 +27,8 @@ public abstract class Agent implements Steppable {
 
     private static final long serialVersionUID = 1;
 
-    // Old location
+    // location
     protected Double2D location;
-
-    // New location
-    protected DoubleVertex xLoc;
-    protected DoubleVertex yLoc;
 
     protected int size;
     protected Station station;
@@ -46,28 +42,9 @@ public abstract class Agent implements Steppable {
     }
 
 
-    public Agent(int size, DoubleVertex xLoc, DoubleVertex yLoc, String name) {
-        this.size = size;
-        this.xLoc = xLoc;
-        this.yLoc = yLoc;
-        this.name = name;
-    }
-
-
     public Double2D getLocation() {
         return location;
     }
-
-    /*
-    Moved this method to Person to be overridden, just in case replacing this method in agent caused any trouble
-
-    public Double2D getLocation() {
-        double xVal = xLoc.getValue(0);
-        double yVal = yLoc.getValue(0);
-        Double2D position = new Double2D(xVal, yVal);
-        return position;
-    }
-    */
 
     @Override
     public void step(SimState state) {

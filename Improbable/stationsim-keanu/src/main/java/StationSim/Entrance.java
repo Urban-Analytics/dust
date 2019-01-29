@@ -75,7 +75,7 @@ public class Entrance extends Agent {
                         (y + i) - ((size / 2.0) - personSize / 2.0)); // need to add a buffer
 
                 // Assign exit from exit probs
-                double randDouble = station.random.nextDouble(Double.MIN_NORMAL, Double.MAX_VALUE).getValue();
+                double randDouble = station.random.nextDoubleNonZero();
                 station.numRandoms++;
                 double cumulativeProb = 0.0;
                 for (int j = 0; j < exitProbs.length; j++) {

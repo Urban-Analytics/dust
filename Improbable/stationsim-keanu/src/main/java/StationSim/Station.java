@@ -15,10 +15,7 @@
  */
 package StationSim;
 
-//import io.improbable.keanu.research.randomfactory.VertexBackedRandomGenerator;
-import io.improbable.keanu.randomfactory.RandomDoubleFactory;
 import io.improbable.keanu.vertices.dbl.KeanuRandom;
-//import org.apache.commons.math3.random.RandomGenerator;
 import sim.engine.SimState;
 import sim.field.continuous.Continuous2D;
 import sim.util.Bag;
@@ -26,7 +23,6 @@ import sim.util.Double2D;
 import sim.util.Interval;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Simulates a very simple train station with a given number of entrances and exits which are set through

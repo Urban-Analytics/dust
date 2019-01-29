@@ -36,11 +36,6 @@ public class Person extends Agent {
     private double radius;
     private double currentSpeed;
 
-    // Probabilistic variables and params
-    public DoubleVertex xLoc;
-    public DoubleVertex yLoc;
-    public DoubleVertex probableSpeed;
-
 
     public Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
         super(size, location, name);
@@ -92,28 +87,11 @@ public class Person extends Agent {
     }
 
 
-
-    // New Person constructor that allows probabilistic representation of x and y position
-    public Person(int size, DoubleVertex xLoc, DoubleVertex yLoc, String name, Station station, Exit exit, Entrance entrance, DoubleVertex probableSpeed) {
-        super(size, xLoc, yLoc, name);
-        this.station = station;
-        this.entrance = entrance;
-        this.exit = exit;
-        radius = size / 2.0;
-        station.numRandoms++;
-        currentSpeed = 0.0;
-
-        this.probableSpeed = probableSpeed;
-    }
-
-
     public double getCurrentSpeed() {
         return currentSpeed;
     }
 
     public double getDesiredSpeed() { return desiredSpeed; }
-
-    public DoubleVertex getProbableSpeed() { return probableSpeed; }
 
     public Exit getExit() {
         return exit;
@@ -121,17 +99,6 @@ public class Person extends Agent {
 
     public double getRadius() {
         return radius;
-    }
-
-    @Override
-    public Double2D getLocation() {
-        /*
-        double xVal = xLoc.getValue(0);
-        double yVal = yLoc.getValue(0);
-        Double2D position = new Double2D(xVal, yVal);
-        return position;
-        */
-        return location;
     }
 
     /** Moves the Person closer to their exit and interacts with other Person agents if necessary.

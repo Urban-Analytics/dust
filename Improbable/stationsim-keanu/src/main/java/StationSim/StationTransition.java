@@ -19,6 +19,9 @@ package StationSim;
 import io.improbable.keanu.tensor.Tensor;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.KeanuRandom;
+import io.improbable.keanu.vertices.dbl.nonprobabilistic.CastDoubleVertex;
+import io.improbable.keanu.vertices.dbl.nonprobabilistic.ConstantDoubleVertex;
+import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
 import sim.util.Bag;
 import sim.util.Double2D;
 
@@ -36,6 +39,8 @@ public class StationTransition {
     private static int NUM_ITER = 2000; // 2000
     private static int WINDOW_SIZE = 200; // 200
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE;
+
+    private static double SIGMA_NOISE = 1.0; //
 
     // Writing to file
     private static Writer stateWriter; // To write stateVectorHistory
@@ -71,7 +76,7 @@ public class StationTransition {
         int counter = 0;
         results = new double[(NUM_ITER / WINDOW_SIZE)];
 
-        // Rewrote propagation of this model as it allows easier extraction of truth data at intervals
+        // Rewrote how truthModel is run as it allows easier extraction of truth data at intervals
         while(truthModel.schedule.getSteps() < NUM_ITER) {
             if (truthModel.schedule.getSteps() % WINDOW_SIZE == 0.0) {
                 results[counter] = truthModel.area.getAllObjects().size();
@@ -96,9 +101,8 @@ public class StationTransition {
 
         tempModel.start(rand);
         tempModel.schedule.step(tempModel);
-        Bag people = tempModel.area.getAllObjects();
 
-        //Bag people = tempModel.area.getAllObjects();
+        Bag people = tempModel.area.getAllObjects();
         List<Person> personList = new ArrayList<Person>(people);
         assert(personList.size() != 0);
 
@@ -113,19 +117,26 @@ public class StationTransition {
             }
 
             // Build new stateVector
-            //personList = new ArrayList<Person>(tempModel.area.getAllObjects());
+            personList = new ArrayList<Person>(tempModel.area.getAllObjects());
 
+            ConstantDoubleVertex[] stateVector = buildStateVector(personList);
 
             /*
              ************ INITIALISE THE BLACK BOX MODEL ************
              */
 
-            //UnaryOpLambda<DoubleTensor, Integer[]> box = new UnaryOpLambda<DoubleTensor, Integer[]>(stateVector, StationTransition::runModel);
+            UnaryOpLambda<ConstantDoubleVertex[], Integer[]> box =
+                    new UnaryOpLambda<ConstantDoubleVertex[], Integer[]>(stateVector, StationTransition::buildStateVector);
+
+
 
 
             /*
              ************ OBSERVE SOME TRUTH DATA ************
              */
+
+            System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
+            
 
 
             /*
@@ -163,13 +174,53 @@ public class StationTransition {
     }
 
 
-    /*
-    private static double[] buildStateVector(List<Person> personList) {
+
+    private static ConstantDoubleVertex[] buildStateVector(List<Person> personList) {
+
+        ConstantDoubleVertex[] stateVector = new ConstantDoubleVertex[personList.size() * 3];
+        agentExits = new Exit[personList.size()];
+
+        int counter = 0;
+        for (Person person : personList) {
+            int counter2 = counter * 3;
+
+            stateVector[counter2].setValue(person.getLocation().x);
+            stateVector[counter2 + 1].setValue(person.getLocation().y);
+            stateVector[counter2 + 2].setValue(person.getDesiredSpeed());
+
+            agentExits[counter] = person.getExit();
+
+            assert(agentExits.length == stateVector.length / 3);
+
+            counter++;
+        }
+
+        return stateVector;
+    }
+
+
+    private static double[] buildStateVector2(List<Person> personList) {
 
         double[] stateVector = new double[personList.size() * 3];
+        agentExits = new Exit[personList.size()];
 
+        int counter = 0;
+        for (Person person : personList) {
+            int counter2 = counter * 3;
 
-    } */
+            stateVector[counter2] = person.getLocation().x;
+            stateVector[counter2 + 1] = person.getLocation().y;
+            stateVector[counter2 + 2] = person.getDesiredSpeed();
+
+            agentExits[counter] = person.getExit();
+
+            assert(agentExits.length == stateVector.length / 3);
+
+            counter++;
+        }
+
+        return stateVector;
+    }
 
 
     private static List<Person> predict(List<Person> personList) {
@@ -244,7 +295,7 @@ public class StationTransition {
 
 
     private static void writeModelHistory(Station model, String fileName) {
-        model.analysis.writeDataFrame(model.analysis.stateDataFrame, fileName + ".txt");
+        model.analysis.writeDataFrame(model.analysis.stateDataFrame, fileName + ".csv");
     }
 
 

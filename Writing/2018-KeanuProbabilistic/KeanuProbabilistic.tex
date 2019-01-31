@@ -1,0 +1,171 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.20 of 2017/10/04
+%
+\documentclass[11pt]{article}
+%\documentclass[11pt,twocolumn]{article}% two columns
+\setlength{\columnsep}{15pt} % column separation
+\usepackage[left=25mm, right=25mm, top=25mm, bottom=25mm]{geometry}
+
+%
+\usepackage{graphicx}
+%\usepackage{subfig}
+\usepackage{url}
+
+\usepackage{natbib}
+
+% For todo notes (workaround for 2-column using marginnote from: https://tex.stackexchange.com/questions/52680/how-can-i-make-todo-comments-when-using-the-multicol-package)
+\usepackage[textsize=tiny, textwidth=2.0cm]{todonotes}
+
+
+
+\begin{document}
+%
+\title{Calibration and State Estimation of an Agent-Based Model using a Probabilistic Framework
+\thanks{This work was supported by a European Research Council (ERC) Starting Grant [number 757455], a UK Economic and Social Research Council (ESRC) Future Research Leaders grant [number ES/L009900/1], and through an internship funded by the UK Leeds Institute for Data Analytics (LIDA).}}
+
+\author{ XXXX Authors } 
+%\author{Nick Malleson\inst{1,3}\orcidID{0000-0002-6977-0615} \and
+%Jonathan A. Ward\inst{2}\orcidID{0000-0003-3726-9217} \and
+%Alison Heppenstall\inst{1,3}\orcidID{0000-0002-0663-3437} \and
+%Michael Adcock\inst{3} \and
+%Daniel Tang\inst{4}  \and
+%Jonathan Coello\inst{4} \and
+%Tomas Crols\inst{1,3}\orcidID{0000-0002-9379-7770}
+%}
+%
+
+
+%\institute{
+%School of Geography, University of Leeds, LS2 9JT, UK \\
+%\url{http://geog.leeds.ac.uk/} \\
+%\email{n.s.malleson@leeds.ac.uk} 
+% \and
+%School of Mathematics, University of Leeds, LS2 9JT, UK \\
+%\url{http://maths.leeds.ac.uk} 
+%\and
+%Leeds Institute for Data Analytics (LIDA), University of Leeds, LS2 9JT, UK \\
+%\url{http://lida.leeds.ac.uk} \and
+%Improbable, 30 Farringdon Road, London, EC1M 3HE, UK \\
+%\url{http://www.improbable.io}
+%}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+
+XX ABSTRACT
+
+XX KEYWORDS
+%\keywords{Agent-based modelling \and Particle Filter \and Uncertainty \and Data assimilation \and Bayesian inference}
+\end{abstract}
+
+\tableofcontents
+
+\newpage
+
+%
+%
+% ***************** Introduction *****************
+%
+%
+
+\section{Introduction}
+
+\begin{itemize}
+\item Aim: Experiment with probabilistic modelling and probabilistic programming as a means of performing state estimation and data assimilation on a agent-based model.
+\item Method:
+	\begin{itemize}
+	\item Illustrate the data assimilation algorithm on a simple system (i.e. simple model).
+	\item Apply the framework to an ABM with decreasing amounts of information about the truth:
+		\begin{itemize}
+		\item Full information about all agents (with a bit of noise)
+		\item Information about only some agents (i.e. we're tracking a few individuals)
+		\item Only aggregate information
+		\end{itemize}
+	\end{itemize}
+\end{itemize}
+
+%
+%
+% ***************** Background *****************
+%
+%
+\section{Background}
+
+\subsection{Data Assimilation and Probabilistic Programming}
+
+$ $ % (this is because a \todo straight after a \section confuses latex)
+
+\todo[nolist, inline]{How this work fits in to the wider data assimilation schema (is it `nudging'? and how it compares to traditional data assimilation. Basically a brief literature review.}
+
+\todo[nolist, inline]{Outline what probabilistic programming is, and what Keanu is.}
+
+
+
+
+\subsection{An Example Agent-Based Model: \textit{StationSim}}
+
+$ $ % (this is because a \todo straight after a \section confuses latex)
+
+\todo[nolist, inline]{Briefly outline station sim to show that it has some of the normal characteristics of an ABM.}
+
+
+\subsection{A Framework for Data Assimilation}
+
+$ $ % (this is because a \todo straight after a \section confuses latex)
+
+\todo[nolist, inline]{Explain the basic framework here, e.g. number of iterations, number of windows, calculating the posterior for the state, etc. We apply the same framework to the simple model and station sim.}
+
+
+
+%
+%
+% ***************** Method  *****************
+%
+%
+\section{Probabilistic Data Assimilation with a Trivial Model}
+
+$ $ % (this is because a \todo straight after a \section confuses latex)
+
+\todo[nolist, inline]{Outline the Simple Model (just the for loop), show how the state is represented probabilistically, and then show how Keanu can be used to do state estimation / data assimilation (\textit{which of these terms is correct? we need to be careful to use precise language!}).} 
+
+
+
+
+\section{Probabilistic Data Assimilation with StationSim}
+
+\subsection{Full Knowledge of the System}
+
+$ $ % (this is because a \todo straight after a \section confuses latex)
+
+\todo[inline, nolist]{Experiments when the probabilistic model has full knowledge of the system}
+
+\subsection{Partial Knowledge of Some Agents}
+
+$ $ % (this is because a \todo straight after a \section confuses latex)
+
+\todo[inline, nolist]{Experiments when we only give the probabilistic model access to partial information in the state vector (i.e. only a few agents)}
+
+\subsection{Aggregate Knowledge of the System}
+
+$ $ % (this is because a \todo straight after a \section confuses latex)
+
+\todo[inline, nolist]{Experiments when the probabilistic model only has information about the density in some different parts of the system}
+
+
+%
+%
+% ***************** Conclusion *****************
+%
+%
+\section{Conclusions}
+
+Just to test referencing: \citep{epstein_growing_1996}
+
+
+%\bibliographystyle{splncs04}
+\bibliographystyle{chicago}
+\bibliography{2019-KeanuProbabilistic}
+
+\end{document}

@@ -19,6 +19,9 @@ package StationSim;
 import sim.engine.SimState;
 import sim.util.Double2D;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * An entrance that spawns n people per time step based on the size of the Entrance.
  * A target exit is assigned to a person to move toward at spawn time.
@@ -35,15 +38,33 @@ public class Entrance extends Agent {
     public double[] exitProbs;
     public int totalAdded;
 
-    public Entrance(int size, Double2D location, String name, int numPeople, double[] exitProbs, SimState state) {
+    // A bank of people who are inactive. Everyone is created at the beginning, but they are inactive until
+    // the entrance activates them
+    private static Set<Person> inactivePeople = null;
+
+    public Entrance(int size, Double2D location, String name, int numPeople, double[] exitProbs, Station state) {
         super(size, location, name);
-        Station station = (Station) state;
+        Station station = state;
         this.entranceInterval = station.getEntranceInterval();
         this.personSize = station.getPersonSize();
         this.size *= personSize;
         this.numPeople = numPeople;
         this.exitProbs = exitProbs;
         this.totalAdded = 0;
+        // Create all of the people (unless another entrance has done this already
+        if (Entrance.inactivePeople==null) {
+            System.out.print("Populating inactive set: ");
+            Entrance.inactivePeople = new HashSet<>();
+            for (int i=0; i<(state.getNumPeople()); i++) {
+                Double2D spawnLocation = new Double2D(0.0, 0.0);
+                Person person = new Person(personSize, spawnLocation, "Inactive Person: " + i);
+                station.area.setObjectLocation(person, spawnLocation);
+                Entrance.inactivePeople.add(person);
+            }
+            System.out.println("... created "+Entrance.inactivePeople.size()+" inactive agents. " +
+                    "There are "+state.getNumPeople() + "agents in the model.");
+            //System.out.print(Entrance.inactivePeople.toString());
+        }
     }
 
     public Exit getExit() {
@@ -58,6 +79,8 @@ public class Entrance extends Agent {
     @Override
     public void step(SimState state) {
         super.step(state);
+
+        System.out.println(state.schedule.getSteps() + " people in inactive: "+Entrance.inactivePeople.size());
 
         // First check if this is a Person generating step
         if (station.schedule.getSteps() % entranceInterval == 0) {
@@ -89,9 +112,16 @@ public class Entrance extends Agent {
                 //Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exitProbs, this);
                 Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exit, this);
                 if (!person.collision(spawnLocation)) {
+                    // add the person to the model
                     station.area.setObjectLocation(person, spawnLocation);
                     addedCount++;
                     station.addedCount++;
+
+                    // remove an inactive agent from the model and the bank of inactive agents
+                    Person inactive = Entrance.inactivePeople.iterator().next();
+                    station.area.remove(inactive);
+                    Entrance.inactivePeople.remove(inactive);
+
                 }
             }
             // Number of people left for further steps

@@ -35,6 +35,19 @@ public class Person extends Agent {
     private double speedMultiplier = 1.0;
     private double radius;
     private double currentSpeed;
+    private boolean active = true; // Whether or not agents take part in the simulation. One constructore makes this false.
+
+
+    /**
+     * Used for creating inactive agents. These are used so that all agents can be created initially, but when
+     * we actually need an agent this inactive agent will be deleted and a new one will be created one of the other
+     * available constructors. Agents created using this constructure have active=false so do nothing when their step()
+     * method is called
+     */
+    public Person(int size, Double2D location, String name) {
+        super(size, location, name);
+        this.active = false;
+    }
 
 
     public Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
@@ -76,14 +89,8 @@ public class Person extends Agent {
 
     // Constructor with desiredSpeed included
     public Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance, double desiredSpeed) {
-        super(size, location, name);
-        this.station = station;
-        this.entrance = entrance;
-        this.exit = exit;
-        radius = size / 2.0;
+        this(size, location, name, station, exit, entrance); // Use the other Person contstuctor, saves on code repetition
         this.desiredSpeed = desiredSpeed;
-        station.numRandoms++;
-        currentSpeed = 0.0;
     }
 
 
@@ -106,6 +113,9 @@ public class Person extends Agent {
      */
     @Override
     public void step(SimState state) {
+        if (!this.active) { // If the person has not been activated yet then don't do anything
+            return;
+        }
         station = (Station) state;
 
         Double2D newLocation;
@@ -227,8 +237,10 @@ public class Person extends Agent {
      * @return The distance to the chosen exit of this person
      */
     public double distanceToExit() {
+        if (!active) {// Inactive agents don't have an exit yet, so just give them an arbitrary large distance
+            return Double.MAX_VALUE;
+        }
         return getDistance(getLocation(), exit.getLocation());
-
     }
 
     /**

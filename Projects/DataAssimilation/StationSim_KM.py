@@ -18,7 +18,7 @@ from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 from copy import deepcopy
 from multiprocessing import Pool
-from functools import partial
+import multiprocessing
 
 def error(text='Self created error.'):
     from sys import exit
@@ -336,7 +336,7 @@ class ParticleFilter:
             self.unique_particles = []
         
         self.states = np.array(pool.starmap(initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
-            
+        self.states = pool.map(initial_state)
     '''
     Step Particle Filter
     
@@ -537,16 +537,38 @@ class ParticleFilter:
             plt.axis(np.ravel(self.base_model.boundaries, 'F'))
             plt.pause(1 / 4)
 
+
+def single_run_particle_numbers():
+    particle_num = 10
+    runs = 100
+
+    for i in range(runs):
+
+        # Run the particle filter
+        filter_params = {
+            'number_of_particles': particle_num,
+            'number_of_iterations':3000,
+            'resample_window': 100,
+            'agents_to_visualise': 2,
+            'particle_std': 1,
+            'model_std': 1,
+            'do_save': True,
+            'plot_save':False,
+            'do_ani': False,
+        }
+        pf = ParticleFilter(Model, model_params, filter_params)
+        print(i, particle_num, pf.step())
+
 if __name__ == '__main__':
     __spec__ = None
-    
-    # Pool object needed for multiprocessing 
-    pool = Pool()    
-    
+
+# Pool object needed for multiprocessing
+    pool = Pool(processes=multiprocessing.cpu_count())
+
     model_params = {
         'width': 200,
         'height': 100,
-        'pop_total': 1,
+        'pop_total': 700,
         'entrances': 3,
         'entrance_space': 2,
         'entrance_speed': .1,
@@ -564,82 +586,4 @@ if __name__ == '__main__':
         # Run the model
         Model(model_params).batch()
     else:
-        std_max = 2
-        measure_max = 2
-        sample = 10
-        runs = 10
-        
-        stds = np.linspace(0, std_max, num=sample)
-        measures = np.linspace(0, measure_max, num=sample)
-        results = np.zeros((sample*sample*runs,6))
-
-        for i in range(sample):
-            for j in range(sample):
-                for k in range(runs):
-                    print('std sample',i,'measure sample',j,'run',k)
-                    
-                    results[i*(runs+sample) + j*runs + k,0] = stds[i]
-                    results[i*(runs+sample) + j*runs + k,1] = measures[j]
-                    
-                    # Run the particle filter
-                    filter_params = {
-                        'number_of_particles': 10,
-                        'number_of_iterations':20,
-                        'resample_window': 10,
-                        'agents_to_visualise': 2,
-                        'particle_std': stds[i],
-                        'model_std': measures[j],
-                        'do_save': True,
-                        'plot_save':False,
-                        'do_ani': False,
-                    }
-                    pf = ParticleFilter(Model, model_params, filter_params)
-                    results[i*(runs*sample) + j*runs + k,2:] = pf.step()
-
-        averages = np.zeros((sample*sample,4))
-        for i in range(sample*sample):
-            averages[i,:] = np.average(results[i*runs:(i+1)*runs,2:],axis=0)  
-        
-        X,Y = np.meshgrid(stds,measures)
-        
-#        parameter_text = ('pop_total = {}, sample = {}, runs = {}, particles = {},'
-#        ' iterations = {}, window = {}'.format(
-#                  model_params['pop_total'],
-#                  sample,
-#                  runs,
-#                  filter_params['number_of_particles'],
-#                  filter_params['number_of_iterations'],
-#                  filter_params['resample_window']))
-        
-        plt.figure(1)
-        p = plt.gca().pcolor(X,Y,averages[:,0].reshape((sample,sample)).T)
-        plt.ylabel('measure std')
-        plt.xlabel('particle std')
-        plt.title('max error')
-#        plt.gcf().text(.5, .05, parameter_text, ha='center')
-        cb = plt.gcf().colorbar(p)
-        
-        plt.figure(2)
-        p = plt.gca().pcolor(X,Y,averages[:,1].reshape((sample,sample)).T)
-        plt.ylabel('measure std')
-        plt.xlabel('particle std')
-        plt.title('ave error')
-#        plt.gcf().text(.5, .05, parameter_text, ha='center')
-        cb = plt.gcf().colorbar(p)
-        
-        plt.figure(3)
-        p = plt.gca().pcolor(X,Y,averages[:,2].reshape((sample,sample)).T)
-        plt.ylabel('measure std')
-        plt.xlabel('particle std')
-        plt.title('max var')
-#        plt.gcf().text(.5, .05, parameter_text, ha='center')
-        cb = plt.gcf().colorbar(p)
-        
-        plt.figure(4)
-        p = plt.gca().pcolor(X,Y,averages[:,3].reshape((sample,sample)).T)
-        plt.ylabel('measure std')
-        plt.xlabel('particle std')
-        plt.title('ave var')
-#        plt.gcf().text(.5, .05, parameter_text, ha='center')
-        cb = plt.gcf().colorbar(p)
-        plt.show
+        single_run_particle_numbers()

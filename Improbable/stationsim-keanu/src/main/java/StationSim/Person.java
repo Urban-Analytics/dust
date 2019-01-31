@@ -36,6 +36,8 @@ public class Person extends Agent {
     private double radius;
     private double currentSpeed;
     private boolean active = true; // Whether or not agents take part in the simulation. One constructore makes this false.
+    private int id = -1 ; // Inactive agents have ID -1, real agents will have incrementally increasing IDs
+    private static int ID_Counter = -0;
 
 
     /**
@@ -47,6 +49,7 @@ public class Person extends Agent {
     public Person(int size, Double2D location, String name) {
         super(size, location, name);
         this.active = false;
+        this.desiredSpeed = 0;
     }
 
 
@@ -60,6 +63,7 @@ public class Person extends Agent {
         //System.out.println(desiredSpeed + ",");
         station.numRandoms++;
         currentSpeed = 0.0;
+        this.id = Person.ID_Counter++;
 
         double randDouble = station.random.nextDouble();
         station.numRandoms++;
@@ -84,6 +88,7 @@ public class Person extends Agent {
         desiredSpeed = station.random.nextDouble() + minSpeed;
         station.numRandoms++;
         currentSpeed = 0.0;
+        this.id = Person.ID_Counter++;
     }
 
 
@@ -255,6 +260,11 @@ public class Person extends Agent {
 
     public double nextExponential(double lambda) {
         return  Math.log(1 - station.random.nextDouble()) / (-lambda);
+    }
+
+    @Override
+    public String toString() {
+        return "["+ this.id+"]"+this.name;
     }
 
 }

@@ -80,6 +80,13 @@ public class Entrance extends Agent {
     public void step(SimState state) {
         super.step(state);
 
+        // Print the agents for testing
+        /*System.out.print(state.schedule.getSteps() + " -\n\t" + Entrance.inactivePeople.toString() + "\n\t");
+        for (Object o : ((Station)state).area.getAllObjects()) {
+            System.out.print(((Person) o).toString() + " ");
+        }
+        System.out.println();*/
+
         // First check if this is a Person generating step
         if (station.schedule.getSteps() % entranceInterval == 0) {
             // Set number of people to be generated

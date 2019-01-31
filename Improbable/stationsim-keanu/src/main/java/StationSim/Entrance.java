@@ -62,7 +62,7 @@ public class Entrance extends Agent {
                 Entrance.inactivePeople.add(person);
             }
             System.out.println("... created "+Entrance.inactivePeople.size()+" inactive agents. " +
-                    "There are "+state.getNumPeople() + "agents in the model.");
+                    "There are "+state.getNumPeople() + " agents in the model.");
             //System.out.print(Entrance.inactivePeople.toString());
         }
     }
@@ -79,8 +79,6 @@ public class Entrance extends Agent {
     @Override
     public void step(SimState state) {
         super.step(state);
-
-        System.out.println(state.schedule.getSteps() + " people in inactive: "+Entrance.inactivePeople.size());
 
         // First check if this is a Person generating step
         if (station.schedule.getSteps() % entranceInterval == 0) {

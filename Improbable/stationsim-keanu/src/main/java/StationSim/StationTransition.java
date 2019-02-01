@@ -123,7 +123,8 @@ public class StationTransition {
         // Create the current state (initially 0). Use the temporary model because so far it is in its initial state
         tempModel.start(rand);
         //tempModel.schedule.step(tempModel);
-        ConstantDoubleVertex[] currentStateEstimate = buildStateVector(truthModel);
+
+        ConstantDoubleVertex[] currentStateEstimate = buildStateVector(truthModel); // XXXX Shouldn't this be tempModel?
 
         // Start data assimilation window
             // predict
@@ -239,6 +240,10 @@ public class StationTransition {
             stateVector[counter2] = new ConstantDoubleVertex(person.getLocation().x);
             stateVector[counter2 + 1] =  new ConstantDoubleVertex(person.getLocation().y);
             stateVector[counter2 + 2] =  new ConstantDoubleVertex(person.getDesiredSpeed());
+
+            stateVector[counter2].setLabel("Person " + counter);
+            stateVector[counter2 + 1].setLabel("Person " + counter);
+            stateVector[counter2 + 2].setLabel("Person " + counter);
 
             agentExits[counter] = person.getExit();
 

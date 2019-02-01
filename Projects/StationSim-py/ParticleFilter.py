@@ -90,7 +90,7 @@ class ParticleFilter:
             self.unique_particles = []
         
         self.states = np.array(pool.starmap(initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
-        self.states = pool.map(initial_state)
+        #self.states = pool.map(initial_state)
     '''
     Step Particle Filter
     

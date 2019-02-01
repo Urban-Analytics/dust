@@ -13,6 +13,8 @@ Todos:
 multiprocessing
 profile functions
 '''
+
+#%% INIT 
 import numpy as np
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
@@ -27,26 +29,45 @@ def error(text='Self created error.'):
     return
 
 
+#%% MODEL
+    
 class Agent:
 
     def __init__(self, model, unique_id):
+        """
+        Initialise a new agent.
+        
+        PARAMETERS
+          - model: a pointer to the station sim model that is creating this agent
+        
+        DESCRIPTION
+        Creates a new agent and gives it a randomly chosen entrance, exit, and 
+        desired speed. All agents start with active state 0 ('not started').
+        Their initial location (** HOW IS LOCATION REPRESENTED?? **) is set
+        to the location of the entrance that they are assigned to.
+        """
         # Required
         self.unique_id = unique_id
         self.active = 0  # 0 Not Started, 1 Active, 2 Finished
         model.pop_active += 1
         # Location
         self.location = model.loc_entrances[np.random.randint(model.entrances)]
-        self.location[1] += model.entrance_space * (np.random.uniform() - .5)
+        self.location[1] += model.entrance_space * (np.random.uniform() - .5) # XXXX WHAT DOES THIS DO?
         self.loc_desire = model.loc_exits[np.random.randint(model.exits)]
         # Parameters
-        self.time_activate = np.random.exponential(model.entrance_speed)
+        self.time_activate = np.random.exponential(model.entrance_speed) # XXXX WHAT DOES THIS DO?
         self.speed_desire = max(np.random.normal(model.speed_desire_mean, model.speed_desire_std), 2*model.speed_min)
-        self.speeds = np.arange(self.speed_desire, model.speed_min, -model.speed_step)
+        self.speeds = np.arange(self.speed_desire, model.speed_min, -model.speed_step)# XXXX WHAT DOES THIS DO?
         if model.do_save:
             self.history_loc = []
         return
 
     def step(self, model):
+        """
+        Iterate the agent. If they are inactive then it checks to see if they
+        should become active. If they are active then then move (see 
+        self.move()) and, possibly, leave the model (see exit_query())).
+        """
         if self.active == 0:
             self.activate(model)
         elif self.active == 1:
@@ -56,6 +77,10 @@ class Agent:
         return
 
     def activate(self, model):
+        """
+        Test whether an agent should become active. This happens when the model
+        time is greater than the agent's activate time.
+        """
         if not self.active and model.time_id > self.time_activate:
             self.active = 1
             self.time_start = model.time_id
@@ -63,6 +88,13 @@ class Agent:
         return
 
     def move(self, model):
+        """
+        Move the agent towards their destination. If the way is clear then the
+        agent moves the maximum distance they can given their maximum possible
+        speed (self.speed_desire). If not, then they iteratively test smaller
+        and smaller distances until they find one that they can travel to
+        without causing a colision with another agent.
+        """
         for speed in self.speeds:
             # Direct
             new_location = self.lerp(self.loc_desire, self.location, speed)
@@ -80,6 +112,10 @@ class Agent:
         return
 
     def collision(self, model, new_location):
+        """
+        Detects whether a move to the new_location will cause a colision 
+        (either with the model boundary or another agent).
+        """
         within_bounds = all(model.boundaries[0] <= new_location) and all(new_location <= model.boundaries[1])
         if not within_bounds:
             collide = True
@@ -90,6 +126,15 @@ class Agent:
         return collide
 
     def neighbourhood(self, model, new_location, do_kd_tree=True):
+        """
+        XXXX WHAT DOES THIS DO??
+        
+        PARMETERS
+         - model:        the model that this agent is part of
+         - new_location: the proposed new location that the agent will move to
+                         (a XXXX - what kind of object/data is the location?)
+         - do_kd_tree    whther to use a spatial index (kd_tree) (default true)
+        """
         neighbours = False
         neighbouring_agents = model.tree.query_ball_point(new_location, model.separation)
         for neighbouring_agent in neighbouring_agents:
@@ -105,6 +150,10 @@ class Agent:
         return loc
 
     def exit_query(self, model):
+        """
+        Determine whether the agent should leave the model and, if so, 
+        remove them. Otherwise do nothing.
+        """
         if np.linalg.norm(self.location - self.loc_desire) < model.exit_space:
             self.active = 2
             model.pop_active -= 1
@@ -125,6 +174,11 @@ class Agent:
 class Model:
 
     def __init__(self, params):
+        """
+        Create a new model, reading parameters from a dictionary. 
+        
+        XXXX Need to document the required parameters.
+        """
         self.params = (params,)
         [setattr(self, key, value) for key, value in params.items()]
         self.speed_step = (self.speed_desire_mean - self.speed_min) / 3  # Average number of speeds to check
@@ -187,6 +241,9 @@ class Model:
         return
 
     def batch(self):
+        """
+        Run the model.
+        """
         for i in range(self.batch_iterations):
             self.step()
             if self.do_ani:
@@ -212,9 +269,6 @@ class Model:
         return
 
     def save_ani(self):
-
-
-
         return
 
     def save_plot(self):
@@ -251,6 +305,34 @@ class Model:
         print('Active / Finished / Total agents: ' + str(self.pop_active) + '/' + str(self.pop_finished) + '/' + str(self.pop_total))
         print('Average time taken: ' + str(np.mean(self.time_taken)) + 's')
         return
+    
+    
+    @classmethod
+    def run_defaultmodel(cls):
+        """
+        Run a model with some common parameters. Mostly used for testing.
+        """
+        model_params = {
+            'width': 200,
+            'height': 100,
+            'pop_total': 700,
+            'entrances': 3,
+            'entrance_space': 2,
+            'entrance_speed': .1,
+            'exits': 2,
+            'exit_space': 1,
+            'speed_min': .1,
+            'speed_desire_mean': 1,
+            'speed_desire_std': 1,
+            'separation': 2,
+            'batch_iterations': 900,
+            'do_save': True,
+        'do_ani': False,
+        }
+        # Run the model
+        Model(model_params).batch()
+
+#%% PARTICLE FILTER
 
 '''
 Multiprocessing Methods
@@ -564,6 +646,7 @@ if __name__ == '__main__':
 
 # Pool object needed for multiprocessing
     pool = Pool(processes=multiprocessing.cpu_count())
+    # XXXX the pool object isn't actually used - what is it's purpose?
 
     model_params = {
         'width': 200,

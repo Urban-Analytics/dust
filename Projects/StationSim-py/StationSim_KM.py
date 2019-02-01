@@ -47,14 +47,18 @@ class Agent:
         self.unique_id = unique_id
         self.active = 0  # 0 Not Started, 1 Active, 2 Finished
         model.pop_active += 1
+
         # Location
         self.location = model.loc_entrances[np.random.randint(model.entrances)]
         self.location[1] += model.entrance_space * (np.random.uniform() - .5) # XXXX WHAT DOES THIS DO?
         self.loc_desire = model.loc_exits[np.random.randint(model.exits)]
+
         # Parameters
         self.time_activate = np.random.exponential(model.entrance_speed) # XXXX WHAT DOES THIS DO?
+        # The maximum speed that this agent can travel at:
         self.speed_desire = max(np.random.normal(model.speed_desire_mean, model.speed_desire_std), 2*model.speed_min)
-        self.speeds = np.arange(self.speed_desire, model.speed_min, -model.speed_step)# XXXX WHAT DOES THIS DO?
+        # A few speeds to check; used if a step at the max speed would cause a collision
+        self.speeds = np.arange(self.speed_desire, model.speed_min, -model.speed_step)
         if model.do_save:
             self.history_loc = []
         return
@@ -142,6 +146,7 @@ class Agent:
         return neighbours
 
     def lerp(self, loc1, loc2, speed):
+        """XXXX What does this do??"""
         distance = np.linalg.norm(loc1 - loc2)
         loc = loc2 + speed * (loc1 - loc2) / distance
         return loc

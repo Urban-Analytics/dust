@@ -90,7 +90,7 @@ public class StationTransition {
         results = new double[(NUM_ITER / WINDOW_SIZE)];
 
         // Rewrote how truthModel is run as it allows easier extraction of truth data at intervals
-        while(truthModel.schedule.getSteps() < NUM_ITER) {
+        while (truthModel.schedule.getSteps() < NUM_ITER) {
             if (!(truthModel.schedule.getSteps() == 0) && (truthModel.schedule.getSteps() % WINDOW_SIZE == 0.0)) {
                 // Get numPeople output
                 Bag truthPeople = truthModel.area.getAllObjects();
@@ -113,7 +113,7 @@ public class StationTransition {
         truthModel.finish();
         System.out.println("Executed truthModel.finish()");
 
-        assert(!truthHistory.isEmpty());
+        assert (!truthHistory.isEmpty());
 
         /*
          ************ START THE MAIN LOOP ************
@@ -127,9 +127,9 @@ public class StationTransition {
         ConstantDoubleVertex[] currentStateEstimate = buildStateVector(truthModel); // XXXX Shouldn't this be tempModel?
 
         // Start data assimilation window
-            // predict
-            // update
-            // for 1000 iterations
+        // predict
+        // update
+        // for 1000 iterations
 
         //tempModel.start(rand);
         //tempModel.schedule.step(tempModel);
@@ -139,16 +139,10 @@ public class StationTransition {
         //assert(personList.size() != 0);
 
 
-
         // Start data assimilation window
         for (int i = 0; i < NUM_WINDOWS; i++) {
 
             System.out.println("Entered Data Assimilation window " + i);
-
-            // Step the model
-            //for (int j=0; j<WINDOW_SIZE; j++) {
-            //    tempModel.schedule.step(tempModel);
-            //}
 
             /*
              ************ INITIALISE THE BLACK BOX MODEL ************
@@ -175,21 +169,21 @@ public class StationTransition {
             // Observe the truth data plus some noise?
             System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
             System.out.println("Observing at iterations: ");
-            for (Integer j = i * WINDOW_SIZE; j < i * WINDOW_SIZE + WINDOW_SIZE ; j++) {
-                System.out.print(j+",");
+            for (Integer j = i * WINDOW_SIZE; j < i * WINDOW_SIZE + WINDOW_SIZE; j++) {
+                System.out.print(j + ",");
 
                 // Need to get the output from the box model
                 ConstantDoubleVertex[] output = box.getValue();
 
                 // output with a bit of noise. Lower sigma makes it more constrained.
                 GaussianVertex noisyOutput[] = new GaussianVertex[state.length];
-                for (int k=0; k<state.length; k++) {
+                for (int k = 0; k < state.length; k++) {
                     noisyOutput[k] = new GaussianVertex(output[k], SIGMA_NOISE);
                 }
 
                 // Observe the output (could do at same time as adding noise to each element in the state vector?)
                 ConstantDoubleVertex[] history = truthHistory.get(i); // This is the truth state at the end of window i
-                for (int k=0; k<state.length; k++) {
+                for (int k = 0; k < state.length; k++) {
                     noisyOutput[k].observe(history[k].getValue(0)); // Observe each element in the truth state vector
                 }
             }
@@ -218,7 +212,7 @@ public class StationTransition {
         //writeModelHistory(tempModel, "tempModel" + System.currentTimeMillis());
     }
 
-    private static ConstantDoubleVertex[] buildStateVector(Station model) {
+    private static Vertex<DoubleTensor[]> buildStateVector(Station model) {
 
         List<Person> people = new ArrayList<>(model.area.getAllObjects());
 
@@ -226,11 +220,12 @@ public class StationTransition {
     }
 
 
-    private static ConstantDoubleVertex[] buildStateVector(List<Person> personList) {
+    private static Vertex<DoubleTensor[]> buildStateVector(List<Person> personList) {
 
-        assert(!personList.isEmpty());
+        assert (!personList.isEmpty());
 
         ConstantDoubleVertex[] stateVector = new ConstantDoubleVertex[personList.size() * 3];
+        //Vertex<DoubleTensor[]> stateVec = new CombineDoubles();
         agentExits = new Exit[personList.size()];
 
         int counter = 0;
@@ -238,8 +233,8 @@ public class StationTransition {
             int counter2 = counter * 3;
 
             stateVector[counter2] = new ConstantDoubleVertex(person.getLocation().x);
-            stateVector[counter2 + 1] =  new ConstantDoubleVertex(person.getLocation().y);
-            stateVector[counter2 + 2] =  new ConstantDoubleVertex(person.getDesiredSpeed());
+            stateVector[counter2 + 1] = new ConstantDoubleVertex(person.getLocation().y);
+            stateVector[counter2 + 2] = new ConstantDoubleVertex(person.getDesiredSpeed());
 
             stateVector[counter2].setLabel("Person " + counter);
             stateVector[counter2 + 1].setLabel("Person " + counter);
@@ -247,7 +242,7 @@ public class StationTransition {
 
             agentExits[counter] = person.getExit();
 
-            assert(agentExits.length == stateVector.length / 3);
+            assert (agentExits.length == stateVector.length / 3);
 
             counter++;
         }
@@ -256,26 +251,37 @@ public class StationTransition {
     }
 
 
-    private static List<Person> rebuildPersonList(ConstantDoubleVertex[] stateVector) {
+    public static Vertex<DoubleTensor[]> getAtElement(int element, Vertex<DoubleTensor[]> input) {
+
+        return new UnaryOpLambda<>(
+                new long[0],
+                input,
+                (currentState) -> currentState[element]
+        );
+    }
+
+
+    private static List<Person> rebuildPersonList(Vertex<DoubleTensor[]> stateVector) {
 
         List<Person> personList = new ArrayList<>();
         // Find halfway point so equal number of agents assigned entrance 1 and 2 (doesn't affect model run)
-        int halfwayPoint = (stateVector.length / 3) / 2;
+        int halfwayPoint = stateVector.getValue().length;
+        //int halfwayPoint = (stateVector.size() / 3) / 2;
         int entranceNum = 0;
 
-        System.out.println(stateVector.length);
-        System.out.println(stateVector.length / 3);
+        System.out.println(stateVector.getValue().length);
+        System.out.println(stateVector.getValue().length / 3);
         System.out.println(halfwayPoint);
 
-        for (int i=0; i < stateVector.length / 3; i++) {
+        for (int i = 0; i < stateVector.length / 3; i++) {
             // j is equal to ith lot of 3s
             int j = i * 3;
             // Extract vertex's from stateVector
             double xLoc = stateVector[j].getValue(0);
-            double yLoc = stateVector[j+1].getValue(0);
+            double yLoc = stateVector[j + 1].getValue(0);
             Double2D loc = new Double2D(xLoc, yLoc); // Build Double2D for location
 
-            double desSpeed = stateVector[j+2].getValue(0);
+            double desSpeed = stateVector[j + 2].getValue(0);
 
             // Get exit from agentExits[]
             Exit exit = agentExits[i];
@@ -301,7 +307,7 @@ public class StationTransition {
     }
 
 
-    private static ConstantDoubleVertex[] predict(ConstantDoubleVertex[] initialState) {
+    private static Vertex<DoubleTensor[]> predict(int stepCount, Vertex<DoubleTensor[]> initialState) {
 
         // Find all the people
         Bag people = tempModel.area.getAllObjects();
@@ -312,7 +318,7 @@ public class StationTransition {
         }
 
         // Convert from the initial state ( a list of numbers) to a list of agents
-        List<Person> personList = new ArrayList<>(rebuildPersonList(initialState)); // NOW FIXED (this will break it (needs to convert initialState -> PersonList))
+        List<Person> personList = new ArrayList<>(rebuildPersonList(initialState)); // FIXED NOW (this will break it (needs to convert initialState -> PersonList))
 
         // Add people from the personList
         for (Object o : personList) {
@@ -321,26 +327,42 @@ public class StationTransition {
         }
 
         // Propagate the model
-        for (int i=0; i < WINDOW_SIZE; i++) {
+        for (int i = 0; i < WINDOW_SIZE; i++) {
             // Step all the people window_size times
             tempModel.schedule.step(tempModel);
         }
 
-        // Return the new state, after those iterations
+        // Get new stateVector
+        List<Person> personList2 = new ArrayList<>(tempModel.area.getAllObjects());
+        Vertex<DoubleTensor[]> state = buildStateVector(personList2); // build stateVector directly from Bag people?
 
-        return buildStateVector(tempModel);
+        UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
+                new long[0],
+                state,
+                (currentState) -> step(stepCount, currentState)
+        );
 
-        /*
-        // Create personList and populate
-        List<Person> newPersonList = new ArrayList<>();
-        personList.addAll(tempModel.area.getAllObjects());
+        return box;
+    }
 
-        // Check personList is not empty, then that it is same size as Bag people
-        assert(newPersonList.size() > 0);
-        assert(people.size() == personList.size());
 
-        return newPersonList;
-        */
+    private static DoubleTensor[] step(int stepCount, DoubleTensor[] initialState) {
+
+        DoubleTensor[] steppedState = new DoubleTensor[initialState.length];
+
+        for (int i=0; i < stepCount; i++) {
+            steppedState = initialState; // actually update the state here
+        }
+        return steppedState;
+    }
+
+
+    public static void main(String[] args) {
+
+        StationTransition.runDataAssimilation();
+        System.out.println("Happy days, runDataAssimilation has executed successfully!");
+
+        System.exit(0);
     }
 
 
@@ -379,101 +401,4 @@ public class StationTransition {
     private static void writeModelHistory(Station model, String fileName) {
         model.analysis.writeDataFrame(model.analysis.stateDataFrame, fileName + ".csv");
     }
-
-
-    public static void main(String[] args) {
-
-        StationTransition.runDataAssimilation();
-        System.out.println("Happy days, runDataAssimilation has executed successfully!");
-
-        System.exit(0);
-    }
-
-    private static Integer[] runModel() {
-        // Create output array
-        Integer[] output = new Integer[WINDOW_SIZE];
-        // Step the model
-        for (int i=9; i<WINDOW_SIZE; i++) {
-            tempModel.schedule.step(tempModel);
-            output[i] = tempModel.area.getAllObjects().size();
-        }
-        return output;
-    }
-
-    private static double[] buildStateVector2(List<Person> personList) {
-
-        double[] stateVector = new double[personList.size() * 3];
-        agentExits = new Exit[personList.size()];
-
-        int counter = 0;
-        for (Person person : personList) {
-            int counter2 = counter * 3;
-
-            stateVector[counter2] = person.getLocation().x;
-            stateVector[counter2 + 1] = person.getLocation().y;
-            stateVector[counter2 + 2] = person.getDesiredSpeed();
-
-            agentExits[counter] = person.getExit();
-
-            assert(agentExits.length == stateVector.length / 3);
-
-            counter++;
-        }
-
-        return stateVector;
-    }
-
-    private static ConstantDoubleVertex[] buildStateVector3(List<Person> personList) {
-
-        assert(!personList.isEmpty());
-
-        ConstantDoubleVertex[] stateVector = new ConstantDoubleVertex[personList.size() * 3];
-        agentExits = new Exit[personList.size()];
-
-        int counter = 0;
-        for (Person person : personList) {
-            int counter2 = counter * 3;
-
-            stateVector[counter2] = new ConstantDoubleVertex(person.getLocation().x);
-            stateVector[counter2 + 1] =  new ConstantDoubleVertex(person.getLocation().y);
-            stateVector[counter2 + 2] =  new ConstantDoubleVertex(person.getDesiredSpeed());
-
-            agentExits[counter] = person.getExit();
-
-            assert(agentExits.length == stateVector.length / 3);
-
-            counter++;
-        }
-
-        return stateVector;
-    }
-
-    private static DoubleTensor buildStateVector4(List<Person> personList) {
-
-        assert(!personList.isEmpty());
-
-        DoubleTensor stateVector = DoubleTensor.create(0.0, new long[]{personList.size()});
-
-        //ConstantDoubleVertex[] stateVector = new ConstantDoubleVertex[personList.size() * 3];
-        agentExits = new Exit[personList.size()];
-
-        int counter = 0;
-        for (Person person : personList) {
-            int counter2 = counter * 3;
-
-            stateVector.setValue(person.getLocation().x, counter2);
-            stateVector.setValue(person.getLocation().y, counter2 + 1);
-            stateVector.setValue(person.getDesiredSpeed());
-
-            agentExits[counter] = person.getExit();
-
-            assert(agentExits.length == (stateVector.getLength() / 3));
-
-            counter++;
-        }
-
-        return stateVector;
-    }
-
 }
-

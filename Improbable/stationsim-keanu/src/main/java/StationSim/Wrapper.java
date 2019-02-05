@@ -1,23 +1,10 @@
 package StationSim;
 
-import io.improbable.keanu.algorithms.NetworkSamples;
-import io.improbable.keanu.algorithms.mcmc.MetropolisHastings;
-import io.improbable.keanu.network.BayesianNetwork;
-import io.improbable.keanu.randomfactory.RandomDoubleFactory;
-import io.improbable.keanu.randomfactory.RandomFactory;
-//import io.improbable.keanu.research.randomfactory.VertexBackedRandomGenerator;
-//import io.improbable.keanu.research.visualisation.GraphvizKt;
-//import io.improbable.keanu.research.vertices.IntegerArrayIndexingVertex;
-//import io.improbable.keanu.research.vertices.RandomFactoryVertex;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.KeanuRandom;
-import io.improbable.keanu.vertices.dbl.nonprobabilistic.CastDoubleVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
-import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
-import org.apache.commons.math3.random.RandomGenerator;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;

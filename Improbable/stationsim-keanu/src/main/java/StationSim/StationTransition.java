@@ -16,26 +16,20 @@
 
 package StationSim;
 
-import com.sun.j3d.utils.scenegraph.io.state.com.sun.j3d.utils.geometry.ConeState;
-import io.improbable.keanu.algorithms.NetworkSamples;
-import io.improbable.keanu.algorithms.mcmc.MetropolisHastings;
 import io.improbable.keanu.network.BayesianNetwork;
 import io.improbable.keanu.tensor.Tensor;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
-import io.improbable.keanu.tensor.generic.GenericTensor;
 import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.KeanuRandom;
-import io.improbable.keanu.vertices.dbl.nonprobabilistic.CastDoubleVertex;
 import io.improbable.keanu.vertices.dbl.nonprobabilistic.ConstantDoubleVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
-import org.yaml.snakeyaml.scanner.Constant;
+
 import sim.util.Bag;
 import sim.util.Double2D;
 
 import java.io.Writer;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,8 +37,8 @@ import java.util.List;
 public class StationTransition {
 
     // Create truth model (and temp model)
-    static Station truthModel = new Station(System.currentTimeMillis());
-    static Station tempModel = new Station(System.currentTimeMillis() + 1);
+    private static Station truthModel = new Station(System.currentTimeMillis());
+    private static Station tempModel = new Station(System.currentTimeMillis() + 1);
 
     private static int NUM_ITER = 2000; // 2000
     private static int WINDOW_SIZE = 200; // 200
@@ -66,7 +60,7 @@ public class StationTransition {
 
     private static double[] results;
 
-    private static List<ConstantDoubleVertex[]> truthHistory = new ArrayList<>();
+    private static List<Vertex<DoubleTensor[]>> truthHistory = new ArrayList<>();
 
 
     private static void runDataAssimilation() {
@@ -99,9 +93,9 @@ public class StationTransition {
                 // Build stateVector to observe (unless iter == 0)
 
                 List<Person> truthList = new ArrayList<>(truthPeople);
-                ConstantDoubleVertex[] truthVector = buildStateVector(truthList);
+                //Vertex<DoubleTensor[]> truthVector = buildStateVector(truthList);
                 // Add stateVector to history
-                truthHistory.add(truthVector);
+                //truthHistory.add(truthVector);
 
                 // Increment counter
                 counter++;
@@ -120,24 +114,11 @@ public class StationTransition {
          */
         System.out.println("Starting DA loop");
 
+
         // Create the current state (initially 0). Use the temporary model because so far it is in its initial state
         tempModel.start(rand);
-        //tempModel.schedule.step(tempModel);
 
-        ConstantDoubleVertex[] currentStateEstimate = buildStateVector(truthModel); // XXXX Shouldn't this be tempModel?
-
-        // Start data assimilation window
-        // predict
-        // update
-        // for 1000 iterations
-
-        //tempModel.start(rand);
-        //tempModel.schedule.step(tempModel);
-
-        //Bag people = tempModel.area.getAllObjects();
-        //List<Person> personList = new ArrayList<Person>(people);
-        //assert(personList.size() != 0);
-
+        Vertex<DoubleTensor[]> currentStateEstimate = buildStateVector(tempModel); // TODO: Shouldn't this be tempModel?
 
         // Start data assimilation window
         for (int i = 0; i < NUM_WINDOWS; i++) {
@@ -148,24 +129,20 @@ public class StationTransition {
              ************ INITIALISE THE BLACK BOX MODEL ************
              */
 
-            ConstantDoubleVertex[] state = currentStateEstimate;
+            Vertex<DoubleTensor[]> state = currentStateEstimate;
 
-            UnaryOpLambda<ConstantDoubleVertex[], ConstantDoubleVertex[]> box =
-                    new UnaryOpLambda<ConstantDoubleVertex[], ConstantDoubleVertex[]>(new long[]{state.length}, state, StationTransition::predict);
-
-
-            //Vertex<ConstantDoubleVertex> state =
-
-            // Build new stateVector
-            //personList = new ArrayList<Person>(tempModel.area.getAllObjects());
-
-            //ConstantDoubleVertex[] stateVector = buildStateVector(personList);
+            //UnaryOpLambda<Vertex<DoubleTensor>, Vertex<DoubleTensor>> box =
+              //      new UnaryOpLambda<Vertex<DoubleTensor>, Vertex<DoubleTensor>>(
+                //            new long[]{state.getValue().length},
+                  //          state,
+                    //        (currentState) -> predict(200, state));
 
 
             /*
              ************ OBSERVE SOME TRUTH DATA ************
              */
 
+            /*
             // Observe the truth data plus some noise?
             System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
             System.out.println("Observing at iterations: ");
@@ -176,25 +153,25 @@ public class StationTransition {
                 ConstantDoubleVertex[] output = box.getValue();
 
                 // output with a bit of noise. Lower sigma makes it more constrained.
-                GaussianVertex noisyOutput[] = new GaussianVertex[state.length];
-                for (int k = 0; k < state.length; k++) {
+                GaussianVertex noisyOutput[] = new GaussianVertex[state.getValue().length];
+                for (int k = 0; k < state.getValue().length; k++) {
                     noisyOutput[k] = new GaussianVertex(output[k], SIGMA_NOISE);
                 }
 
                 // Observe the output (could do at same time as adding noise to each element in the state vector?)
-                ConstantDoubleVertex[] history = truthHistory.get(i); // This is the truth state at the end of window i
-                for (int k = 0; k < state.length; k++) {
-                    noisyOutput[k].observe(history[k].getValue(0)); // Observe each element in the truth state vector
+                Vertex<DoubleTensor[]> history = truthHistory.get(i); // This is the truth state at the end of window i
+                for (int k = 0; k < state.getValue().length; k++) {
+                    noisyOutput[k].observe(history.getValue()[k].getValue(0)); // Observe each element in the truth state vector
                 }
             }
             System.out.println();
-
+            */
 
             /*
              ************ CREATE THE BAYES NET ************
              */
 
-            BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
+            //BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
 
             /*
              ************ SAMPLE FROM THE POSTERIOR************
@@ -212,6 +189,7 @@ public class StationTransition {
         //writeModelHistory(tempModel, "tempModel" + System.currentTimeMillis());
     }
 
+
     private static Vertex<DoubleTensor[]> buildStateVector(Station model) {
 
         List<Person> people = new ArrayList<>(model.area.getAllObjects());
@@ -220,6 +198,7 @@ public class StationTransition {
     }
 
 
+    // TODO: Modify this method (or overload) to accept `Bag people` instead of requiring `List<Person>`
     private static Vertex<DoubleTensor[]> buildStateVector(List<Person> personList) {
 
         assert (!personList.isEmpty());
@@ -233,6 +212,7 @@ public class StationTransition {
             int counter2 = counter * 3;
 
             stateVector[counter2] = new ConstantDoubleVertex(person.getLocation().x);
+            //stateVector[counter2] = DoubleTensor.create()
             stateVector[counter2 + 1] = new ConstantDoubleVertex(person.getLocation().y);
             stateVector[counter2 + 2] = new ConstantDoubleVertex(person.getDesiredSpeed());
 
@@ -247,13 +227,13 @@ public class StationTransition {
             counter++;
         }
 
-        return stateVector;
+        //return stateVector;
     }
 
 
     public static Vertex<DoubleTensor[]> getAtElement(int element, Vertex<DoubleTensor[]> input) {
 
-        return new UnaryOpLambda<>(
+        return new UnaryOpLambda<DoubleTensor[], DoubleTensor[]>(
                 new long[0],
                 input,
                 (currentState) -> currentState[element]
@@ -265,23 +245,24 @@ public class StationTransition {
 
         List<Person> personList = new ArrayList<>();
         // Find halfway point so equal number of agents assigned entrance 1 and 2 (doesn't affect model run)
-        int halfwayPoint = stateVector.getValue().length;
+        int halfwayPoint = (stateVector.getValue().length / 3) / 2; // Divide by 3 and then by 2 to divide into triplets (3 Vertex's per agent), then half number of agents
         //int halfwayPoint = (stateVector.size() / 3) / 2;
         int entranceNum = 0;
 
-        System.out.println(stateVector.getValue().length);
-        System.out.println(stateVector.getValue().length / 3);
-        System.out.println(halfwayPoint);
+        //System.out.println(stateVector.getValue().length);
+        //System.out.println(stateVector.getValue().length / 3);
+        //System.out.println(halfwayPoint);
 
-        for (int i = 0; i < stateVector.length / 3; i++) {
+        for (int i = 0; i < stateVector.getValue().length / 3; i++) {
             // j is equal to ith lot of 3s
             int j = i * 3;
-            // Extract vertex's from stateVector
-            double xLoc = stateVector[j].getValue(0);
-            double yLoc = stateVector[j + 1].getValue(0);
-            Double2D loc = new Double2D(xLoc, yLoc); // Build Double2D for location
 
-            double desSpeed = stateVector[j + 2].getValue(0);
+            // Extract vertex's from stateVector
+            DoubleTensor xLoc = stateVector.getValue()[j];
+            DoubleTensor yLoc = stateVector.getValue()[j+1];
+            Double2D loc = new Double2D(xLoc.scalar(), yLoc.scalar()); // Build Double2D for location
+
+            DoubleTensor desSpeed = stateVector.getValue()[j+2];
 
             // Get exit from agentExits[]
             Exit exit = agentExits[i];
@@ -298,7 +279,7 @@ public class StationTransition {
             String name = "Person: " + i;
 
             // Create person using location and speed from stateVector
-            Person person = new Person(tempModel.getPersonSize(), loc, name, tempModel, exit, entrance, desSpeed);
+            Person person = new Person(tempModel.getPersonSize(), loc, name, tempModel, exit, entrance, desSpeed.scalar());
 
             // add person to personList
             personList.add(person);
@@ -334,12 +315,12 @@ public class StationTransition {
 
         // Get new stateVector
         List<Person> personList2 = new ArrayList<>(tempModel.area.getAllObjects());
-        Vertex<DoubleTensor[]> state = buildStateVector(personList2); // build stateVector directly from Bag people?
+        Vertex<DoubleTensor> state = buildStateVector(personList2); // build stateVector directly from Bag people?
 
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
                 new long[0],
                 state,
-                (currentState) -> step(stepCount, currentState)
+                (currentState) -> step(stepCount, state)
         );
 
         return box;

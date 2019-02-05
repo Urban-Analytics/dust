@@ -5,7 +5,9 @@ import io.improbable.keanu.vertices.NonProbabilistic;
 import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.KeanuRandom;
-import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabilistic<DoubleTensor[]> {
 
@@ -28,11 +30,40 @@ public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabi
         vertices = new DoubleVertex[]{x0, x1};
     }
 
+
+    public CombineDoubles(List<DoubleVertex> vert1) {
+        super(new long[0]);
+        addParents(doublesToAdd);
+        DoubleVertex[] tempVertices = vertices;
+        vertices = new DoubleVertex[tempVertices.length + doublesToAdd.size()];
+
+        System.arraycopy(tempVertices, 0, vertices, 0, tempVertices.length);
+
+        for (int i=tempVertices.length; i < vertices.length; i++) {
+            vertices[i] = doublesToAdd.get(i);
+        }
+    }
+
+
+    public void addDoubles(List<DoubleVertex> doublesToAdd) {
+        addParents(doublesToAdd);
+        DoubleVertex[] tempVertices = vertices;
+        vertices = new DoubleVertex[tempVertices.length + doublesToAdd.size()];
+
+        System.arraycopy(tempVertices, 0, vertices, 0, tempVertices.length);
+
+        for (int i=tempVertices.length; i < vertices.length; i++) {
+            vertices[i] = doublesToAdd.get(i);
+        }
+    }
+
+
     @Override
     public DoubleTensor[] sample(KeanuRandom random) {
         //ignore
         return null;
     }
+
 
     @Override
     public DoubleTensor[] calculate() {

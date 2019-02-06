@@ -1,7 +1,7 @@
 package StationSim;
 
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
-import io.improbable.keanu.vertices.dbl.KeanuRandom;
+import io.improbable.keanu.KeanuRandom;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
 
 import java.io.*;

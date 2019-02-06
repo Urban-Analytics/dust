@@ -1,5 +1,6 @@
 package StationSim;
 
+import io.improbable.keanu.tensor.dbl.DoubleTensor;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
 
@@ -23,11 +24,10 @@ public class CombineDoublesTest {
 
         List<DoubleVertex> testList = testBuild();
 
-        for (int j=0; j<50; j++) {
-            CombineDoubles loopCombined = new CombineDoubles(testList.get(j), testList.get(j+1));
+        CombineDoubles combined = new CombineDoubles(testList);
 
-
+        for (DoubleTensor comb : combined.calculate()) {
+            System.out.println(comb.getValue(0));
         }
-        //CombineDoubles combined = new CombineDoubles();
     }
 }

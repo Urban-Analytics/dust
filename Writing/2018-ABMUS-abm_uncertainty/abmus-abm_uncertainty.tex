@@ -68,9 +68,6 @@ This paper presents ongoing work towards methods that will (i) allow real-time d
 Specifically, this project emulates a simple system of pedestrians who all move towards an exit. The paper reports on initial experiments to constrain the range of possible model outcomes using Bayesian inference techniques as implemented in a new probabilistic programming library. 
 Ultimately the project aims to provide valuable information about the number and type of sensors that might be required to model movements of humans around real urban systems.
 
-XX REWRITE ABSTRACT
-
-
 \keywords{Agent-based modelling \and Uncertainty \and Data assimilation \and Bayesian inference}
 \end{abstract}
 %
@@ -79,29 +76,6 @@ XX REWRITE ABSTRACT
  
 
 \section{Introduction and Background}
-
-Paper plan:
-
-\begin{itemize}
-\item Aims: 1. explore the amount of data required to successfully parameterise a pedestrian simulation. 2. experiment with the efficacy of Bayes nets and probabilistic programming for doing this.
-\item 1. Experiment with a simple model - how much data do we need to give to the Bayes Net in order to successfully find the threshold? 
-	\begin{enumerate}
-	\item Give it every iteration
-	\item Give it 1 iteration
-	\item ... how many before it does not have enough data?
-	\end{enumerate}
-\item 2. Experiment with ABM.
-	\begin{enumerate}
-	\item Give it every iteration
-	\item Give it 1 iteration
-	\item ... how many before it does not have enough data?
-	\item Give it inflows and outflows
-	\item Give it density of a particular square.
-	\end{enumerate}
-\end{itemize}
-
-
-
 
 Individual-level modelling approaches, such as agent-based modelling (ABM), are ideally suited to modelling the behaviour and evolution of social systems. This is especially true in the context of modern `smart' cities, where large volumes of data, supported by innovative `big' data analytics, can be leveraged to better understand and capture the characteristics of the underlying systems. However, there is inevitably a high degree of uncertainty in projections of social systems -- input data are noisy and sparse, and human behaviour is itself extremely uncertain -- one of the key challenges facing the discipline is the quantification of uncertainty within the outputs of these models.
 
@@ -152,7 +126,7 @@ We create truth data, i.e. agent counts over time, from a single model run using
 
 \begin{figure}%
 \centering
-\includegraphics[width=\textwidth]{figures/procedure_diagram2}
+\includegraphics[width=\textwidth]{figures/procedure_diagram}
 \caption{An illustration of the procedure to perform parameter estimation.} 
 \label{fig:procedure_diagram}
 \end{figure}
@@ -291,6 +265,6 @@ This paper addresses a core aspect of the ABMUS workshop theme; that of the \tex
 %
 
 \bibliographystyle{splncs04}
-\bibliography{2018-MikesModel}
+\bibliography{2018-abmus-abm_uncertainty}
 
 \end{document}

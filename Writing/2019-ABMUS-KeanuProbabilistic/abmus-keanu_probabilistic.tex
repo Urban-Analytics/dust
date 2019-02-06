@@ -73,20 +73,14 @@ XXXXX NICK TO WRITE ABSTRACT
 
 \section{Introduction and Objectives}
 
+Calibration -- the process of finding optimal values for a model's parameter -- is well studied in the field of agent-based modelling. Two aligned topics that are much less well studied, however, are those of \textit{state estimation} and \textit{data assimilation}. State estimation refers to the practice of estimating the \textit{true} state of a system. Although their complexity precludes the true state of human systems ever being known precisely, it can be estimated by combining a model of the system with current data. The practice of estimating a system's current state using a model and some data is often termed data assimilation\footnote{It is worth noting that although data assimilation techniques can be used to adjust model parameters in response to new data, here the technique is applied solely to the task of state estimation.}.  Data assimilation has, and continues to be, extremely well studied in fields such as meteorology~\cite{kalnay_atmospheric_2003} where it has been credited as being part of the reason that weather forecasts have improved so substantially in recent years~\cite{bauer_quiet_2015}. 
+
+Applications of data assimilation in agent-based modelling are scarce, however; only a handful of attempts have been published~\cite{malleson_understanding_2018,wang_data_2015,ward_dynamic_2016}. The aim of this research is to contribute to this emerging field by performing data assimilation on a simple agent-based model of a hypothetical crowd. A series of `identical twin' experiments are performed, whereby the agent-based model first generates `pseudo-truth' data that reflect the `true' state of the system (in the real world such data are never available) and then the model is then re-run in a data assimilation framework that attempts to replicate the truth data. Importantly, by varying the amount of information about the true system state that are provided to the data assimilation algorithm it is possible to estimate the amount of information that might be required were a real crowd of people to be simulated. Here it is assumed that some individuals in the hypothetical data are tracked, so their spatio-temporal locations are known, but in future work the framework will be extended to aggregate data as well (i.e. counts of people rather than individual traces). 
+
+Data assimilation is a Bayesian approach. The prior estimate of the state of the (pseudo) real system is the current estimate of the system state as provided by the (agent-based) model.The posterior is the new estimate that is obtained once the most recent observations from the (pseudo) real system have been assimilated. Probabilistic programming~\cite{ghahramani_bayesian_2012,ghahramani_probabilistic_2015} is a relatively new approach to writing computer programs whereby variables represent probability distributions rather than actual values. This approach is therefore ideally suited to Bayesian modelling. Hence this paper makes a further contribution: it explores the value of a probabilistic programming library, \textit{keanu}, and the probabilistic approach to modelling in general, as a means of performing data assimilation on an agent-based model.
 
 
 
-\begin{itemize}
-\item Aim: Experiment with probabilistic modelling and probabilistic programming as a means of performing state estimation and data assimilation on a agent-based model.
-\item Method: Apply the framework to an ABM with decreasing amounts of information about the truth:
-	\begin{enumerate}
-	\item Full information about all agents (with a bit of noise)
-	\item Information about only some agents (i.e. we're tracking a few individuals)\todo{Luke is this realistic by Feb 22?}
-	\item Only aggregate information (This will be future work).
-	\end{enumerate}
-\end{itemize}
-
-\todo[inline]{Note that this is not calibration - it's state estimation through data assimilation}
 
 %
 %
@@ -97,7 +91,7 @@ XXXXX NICK TO WRITE ABSTRACT
 
 $ $ % (this is because a \todo straight after a \section confuses latex)
 
-\todo[nolist, inline]{How this work fits in to the wider data assimilation schema (is it `nudging'? and how it compares to traditional data assimilation. Basically a very, very brief literature review.}
+\todo[nolist, inline]{How this work fits in to the wider data assimilation schema (is it `nudging'? and how it compares to traditional data assimilation. Basically a very, very brief literature review (1 paragraph).}
 
 \todo[nolist, inline]{Outline what probabilistic programming is, and what Keanu is.}
 
@@ -149,9 +143,7 @@ XXXX Conclusions
 
 \subsection*{Link to ABMUS Workshop Themes}
 
-This paper contributes to the challenge set out in the workshop theme by developing methods that support ``trusted models that can be used by industry and governments to enhance decision-making, and that can incorporate real (and real-time) data sets in a meaningful way''. Without a reliable means of incorporating real-time data into urban models, their use in forecasting will always be limited to providing likely outcomes based on historical data.
-
-(This is just to make the referencing work initially - can be deleted later \cite{epstein_growing_1996} ).
+This paper contributes to the challenge set out in the workshop theme in two ways. Firstly, by developing methods that support ``trusted models that can be used by industry and governments to enhance decision-making, and that can incorporate real (and real-time) data sets in a meaningful way''. Secondly, regarding the `humans and devices' theme specifically, by beginning to estimate the volume of sensors that would be required in order to successfully model crowds in real time. Without a reliable means of incorporating real-time data into urban models, their use will continue to be limited to scenario evaluation based on historical data rather than providing the most likely estimates of the \textit{current} state of urban systems as well as short-term forecasts.
 
 
 \bibliographystyle{splncs04}

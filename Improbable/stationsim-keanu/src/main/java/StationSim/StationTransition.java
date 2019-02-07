@@ -33,10 +33,11 @@ import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.Una
 import sim.util.Bag;
 import sim.util.Double2D;
 
-import javax.swing.*;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 
 
 public class StationTransition {
@@ -120,6 +121,7 @@ public class StationTransition {
 
         // Create the current state (initially 0). Use the temporary model because so far it is in its initial state
         tempModel.start(rand);
+        tempModel.schedule.step(tempModel);
         Vertex<DoubleTensor[]> currentStateEstimate = buildStateVector(tempModel); // TODO: Shouldn't this be tempModel?
 
         // Start data assimilation window
@@ -141,7 +143,7 @@ public class StationTransition {
 
 
             // Observe the truth data plus some noise?
-            System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
+            //System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
             /*
             System.out.println("Observing at iterations: ");
             for (Integer j = i * WINDOW_SIZE; j < i * WINDOW_SIZE + WINDOW_SIZE; j++) {
@@ -165,6 +167,7 @@ public class StationTransition {
             System.out.println();
             */
 
+            System.out.println("Observing truth data at window " + i + ", adding noise with standard dev: " + SIGMA_NOISE);
             // Get last value of output from box
             Vertex<DoubleTensor> out = CombineDoubles.getAtElement(WINDOW_SIZE-1, box);
             // Output with a bit of noise
@@ -177,27 +180,36 @@ public class StationTransition {
              ************ CREATE THE BAYES NET ************
              */
 
+            System.out.println("Creating BayesNet");
             BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
 
             /*
              ************ SAMPLE FROM THE POSTERIOR************
              */
 
+            System.out.println("Sampling");
             List<Vertex> parameters = new ArrayList<>();
             parameters.add(box);
 
             NetworkSamples sampler = MetropolisHastings.builder().build().getPosteriorSamples(
-                    (ProbabilisticModel) net,
-                    parameters,
-                    NUM_SAMPLES);
+                    (ProbabilisticModel) net,   // BayesNet with latent vertices
+                    parameters,                 // Vertices to include in the returned samples
+                    NUM_SAMPLES);               // Number of samples
 
+            // Down sample and drop sample
             sampler = sampler.drop(DROP_SAMPLES).downSample(DOWN_SAMPLE);
 
             /*
              ************ GET THE INFORMATION OUT OF THE SAMPLES ************
              */
 
-            // for 1000 iterations
+            // *** Model state ***
+            List<DoubleTensor[]> stateSamplesTensor = sampler.get(box).asList();
+
+            List<Double[]> stateSamplesDouble = getDoubleSamples(stateSamplesTensor);
+
+            Double[] meanStateVector = getStateVectorMean(stateSamplesDouble);
+
 
         }
         tempModel.finish();
@@ -316,6 +328,9 @@ public class StationTransition {
         // Find all the people
         Bag people = tempModel.area.getAllObjects();
 
+        assert(people != null);
+        System.out.println("There are " + people.size() + " people in the model.");
+
         // Remove all old people
         for (Object o : people) {
             tempModel.area.remove(o);
@@ -329,6 +344,9 @@ public class StationTransition {
             Person p = (Person) o;
             tempModel.area.setObjectLocation(p, p.getLocation());
         }
+
+        assert (tempModel.area.getAllObjects().size() > 0);
+        System.out.println("There are " + personList.size() + " people in the model.");
 
         // Propagate the model
         for (int i = 0; i < WINDOW_SIZE; i++) {
@@ -358,6 +376,40 @@ public class StationTransition {
             steppedState = initialState; // actually update the state here
         }
         return steppedState;
+    }
+
+
+    private static List<Double[]> getDoubleSamples(List<DoubleTensor[]> tensorSamples) {
+
+        List<Double[]> doubleSamples = new ArrayList<>();
+
+        for (DoubleTensor[] sample : tensorSamples) {
+            Double[] sampleResults = new Double[sample.length];
+            for (int k = 0; k < sample.length; k++) {
+                sampleResults[k] = sample[k].getValue(0);
+            }
+            doubleSamples.add(sampleResults);
+        }
+        return doubleSamples;
+    }
+
+
+    private static Double[] getStateVectorMean(List<Double[]> doubleSamples) {
+
+        // var to hold number of samples
+        int sampleSize = doubleSamples.get(0).length;
+
+        // New list to hold means of each element in stateVector
+        Double[] sampleMeans = new Double[sampleSize];
+
+        for (int i=0; i < sampleSize; i++) {
+            double indexTotal = 0;
+            for (Double[] vectorSample : doubleSamples) {
+                indexTotal += vectorSample[i];
+            }
+            sampleMeans[i] = indexTotal / sampleSize;
+        }
+        return sampleMeans;
     }
 
 

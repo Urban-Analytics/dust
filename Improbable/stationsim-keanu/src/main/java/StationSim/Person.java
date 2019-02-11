@@ -35,25 +35,25 @@ public class Person extends Agent {
     private double speedMultiplier = 1.0;
     private double radius;
     private double currentSpeed;
-    private boolean active = true; // Whether or not agents take part in the simulation. One constructore makes this false.
+    private boolean active = true; // Whether or not agents take part in the simulation. One constructor makes this false.
     private int id = -1 ; // Inactive agents have ID -1, real agents will have incrementally increasing IDs
-    private static int ID_Counter = -0;
+    private static int ID_Counter = 0;
 
 
     /**
      * Used for creating inactive agents. These are used so that all agents can be created initially, but when
      * we actually need an agent this inactive agent will be deleted and a new one will be created one of the other
-     * available constructors. Agents created using this constructure have active=false so do nothing when their step()
+     * available constructors. Agents created using this constructor have active=false so do nothing when their step()
      * method is called
      */
-    public Person(int size, Double2D location, String name) {
+    Person(int size, Double2D location, String name) {
         super(size, location, name);
         this.active = false;
         this.desiredSpeed = 0;
     }
 
 
-    public Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
+    Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
         super(size, location, name);
         this.station = station;
         this.entrance = entrance;
@@ -79,7 +79,7 @@ public class Person extends Agent {
 
 
     // New Person constructor to accept Exit object instead of exitProbs. Easier to build state vector with.
-    public Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance) {
+    Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance) {
         super(size, location, name);
         this.station = station;
         this.entrance = entrance;
@@ -93,25 +93,11 @@ public class Person extends Agent {
 
 
     // Constructor with desiredSpeed included
-    public Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance, double desiredSpeed) {
-        this(size, location, name, station, exit, entrance); // Use the other Person contstuctor, saves on code repetition
+    Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance, double desiredSpeed) {
+        this(size, location, name, station, exit, entrance); // Use the other Person constructor, saves on code repetition
         this.desiredSpeed = desiredSpeed;
     }
 
-
-    public double getCurrentSpeed() {
-        return currentSpeed;
-    }
-
-    public double getDesiredSpeed() { return desiredSpeed; }
-
-    public Exit getExit() {
-        return exit;
-    }
-
-    public double getRadius() {
-        return radius;
-    }
 
     /** Moves the Person closer to their exit and interacts with other Person agents if necessary.
      * @param state Current sim state
@@ -177,14 +163,11 @@ public class Person extends Agent {
                 }
             }
         }
-
-        // Update location (or not)
         // Update location (or not)
         if(!collision(newLocation)) {
             currentSpeed = getDistance(getLocation(), newLocation);
             location = newLocation;
         }
-
         station.area.setObjectLocation(this, location);
     }
 
@@ -205,7 +188,7 @@ public class Person extends Agent {
     /**
      * Check for collision with any other people at a given location
      * @param location Test location for this object
-     * @return Wheteher this object will intersect with any other people at the given location
+     * @return Whether this object will intersect with any other people at the given location
      */
     public boolean collision(Double2D location) {
         Person p;
@@ -260,6 +243,20 @@ public class Person extends Agent {
 
     public double nextExponential(double lambda) {
         return  Math.log(1 - station.random.nextDouble()) / (-lambda);
+    }
+
+    double getCurrentSpeed() {
+        return currentSpeed;
+    }
+
+    double getDesiredSpeed() { return desiredSpeed; }
+
+    public Exit getExit() {
+        return exit;
+    }
+
+    double getRadius() {
+        return radius;
     }
 
     @Override

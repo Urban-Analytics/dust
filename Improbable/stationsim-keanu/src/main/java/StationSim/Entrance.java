@@ -38,9 +38,7 @@ public class Entrance extends Agent {
     public double[] exitProbs;
     public int totalAdded;
 
-    // A bank of people who are inactive. Everyone is created at the beginning, but they are inactive until
-    // the entrance activates them
-    private static Set<Person> inactivePeople = null;
+
 
     public Entrance(int size, Double2D location, String name, int numPeople, double[] exitProbs, Station state) {
         super(size, location, name);
@@ -51,20 +49,7 @@ public class Entrance extends Agent {
         this.numPeople = numPeople;
         this.exitProbs = exitProbs;
         this.totalAdded = 0;
-        // Create all of the people (unless another entrance has done this already
-        if (Entrance.inactivePeople==null) {
-            System.out.print("Populating inactive set: ");
-            Entrance.inactivePeople = new HashSet<>();
-            for (int i=0; i<(state.getNumPeople()); i++) {
-                Double2D spawnLocation = new Double2D(0.0, 0.0);
-                Person person = new Person(personSize, spawnLocation, "Inactive Person: " + i);
-                station.area.setObjectLocation(person, spawnLocation);
-                Entrance.inactivePeople.add(person);
-            }
-            System.out.println("... created "+Entrance.inactivePeople.size()+" inactive agents. " +
-                    "There are "+state.getNumPeople() + " agents in the model.");
-            //System.out.print(Entrance.inactivePeople.toString());
-        }
+
     }
 
     public Exit getExit() {
@@ -81,11 +66,17 @@ public class Entrance extends Agent {
         super.step(state);
 
         // Print the agents for testing
-        /*System.out.print(state.schedule.getSteps() + " -\n\t" + Entrance.inactivePeople.toString() + "\n\t");
+        /*
+        System.out.print("Ticks:"+ state.schedule.getSteps() + " -\n\t" +
+                "Num inactive: "+ inactivePeople.size()  + " -\n\t" +
+                "Total num agents:: "+ ((Station)state).area.getAllObjects().size()  + " -\n\t"
+                //Entrance.inactivePeople.toString() + "\n\t"
+        );
         for (Object o : ((Station)state).area.getAllObjects()) {
             System.out.print(((Person) o).toString() + " ");
         }
-        System.out.println();*/
+        System.out.println();
+        */
 
         // First check if this is a Person generating step
         if (station.schedule.getSteps() % entranceInterval == 0) {
@@ -123,13 +114,14 @@ public class Entrance extends Agent {
                     station.addedCount++;
 
                     // remove an inactive agent from the model and the bank of inactive agents
+                    Station s = ((Station)state);
                     Person inactive =
-                            Entrance
+                            s
                                     .inactivePeople
                                     .iterator()
                                     .next();
                     station.area.remove(inactive);
-                    Entrance.inactivePeople.remove(inactive);
+                    s.inactivePeople.remove(inactive);
 
                 }
             }

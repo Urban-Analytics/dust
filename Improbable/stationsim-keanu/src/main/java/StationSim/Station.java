@@ -23,6 +23,8 @@ import sim.util.Double2D;
 import sim.util.Interval;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Simulates a very simple train station with a given number of entrances and exits which are set through
@@ -43,6 +45,10 @@ public class Station extends SimState {
     public Continuous2D area = new Continuous2D(1.0, areaWidth, areaHeight);
     public Continuous2D doorways = new Continuous2D(1.0, areaWidth, areaHeight);
     public Continuous2D walls = new Continuous2D(1.0, areaWidth, areaHeight);
+
+    // A bank of people who are inactive. Everyone is created at the beginning, but they are inactive until
+    // the entrance activates them
+    Set<Person> inactivePeople = null;
 
     // Default values for parameters
     private int numPeople = 700;
@@ -94,9 +100,11 @@ public class Station extends SimState {
         doorways.clear();
         walls.clear();
         addedCount = 0;
+
         createWalls();
         createExits();
         createEntrances();
+        createInactivePeople();
 
         // This changes when number of exits of size of exits do
         wallHeight = (areaHeight / (numExits + 1)) - (exitSize * 2.0  * personSize / 2.0);
@@ -109,6 +117,7 @@ public class Station extends SimState {
         analysis = new Analysis(this);
         schedule.scheduleRepeating(analysis, 3, 1.0);
     }
+
 
     /**
      * Start the simulation. This is the version that is called from the GUI or Station.main() methods. It needs to
@@ -129,6 +138,7 @@ public class Station extends SimState {
         createWalls();
         createExits();
         createEntrances();
+        createInactivePeople();
 
         // This changes when number of exits of size of exits do
         wallHeight = (areaHeight / (numExits + 1)) - (exitSize * 2.0  * personSize / 2.0);
@@ -150,6 +160,32 @@ public class Station extends SimState {
         super.finish();
         System.out.println("Number of random draws: " + numRandoms);
     }
+
+
+    /** Setup walls on the right side of the simulation. These the position and size of these are
+     * change based on the number of exits and size of the exits.
+     */
+    public void createWalls() {
+        Double2D pos;
+        Wall wall;
+
+        for (int i = 0; i < numExits + 1; i++) {
+            pos = new Double2D(areaWidth - (wallWidth), areaHeight / (numExits * 2 + 2) * (i * 2 + 1));
+            wall = new Wall(pos, wallWidth / 2, wallHeight /2);
+            walls.setObjectLocation(wall, wall.getLocation());
+
+        }
+
+        // back corners - These cover gaps in the top and bottom corners
+        pos = new Double2D(areaWidth - (wallWidth), exitSize / 1.5);
+        wall = new Wall(pos, wallWidth, exitSize + 1);
+        walls.setObjectLocation(wall, wall.getLocation());
+
+        pos = new Double2D(areaWidth - (wallWidth), areaHeight - (exitSize / 1.5));
+        wall = new Wall(pos, wallWidth, exitSize + 1); //exitSize  * personSize / 2
+        walls.setObjectLocation(wall, wall.getLocation());
+    }
+
 
     /** Creates entrance agents based on the number of entrances and size of entrances set in GUI.
      * The size of the entrance represents how many people can pass through it per step (i.e. the number
@@ -178,6 +214,7 @@ public class Station extends SimState {
 
     }
 
+
     /** Creates exit agents based on the number of exits and size of exits set in GUI.
      * The size of the entrance represents how many people can pass through it per step
      * (i.e. The number of person agents that can be removed from the simulation by an
@@ -204,29 +241,26 @@ public class Station extends SimState {
         }
     }
 
-    /** Setup walls on the right side of the simulation. These the position and size of these are
-     * change based on the number of exits and size of the exits.
+
+    /** Creates inactive agents at the start of the simulation run. This is to ensure the
+     * state vector does not change length throughout the data assimilation windows in StationTransition.java
      */
-    public void createWalls() {
-        Double2D pos;
-        Wall wall;
+    private void createInactivePeople() {
+        // Create all of the people (unless another entrance has done this already
 
-        for (int i = 0; i < numExits + 1; i++) {
-            pos = new Double2D(areaWidth - (wallWidth), areaHeight / (numExits * 2 + 2) * (i * 2 + 1));
-            wall = new Wall(pos, wallWidth / 2, wallHeight /2);
-            walls.setObjectLocation(wall, wall.getLocation());
-
+        System.out.print("Populating inactive set: ");
+        this.inactivePeople = new HashSet<>();
+        for (int i=0; i<(this.getNumPeople()); i++) {
+            Double2D spawnLocation = new Double2D(0.0, 0.0);
+            Person person = new Person(personSize, spawnLocation, "Inactive Person: " + i);
+            this.area.setObjectLocation(person, spawnLocation);
+            this.inactivePeople.add(person);
         }
-
-        // back corners - These cover gaps in the top an bottom corners
-        pos = new Double2D(areaWidth - (wallWidth), exitSize / 1.5);
-        wall = new Wall(pos, wallWidth, exitSize + 1);
-        walls.setObjectLocation(wall, wall.getLocation());
-
-        pos = new Double2D(areaWidth - (wallWidth), areaHeight - (exitSize / 1.5));
-        wall = new Wall(pos, wallWidth, exitSize + 1); //exitSize  * personSize / 2
-        walls.setObjectLocation(wall, wall.getLocation());
+        System.out.println("... created "+this.inactivePeople.size()+" inactive agents. " +
+                "There are "+this.getNumPeople() + " agents in the model.");
+        //System.out.print(Entrance.inactivePeople.toString());
     }
+
 
     // Lots of getters and setters use hideParameters variable to hide parameters from GUI
     public int getNumPeople() {

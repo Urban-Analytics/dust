@@ -121,7 +121,7 @@ public class StationTransition {
 
         // Create the current state (initially 0). Use the temporary model because so far it is in its initial state
         tempModel.start(rand);
-        tempModel.schedule.step(tempModel);
+        //tempModel.schedule.step(tempModel);
         Vertex<DoubleTensor[]> currentStateEstimate = buildStateVector(tempModel); // TODO: Shouldn't this be tempModel?
 
         // Start data assimilation window
@@ -324,17 +324,31 @@ public class StationTransition {
 
 
     private static Vertex<DoubleTensor[]> predict(int stepCount, Vertex<DoubleTensor[]> initialState) {
-
+        System.out.println("PREDICTING...");
         // Find all the people
         Bag people = tempModel.area.getAllObjects();
 
-        assert(people != null);
-        System.out.println("There are " + people.size() + " people in the model.");
+        System.out.println("\tBag people size: " + people.size());
+
+        for (Object peep : people) {
+            System.out.println("Person 1:: ");
+            System.out.println(peep.toString());
+        }
+
+        assert(people.size() != 0);
+        System.out.println("\tThere are " + people.size() + " people in the model.");
 
         // Remove all old people
+        /*
         for (Object o : people) {
             tempModel.area.remove(o);
         }
+        */
+        for (int i=0; i < tempModel.getNumPeople(); i++) {
+            tempModel.area.remove(people.get(i));
+        }
+
+        assert(people.size() == 0);
 
         // Convert from the initial state ( a list of numbers) to a list of agents
         List<Person> personList = new ArrayList<>(rebuildPersonList(initialState)); // FIXED NOW (this will break it (needs to convert initialState -> PersonList))
@@ -346,7 +360,7 @@ public class StationTransition {
         }
 
         assert (tempModel.area.getAllObjects().size() > 0);
-        System.out.println("There are " + personList.size() + " people in the model.");
+        System.out.println("\tThere are " + personList.size() + " people in the model.");
 
         // Propagate the model
         for (int i = 0; i < WINDOW_SIZE; i++) {
@@ -355,8 +369,8 @@ public class StationTransition {
         }
 
         // Get new stateVector
-        List<Person> personList2 = new ArrayList<>(tempModel.area.getAllObjects());
-        Vertex<DoubleTensor[]> state = buildStateVector(personList2); // build stateVector directly from Bag people?
+        //List<Person> personList2 = new ArrayList<>(tempModel.area.getAllObjects());
+        Vertex<DoubleTensor[]> state = buildStateVector(tempModel.area.getAllObjects()); // build stateVector directly from Bag people? YES
 
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
                 new long[0],
@@ -364,6 +378,7 @@ public class StationTransition {
                 (currentState) -> step(stepCount, currentState)
         );
 
+        System.out.println("PREDICTION FINISHED.");
         return box;
     }
 

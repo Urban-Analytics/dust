@@ -17,6 +17,7 @@
 package StationSim;
 
 import sim.engine.SimState;
+import sim.util.Bag;
 import sim.util.Double2D;
 
 import java.util.HashSet;
@@ -116,8 +117,10 @@ public class Entrance extends Agent {
                     // remove an inactive agent from the model and the bank of inactive agents
                     Station s = ((Station)state);
                     Person inactive = s.inactivePeople.iterator().next();
-                    station.area.remove(inactive);
+                    s.area.remove(inactive);
                     s.inactivePeople.remove(inactive);
+
+                    System.out.println("Number of objects in s: " + s.area.getAllObjects().size());
 
                 }
             }

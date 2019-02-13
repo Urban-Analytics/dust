@@ -85,6 +85,7 @@ public class StationTransition {
      * Predict first removes 700 agents (successfully)
      * Then builds a list of 700 agents from the state vector (successfully)
      * It then runs the model (containing 700 agents) forward by 200 iterations (PROBLEM HERE)
+     * Returns new UnaryOpLambda
      *
      *      PROBLEM: Stepping the model results in the number of agents in the model increasing (by ~350-450 agents per run).
      *      I have gone through the predict() and step() functions using the debugger and I believe the problem is that
@@ -410,16 +411,24 @@ public class StationTransition {
         }
 
         assert (tempModel.area.getAllObjects().size() > 0);
-        System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model.");
 
         System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model before stepping.");
+
+        /**
+         * Error stems from the for loop below. Whilst this loop is running, the debugger shows that the number of agents
+         * in the model is increasing (Shown next to line 391: Bag people...)
+         */
+
         // Propagate the model
         System.out.println("\tStepping...");
         System.out.println("\tPROBLEM HERE");
+        System.out.println("Number of inactive agents: " + tempModel.inactivePeople.size());
         for (int i = 0; i < WINDOW_SIZE; i++) {
             // Step all the people window_size times
             tempModel.schedule.step(tempModel);
+            System.out.println("Number of inactive agents: " + tempModel.inactivePeople.size());
         }
+        System.out.println("Number of inactive agents: " + tempModel.inactivePeople.size());
         System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model after stepping.");
 
         assert(tempModel.area.getAllObjects().size() == 700) : "Too many people in the model before building state vector";

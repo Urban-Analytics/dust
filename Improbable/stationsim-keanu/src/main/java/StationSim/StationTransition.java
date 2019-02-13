@@ -16,17 +16,20 @@
 
 package StationSim;
 
-import io.improbable.keanu.algorithms.NetworkSample;
-import io.improbable.keanu.algorithms.NetworkSamples;
-import io.improbable.keanu.algorithms.ProbabilisticModel;
+import io.improbable.keanu.Keanu;
+import io.improbable.keanu.algorithms.*;
 import io.improbable.keanu.algorithms.mcmc.MetropolisHastings;
+import io.improbable.keanu.algorithms.mcmc.NetworkSamplesGenerator;
+import io.improbable.keanu.algorithms.variational.optimizer.Optimizer;
 import io.improbable.keanu.network.BayesianNetwork;
+import io.improbable.keanu.network.KeanuProbabilisticModel;
 import io.improbable.keanu.tensor.Tensor;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
 import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.VertexLabel;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.KeanuRandom;
+import io.improbable.keanu.vertices.dbl.DoubleVertexSamples;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
 
@@ -35,6 +38,8 @@ import sim.util.Double2D;
 
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
@@ -72,6 +77,26 @@ public class StationTransition {
     private static List<Vertex<DoubleTensor[]>> truthHistory = new ArrayList<>();
 
 
+    /**
+     * Still have error in predict() somewhere.
+     * When predict is called, the model has 700 agents in it (tempModel.area.getAllObjects())
+     *
+     * Predict pseudocode:
+     * Predict first removes 700 agents (successfully)
+     * Then builds a list of 700 agents from the state vector (successfully)
+     * It then runs the model (containing 700 agents) forward by 200 iterations (PROBLEM HERE)
+     *
+     *      PROBLEM: Stepping the model results in the number of agents in the model increasing (by ~350-450 agents per run).
+     *      I have gone through the predict() and step() functions using the debugger and I believe the problem is that
+     *      when agents are added to the area in Entrance.java, they are not being removed from tempModel.area
+     *
+     *      I thought that the issue was with the station in the Entrance constructor (or somewhere in that class)
+     *      being a new Station object (not just a pointer to the original station i.e. tempModel), and therefore any
+     *      reference to station variables in Entrance would not reference tempModel but a new copy of it. However I
+     *      changed a few things that I thought would solve this (or at least affect it) and there was no effect.
+     */
+
+
     private static void runDataAssimilation() {
 
 
@@ -84,11 +109,12 @@ public class StationTransition {
         System.out.println("truthModel.start() has executed successfully");
 
         int counter = 0;
-        results = new double[(NUM_ITER / WINDOW_SIZE)];
+        results = new double[(NUM_WINDOWS)];
 
         // Rewrote how truthModel is run as it allows easier extraction of truth data at intervals
         while (truthModel.schedule.getSteps() < NUM_ITER) {
-            if (!(truthModel.schedule.getSteps() == 0) && (truthModel.schedule.getSteps() % WINDOW_SIZE == 0.0)) {
+            //if ((truthModel.schedule.getSteps() != 0) && (truthModel.schedule.getSteps() % WINDOW_SIZE == 0.0)) {;
+            if (truthModel.schedule.getSteps() % WINDOW_SIZE == 0.0) {
                 // Get numPeople output
                 Bag truthPeople = truthModel.area.getAllObjects();
                 results[counter] = truthPeople.size();
@@ -99,13 +125,14 @@ public class StationTransition {
 
                 // Add stateVector to history
                 truthHistory.add(truthVector);
-
+                System.out.println("\tSaving truthVector at step: " + truthModel.schedule.getSteps());
                 // Increment counter
                 counter++;
             }
             // Step while condition is not true
             truthModel.schedule.step(truthModel);
         }
+        System.out.println("Counter: " + counter);
         // Finish model
         truthModel.finish();
         System.out.println("Executed truthModel.finish()");
@@ -122,7 +149,7 @@ public class StationTransition {
         // Create the current state (initially 0). Use the temporary model because so far it is in its initial state
         tempModel.start(rand);
         //tempModel.schedule.step(tempModel);
-        Vertex<DoubleTensor[]> currentStateEstimate = buildStateVector(tempModel); // TODO: Shouldn't this be tempModel?
+        Vertex<DoubleTensor[]> currentStateEstimate = buildStateVector(tempModel);
 
         // Start data assimilation window
         for (int i = 0; i < NUM_WINDOWS; i++) {
@@ -133,84 +160,123 @@ public class StationTransition {
              ************ INITIALISE THE BLACK BOX MODEL ************
              */
 
-            Vertex<DoubleTensor[]> state = currentStateEstimate;
-            Vertex<DoubleTensor[]> box = predict(WINDOW_SIZE, state);
-
+            Vertex<DoubleTensor[]> box = predict(WINDOW_SIZE, currentStateEstimate);
 
             /*
              ************ OBSERVE SOME TRUTH DATA ************
              */
 
-
             // Observe the truth data plus some noise?
             //System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
             /*
             System.out.println("Observing at iterations: ");
-            for (Integer j = i * WINDOW_SIZE; j < i * WINDOW_SIZE + WINDOW_SIZE; j++) {
+            for (Integer j = 0; j < WINDOW_SIZE + WINDOW_SIZE; j++) {
                 System.out.print(j + ",");
 
                 // Need to get the output from the box model
-                DoubleTensor[] output = ((CombineDoubles) box).calculate();
+                //DoubleTensor[] output = ((CombineDoubles) box).calculate();
+                DoubleTensor[] output = box.getValue();
 
                 // output with a bit of noise. Lower sigma makes it more constrained.
                 GaussianVertex noisyOutput[] = new GaussianVertex[state.getValue().length];
                 for (int k = 0; k < state.getValue().length; k++) {
-                    noisyOutput[k] = new GaussianVertex(output[k].getValue(), SIGMA_NOISE);
+                    noisyOutput[k] = new GaussianVertex(output[k].scalar(), SIGMA_NOISE);
                 }
 
                 // Observe the output (could do at same time as adding noise to each element in the state vector?)
                 Vertex<DoubleTensor[]> history = truthHistory.get(i); // This is the truth state at the end of window i
+                DoubleTensor[] hist = history.getValue();
                 for (int k = 0; k < state.getValue().length; k++) {
-                    noisyOutput[k].observe(history.getValue()[k].getValue(0)); // Observe each element in the truth state vector
+                    noisyOutput[k].observe(hist[k]); // Observe each element in the truth state vector
                 }
             }
             System.out.println();
+            System.out.println("Observations complete");
             */
 
-            System.out.println("Observing truth data at window " + i + ", adding noise with standard dev: " + SIGMA_NOISE);
-            // Get last value of output from box
-            Vertex<DoubleTensor> out = CombineDoubles.getAtElement(WINDOW_SIZE-1, box);
-            // Output with a bit of noise
-            GaussianVertex noiseOut = new GaussianVertex(out.getValue().scalar(), SIGMA_NOISE);
-            // Observe the output
-            noiseOut.observe(truthHistory.get(i).getValue()[WINDOW_SIZE-1]);
 
+            // Observe the truth data plus some noise?
+            System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
+            // Get output from the box model (200 iterations)
+            DoubleTensor[] output = box.getValue();
+            System.out.println("Output length: " + output.length);
+
+            // output with a bit of noise. Lower sigma makes it more constrained.;
+            GaussianVertex[] noisyOutput = new GaussianVertex[output.length];
+            for (int k=0; k < output.length; k++) {
+                noisyOutput[k] = new GaussianVertex(output[k].scalar(), SIGMA_NOISE);
+            }
+
+            // Observe the output (Could do at same time as adding noise to each element in the state vector?)
+            Vertex<DoubleTensor[]> history = truthHistory.get(i);
+            DoubleTensor[] hist = history.getValue();
+            System.out.println("Hist length: " + hist.length);
+
+            for (int f=0; f < noisyOutput.length; f++) {
+                noisyOutput[f].observe(hist[f]); // Observe each element in the truth state vector
+            }
+            System.out.println("Observations complete");
 
             /*
              ************ CREATE THE BAYES NET ************
              */
 
             System.out.println("Creating BayesNet");
-            BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
+            KeanuProbabilisticModel model = new KeanuProbabilisticModel(box.getConnectedGraph());
+            //BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
+
+            /*
+             ************ OPTIMISE ************
+             */
+
+            //Optimizer optimizer = Keanu.Optimizer.of(net);
+            //optimizer.maxAPosteriori();
 
             /*
              ************ SAMPLE FROM THE POSTERIOR************
              */
 
             System.out.println("Sampling");
-            List<Vertex> parameters = new ArrayList<>();
-            parameters.add(box);
 
-            NetworkSamples sampler = MetropolisHastings.builder().build().getPosteriorSamples(
-                    (ProbabilisticModel) net,   // BayesNet with latent vertices
-                    parameters,                 // Vertices to include in the returned samples
-                    NUM_SAMPLES);               // Number of samples
+            PosteriorSamplingAlgorithm samplingAlgorithm = Keanu.Sampling.MetropolisHastings.withDefaultConfig();
+
+            samplingAlgorithm.getPosteriorSamples(
+                    model,
+                    model.getLatentOrObservedVertices(),
+                    NUM_SAMPLES
+            );
+
+            /*
+            NetworkSamples sampler = Keanu.Sampling.MetropolisHastings.withDefaultConfig().getPosteriorSamples(
+                    model,
+                    model.getLatentOrObservedVertices(),
+                    NUM_SAMPLES
+            );
+            */
 
             // Down sample and drop sample
-            sampler = sampler.drop(DROP_SAMPLES).downSample(DOWN_SAMPLE);
+            //sampler = sampler.drop(DROP_SAMPLES).downSample(DOWN_SAMPLE);
 
             /*
              ************ GET THE INFORMATION OUT OF THE SAMPLES ************
              */
 
+            //List<DoubleTensor> stateSamples = sampler.getDoubleTensorSamples(box).asList();
+            //Samples stateSamples = sampler.get(box);
+
+            //List samp = stateSamples.asList();
+
+            //System.out.println("Sample size: " + samp.size());
+            //System.out.println(samp);
+
             // *** Model state ***
-            List<DoubleTensor[]> stateSamplesTensor = sampler.get(box).asList();
+            /*List<DoubleTensor[]> stateSamplesTensor = sampler.get(box).asList();
 
             List<Double[]> stateSamplesDouble = getDoubleSamples(stateSamplesTensor);
 
             Double[] meanStateVector = getStateVectorMean(stateSamplesDouble);
-
-
+            */
+            //currentStateEstimate = meanStateVector;
         }
         tempModel.finish();
         //writeModelHistory(truthModel, "truthModel" + System.currentTimeMillis());
@@ -219,7 +285,7 @@ public class StationTransition {
 
 
     private static Vertex<DoubleTensor[]> buildStateVector(List<Person> personList) {
-
+        System.out.println("\tBUILDING STATE VECTOR...");
         assert (!personList.isEmpty());
 
         // Create new collection to hold vertices for CombineDoubles
@@ -254,11 +320,11 @@ public class StationTransition {
             // Add agent exit to list for rebuilding later
             agentExits[counter] = person.getExit();
 
-            // Ensure exit array is same length as stateVertices / 3 (as 3 vertices per agent)
-            assert (agentExits.length == stateVertices.size() / 3);
-
             counter++;
         }
+        // Ensure exit array is same length as stateVertices / 3 (as 3 vertices per agent)
+        assert (agentExits.length == stateVertices.size() / 3);
+        System.out.println("\tSTATE VECTOR BUILT");
         return new CombineDoubles(stateVertices);
     }
 
@@ -279,12 +345,7 @@ public class StationTransition {
         List<Person> personList = new ArrayList<>();
         // Find halfway point so equal number of agents assigned entrance 1 and 2 (doesn't affect model run)
         int halfwayPoint = (stateVector.getValue().length / 3) / 2; // Divide by 3 and then by 2 to divide into triplets (3 Vertex's per agent), then half number of agents
-        //int halfwayPoint = (stateVector.size() / 3) / 2;
         int entranceNum = 0;
-
-        //System.out.println(stateVector.getValue().length);
-        //System.out.println(stateVector.getValue().length / 3);
-        //System.out.println(halfwayPoint);
 
         for (int i = 0; i < stateVector.getValue().length / 3; i++) {
             // j is equal to ith lot of 3s
@@ -327,28 +388,17 @@ public class StationTransition {
         System.out.println("PREDICTING...");
         // Find all the people
         Bag people = tempModel.area.getAllObjects();
-
         System.out.println("\tBag people size: " + people.size());
 
-        for (Object peep : people) {
-            System.out.println("Person 1:: ");
-            System.out.println(peep.toString());
+        assert(tempModel.area.getAllObjects().size() != 0);
+        List<Person> personList1 = new ArrayList<>(people);
+
+        for (Person person : personList1) {
+            tempModel.area.remove(person);
         }
 
-        assert(people.size() != 0);
-        System.out.println("\tThere are " + people.size() + " people in the model.");
-
-        // Remove all old people
-        /*
-        for (Object o : people) {
-            tempModel.area.remove(o);
-        }
-        */
-        for (int i=0; i < tempModel.getNumPeople(); i++) {
-            tempModel.area.remove(people.get(i));
-        }
-
-        assert(people.size() == 0);
+        System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model.");
+        assert(tempModel.area.getAllObjects().size() == 0);
 
         // Convert from the initial state ( a list of numbers) to a list of agents
         List<Person> personList = new ArrayList<>(rebuildPersonList(initialState)); // FIXED NOW (this will break it (needs to convert initialState -> PersonList))
@@ -360,14 +410,19 @@ public class StationTransition {
         }
 
         assert (tempModel.area.getAllObjects().size() > 0);
-        System.out.println("\tThere are " + personList.size() + " people in the model.");
+        System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model.");
 
+        System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model before stepping.");
         // Propagate the model
+        System.out.println("\tStepping...");
+        System.out.println("\tPROBLEM HERE");
         for (int i = 0; i < WINDOW_SIZE; i++) {
             // Step all the people window_size times
             tempModel.schedule.step(tempModel);
         }
+        System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model after stepping.");
 
+        assert(tempModel.area.getAllObjects().size() == 700) : "Too many people in the model before building state vector";
         // Get new stateVector
         //List<Person> personList2 = new ArrayList<>(tempModel.area.getAllObjects());
         Vertex<DoubleTensor[]> state = buildStateVector(tempModel.area.getAllObjects()); // build stateVector directly from Bag people? YES

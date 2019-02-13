@@ -115,11 +115,7 @@ public class Entrance extends Agent {
 
                     // remove an inactive agent from the model and the bank of inactive agents
                     Station s = ((Station)state);
-                    Person inactive =
-                            s
-                                    .inactivePeople
-                                    .iterator()
-                                    .next();
+                    Person inactive = s.inactivePeople.iterator().next();
                     station.area.remove(inactive);
                     s.inactivePeople.remove(inactive);
 

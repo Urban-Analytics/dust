@@ -46,10 +46,11 @@ public class Person extends Agent {
      * available constructors. Agents created using this constructor have active=false so do nothing when their step()
      * method is called
      */
-    Person(int size, Double2D location, String name) {
+    Person(int size, Double2D location, String name, Exit exit) {
         super(size, location, name);
         this.active = false;
         this.desiredSpeed = 0;
+        this.exit = exit;
     }
 
 
@@ -228,7 +229,7 @@ public class Person extends Agent {
         if (!active) {// Inactive agents don't have an exit yet, so just give them an arbitrary large distance
             return Double.MAX_VALUE;
         }
-        return getDistance(getLocation(), exit.getLocation());
+        return getDistance(this.getLocation(), exit.getLocation());
     }
 
     /**
@@ -262,6 +263,24 @@ public class Person extends Agent {
     @Override
     public String toString() {
         return "["+ this.id+"]"+this.name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        // If the object is compared with itself then return true
+        if (o == this) {
+            return true;
+        }
+
+        /* Check if o is an instance of Person or not
+          "null instanceof [type]" also returns false */
+        if (!(o instanceof Person)) {
+            return false;
+        }
+
+        // typecast o to Complex so that we can compare data members
+        Person p = (Person) o;
+        return this.id == p.id;
     }
 
 }

@@ -114,15 +114,9 @@ public class StationTransition {
                 Bag truthPeople = truthModel.area.getAllObjects();
                 results[counter] = truthPeople.size();
 
-                System.out.println("TESTING");
-
-                System.out.println(String.format(
-                        "truthPeople: '%d', truthModel: %d",truthPeople.size(),truthModel.getNumPeople()).toString());
-
-                assert ( truthPeople.size() == truthModel.getNumPeople() ) :
-                        String.format(
-                        "truthPeople: '%d', truthModel: %d",truthPeople.size(),truthModel.getNumPeople()
-                );
+                // CHeck the number of people expected and the number of people in the model is correct.
+                assert truthPeople.size() == truthModel.getNumPeople() :
+                        String.format( "truthPeople: '%d', truthModel: %d",truthPeople.size(),truthModel.getNumPeople() );
 
                 // Build stateVector to observe (unless iter == 0)
                 List<Person> truthList = new ArrayList<>(truthPeople);

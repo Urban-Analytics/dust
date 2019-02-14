@@ -117,10 +117,23 @@ public class Entrance extends Agent {
                     // remove an inactive agent from the model and the bank of inactive agents
                     Station s = ((Station)state);
                     Person inactive = s.inactivePeople.iterator().next();
-                    s.area.remove(inactive);
-                    s.inactivePeople.remove(inactive);
 
-                    System.out.println("Number of objects in s: " + s.area.getAllObjects().size());
+                    // Check if any inactive agents left before looping through objects (to save time)
+                    /*if (s.inactivePeople.size() > 0) {
+                        // Loop through and remove an inactive agent so total stays at 700
+                        for (Object inTheModel : s.area.getAllObjects()) {
+                            if (!((Person) inTheModel).isActive()) { // Cast inTheModel to Person and check if active
+                                s.area.remove(inTheModel);
+                                break;
+                            }
+                        }
+                    }*/
+
+                    //s.area.remove(inactive); // Null, inactive never == object in model after personList is built in predict
+
+                    s.inactivePeople.remove(inactive); // agent removed from inactive agents set in station
+
+                    //System.out.println("Number of objects in s: " + s.area.getAllObjects().size());
 
                 }
             }

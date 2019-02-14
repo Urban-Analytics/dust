@@ -345,16 +345,24 @@ public class StationTransition {
 
         List<Person> personList = new ArrayList<>();
         // Find halfway point so equal number of agents assigned entrance 1 and 2 (doesn't affect model run)
-        int halfwayPoint = (stateVector.getValue().length / 3) / 2; // Divide by 3 and then by 2 to divide into triplets (3 Vertex's per agent), then half number of agents
+        int halfwayPoint = tempModel.getNumPeople() / 2; // Divide by 2 to get half number of agents
         int entranceNum = 0;
 
-        for (int i = 0; i < stateVector.getValue().length / 3; i++) {
+        for (int i = 0; i < tempModel.getNumPeople(); i++) {
             // j is equal to ith lot of 3s
             int j = i * 3;
 
             // Extract vertex's from stateVector
             Vertex<DoubleTensor> xLoc = CombineDoubles.getAtElement(j, stateVector);
             Vertex<DoubleTensor> yLoc = CombineDoubles.getAtElement(j+1, stateVector);
+
+            // if x value is 0.0 agent is inactive
+            if (withinRange(new double[]{-1,1}, xLoc.getValue().scalar())) {
+                Person inactive = tempModel.inactivePeople.iterator().next();
+                personList.add(inactive);
+                continue; // inactive agent added, no need to go through rest
+            }
+
             // Build Double2D
             Double2D loc = new Double2D(xLoc.getValue().scalar(), yLoc.getValue().scalar()); // Build Double2D for location
 
@@ -373,6 +381,7 @@ public class StationTransition {
             List<Entrance> entrances = tempModel.getEntrances();
             Entrance entrance = entrances.get(entranceNum);
 
+            // TODO: Make this name equal the right name (id?) for agents so we can follow one agent through model more easily
             String name = "Person: " + i;
 
             // Create person using location and speed from stateVector
@@ -381,14 +390,25 @@ public class StationTransition {
             // add person to personList
             personList.add(person);
         }
+        assert(personList.size() == 700) : "personList contains " + personList.size() + " agents, this is wrong!";
         return personList;
+    }
+
+
+    private static boolean withinRange(double[] range, double value) {
+        assert(range.length == 2) : "Range has too many values in array";
+        Arrays.sort(range);
+        if (value > range[0] && value < range[1]) {
+            return true;
+        }
+        return false;
     }
 
 
     private static Vertex<DoubleTensor[]> predict(int stepCount, Vertex<DoubleTensor[]> initialState) {
         System.out.println("PREDICTING...");
         // Find all the people
-        Bag people = tempModel.area.getAllObjects();
+        Bag people = new Bag(tempModel.area.getAllObjects());
         System.out.println("\tBag people size: " + people.size());
 
         assert(tempModel.area.getAllObjects().size() != 0);
@@ -404,6 +424,8 @@ public class StationTransition {
         // Convert from the initial state ( a list of numbers) to a list of agents
         List<Person> personList = new ArrayList<>(rebuildPersonList(initialState)); // FIXED NOW (this will break it (needs to convert initialState -> PersonList))
 
+        assert(personList.size() == 700) : "personList is not 700 agents exactly";
+
         // Add people from the personList
         for (Object o : personList) {
             Person p = (Person) o;
@@ -416,7 +438,7 @@ public class StationTransition {
 
         /**
          * Error stems from the for loop below. Whilst this loop is running, the debugger shows that the number of agents
-         * in the model is increasing (Shown next to line 391: Bag people...)
+         * in the model is increasing (Shown in debugger next to line 391: Bag people...)
          */
 
         // Propagate the model
@@ -426,12 +448,12 @@ public class StationTransition {
         for (int i = 0; i < WINDOW_SIZE; i++) {
             // Step all the people window_size times
             tempModel.schedule.step(tempModel);
-            System.out.println("Number of inactive agents: " + tempModel.inactivePeople.size());
+            //System.out.println("Number of inactive agents: " + tempModel.inactivePeople.size());
         }
         System.out.println("Number of inactive agents: " + tempModel.inactivePeople.size());
         System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model after stepping.");
 
-        assert(tempModel.area.getAllObjects().size() == 700) : "Too many people in the model before building state vector";
+        assert(tempModel.area.getAllObjects().size() == 700) : "Wrong number of people in the model before building state vector";
         // Get new stateVector
         //List<Person> personList2 = new ArrayList<>(tempModel.area.getAllObjects());
         Vertex<DoubleTensor[]> state = buildStateVector(tempModel.area.getAllObjects()); // build stateVector directly from Bag people? YES

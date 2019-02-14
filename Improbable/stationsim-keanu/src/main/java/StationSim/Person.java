@@ -260,6 +260,8 @@ public class Person extends Agent {
         return radius;
     }
 
+    boolean isActive() { return active; }
+
     @Override
     public String toString() {
         return "["+ this.id+"]"+this.name;

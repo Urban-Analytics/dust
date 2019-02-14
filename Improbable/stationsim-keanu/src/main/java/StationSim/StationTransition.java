@@ -18,10 +18,6 @@ package StationSim;
 
 import io.improbable.keanu.Keanu;
 import io.improbable.keanu.algorithms.*;
-import io.improbable.keanu.algorithms.mcmc.MetropolisHastings;
-import io.improbable.keanu.algorithms.mcmc.NetworkSamplesGenerator;
-import io.improbable.keanu.algorithms.variational.optimizer.Optimizer;
-import io.improbable.keanu.network.BayesianNetwork;
 import io.improbable.keanu.network.KeanuProbabilisticModel;
 import io.improbable.keanu.tensor.Tensor;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
@@ -29,7 +25,6 @@ import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.VertexLabel;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.KeanuRandom;
-import io.improbable.keanu.vertices.dbl.DoubleVertexSamples;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
 
@@ -39,10 +34,7 @@ import sim.util.Double2D;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
 
 
 public class StationTransition {
@@ -466,7 +458,9 @@ public class StationTransition {
         /**
          * BELOW IS THE ASSERTION ERROR DUE TO WRONG NUMBER OF AGENTS, STACK TRACE WRONGLY POINTS TO FOR LOOP ABOVE
          */
-        assert(tempModel.area.getAllObjects().size() == 700) : "Wrong number of people in the model before building state vector";
+        assert(tempModel.area.getAllObjects().size() == truthModel.getNumPeople()) : String.format(
+                "Wrong number of people in the model before building state vector. Expected %d but got %d",
+                truthModel.getNumPeople(), tempModel.area.getAllObjects().size() );
         // Get new stateVector
         //List<Person> personList2 = new ArrayList<>(tempModel.area.getAllObjects());
         Vertex<DoubleTensor[]> state = buildStateVector(tempModel.area.getAllObjects()); // build stateVector directly from Bag people? YES

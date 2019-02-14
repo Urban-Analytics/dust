@@ -30,7 +30,7 @@ public class Exit extends Agent {
     private int exitInterval;
     public int totalRemoved;
 
-    // Added explicitly assigned exitNumber to help StationTransition2
+    // Added explicitly assigned exitNumber to help StationTransition
     public int exitNumber;
 
 

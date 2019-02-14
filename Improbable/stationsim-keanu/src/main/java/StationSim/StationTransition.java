@@ -37,7 +37,7 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public class StationTransition2 {
+public class StationTransition {
 
     // Create truth model (and temp model)
     private static Station truthModel = new Station(System.currentTimeMillis()); // Station model used to produce truth data
@@ -119,7 +119,7 @@ public class StationTransition2 {
                 System.out.println(String.format(
                         "truthPeople: '%d', truthModel: %d",truthPeople.size(),truthModel.getNumPeople()).toString());
 
-                assert truthPeople.size() == truthModel.getNumPeople():
+                assert ( truthPeople.size() == truthModel.getNumPeople() ) :
                         String.format(
                         "truthPeople: '%d', truthModel: %d",truthPeople.size(),truthModel.getNumPeople()
                 );
@@ -538,7 +538,7 @@ public class StationTransition2 {
 
     public static void main(String[] args) {
 
-        StationTransition2.runDataAssimilation();
+        StationTransition.runDataAssimilation();
         System.out.println("Happy days, runDataAssimilation has executed successfully!");
 
         System.exit(0);

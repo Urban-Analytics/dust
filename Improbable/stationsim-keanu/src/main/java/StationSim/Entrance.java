@@ -121,7 +121,7 @@ public class Entrance extends Agent {
 
                     /**
                      * Tried this initially, realised that the problem was with the link between Station.inactivePeople
-                     * and building personList in StationTransition2.rebuildPersonList()
+                     * and building personList in StationTransition.rebuildPersonList()
                      */
                     // Check if any inactive agents left before looping through objects (to save time)
                     /*if (s.inactivePeople.size() > 0) {

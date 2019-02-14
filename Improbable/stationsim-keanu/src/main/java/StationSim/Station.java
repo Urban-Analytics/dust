@@ -243,7 +243,7 @@ public class Station extends SimState {
 
 
     /** Creates inactive agents at the start of the simulation run. This is to ensure the
-     * state vector does not change length throughout the data assimilation windows in StationTransition2.java
+     * state vector does not change length throughout the data assimilation windows in StationTransition.java
      */
     private void createInactivePeople() {
         // Create all of the people (unless another entrance has done this already

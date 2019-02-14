@@ -37,7 +37,7 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public class StationTransition {
+public class StationTransition2 {
 
     // Create truth model (and temp model)
     private static Station truthModel = new Station(System.currentTimeMillis()); // Station model used to produce truth data
@@ -114,6 +114,16 @@ public class StationTransition {
                 Bag truthPeople = truthModel.area.getAllObjects();
                 results[counter] = truthPeople.size();
 
+                System.out.println("TESTING");
+
+                System.out.println(String.format(
+                        "truthPeople: '%d', truthModel: %d",truthPeople.size(),truthModel.getNumPeople()).toString());
+
+                assert truthPeople.size() == truthModel.getNumPeople():
+                        String.format(
+                        "truthPeople: '%d', truthModel: %d",truthPeople.size(),truthModel.getNumPeople()
+                );
+
                 // Build stateVector to observe (unless iter == 0)
                 List<Person> truthList = new ArrayList<>(truthPeople);
                 Vertex<DoubleTensor[]> truthVector = buildStateVector(truthList);
@@ -127,13 +137,17 @@ public class StationTransition {
             // Step while condition is not true
             truthModel.schedule.step(truthModel);
         }
-        System.out.println("Counter: " + counter);
+        System.out.println("\tHave stepped truth model for: " + counter);
         // Finish model
         truthModel.finish();
-        System.out.println("Executed truthModel.finish()");
+        System.out.println("\tExecuted truthModel.finish()");
 
         // Ensure truthModel has successfully recorded history
         assert (!truthHistory.isEmpty());
+
+        // As the model has finished everyone should be inactive
+        assert truthModel.inactivePeople.size() == 0 : String.format(
+                "There should be no inactive people, not $d",truthModel.inactivePeople);
 
         /*
          ************ START THE MAIN LOOP ************
@@ -282,6 +296,7 @@ public class StationTransition {
     private static Vertex<DoubleTensor[]> buildStateVector(List<Person> personList) {
         System.out.println("\tBUILDING STATE VECTOR...");
         assert (!personList.isEmpty());
+        assert (personList.size() == truthModel.getNumPeople()) : personList.size();
 
         // Create new collection to hold vertices for CombineDoubles
         List<DoubleVertex> stateVertices = new ArrayList<>();
@@ -523,7 +538,7 @@ public class StationTransition {
 
     public static void main(String[] args) {
 
-        StationTransition.runDataAssimilation();
+        StationTransition2.runDataAssimilation();
         System.out.println("Happy days, runDataAssimilation has executed successfully!");
 
         System.exit(0);

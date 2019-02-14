@@ -84,17 +84,19 @@ public class StationTransition {
      * Predict pseudocode:
      * Predict first removes 700 agents (successfully)
      * Then builds a list of 700 agents from the state vector (successfully)
-     * It then runs the model (containing 700 agents) forward by 200 iterations (PROBLEM HERE)
+     * It then runs (steps) the model (containing 700 agents) forward by 200 iterations (PROBLEM HERE)
      * Returns new UnaryOpLambda
      *
-     *      PROBLEM: Stepping the model results in the number of agents in the model increasing (by ~350-450 agents per run).
-     *      I have gone through the predict() and step() functions using the debugger and I believe the problem is that
-     *      when agents are added to the area in Entrance.java, they are not being removed from tempModel.area
+     *      PROBLEM: predict causes the number of agents in the model to reduce. Usually only one person in the model
+     *      by 2nd or 3rd window. This is caught by an AssertionError in predict but assertions have to be turned on
+     *      in IntelliJ with -ea flag (https://stackoverflow.com/questions/18168257/where-to-add-compiler-options-like-ea-in-intellij-idea)
      *
-     *      I thought that the issue was with the station in the Entrance constructor (or somewhere in that class)
-     *      being a new Station object (not just a pointer to the original station i.e. tempModel), and therefore any
-     *      reference to station variables in Entrance would not reference tempModel but a new copy of it. However I
-     *      changed a few things that I thought would solve this (or at least affect it) and there was no effect.
+     *      Original problem was that the Set of inactiveAgents was not referenced when building personList,
+     *      so when agents were removed from inactiveAgents they were not being removed from the model. This has now
+     *      been fixed (to a point) where personList checks if agent is inactive and adds inactive agent if true.
+     *      Explanation of how is in rebuildPersonList.
+     *
+     *      I'm in presentation training from 2-4:30pm today so won't be contactable then
      */
 
 
@@ -355,9 +357,16 @@ public class StationTransition {
             // Extract vertex's from stateVector
             Vertex<DoubleTensor> xLoc = CombineDoubles.getAtElement(j, stateVector);
             Vertex<DoubleTensor> yLoc = CombineDoubles.getAtElement(j+1, stateVector);
+            Vertex<DoubleTensor> desSpeed = CombineDoubles.getAtElement(j+2, stateVector);
 
+            /**
+             * This is where we check to see if agent (from stateVector) is inactive.
+             * Inactive agents have desiredSpeed of 0 (or between -1:1,-1:1 if noise has been added in observations)
+             * If vertex is for inactive agent, add inactiveAgent from set and continue
+             */
+            // TODO: Make range from -SIGMA_NOISE to SIGMA_NOISE?? (So noisy observations don't break this check)
             // if x value is 0.0 agent is inactive
-            if (withinRange(new double[]{-1,1}, xLoc.getValue().scalar())) {
+            if (withinRange(new double[]{-1,1}, desSpeed.getValue().scalar())) {
                 Person inactive = tempModel.inactivePeople.iterator().next();
                 personList.add(inactive);
                 continue; // inactive agent added, no need to go through rest
@@ -365,8 +374,7 @@ public class StationTransition {
 
             // Build Double2D
             Double2D loc = new Double2D(xLoc.getValue().scalar(), yLoc.getValue().scalar()); // Build Double2D for location
-
-            Vertex<DoubleTensor> desSpeed = CombineDoubles.getAtElement(j+2, stateVector);
+            // Get speed as double val
             double speedAsDouble = desSpeed.getValue().scalar();
 
             // Get exit from agentExits[]
@@ -437,8 +445,10 @@ public class StationTransition {
         System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model before stepping.");
 
         /**
-         * Error stems from the for loop below. Whilst this loop is running, the debugger shows that the number of agents
-         * in the model is increasing (Shown in debugger next to line 391: Bag people...)
+         * Error is in .step() function below. As model is stepped, new agents should be added and inactive ones
+         * removed from the model.
+         * HOWEVER, each step causes quite considerable number of agents to be lost from the model.
+         *
          */
 
         // Propagate the model
@@ -453,6 +463,9 @@ public class StationTransition {
         System.out.println("Number of inactive agents: " + tempModel.inactivePeople.size());
         System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model after stepping.");
 
+        /**
+         * BELOW IS THE ASSERTION ERROR DUE TO WRONG NUMBER OF AGENTS, STACK TRACE WRONGLY POINTS TO FOR LOOP ABOVE
+         */
         assert(tempModel.area.getAllObjects().size() == 700) : "Wrong number of people in the model before building state vector";
         // Get new stateVector
         //List<Person> personList2 = new ArrayList<>(tempModel.area.getAllObjects());

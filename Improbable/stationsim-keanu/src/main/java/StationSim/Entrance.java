@@ -118,6 +118,11 @@ public class Entrance extends Agent {
                     Station s = ((Station)state);
                     Person inactive = s.inactivePeople.iterator().next();
 
+
+                    /**
+                     * Tried this initially, realised that the problem was with the link between Station.inactivePeople
+                     * and building personList in StationTransition.rebuildPersonList()
+                     */
                     // Check if any inactive agents left before looping through objects (to save time)
                     /*if (s.inactivePeople.size() > 0) {
                         // Loop through and remove an inactive agent so total stays at 700
@@ -131,6 +136,10 @@ public class Entrance extends Agent {
 
                     //s.area.remove(inactive); // Null, inactive never == object in model after personList is built in predict
 
+                    /**
+                     * With personList now linked to Set of inactiveAgents (and being built from it) it is only
+                     * necessary to remove the inactive people from the Set
+                     */
                     s.inactivePeople.remove(inactive); // agent removed from inactive agents set in station
 
                     //System.out.println("Number of objects in s: " + s.area.getAllObjects().size());

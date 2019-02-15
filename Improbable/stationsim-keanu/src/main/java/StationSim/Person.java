@@ -59,6 +59,14 @@ public class Person extends Agent {
         station.area.setObjectLocation(this, new Double2D(0d,0d));
     }
 
+    public void makeActive(Double2D location, Station station, Exit exit, Entrance entrance) {
+         this.active = true;
+         this.location = location;
+         this.station = station;
+         this.exit = exit;
+         this.entrance = entrance;
+         desiredSpeed = station.random.nextDouble() + minSpeed;
+    }
 
 
     Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {

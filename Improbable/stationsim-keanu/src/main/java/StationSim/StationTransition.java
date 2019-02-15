@@ -152,7 +152,7 @@ public class StationTransition {
 
         // Create the current state (initially 0). Use the temporary model because so far it is in its initial state
         tempModel.start(rand);
-        //tempModel.schedule.step(tempModel);
+        System.out.println("tempModel.start() has executed successfully");
         Vertex<DoubleTensor[]> currentStateEstimate = buildStateVector(tempModel);
 
         // Start data assimilation window
@@ -329,7 +329,7 @@ public class StationTransition {
         }
         // Ensure exit array is same length as stateVertices / 3 (as 3 vertices per agent)
         assert (agentExits.length == stateVertices.size() / 3);
-        assert (stateVertices.size() == 2100) : "State Vector is incorrect size: " + stateVertices.size();
+        assert (stateVertices.size() == tempModel.getNumPeople() * 3) : "State Vector is incorrect size: " + stateVertices.size();
         System.out.println("\tSTATE VECTOR BUILT");
         return new CombineDoubles(stateVertices);
     }
@@ -348,15 +348,15 @@ public class StationTransition {
 
     private static List<Person> rebuildPersonList(Vertex<DoubleTensor[]> stateVector) {
 
-        assert(stateVector.getValue().length == 2100) : "State Vector is incorrect length: " + stateVector.getValue().length;
+        assert(stateVector.getValue().length == tempModel.getNumPeople() * 3) : "State Vector is incorrect length: " + stateVector.getValue().length;
 
         List<Person> personList = new ArrayList<>();
-        // Find halfway point so equal number of agents assigned entrance 1 and 2 (doesn't affect model run)
-        int halfwayPoint = tempModel.getNumPeople() / 2; // Divide by 2 to get half number of agents
+        // Find halfway point so equal number of agents assigned to entrance 1 and 2 (doesn't affect model run)
+        int halfwayPoint = tempModel.getNumPeople() / 2;
         int entranceNum = 0;
 
         for (int i = 0; i < tempModel.getNumPeople(); i++) {
-            // j is equal to ith lot of 3s
+            // j is equal to ith lot of 3s (this is because each agent is represented by three vertices in stateVector)
             int j = i * 3;
 
             // Extract vertex's from stateVector
@@ -369,11 +369,14 @@ public class StationTransition {
              * Inactive agents have desiredSpeed of 0 (or between -1:1,-1:1 if noise has been added in observations)
              * If vertex is from inactive agent, add inactiveAgent from set and continue
              */
+            System.out.println("inactivePeople size: " + tempModel.inactivePeople.size());
             // TODO: Make range from -SIGMA_NOISE to SIGMA_NOISE?? (So noisy observations don't break this check)
             // if x value is 0.0 agent is inactive
             if (withinRange(new double[]{-1,1}, desSpeed.getValue().scalar())) {
                 Person inactive = tempModel.inactivePeople.iterator().next();
+                System.out.println("Inactive persons name: " + inactive.name);
                 personList.add(inactive);
+                tempModel.inactivePeople.remove(inactive);
                 continue; // inactive agent added, no need to go through rest
             }
 
@@ -403,7 +406,7 @@ public class StationTransition {
             // add person to personList
             personList.add(person);
         }
-        assert(personList.size() == 700) : "personList contains " + personList.size() + " agents, this is wrong!";
+        assert(personList.size() == tempModel.getNumPeople()) : "personList contains " + personList.size() + " agents, this is wrong!";
         return personList;
     }
 

@@ -137,7 +137,7 @@ public class StationTransition {
         System.out.println("\tExecuted truthModel.finish()");
 
         // Ensure truthModel has successfully recorded history
-        assert (!truthHistory.isEmpty());
+        assert (!truthHistory.isEmpty()) : "truthHistory is empty, this is not right.";
 
         // As the model has finished everyone should be inactive
         assert truthModel.inactivePeople.size() == 0 : String.format(
@@ -328,6 +328,7 @@ public class StationTransition {
         }
         // Ensure exit array is same length as stateVertices / 3 (as 3 vertices per agent)
         assert (agentExits.length == stateVertices.size() / 3);
+        assert (stateVertices.size() == 2100) : "State Vector is incorrect size: " + stateVertices.size();
         System.out.println("\tSTATE VECTOR BUILT");
         return new CombineDoubles(stateVertices);
     }
@@ -346,6 +347,8 @@ public class StationTransition {
 
     private static List<Person> rebuildPersonList(Vertex<DoubleTensor[]> stateVector) {
 
+        assert(stateVector.getValue().length == 2100) : "State Vector is incorrect length: " + stateVector.getValue().length;
+
         List<Person> personList = new ArrayList<>();
         // Find halfway point so equal number of agents assigned entrance 1 and 2 (doesn't affect model run)
         int halfwayPoint = tempModel.getNumPeople() / 2; // Divide by 2 to get half number of agents
@@ -363,7 +366,7 @@ public class StationTransition {
             /**
              * This is where we check to see if agent (from stateVector) is inactive.
              * Inactive agents have desiredSpeed of 0 (or between -1:1,-1:1 if noise has been added in observations)
-             * If vertex is for inactive agent, add inactiveAgent from set and continue
+             * If vertex is from inactive agent, add inactiveAgent from set and continue
              */
             // TODO: Make range from -SIGMA_NOISE to SIGMA_NOISE?? (So noisy observations don't break this check)
             // if x value is 0.0 agent is inactive

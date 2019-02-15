@@ -66,6 +66,8 @@ public class Entrance extends Agent {
     public void step(SimState state) {
         super.step(state);
 
+
+
         // Print the agents for testing
         /*
         System.out.print("Ticks:"+ state.schedule.getSteps() + " -\n\t" +
@@ -134,7 +136,7 @@ public class Entrance extends Agent {
                         }
                     }*/
 
-                    //s.area.remove(inactive); // Null, inactive never == object in model after personList is built in predict
+                    s.area.remove(inactive); // Null, inactive never == object in model after personList is built in predict
 
                     /**
                      * With personList now linked to Set of inactiveAgents (and being built from it) it is only
@@ -150,5 +152,7 @@ public class Entrance extends Agent {
             totalAdded += addedCount;
             numPeople -= addedCount;
         }
+        //assert(station.getNumPeople() == 700) : "Wrong number of people in the model after Entrance.step()";
+        assert(station.area.getAllObjects().size() == 700) : "Wrong number of people in the model after Entrance.step()";
     }
 }

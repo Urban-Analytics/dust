@@ -130,6 +130,7 @@ public class StationTransition {
             }
             // Step while condition is not true
             truthModel.schedule.step(truthModel);
+            System.out.println("Step number: " + truthModel.schedule.getSteps());
         }
         System.out.println("\tHave stepped truth model for: " + counter);
         // Finish model

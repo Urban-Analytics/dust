@@ -66,7 +66,7 @@ public class Entrance extends Agent {
     public void step(SimState state) {
         super.step(state);
 
-
+        System.out.println("ONE People in the model: " + station.area.getAllObjects().size());
 
         // Print the agents for testing
         /*
@@ -89,6 +89,7 @@ public class Entrance extends Agent {
                 toEnter = size;
             }
             int addedCount = 0;
+            System.out.println("TWO People in the model: " + station.area.getAllObjects().size());
             // Generate people agents to pass through entrance and set as stoppables.
             for (int i = 0; i < toEnter; i++) {
                 double x = location.getX();
@@ -107,14 +108,17 @@ public class Entrance extends Agent {
                         cumulativeProb += exitProbs[j];
                     }
                 }
+                System.out.println("THREE People in the model: " + station.area.getAllObjects().size());
                 // Use new person constructor to assign exit and not exitProbability
                 //Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exitProbs, this);
                 Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exit, this);
+                System.out.println("FOUR People in the model: " + station.area.getAllObjects().size());
                 if (!person.collision(spawnLocation)) {
                     // add the person to the model
                     station.area.setObjectLocation(person, spawnLocation);
                     addedCount++;
                     station.addedCount++;
+                    System.out.println("FIVE People in the model: " + station.area.getAllObjects().size());
 
                     // remove an inactive agent from the model and the bank of inactive agents
                     Station s = ((Station)state);
@@ -135,6 +139,7 @@ public class Entrance extends Agent {
                             }
                         }
                     }*/
+                    System.out.println("\tSIX People in the model: " + station.area.getAllObjects().size());
 
                     s.area.remove(inactive); // Null, inactive never == object in model after personList is built in predict
 
@@ -144,15 +149,20 @@ public class Entrance extends Agent {
                      */
                     s.inactivePeople.remove(inactive); // agent removed from inactive agents set in station
 
+                    System.out.println("\tSEVEN People in the model: " + station.area.getAllObjects().size());
+
                     //System.out.println("Number of objects in s: " + s.area.getAllObjects().size());
 
                 }
             }
+            System.out.println("\taddedCount: " + addedCount);
+            System.out.println("\tinactivePeople size: " + station.inactivePeople.size());
             // Number of people left for further steps
             totalAdded += addedCount;
             numPeople -= addedCount;
         }
         //assert(station.getNumPeople() == 700) : "Wrong number of people in the model after Entrance.step()";
-        assert(station.area.getAllObjects().size() == 700) : "Wrong number of people in the model after Entrance.step()";
+        assert(station.area.getAllObjects().size() == 700) : "Wrong number of people in the model after Entrance.step(): "
+                                                                + station.area.getAllObjects().size();
     }
 }

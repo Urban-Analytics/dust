@@ -43,7 +43,7 @@ public class StationTransition {
     private static Station truthModel = new Station(System.currentTimeMillis()); // Station model used to produce truth data
     private static Station tempModel = new Station(System.currentTimeMillis() + 1); // Station model used for state estimation
 
-    private static int NUM_ITER = 2000; // Total number of iterations
+    private static int NUM_ITER = 5000; // Total number of iterations
     private static int WINDOW_SIZE = 200; // Number of iterations per update window
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE; // Number of update windows
 
@@ -141,8 +141,8 @@ public class StationTransition {
         assert (!truthHistory.isEmpty()) : "truthHistory is empty, this is not right.";
 
         // As the model has finished everyone should be inactive
-        assert truthModel.inactivePeople.size() == 0 : String.format(
-                "There should be no inactive people, not $d",truthModel.inactivePeople);
+        assert truthModel.inactivePeople.size() == truthModel.getNumPeople() : String.format(
+                "Everyone should be inactive but there are only '%d' inactive people: %s", truthModel.inactivePeople.size(), truthModel.inactivePeople);
 
         /*
          ************ START THE MAIN LOOP ************

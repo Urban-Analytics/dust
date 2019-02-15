@@ -46,12 +46,19 @@ public class Person extends Agent {
      * available constructors. Agents created using this constructor have active=false so do nothing when their step()
      * method is called
      */
-    Person(int size, Double2D location, String name, Exit exit) {
+     Person(int size, Double2D location, String name, Exit exit) {
         super(size, location, name);
         this.active = false;
         this.desiredSpeed = 0;
         this.exit = exit;
     }
+
+    public void makeInactive(Station station) {
+        this.active = false;
+        this.name = "PreviouslyActive";
+        station.area.setObjectLocation(this, new Double2D(0d,0d));
+    }
+
 
 
     Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
@@ -108,6 +115,7 @@ public class Person extends Agent {
         if (!this.active) { // If the person has not been activated yet then don't do anything
             return;
         }
+        assert this.active ;
         station = (Station) state;
 
         Double2D newLocation;

@@ -38,8 +38,8 @@ public class Station extends SimState {
     public static int modelCount = 0 ; // Record the total number of models created.
 
     // Representations of simulation space
-    private double areaWidth = 200.0;
-    private double areaHeight = 100.0;
+    private final double areaWidth = 200.0;
+    private final double areaHeight = 100.0;
     int wallWidth = 2;
     double wallHeight;
     public Continuous2D area = new Continuous2D(1.0, areaWidth, areaHeight);
@@ -51,9 +51,9 @@ public class Station extends SimState {
     Set<Person> inactivePeople = null;
 
     // Default values for parameters
-    private int numPeople = 700;
-    private int numEntrances = 3;
-    private int numExits = 2;
+    private final int numPeople = 700;
+    private final int numEntrances = 3;
+    private final int numExits = 2;
     public double[][] exitProbs = {{0.2, 0.8},
                                     {0.3, 0.7},
                                     {0.9, 0.1}};
@@ -264,7 +264,7 @@ public class Station extends SimState {
 
 
     // Lots of getters and setters use hideParameters variable to hide parameters from GUI
-    public int getNumPeople() {
+    public final int getNumPeople() {
         return numPeople;
     }
 
@@ -272,9 +272,9 @@ public class Station extends SimState {
         return "Total number of people to enter simulation split evenly between all entrances";
     }
 
-    public void setNumPeople(int people) {
+    /*public void setNumPeople(int people) {
         numPeople = people;
-    }
+    } */
 
     public Object domNumPeople() {
         return new Interval(1, 10000);
@@ -288,9 +288,9 @@ public class Station extends SimState {
         return numEntrances;
     }
 
-    public void setNumEntrances(int entrances) {
+    /*public void setNumEntrances(int entrances) {
         numEntrances = entrances;
-    }
+    }*/
 
     public boolean hideNumEntrances() {
         return hideParameters;
@@ -304,9 +304,9 @@ public class Station extends SimState {
         return numExits;
     }
 
-    public void setNumExits(int exits) {
+    /*public void setNumExits(int exits) {
         numExits = exits;
-    }
+    }*/
 
     public boolean hideNumExits() {
         return hideParameters;

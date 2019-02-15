@@ -109,6 +109,10 @@ public class Entrance extends Agent {
                     }
                 }
                 System.out.println("THREE People in the model: " + station.area.getAllObjects().size());
+
+                // TODO convert person to active rather than create new one
+
+
                 // Use new person constructor to assign exit and not exitProbability
                 //Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exitProbs, this);
                 Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exit, this);
@@ -162,7 +166,7 @@ public class Entrance extends Agent {
             numPeople -= addedCount;
         }
         //assert(station.getNumPeople() == 700) : "Wrong number of people in the model after Entrance.step()";
-        assert(station.area.getAllObjects().size() == 700) : "Wrong number of people in the model after Entrance.step(): "
+        assert(station.area.getAllObjects().size() == station.getNumPeople()) : "Wrong number of people in the model after Entrance.step(): "
                                                                 + station.area.getAllObjects().size();
     }
 }

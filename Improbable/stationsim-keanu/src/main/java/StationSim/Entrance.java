@@ -21,6 +21,7 @@ import sim.util.Bag;
 import sim.util.Double2D;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -112,7 +113,11 @@ public class Entrance extends Agent {
 
                 // TODO convert person to active rather than create new one. DONE?
                 Station s = ((Station)state);
-                Person inactive = s.inactivePeople.iterator().next();
+                //Person inactive = s.inactivePeople.iterator().next();
+                Bag inactivePeopleInModel = s.area.getObjectsAtLocation(new Double2D(0d,0d));
+
+                Person inactive = (Person) inactivePeopleInModel.get(0);
+
                 inactive.makeActive(spawnLocation, s, exit, this);
 
                 // Use new person constructor to assign exit and not exitProbability

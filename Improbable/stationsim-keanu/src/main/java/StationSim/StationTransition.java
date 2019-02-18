@@ -34,6 +34,7 @@ import sim.util.Double2D;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 
@@ -130,7 +131,7 @@ public class StationTransition {
             }
             // Step while condition is not true
             truthModel.schedule.step(truthModel);
-            System.out.println("Step number: " + truthModel.schedule.getSteps());
+            //System.out.println("Step number: " + truthModel.schedule.getSteps());
         }
         System.out.println("\tHave stepped truth model for: " + counter);
         // Finish model
@@ -300,6 +301,13 @@ public class StationTransition {
 
         int counter = 0;
         for (Person person : personList) {
+
+            if (person.getStation() == tempModel && !person.isActive()) {
+                tempModel.inactivePeople.add(person);
+                counter++;
+                continue;
+            }
+
             // Init new GaussianVertices with mean 0.0 as DoubleVertex is abstract
             DoubleVertex xLoc = new GaussianVertex(0.0, SIGMA_NOISE);
             DoubleVertex yLoc = new GaussianVertex(0.0, SIGMA_NOISE);
@@ -348,12 +356,15 @@ public class StationTransition {
 
     private static List<Person> rebuildPersonList(Vertex<DoubleTensor[]> stateVector) {
 
+        System.out.println("REBUILDING PERSON LIST...");
+
         assert(stateVector.getValue().length == tempModel.getNumPeople() * 3) : "State Vector is incorrect length: " + stateVector.getValue().length;
 
         List<Person> personList = new ArrayList<>();
         // Find halfway point so equal number of agents assigned to entrance 1 and 2 (doesn't affect model run)
         int halfwayPoint = tempModel.getNumPeople() / 2;
         int entranceNum = 0;
+        int counter1 = 0;
 
         for (int i = 0; i < tempModel.getNumPeople(); i++) {
             // j is equal to ith lot of 3s (this is because each agent is represented by three vertices in stateVector)
@@ -370,11 +381,15 @@ public class StationTransition {
              * If vertex is from inactive agent, add inactiveAgent from set and continue
              */
             System.out.println("inactivePeople size: " + tempModel.inactivePeople.size());
+            System.out.println("There are " + personList.size() + " in personList.");
+            Iterator<Person> inactivePeeps = tempModel.inactivePeople.iterator(); // initialise person so call to .next() gets new agent with every loop
             // TODO: Make range from -SIGMA_NOISE to SIGMA_NOISE?? (So noisy observations don't break this check)
             // if x value is 0.0 agent is inactive
-            if (withinRange(new double[]{-1,1}, desSpeed.getValue().scalar())) {
-                Person inactive = tempModel.inactivePeople.iterator().next();
-                System.out.println("Inactive persons name: " + inactive.name);
+            if (withinRange(new double[]{-1,1}, xLoc.getValue().scalar())) {
+                System.out.println("xLoc value is: " + xLoc.getValue().scalar());
+                System.out.println("Counter value: " + counter1);
+                counter1++;
+                Person inactive = inactivePeeps.next();
                 personList.add(inactive);
                 tempModel.inactivePeople.remove(inactive);
                 continue; // inactive agent added, no need to go through rest
@@ -407,6 +422,8 @@ public class StationTransition {
             personList.add(person);
         }
         assert(personList.size() == tempModel.getNumPeople()) : "personList contains " + personList.size() + " agents, this is wrong!";
+
+        System.out.println("PERSON LIST BUILT SUCCESSFULLY");
         return personList;
     }
 

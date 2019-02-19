@@ -114,28 +114,27 @@ public class Entrance extends Agent {
                 // TODO convert person to active rather than create new one. DONE?
                 Station s = ((Station)state);
                 //Person inactive = s.inactivePeople.iterator().next();
+
+                /**
+                 * Get all inactive agents in the model and take the first one
+                 */
                 Bag inactivePeopleInModel = s.area.getObjectsAtLocation(new Double2D(0d,0d));
-
                 Person inactive = (Person) inactivePeopleInModel.get(0);
+                // Check agent is inactive
+                //System.out.println("Inactive: " + inactive.isActive());
+                assert(!inactive.isActive()) : "New agent is not inactive, this is a problem.";
 
+                /* Make the agent active */
                 inactive.makeActive(spawnLocation, s, exit, this);
 
-                // Use new person constructor to assign exit and not exitProbability
-                //Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exitProbs, this);
-                //Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exit, this);
-                //System.out.println("FOUR: People in the model: " + station.area.getAllObjects().size());
+                /* Check if agent will collide when spawning, if not move new active agent through entrance */
                 if (!inactive.collision(spawnLocation)) {
                     // add the person to the model
                     station.area.setObjectLocation(inactive, spawnLocation);
                     addedCount++;
                     station.addedCount++;
-
-                    //System.out.println("\tSIX: People in the model: " + station.area.getAllObjects().size());
-
-                    //s.area.remove(inactive); // remove inactive from model
-                    s.inactivePeople.remove(inactive); // agent removed from inactive agents set in station
-
-                    //System.out.println("\tSEVEN: People in the model: " + station.area.getAllObjects().size());
+                    // agent removed from inactive agents set in station
+                    //s.inactivePeople.remove(inactive);
                 }
             }
             //System.out.println("\taddedCount: " + addedCount);

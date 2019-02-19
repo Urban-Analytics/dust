@@ -19,6 +19,7 @@ package StationSim;
 import io.improbable.keanu.Keanu;
 import io.improbable.keanu.algorithms.*;
 import io.improbable.keanu.network.KeanuProbabilisticModel;
+import io.improbable.keanu.network.NetworkState;
 import io.improbable.keanu.tensor.Tensor;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
 import io.improbable.keanu.vertices.Vertex;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class StationTransition {
@@ -204,7 +206,7 @@ public class StationTransition {
             System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
             // Get output from the box model (200 iterations)
             DoubleTensor[] output = box.getValue();
-            System.out.println("Output length: " + output.length);
+            //System.out.println("Output length: " + output.length);
 
             // output with a bit of noise. Lower sigma makes it more constrained.;
             GaussianVertex[] noisyOutput = new GaussianVertex[output.length];
@@ -215,7 +217,7 @@ public class StationTransition {
             // Observe the output (Could do at same time as adding noise to each element in the state vector?)
             Vertex<DoubleTensor[]> history = truthHistory.get(i);
             DoubleTensor[] hist = history.getValue();
-            System.out.println("Hist length: " + hist.length);
+            //System.out.println("Hist length: " + hist.length);
 
             for (int f=0; f < noisyOutput.length; f++) {
                 noisyOutput[f].observe(hist[f]); // Observe each element in the truth state vector
@@ -243,9 +245,10 @@ public class StationTransition {
 
             System.out.println("Sampling");
 
+            // Use Metropolis Hastings algo for sampling
             PosteriorSamplingAlgorithm samplingAlgorithm = Keanu.Sampling.MetropolisHastings.withDefaultConfig();
-
-            samplingAlgorithm.getPosteriorSamples(
+            // Create sampler from KeanuProbabilisticModel
+            NetworkSamples sampler = samplingAlgorithm.getPosteriorSamples(
                     model,
                     model.getLatentOrObservedVertices(),
                     NUM_SAMPLES
@@ -260,11 +263,38 @@ public class StationTransition {
             */
 
             // Down sample and drop sample
-            //sampler = sampler.drop(DROP_SAMPLES).downSample(DOWN_SAMPLE);
+
+            sampler = sampler.drop(DROP_SAMPLES).downSample(DOWN_SAMPLE);
+
+            assert(sampler != null) : "Sampler is null, this is not good";
 
             /*
              ************ GET THE INFORMATION OUT OF THE SAMPLES ************
              */
+
+
+            //Samples samples = sampler.get(box.getReference());
+            NetworkState samples = sampler.getMostProbableState();
+            assert(samples != null) : "SampleS are null, this is definitely not good";
+
+            assert(box.getReference() != null) : "box.getReference() is null!";
+
+            Samples samp1 = samples.get(box.getReference());
+
+            //samples.asList();
+            //List<Double> thresholdSamples = sampler.get(box.getReference()).asList().
+              //      stream().map( (d) -> d.getValue(0)).collect(Collectors.toList());
+
+            List<DoubleTensor[]> stateSamples = sampler.get(box).asList();
+            assert(stateSamples.get(i).length == output.length) : "Sample vectors are wrong length, they are "
+                                                                    + stateSamples.get(i).length
+                                                                    + ". They should be " + output.length;
+
+            //DoubleTensor[] stateSamples = sampler.get(box).getMode();
+            List<Double[]> stateSamplesDouble = getDoubleSamples(stateSamples);
+            Double[] meanStateVector = getStateVectorMean(stateSamplesDouble);
+
+            //currentStateEstimate = meanStateVector;
 
             //List<DoubleTensor> stateSamples = sampler.getDoubleTensorSamples(box).asList();
             //Samples stateSamples = sampler.get(box);
@@ -301,12 +331,6 @@ public class StationTransition {
 
         int counter = 0;
         for (Person person : personList) {
-
-            if (person.getStation() == tempModel && !person.isActive()) {
-                tempModel.inactivePeople.add(person);
-                counter++;
-                continue;
-            }
 
             // Init new GaussianVertices with mean 0.0 as DoubleVertex is abstract
             DoubleVertex xLoc = new GaussianVertex(0.0, SIGMA_NOISE);
@@ -360,11 +384,17 @@ public class StationTransition {
 
         assert(stateVector.getValue().length == tempModel.getNumPeople() * 3) : "State Vector is incorrect length: " + stateVector.getValue().length;
 
+        // list to hold the people
         List<Person> personList = new ArrayList<>();
+
+        // initialise iterator so call to .next() gets new agent with every iteration
+        Iterator<Person> inactivePeeps = tempModel.inactivePeople.iterator();
+
         // Find halfway point so equal number of agents assigned to entrance 1 and 2 (doesn't affect model run)
         int halfwayPoint = tempModel.getNumPeople() / 2;
         int entranceNum = 0;
-        int counter1 = 0;
+
+        int inactiveCounter = 0;
 
         for (int i = 0; i < tempModel.getNumPeople(); i++) {
             // j is equal to ith lot of 3s (this is because each agent is represented by three vertices in stateVector)
@@ -375,23 +405,13 @@ public class StationTransition {
             Vertex<DoubleTensor> yLoc = CombineDoubles.getAtElement(j+1, stateVector);
             Vertex<DoubleTensor> desSpeed = CombineDoubles.getAtElement(j+2, stateVector);
 
-            /**
-             * This is where we check to see if agent (from stateVector) is inactive.
-             * Inactive agents have desiredSpeed of 0 (or between -1:1,-1:1 if noise has been added in observations)
-             * If vertex is from inactive agent, add inactiveAgent from set and continue
-             */
-            System.out.println("inactivePeople size: " + tempModel.inactivePeople.size());
-            System.out.println("There are " + personList.size() + " in personList.");
-            Iterator<Person> inactivePeeps = tempModel.inactivePeople.iterator(); // initialise person so call to .next() gets new agent with every loop
             // TODO: Make range from -SIGMA_NOISE to SIGMA_NOISE?? (So noisy observations don't break this check)
             // if x value is 0.0 agent is inactive
-            if (withinRange(new double[]{-1,1}, xLoc.getValue().scalar())) {
-                System.out.println("xLoc value is: " + xLoc.getValue().scalar());
-                System.out.println("Counter value: " + counter1);
-                counter1++;
+            if (yLoc.getValue().scalar() == 0.0) {
                 Person inactive = inactivePeeps.next();
                 personList.add(inactive);
-                tempModel.inactivePeople.remove(inactive);
+                inactiveCounter++;
+                //tempModel.inactivePeople.remove(inactive);
                 continue; // inactive agent added, no need to go through rest
             }
 
@@ -560,38 +580,6 @@ public class StationTransition {
         System.out.println("Happy days, runDataAssimilation has executed successfully!");
 
         System.exit(0);
-    }
-
-
-    private static void update(Tensor<DoubleVertex> stateVector) {
-        /*
-        During the update, the estimate of the state is updated using the observations from truthModel
-
-        This is the Data Assimilation step similar to the workflow of the SimpleModel's.
-        Here we need to:
-            Initialise the Black Box model
-            Run for XX iterations
-            Observe truth data
-            Create the BayesNet
-            Sample from the posterior
-            Get information from the samples
-        */
-        //System.out.println("UPDATING");
-
-        // INITIALISE THE BLACK BOX MODEL
-
-        //UnaryOpLambda<GenericTensor, GenericTensor> box = new UnaryOpLambda<>(stateVector, stateHistory???);
-        //UnaryOpLambda<GenericTensor, ???> box = new UnaryOpLambda<>(stateVector, tempModel.schedule.step(tempModel));
-
-        //UnaryOpLambda<GenericTensor, Integer[]> box = new UnaryOpLambda<>(stateVector, tempModel.area.getAllObjects())
-
-        // RUN FOR XX ITERATIONS
-        // Are both of these done in predict() or runDataAssim...?
-
-        // OBSERVE TRUTH DATA
-        // Loop through and apply observations
-
-
     }
 
 

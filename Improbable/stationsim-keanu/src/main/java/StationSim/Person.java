@@ -15,7 +15,6 @@
  */
 
 package StationSim;
-import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import sim.engine.SimState;
 import sim.util.Bag;
 import sim.util.Double2D;
@@ -79,7 +78,7 @@ public class Person extends Agent {
         //System.out.println(desiredSpeed + ",");
         station.numRandoms++;
         currentSpeed = 0.0;
-        this.id = Person.ID_Counter++;
+        this.id = StationSim.Person.ID_Counter++;
 
         double randDouble = station.random.nextDouble();
         station.numRandoms++;
@@ -104,7 +103,7 @@ public class Person extends Agent {
         desiredSpeed = station.random.nextDouble() + minSpeed;
         station.numRandoms++;
         currentSpeed = 0.0;
-        this.id = Person.ID_Counter++;
+        this.id = StationSim.Person.ID_Counter++;
     }
 
 
@@ -208,11 +207,11 @@ public class Person extends Agent {
      * @return Whether this object will intersect with any other people at the given location
      */
     public boolean collision(Double2D location) {
-        Person p;
+        StationSim.Person p;
         Bag people = station.area.getNeighborsWithinDistance(location, radius * 5);
         if (people != null) {
             for (int i = 0; i < people.size(); i++) {
-                p = (Person) people.get(i);
+                p = (StationSim.Person) people.get(i);
                 if (p != this && intersect(location, p)) { //check if evaluation is lazy
                     return true;
                 }
@@ -228,7 +227,7 @@ public class Person extends Agent {
      * @param other Another person with this current location in the simulation
      * @return Whether the two people will intersect
      */
-    public boolean intersect(Double2D location, Person other) {
+    public boolean intersect(Double2D location, StationSim.Person other) {
         double distX = location.getX() - other.getLocation().getX();
         double distY = location.getY() - other.getLocation().getY();
 
@@ -294,12 +293,12 @@ public class Person extends Agent {
 
         /* Check if o is an instance of Person or not
           "null instanceof [type]" also returns false */
-        if (!(o instanceof Person)) {
+        if (!(o instanceof StationSim.Person)) {
             return false;
         }
 
         // typecast o to Complex so that we can compare data members
-        Person p = (Person) o;
+        StationSim.Person p = (StationSim.Person) o;
         return this.id == p.id;
     }
 

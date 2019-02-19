@@ -17,18 +17,17 @@
 package StationSim;
 
 import io.improbable.keanu.Keanu;
-import io.improbable.keanu.algorithms.*;
+import io.improbable.keanu.KeanuRandom;
+import io.improbable.keanu.algorithms.NetworkSamples;
+import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
 import io.improbable.keanu.network.KeanuProbabilisticModel;
 import io.improbable.keanu.network.NetworkState;
-import io.improbable.keanu.tensor.Tensor;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
 import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.VertexLabel;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
-import io.improbable.keanu.KeanuRandom;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
-
 import sim.util.Bag;
 import sim.util.Double2D;
 
@@ -37,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 public class StationTransition {
@@ -123,7 +121,7 @@ public class StationTransition {
 
                 // Build stateVector to observe (unless iter == 0)
                 List<Person> truthList = new ArrayList<>(truthPeople);
-                Vertex<DoubleTensor[]> truthVector = buildStateVector(truthList, truthModel);
+                Vertex<DoubleTensor[]> truthVector = buildStateVector(truthList);
 
                 // Add stateVector to history
                 truthHistory.add(truthVector);
@@ -279,7 +277,7 @@ public class StationTransition {
 
             assert(box.getReference() != null) : "box.getReference() is null!";
 
-            Samples samp1 = samples.get(box.getReference());
+            //Samples samp1 = samples.get(box.getReference());
 
             //samples.asList();
             //List<Double> thresholdSamples = sampler.get(box.getReference()).asList().
@@ -319,52 +317,20 @@ public class StationTransition {
     }
 
 
-    private static Vertex<DoubleTensor[]> buildStateVector(List<Person> personList, Station model) {
+    private static Vertex<DoubleTensor[]> buildStateVector(List<Person> personList) {
         System.out.println("\tBUILDING STATE VECTOR...");
+        assert (!personList.isEmpty());
+        assert (personList.size() == truthModel.getNumPeople()) : personList.size();
 
-        assert(!personList.isEmpty()) : "personList is empty, cannot build stateVector from empty list";
-        assert(personList.size() == model.getNumPeople()) : "personList is wrong size: " + personList.size();
-
-        // Create new collection to hold vertices for CombineDoubles constructor
+        // Create new collection to hold vertices for CombineDoubles
         List<DoubleVertex> stateVertices = new ArrayList<>();
-        // Instantiate array of agent exits
+        // Create array to hold exit list
         agentExits = new Exit[personList.size()];
 
-        System.out.println();
-
         int counter = 0;
-        int inactiveCounter = 0;
         for (Person person : personList) {
 
-<<<<<<< HEAD
             // Init new GaussianVertices with mean 0.0 as DoubleVertex is abstract
-=======
-            // if agent is inactive, assign values of 0.0 for all and add to inactivePeople list
-            if (!person.isActive()) {
-                model.inactivePeople.add(person); // add inactive agent back to inactivePeople list
-                inactiveCounter++;
-
-                // Init new GaussianVertices with mean and sigma of 0.0. These are inactive agents in stateVector
-                DoubleVertex xLoc = new GaussianVertex(0.0, 0.0);
-                DoubleVertex yLoc = new GaussianVertex(0.0, 0.0);
-                DoubleVertex desSpeed = new GaussianVertex(0.0, 0.0);
-
-                // Add labelled vertices to collection
-                stateVertices.add(xLoc);
-                stateVertices.add(yLoc);
-                stateVertices.add(desSpeed);
-
-                // Add agent exit to list for rebuilding later
-                agentExits[counter] = person.getExit();
-
-                // Skip the rest of the loop and start next iteration
-                continue;
-            }
-
-            // If agent is active, following code is executed...
-
-            // Init new GaussianVertices with mean 0.0 and mu SIGMA as DoubleVertex is abstract
->>>>>>> ebf4fce234874b77a6264770857f94ae16ca6709
             DoubleVertex xLoc = new GaussianVertex(0.0, SIGMA_NOISE);
             DoubleVertex yLoc = new GaussianVertex(0.0, SIGMA_NOISE);
             DoubleVertex desSpeed = new GaussianVertex(0.0, SIGMA_NOISE);
@@ -377,70 +343,43 @@ public class StationTransition {
             // Set labels of vertices dependant on counter
             // '... + 1', '... + 2' etc. is to ensure unique labels when building the BayesNet
             // Uniqueness is enforced on instantiation of the BayesNet
-            // i.e. Person 01, Person 02, Person 03. These are first 3 vertices representing agent 0
             xLoc.setLabel(new VertexLabel("Person " + counter + 1));
             yLoc.setLabel(new VertexLabel("Person " + counter + 2));
             desSpeed.setLabel(new VertexLabel("Person " + counter + 3));
+
+            // Add labelled vertices to collection
+            stateVertices.add(xLoc);
+            stateVertices.add(yLoc);
+            stateVertices.add(desSpeed);
 
             // Add agent exit to list for rebuilding later
             agentExits[counter] = person.getExit();
 
             counter++;
         }
-        System.out.println("Number of inactive agents included in stateVector: " + inactiveCounter);
-
-        assert(agentExits.length == model.getNumPeople()) : "agentExits array is wrong length: " + agentExits.length;
-        assert(stateVertices.size() == model.getNumPeople() * 3) : "stateVertices is wrong length: " + stateVertices.size();
-
-        System.out.println("\tSTATE VECTOR BUILT.");
-
+        // Ensure exit array is same length as stateVertices / 3 (as 3 vertices per agent)
+        assert (agentExits.length == stateVertices.size() / 3);
+        assert (stateVertices.size() == tempModel.getNumPeople() * 3) : "State Vector is incorrect size: " + stateVertices.size();
+        System.out.println("\tSTATE VECTOR BUILT");
         return new CombineDoubles(stateVertices);
     }
 
 
-    private static Vertex<DoubleTensor[]> buildStateVector(Bag people, Station model) {
+    private static Vertex<DoubleTensor[]> buildStateVector(Bag people) {
         List<Person> personList = new ArrayList<>(people);
-        return buildStateVector(personList, model);
+        return buildStateVector(personList);
     }
 
 
     private static Vertex<DoubleTensor[]> buildStateVector(Station model) {
-        return buildStateVector(model.area.getAllObjects(), model);
+        return buildStateVector(model.area.getAllObjects());
     }
 
 
     private static List<Person> rebuildPersonList(Vertex<DoubleTensor[]> stateVector) {
+
         System.out.println("REBUILDING PERSON LIST...");
 
-        assert(stateVector.getValue().length == tempModel.getNumPeople() * 3) : "State Vector is incorrect length: "
-                                                                                    + stateVector.getValue().length;
-
-        System.out.println(String.format("There are %d inactive agents to add to personList.", tempModel.inactivePeople.size()));
-
-        List<Person> personList = new ArrayList<>();
-
-        // Find halfway point so equal number of agents assigned to entrance 1 and 2 (doesn't affect model run)
-        int halfwayPoint = tempModel.getNumPeople() / 2;
-        int entranceNum = 0;
-
-        int inactiveCounter = 0;
-
-        for (int i=0; i < tempModel.getNumPeople(); i++) {
-            // j is equal to ith lot of 3s (this is because each agent is represented by three vertices in stateVector)
-            int j = i * 3;
-
-            // Extract vertex's from stateVector
-            Vertex<DoubleTensor> xLoc = CombineDoubles.getAtElement(j, stateVector);
-            Vertex<DoubleTensor> yLoc = CombineDoubles.getAtElement(j+1, stateVector);
-            Vertex<DoubleTensor> desSpeed = CombineDoubles.getAtElement(j+2, stateVector);
-
-            // TODO: Add vertex labels to inactive vertices in buildStateVector() to make identifying inactive vertices easier.
-            /*
-            This is where we check if triplet vertices in state vector are from an inactive agent
-            We do this by chec
-             */
-        }
-        /*
         assert(stateVector.getValue().length == tempModel.getNumPeople() * 3) : "State Vector is incorrect length: " + stateVector.getValue().length;
 
         // list to hold the people
@@ -464,27 +403,9 @@ public class StationTransition {
             Vertex<DoubleTensor> yLoc = CombineDoubles.getAtElement(j+1, stateVector);
             Vertex<DoubleTensor> desSpeed = CombineDoubles.getAtElement(j+2, stateVector);
 
-<<<<<<< HEAD
             // TODO: Make range from -SIGMA_NOISE to SIGMA_NOISE?? (So noisy observations don't break this check)
             // if x value is 0.0 agent is inactive
             if (yLoc.getValue().scalar() == 0.0) {
-=======
-            /**
-             * This is where we check to see if agent (from stateVector) is inactive.
-             * Inactive agents have desiredSpeed of 0 (or between -1:1,-1:1 if noise has been added in observations)
-             * If vertex is from inactive agent, add inactiveAgent from set and continue
-             */
-            //System.out.println("inactivePeople size: " + tempModel.inactivePeople.size());
-            //System.out.println("There are " + personList.size() + " in personList.");
-        /*
-            Iterator<Person> inactivePeeps = tempModel.inactivePeople.iterator(); // initialise person so call to .next() gets new agent with every loop
-            // TODO: Make range from -SIGMA_NOISE to SIGMA_NOISE?? (So noisy observations don't break this check)
-            // if x value is 0.0 agent is inactive
-            if (withinRange(new double[]{-1,1}, xLoc.getValue().scalar())) {
-                //System.out.println("xLoc value is: " + xLoc.getValue().scalar());
-                //System.out.println("Counter value: " + counter1);
-                counter1++;
->>>>>>> ebf4fce234874b77a6264770857f94ae16ca6709
                 Person inactive = inactivePeeps.next();
                 personList.add(inactive);
                 inactiveCounter++;
@@ -521,7 +442,7 @@ public class StationTransition {
         assert(personList.size() == tempModel.getNumPeople()) : "personList contains " + personList.size() + " agents, this is wrong!";
 
         System.out.println("PERSON LIST BUILT SUCCESSFULLY");
-        return personList; */
+        return personList;
     }
 
 
@@ -593,7 +514,7 @@ public class StationTransition {
                 truthModel.getNumPeople(), tempModel.area.getAllObjects().size() );
         // Get new stateVector
         //List<Person> personList2 = new ArrayList<>(tempModel.area.getAllObjects());
-        Vertex<DoubleTensor[]> state = buildStateVector(tempModel.area.getAllObjects(), tempModel); // build stateVector directly from Bag people? YES
+        Vertex<DoubleTensor[]> state = buildStateVector(tempModel.area.getAllObjects()); // build stateVector directly from Bag people? YES
 
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
                 new long[0],

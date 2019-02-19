@@ -49,6 +49,9 @@ public class Station extends SimState {
     // A bank of people who are inactive. Everyone is created at the beginning, but they are inactive until
     // the entrance activates them
     Set<Person> inactivePeople = null;
+    // Set to hold inactive people to add to model. This is because adding from inactivePeople directly was not possible
+    // without removing inactiveAgent from set.
+    //Set<Person> toAdd = null;
 
     // Default values for parameters
     private final int numPeople = 700;
@@ -93,7 +96,7 @@ public class Station extends SimState {
      * random factory supplied as a parameter.
      */
     public void start(KeanuRandom rand) {
-        System.out.println("Model "+Station.modelCount++ +" starting");
+        System.out.println("Model "+ StationSim.Station.modelCount++ +" starting");
         super.start();
         random = rand;
         area.clear();
@@ -259,8 +262,7 @@ public class Station extends SimState {
         }
         System.out.println("... created "+this.inactivePeople.size()+" inactive agents. " +
                 "There are "+this.getNumPeople() + " agents in the model.");
-        assert(inactivePeople.size() == this.getNumPeople()) : "Wrong number of inactive agents created in start(): "
-                                                                    + inactivePeople.size();
+        //System.out.print(Entrance.inactivePeople.toString());
     }
 
 
@@ -477,7 +479,7 @@ public class Station extends SimState {
      * @param args
      */
     public static void main(String[] args) {
-        doLoop(Station.class, args);
+        doLoop(StationSim.Station.class, args);
         System.exit(0);
     }
 }

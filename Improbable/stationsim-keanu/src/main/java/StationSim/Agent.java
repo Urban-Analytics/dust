@@ -16,7 +16,6 @@
 
 package StationSim;
 
-import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import sim.engine.SimState;
 import sim.engine.Steppable;
 import sim.util.Double2D;

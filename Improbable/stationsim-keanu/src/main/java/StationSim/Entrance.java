@@ -20,10 +20,6 @@ import sim.engine.SimState;
 import sim.util.Bag;
 import sim.util.Double2D;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-
 /**
  * An entrance that spawns n people per time step based on the size of the Entrance.
  * A target exit is assigned to a person to move toward at spawn time.

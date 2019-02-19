@@ -20,6 +20,8 @@ import io.improbable.keanu.Keanu;
 import io.improbable.keanu.KeanuRandom;
 import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
+import io.improbable.keanu.algorithms.Samples;
+import io.improbable.keanu.network.BayesianNetwork;
 import io.improbable.keanu.network.KeanuProbabilisticModel;
 import io.improbable.keanu.network.NetworkState;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
@@ -69,28 +71,7 @@ public class StationTransition {
 
     private static List<Vertex<DoubleTensor[]>> truthHistory = new ArrayList<>();
 
-
-    /**
-     * Still have error in predict() somewhere.
-     * When predict is called, the model has 700 agents in it (tempModel.area.getAllObjects())
-     *
-     * Predict pseudocode:
-     * Predict first removes 700 agents (successfully)
-     * Then builds a list of 700 agents from the state vector (successfully)
-     * It then runs (steps) the model (containing 700 agents) forward by 200 iterations (PROBLEM HERE)
-     * Returns new UnaryOpLambda
-     *
-     *      PROBLEM: predict causes the number of agents in the model to reduce. Usually only one person in the model
-     *      by 2nd or 3rd window. This is caught by an AssertionError in predict but assertions have to be turned on
-     *      in IntelliJ with -ea flag (https://stackoverflow.com/questions/18168257/where-to-add-compiler-options-like-ea-in-intellij-idea)
-     *
-     *      Original problem was that the Set of inactiveAgents was not referenced when building personList,
-     *      so when agents were removed from inactiveAgents they were not being removed from the model. This has now
-     *      been fixed (to a point) where personList checks if agent is inactive and adds inactive agent if true.
-     *      Explanation of how is in rebuildPersonList.
-     *
-     *      I'm in presentation training from 2-4:30pm today so won't be contactable then
-     */
+    private static List<VertexLabel> vertexLabelList = new ArrayList<>();
 
 
     private static void runDataAssimilation() {
@@ -117,7 +98,7 @@ public class StationTransition {
 
                 // CHeck the number of people expected and the number of people in the model is correct.
                 assert truthPeople.size() == truthModel.getNumPeople() :
-                        String.format( "truthPeople: '%d', truthModel: %d",truthPeople.size(),truthModel.getNumPeople() );
+                        String.format( "truthPeople: '%d', truthModel: %d",truthPeople.size(),truthModel.getNumPeople());
 
                 // Build stateVector to observe (unless iter == 0)
                 List<Person> truthList = new ArrayList<>(truthPeople);
@@ -131,7 +112,6 @@ public class StationTransition {
             }
             // Step while condition is not true
             truthModel.schedule.step(truthModel);
-            //System.out.println("Step number: " + truthModel.schedule.getSteps());
         }
         System.out.println("\tHave stepped truth model for: " + counter);
         // Finish model
@@ -143,12 +123,30 @@ public class StationTransition {
 
         // As the model has finished everyone should be inactive
         assert truthModel.inactivePeople.size() == truthModel.getNumPeople() : String.format(
-                "Everyone should be inactive but there are only '%d' inactive people: %s", truthModel.inactivePeople.size(), truthModel.inactivePeople);
+                "Everyone should be inactive but there are only '%d' inactive people: %s",
+                    truthModel.inactivePeople.size(), truthModel.inactivePeople);
 
         /*
          ************ START THE MAIN LOOP ************
          */
         System.out.println("Starting DA loop");
+
+        // Produce VertexLabels for each vertex in stateVector and add to static list
+        // THIS IS NEW
+        for (int p=0; p < tempModel.getNumPeople(); p++) {
+            // second int variable to access each element of triplet vertices (3 vertices per agent)
+            int pp = p * 3;
+
+            // Create labels for each vertex
+            VertexLabel lab0 = new VertexLabel("Person " + pp + 0);
+            VertexLabel lab1 = new VertexLabel("Person " + pp + 1);
+            VertexLabel lab2 = new VertexLabel("Person " + pp + 2);
+
+            // Add labels to list for reference
+            vertexLabelList.add(lab0);
+            vertexLabelList.add(lab1);
+            vertexLabelList.add(lab2);
+        }
 
 
         // Create the current state (initially 0). Use the temporary model because so far it is in its initial state
@@ -170,35 +168,6 @@ public class StationTransition {
             /*
              ************ OBSERVE SOME TRUTH DATA ************
              */
-
-            // Observe the truth data plus some noise?
-            //System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
-            /*
-            System.out.println("Observing at iterations: ");
-            for (Integer j = 0; j < WINDOW_SIZE + WINDOW_SIZE; j++) {
-                System.out.print(j + ",");
-
-                // Need to get the output from the box model
-                //DoubleTensor[] output = ((CombineDoubles) box).calculate();
-                DoubleTensor[] output = box.getValue();
-
-                // output with a bit of noise. Lower sigma makes it more constrained.
-                GaussianVertex noisyOutput[] = new GaussianVertex[state.getValue().length];
-                for (int k = 0; k < state.getValue().length; k++) {
-                    noisyOutput[k] = new GaussianVertex(output[k].scalar(), SIGMA_NOISE);
-                }
-
-                // Observe the output (could do at same time as adding noise to each element in the state vector?)
-                Vertex<DoubleTensor[]> history = truthHistory.get(i); // This is the truth state at the end of window i
-                DoubleTensor[] hist = history.getValue();
-                for (int k = 0; k < state.getValue().length; k++) {
-                    noisyOutput[k].observe(hist[k]); // Observe each element in the truth state vector
-                }
-            }
-            System.out.println();
-            System.out.println("Observations complete");
-            */
-
 
             // Observe the truth data plus some noise?
             System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
@@ -227,8 +196,10 @@ public class StationTransition {
              */
 
             System.out.println("Creating BayesNet");
-            KeanuProbabilisticModel model = new KeanuProbabilisticModel(box.getConnectedGraph());
-            //BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
+            // First create BayesNet, then create Probabilistic Model from BayesNet
+            BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
+            // Create probabilistic model from BayesNet
+            KeanuProbabilisticModel model = new KeanuProbabilisticModel(net);
 
             /*
              ************ OPTIMISE ************
@@ -248,17 +219,9 @@ public class StationTransition {
             // Create sampler from KeanuProbabilisticModel
             NetworkSamples sampler = samplingAlgorithm.getPosteriorSamples(
                     model,
-                    model.getLatentOrObservedVertices(),
+                    model.getLatentVariables(),
                     NUM_SAMPLES
             );
-
-            /*
-            NetworkSamples sampler = Keanu.Sampling.MetropolisHastings.withDefaultConfig().getPosteriorSamples(
-                    model,
-                    model.getLatentOrObservedVertices(),
-                    NUM_SAMPLES
-            );
-            */
 
             // Down sample and drop sample
 
@@ -270,45 +233,51 @@ public class StationTransition {
              ************ GET THE INFORMATION OUT OF THE SAMPLES ************
              */
 
+            /*
+            GaussianKDE class!!!
+            More accurate approximation for posterior distribution
 
-            //Samples samples = sampler.get(box.getReference());
-            NetworkState samples = sampler.getMostProbableState();
-            assert(samples != null) : "SampleS are null, this is definitely not good";
+            Can instantiate a GaussianKDE directly from samples of a DoubleVertex
+            HOWEVER if posterior distribution is simple (i.e. almost same as simple Gaussian) then much more simple and
+            efficient to produce another Gaussian from mu and sigma (these can be calculated from a separate BayesNet?)
 
-            assert(box.getReference() != null) : "box.getReference() is null!";
 
-            //Samples samp1 = samples.get(box.getReference());
+            Label samples in buildStateVector() and reference labels when sampling
+            Need to loop through each vertex and sample individually
+            Can then use the sampled distributions to reintroduce as Prior for next window
 
-            //samples.asList();
-            //List<Double> thresholdSamples = sampler.get(box.getReference()).asList().
-              //      stream().map( (d) -> d.getValue(0)).collect(Collectors.toList());
+            Caleb talked about swapping the prior for the black box model each time instead of recreating. Not sure
+            how this would look/work but he said it was possible and would be good for efficiency (also point below).
 
-            List<DoubleTensor[]> stateSamples = sampler.get(box).asList();
-            assert(stateSamples.get(i).length == output.length) : "Sample vectors are wrong length, they are "
-                                                                    + stateSamples.get(i).length
-                                                                    + ". They should be " + output.length;
+            Try to swap prior for black box model instead of creating at each iteration (efficiency improvement)
+             */
 
-            //DoubleTensor[] stateSamples = sampler.get(box).getMode();
-            List<Double[]> stateSamplesDouble = getDoubleSamples(stateSamples);
-            Double[] meanStateVector = getStateVectorMean(stateSamplesDouble);
+            // for each DoubleTensor in Vertex<DoubleTensor[]> box
+            for (DoubleTensor dubTense : box.getValue()) {
+                // first sample from each DoubleTensor (What does each DoubleTensor represent? Need to be clear on this)
+                // using net.getSamplesByLabel()
+                // would I need to create array of VertexLabels as class variable? Then could loop through all these
+                // in relatively efficient manner, list would be immutable.
 
-            //currentStateEstimate = meanStateVector;
+                // Instantiate GaussianKDE object from sample
+                // then collect into Vertex<> object?
+                // public static KDEVertex approximate(Samples<DoubleTensor> vertexSamples) (constructor)
 
-            //List<DoubleTensor> stateSamples = sampler.getDoubleTensorSamples(box).asList();
-            //Samples stateSamples = sampler.get(box);
+                // Reintroduce this Gaussian (or Vertex<>) as currentStateEstimate
+                // (might need to cast these as DoubleVertex? i.e. DoubleVertex x = new GaussianKDE(vertSamples);)
+            }
 
-            //List samp = stateSamples.asList();
+            // This is important! This is how we get individual vertices from their label
+            // Vertex's are labelled when building the stateVector
+            Vertex pop = net.getVertexByLabel(vertexLabelList.get(0));
+            // This is a Vertex? can I call getValue() and get the DoubleTensor?
+            // Calling .getValue() returns a Java object. Can I cast this to something else?
 
-            //System.out.println("Sample size: " + samp.size());
-            //System.out.println(samp);
 
-            // *** Model state ***
-            /*List<DoubleTensor[]> stateSamplesTensor = sampler.get(box).asList();
 
-            List<Double[]> stateSamplesDouble = getDoubleSamples(stateSamplesTensor);
 
-            Double[] meanStateVector = getStateVectorMean(stateSamplesDouble);
-            */
+
+
             //currentStateEstimate = meanStateVector;
         }
         tempModel.finish();
@@ -460,16 +429,14 @@ public class StationTransition {
         System.out.println("PREDICTING...");
         // Find all the people
         Bag people = new Bag(tempModel.area.getAllObjects());
-        System.out.println("\tBag people size: " + people.size());
 
         assert(tempModel.area.getAllObjects().size() != 0);
-        List<Person> personList1 = new ArrayList<>(people);
+        List<Person> initialPeopleList = new ArrayList<>(people);
 
-        for (Person person : personList1) {
+        for (Person person : initialPeopleList) {
             tempModel.area.remove(person);
         }
 
-        System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model.");
         assert(tempModel.area.getAllObjects().size() == 0);
 
         // Convert from the initial state ( a list of numbers) to a list of agents
@@ -485,35 +452,16 @@ public class StationTransition {
 
         assert (tempModel.area.getAllObjects().size() > 0);
 
-        System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model before stepping.");
-
-        /**
-         * Error is in .step() function below. As model is stepped, new agents should be added and inactive ones
-         * removed from the model.
-         * HOWEVER, each step causes quite considerable number of agents to be lost from the model.
-         *
-         */
-
-        // Propagate the model
-        System.out.println("\tStepping...");
-        System.out.println("\tPROBLEM HERE");
-        System.out.println("Number of inactive agents: " + tempModel.inactivePeople.size());
         for (int i = 0; i < WINDOW_SIZE; i++) {
             // Step all the people window_size times
             tempModel.schedule.step(tempModel);
-            //System.out.println("Number of inactive agents: " + tempModel.inactivePeople.size());
         }
-        System.out.println("Number of inactive agents: " + tempModel.inactivePeople.size());
-        System.out.println("\tThere are " + tempModel.area.getAllObjects().size() + " people in the model after stepping.");
 
-        /**
-         * BELOW IS THE ASSERTION ERROR DUE TO WRONG NUMBER OF AGENTS, STACK TRACE WRONGLY POINTS TO FOR LOOP ABOVE
-         */
         assert(tempModel.area.getAllObjects().size() == truthModel.getNumPeople()) : String.format(
                 "Wrong number of people in the model before building state vector. Expected %d but got %d",
                 truthModel.getNumPeople(), tempModel.area.getAllObjects().size() );
+
         // Get new stateVector
-        //List<Person> personList2 = new ArrayList<>(tempModel.area.getAllObjects());
         Vertex<DoubleTensor[]> state = buildStateVector(tempModel.area.getAllObjects()); // build stateVector directly from Bag people? YES
 
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(

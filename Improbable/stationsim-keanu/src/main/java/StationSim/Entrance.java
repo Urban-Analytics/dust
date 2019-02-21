@@ -117,7 +117,6 @@ public class Entrance extends Agent {
                 Bag inactivePeopleInModel = s.area.getObjectsAtLocation(new Double2D(0d,0d));
                 Person inactive = (Person) inactivePeopleInModel.get(0);
                 // Check agent is inactive
-                //System.out.println("Inactive: " + inactive.isActive());
                 assert(!inactive.isActive()) : "New agent is not inactive, this is a problem.";
 
                 /* Make the agent active */
@@ -127,19 +126,14 @@ public class Entrance extends Agent {
                 if (!inactive.collision(spawnLocation)) {
                     // add the person to the model
                     station.area.setObjectLocation(inactive, spawnLocation);
-                    addedCount++;
+                    addedCount++; // save for later
                     station.addedCount++;
-                    // agent removed from inactive agents set in station
-                    //s.inactivePeople.remove(inactive);
                 }
             }
-            //System.out.println("\taddedCount: " + addedCount);
-            //System.out.println("\tinactivePeople size: " + station.inactivePeople.size());
             // Number of people left for further steps
             totalAdded += addedCount;
             numPeople -= addedCount;
         }
-        //assert(station.getNumPeople() == 700) : "Wrong number of people in the model after Entrance.step()";
         assert(station.area.getAllObjects().size() == station.getNumPeople()) : "Wrong number of people: ("
                                                                                 + station.area.getAllObjects().size()
                                                                                 + ") in the model after Entrance.step()";

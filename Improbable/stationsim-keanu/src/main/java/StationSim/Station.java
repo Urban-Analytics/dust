@@ -49,9 +49,6 @@ public class Station extends SimState {
     // A bank of people who are inactive. Everyone is created at the beginning, but they are inactive until
     // the entrance activates them
     Set<Person> inactivePeople = null;
-    // Set to hold inactive people to add to model. This is because adding from inactivePeople directly was not possible
-    // without removing inactiveAgent from set.
-    //Set<Person> toAdd = null;
 
     // Default values for parameters
     private final int numPeople = 700;

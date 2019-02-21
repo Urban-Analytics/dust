@@ -34,10 +34,7 @@ import sim.util.Bag;
 import sim.util.Double2D;
 
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 
 public class StationTransition {
@@ -73,6 +70,8 @@ public class StationTransition {
 
     private static List<VertexLabel> vertexLabelList = new ArrayList<>();
 
+    private static Map<Integer, List<VertexLabel>> vertexID_Map;
+
 
     private static void runDataAssimilation() {
 
@@ -107,6 +106,11 @@ public class StationTransition {
                 // Add stateVector to history
                 truthHistory.add(truthVector);
                 System.out.println("\tSaving truthVector at step: " + truthModel.schedule.getSteps());
+
+                //for (Person p : truthList) {
+                //    System.out.println(p.toString());
+                //}
+
                 // Increment counter
                 counter++;
             }
@@ -130,24 +134,6 @@ public class StationTransition {
          ************ START THE MAIN LOOP ************
          */
         System.out.println("Starting DA loop");
-
-        // Produce VertexLabels for each vertex in stateVector and add to static list
-        // THIS IS NEW
-        for (int p=0; p < tempModel.getNumPeople(); p++) {
-            // second int variable to access each element of triplet vertices (3 vertices per agent)
-            int pp = p * 3;
-
-            // Create labels for each vertex
-            VertexLabel lab0 = new VertexLabel("Person " + pp + 0);
-            VertexLabel lab1 = new VertexLabel("Person " + pp + 1);
-            VertexLabel lab2 = new VertexLabel("Person " + pp + 2);
-
-            // Add labels to list for reference
-            vertexLabelList.add(lab0);
-            vertexLabelList.add(lab1);
-            vertexLabelList.add(lab2);
-        }
-
 
         // Create the current state (initially 0). Use the temporary model because so far it is in its initial state
         tempModel.start(rand);
@@ -283,6 +269,42 @@ public class StationTransition {
         tempModel.finish();
         //writeModelHistory(truthModel, "truthModel" + System.currentTimeMillis());
         //writeModelHistory(tempModel, "tempModel" + System.currentTimeMillis());
+    }
+
+
+    private static Vertex<DoubleTensor[]> startVector() {
+
+        // Produce VertexLabels for each vertex in stateVector and add to static list
+        // THIS IS NEW
+        for (int p=0; p < tempModel.getNumPeople(); p++) {
+            // second int variable to access each element of triplet vertices (3 vertices per agent)
+            int pp = p * 3;
+
+            // Create labels for each vertex
+            VertexLabel lab0 = new VertexLabel("Person " + pp + 0);
+            VertexLabel lab1 = new VertexLabel("Person " + pp + 1);
+            VertexLabel lab2 = new VertexLabel("Person " + pp + 2);
+
+            // Add labels to list for reference
+            vertexLabelList.add(lab0);
+            vertexLabelList.add(lab1);
+            vertexLabelList.add(lab2);
+
+            // create list and add three labels per ID
+            List<VertexLabel> labelsPerID = new ArrayList<>();
+            labelsPerID.add(lab0);
+            labelsPerID.add(lab1);
+            labelsPerID.add(lab2);
+
+            // Add to Map with link to id
+            vertexID_Map.put(p, labelsPerID);
+        }
+
+        // Now build the initial state vector
+        // Init new GaussianVertices with mean 0.0 as DoubleVertex is abstract
+        DoubleVertex xLoc = new GaussianVertex(0.0, SIGMA_NOISE);
+        DoubleVertex yLoc = new GaussianVertex(0.0, SIGMA_NOISE);
+        DoubleVertex desSpeed = new GaussianVertex(0.0, SIGMA_NOISE);
     }
 
 

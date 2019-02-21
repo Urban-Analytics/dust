@@ -35,7 +35,7 @@ public class Person extends Agent {
     private double radius;
     private double currentSpeed;
     private boolean active = true; // Whether or not agents take part in the simulation. One constructor makes this false.
-    private int id = -1 ; // Inactive agents have ID -1, real agents will have incrementally increasing IDs
+    private int id; // Inactive agents have ID -1, real agents will have incrementally increasing IDs
     private static int ID_Counter = 0;
 
 
@@ -50,6 +50,7 @@ public class Person extends Agent {
         this.active = false;
         this.desiredSpeed = 0;
         this.exit = exit;
+        this.id = ID_Counter++; // Give inactive agents unique ID
     }
 
     public void makeInactive(Station station) {
@@ -103,7 +104,7 @@ public class Person extends Agent {
         desiredSpeed = station.random.nextDouble() + minSpeed;
         station.numRandoms++;
         currentSpeed = 0.0;
-        this.id = StationSim.Person.ID_Counter++;
+        //this.id = StationSim.Person.ID_Counter++; // Dont need this anymore? Commented out just to see if it would break
     }
 
 
@@ -268,6 +269,8 @@ public class Person extends Agent {
     Station getStation() { return station; }
 
     double getDesiredSpeed() { return desiredSpeed; }
+
+    Integer getID() { return id; }
 
     public Exit getExit() {
         return exit;

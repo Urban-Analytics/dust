@@ -5,43 +5,14 @@ import numpy as np
 from copy import deepcopy
 import matplotlib.pyplot as plt
 
-# Multiprocessing methods
-def initial_state(particle,self):
-    """
-    Set the state of the particles to the state of the
-    base model.
-    """
-    self.states[particle,:] = self.base_model.agents2state()
-    return self.states[particle]
-    
-def assign_agents(particle,self):
-    """
-    Assign the state of the particles to the 
-    locations of the agents.
-    """		
-    self.models[particle].state2agents(self.states[particle])
-    return self.models[particle]
 
-def step_particles(particle,self):
-    """
-    Step each particle model, assign the locations of the 
-    agents to the particle state with some noise, and 
-    then use the new particle state to set the location 
-    of the agents.
-    """
-    self.models[particle].step()
-    self.states[particle] = (self.models[particle].agents2state()
-                           + np.random.normal(0, self.particle_std**2, 
-                                                 size=self.states[particle].shape))
-    self.models[particle].state2agents(self.states[particle])
-    return self.models[particle], self.states[particle]
 
 class ParticleFilter: 
     '''
     A particle filter to model the dynamics of the
     state of the model as it develops in time.
     '''
-    
+
     def __init__(self, Model, model_params, filter_params):
         '''
         Initialise Particle Filter
@@ -82,9 +53,42 @@ class ParticleFilter:
             self.variances = []
             self.unique_particles = []
         
-        self.states = np.array(pool.starmap(initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
+        self.states = np.array(pool.starmap(ParticleFilter.initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
 
-        
+
+    # Multiprocessing methods
+    @classmethod
+    def initial_state(cls, particle,self):
+        """
+        Set the state of the particles to the state of the
+        base model.
+        """
+        self.states[particle,:] = self.base_model.agents2state()
+        return self.states[particle]
+
+    @classmethod
+    def assign_agents(cls, particle,self):
+        """
+        Assign the state of the particles to the
+        locations of the agents.
+        """
+        self.models[particle].state2agents(self.states[particle])
+        return self.models[particle]
+
+    @classmethod
+    def step_particles(cls, particle,self):
+        """
+        Step each particle model, assign the locations of the
+        agents to the particle state with some noise, and
+        then use the new particle state to set the location
+        of the agents.
+        """
+        self.models[particle].step()
+        self.states[particle] = (self.models[particle].agents2state()
+                                 + np.random.normal(0, self.particle_std**2,
+                                                    size=self.states[particle].shape))
+        self.models[particle].state2agents(self.states[particle])
+        return self.models[particle], self.states[particle]
     def step(self):
         '''
         Step Particle Filter
@@ -136,7 +140,7 @@ class ParticleFilter:
         '''
         self.base_model.step()
 
-        stepped_particles = pool.starmap(step_particles,list(zip(range(self.number_of_particles),[self]*self.number_of_particles)))
+        stepped_particles = pool.starmap(ParticleFilter.step_particles,list(zip(range(self.number_of_particles),[self]*self.number_of_particles)))
             
         self.models = [stepped_particles[i][0] for i in range(len(stepped_particles))]
         self.states = np.array([stepped_particles[i][1] for i in range(len(stepped_particles))])
@@ -188,7 +192,7 @@ class ParticleFilter:
         
         self.unique_particles.append(len(np.unique(self.states,axis=0)))
 
-        self.models = pool.starmap(assign_agents,list(zip(range(self.number_of_particles),[self]*self.number_of_particles)))
+        self.models = pool.starmap(ParticleFilter.assign_agents,list(zip(range(self.number_of_particles),[self]*self.number_of_particles)))
 
         return
 

@@ -290,8 +290,10 @@ class ParticleFilter:
 
 
 def single_run_particle_numbers():
-    particle_num = 100
+    particle_num = 5
     runs = 10
+    print("Running filter with {} particles and {} runs (on {} cores)".format(
+        particle_num, runs, multiprocessing.cpu_count()))
 
     for i in range(runs):
 
@@ -312,9 +314,8 @@ def single_run_particle_numbers():
 if __name__ == '__main__':
     __spec__ = None
 
-# Pool object needed for multiprocessing
+    # Pool object needed for multiprocessing
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-    # XXXX the pool object isn't actually used - what is it's purpose?
 
     model_params = {
         'width': 200,
@@ -333,8 +334,7 @@ if __name__ == '__main__':
         'do_save': False,
         'do_ani': False,
         }
-    if not True:
-        # Run the model
-        Model(model_params).batch()
-    else:
-        single_run_particle_numbers()
+    #Model(model_params).batch() # Runs the model as normal (one run)
+
+    # Run the particle filter
+    single_run_particle_numbers()

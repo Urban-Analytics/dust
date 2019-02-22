@@ -74,6 +74,7 @@ class ParticleFilter:
         self.states = np.zeros((self.number_of_particles, self.dimensions))
         self.weights = np.ones(self.number_of_particles)
         self.indexes = np.zeros(self.number_of_particles, 'i')
+        self.window_counter = 0 # Just for printing the progress of the PF
         if self.do_save:
             self.active_agents = []
             self.means = []
@@ -82,6 +83,7 @@ class ParticleFilter:
             self.unique_particles = []
         
         self.states = np.array(pool.starmap(initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
+
         
     def step(self):
         '''
@@ -94,6 +96,7 @@ class ParticleFilter:
         particles choosing particles with higher weights. Then save
         and animate the data. When done, plot save figures.
         '''
+        print("Starting particle filter step()")
         while self.time < self.number_of_iterations:
             self.time += 1
             
@@ -102,6 +105,7 @@ class ParticleFilter:
                 self.predict()
                 
                 if self.time % self.resample_window == 0:
+                    print("\tWindow {}".format(self.window_counter))
                     self.reweight()
                     self.resample()
     

@@ -76,22 +76,22 @@ class ParticleFilter:
         return self.models[particle]
 
     @classmethod
-    def step_particles(cls, particle,self):
+    def step_particles(cls, particle_num, self):
         """
         Step each particle model, assign the locations of the
         agents to the particle state with some noise, and
         then use the new particle state to set the location
         of the agents.
 
-        :param particle: The particle number to step
-        :param self: A pointer to this class.
+        :param particle_num: The particle number to step
+        :param self: A pointer to this ParticleFilter object class.
         """
-        self.models[particle].step()
-        self.states[particle] = (self.models[particle].agents2state()
-                                 + np.random.normal(0, self.particle_std**2,
-                                                    size=self.states[particle].shape))
-        self.models[particle].state2agents(self.states[particle])
-        return self.models[particle], self.states[particle]
+        self.models[particle_num].step()
+        self.states[particle_num] = (self.models[particle_num].agents2state()
+                                     + np.random.normal(0, self.particle_std ** 2,
+                                                        size=self.states[particle_num].shape))
+        self.models[particle_num].state2agents(self.states[particle_num])
+        return self.models[particle_num], self.states[particle_num]
 
     def step(self):
         '''

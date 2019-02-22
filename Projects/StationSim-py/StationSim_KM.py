@@ -8,10 +8,6 @@ Created on Tue Nov 20 15:25:27 2018
         # sspmm.py
 '''
 StationSim (aka Mike's model) converted into python.
-
-Todos:
-multiprocessing
-profile functions
 '''
 
 #%% INIT 
@@ -33,15 +29,13 @@ class Agent:
     def __init__(self, model, unique_id):
         """
         Initialise a new agent.
-        
-        PARAMETERS
-          - model: a pointer to the station sim model that is creating this agent
-        
-        DESCRIPTION
-        Creates a new agent and gives it a randomly chosen entrance, exit, and 
+
+        Creates a new agent and gives it a randomly chosen entrance, exit, and
         desired speed. All agents start with active state 0 ('not started').
         Their initial location (** HOW IS LOCATION REPRESENTED?? **) is set
         to the location of the entrance that they are assigned to.
+
+        :param model: a pointer to the station sim model that is creating this agent
         """
         # Required
         self.unique_id = unique_id
@@ -98,8 +92,8 @@ class Agent:
         """
         for speed in self.speeds:
             # Direct
-            new_location = self.lerp(self.loc_desire, self.location, speed)
-            if not self.collision(model, new_location):
+            new_location = Agent.lerp(self.loc_desire, self.location, speed)
+            if not Agent.collision(model, new_location):
                 break
             elif speed == self.speeds[-1]:
                 # Wiggle
@@ -112,7 +106,8 @@ class Agent:
         self.location = new_location
         return
 
-    def collision(self, model, new_location):
+    @classmethod
+    def collision(cls, model, new_location):
         """
         Detects whether a move to the new_location will cause a colision 
         (either with the model boundary or another agent).
@@ -120,21 +115,21 @@ class Agent:
         within_bounds = all(model.boundaries[0] <= new_location) and all(new_location <= model.boundaries[1])
         if not within_bounds:
             collide = True
-        elif self.neighbourhood(model, new_location):
+        elif Agent.neighbourhood(model, new_location):
             collide = True
         else:
             collide = False
         return collide
 
-    def neighbourhood(self, model, new_location, do_kd_tree=True):
+    @classmethod
+    def neighbourhood(cls, model, new_location, do_kd_tree=True):
         """
         XXXX WHAT DOES THIS DO??
-        
-        PARMETERS
-         - model:        the model that this agent is part of
-         - new_location: the proposed new location that the agent will move to
+
+         :param model:        the model that this agent is part of
+         :param new_location: the proposed new location that the agent will move to
                          (a XXXX - what kind of object/data is the location?)
-         - do_kd_tree    whther to use a spatial index (kd_tree) (default true)
+         :param do_kd_tree    whether to use a spatial index (kd_tree) (default true)
         """
         neighbours = False
         neighbouring_agents = model.tree.query_ball_point(new_location, model.separation)
@@ -145,8 +140,16 @@ class Agent:
                 break
         return neighbours
 
-    def lerp(self, loc1, loc2, speed):
-        """XXXX What does this do??"""
+    @classmethod
+    def lerp(cls, loc1, loc2, speed):
+        """
+        Find the new position of after moving 'speed' distance from loc2 towards loc1.
+        XXXX IS this correct
+        :param loc1: desired location
+        :param loc2: current location
+        :param speed: distance that can be covered in an iteration
+        :return: The new location
+        """
         distance = np.linalg.norm(loc1 - loc2)
         loc = loc2 + speed * (loc1 - loc2) / distance
         return loc
@@ -246,13 +249,17 @@ class Model:
         """
         Run the model.
         """
+        print("Starting batch mode with parameters:", self.params)
         for i in range(self.batch_iterations):
             self.step()
+            if i % 100 == 0:
+                print("\tIterations: ",i)
             if self.do_ani:
                 self.ani()
             if self.pop_finished == self.pop_total:
                 print('Everyone made it!')
                 break
+        print("Finished at iteration", i)
         if self.do_save:
             self.save_stats()
             self.save_plot()

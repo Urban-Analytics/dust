@@ -24,12 +24,10 @@ import io.improbable.keanu.algorithms.Samples;
 import io.improbable.keanu.algorithms.variational.GaussianKDE;
 import io.improbable.keanu.network.BayesianNetwork;
 import io.improbable.keanu.network.KeanuProbabilisticModel;
-import io.improbable.keanu.network.NetworkState;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
 import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.VertexLabel;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
-import io.improbable.keanu.vertices.dbl.DoubleVertexSamples;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.KDEVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
@@ -73,8 +71,6 @@ public class StationTransition {
 
     private static List<VertexLabel> vertexLabelList = new ArrayList<>();
 
-    private static Map<Integer, List<VertexLabel>> vertexID_Map;
-
     private static CombineDoubles stateVector;
 
 
@@ -94,7 +90,6 @@ public class StationTransition {
 
         // Rewrote how truthModel is run as it allows easier extraction of truth data at intervals
         while (truthModel.schedule.getSteps() < NUM_ITER) {
-            //if ((truthModel.schedule.getSteps() != 0) && (truthModel.schedule.getSteps() % WINDOW_SIZE == 0.0)) {;
             if (truthModel.schedule.getSteps() % WINDOW_SIZE == 0.0) {
                 // Get numPeople output
                 Bag truthPeople = truthModel.area.getAllObjects();
@@ -106,7 +101,7 @@ public class StationTransition {
 
                 // Build stateVector to observe (unless iter == 0)
                 List<Person> truthList = new ArrayList<>(truthPeople);
-                Vertex<DoubleTensor[]> truthVector = buildStateVector(truthList);
+                Vertex<DoubleTensor[]> truthVector = updateStateVector(truthList);
 
                 // Add stateVector to history
                 truthHistory.add(truthVector);
@@ -122,7 +117,7 @@ public class StationTransition {
             // Step while condition is not true
             truthModel.schedule.step(truthModel);
         }
-        System.out.println("\tHave stepped truth model for: " + counter);
+        System.out.println("\tHave produced " + counter + " truth Vectors for observation");
         // Finish model
         truthModel.finish();
         System.out.println("\tExecuted truthModel.finish()");
@@ -143,7 +138,7 @@ public class StationTransition {
         // Create the current state (initially 0). Use the temporary model because so far it is in its initial state
         tempModel.start(rand);
         System.out.println("tempModel.start() has executed successfully");
-        //Vertex<DoubleTensor[]> currentStateEstimate = buildStateVector(tempModel);
+        //Vertex<DoubleTensor[]> currentStateEstimate = updateStateVector(tempModel);
 
         // Build static stateVector
         buildStateVector(tempModel);
@@ -236,7 +231,7 @@ public class StationTransition {
             efficient to produce another Gaussian from mu and sigma (these can be calculated from a separate BayesNet?)
 
 
-            Label samples in buildStateVector() and reference labels when sampling
+            Label samples in updateStateVector() and reference labels when sampling
             Need to loop through each vertex and sample individually
             Can then use the sampled distributions to reintroduce as Prior for next window
 
@@ -279,6 +274,7 @@ public class StationTransition {
                 Samples<DoubleTensor> samples = sampler.get(pop2);
 
                 KDEVertex newKDE = GaussianKDE.approximate(samples);
+
             }
 
 
@@ -300,27 +296,20 @@ public class StationTransition {
         List<DoubleVertex> stateVertices = new ArrayList<>();
 
         // loop through numPeople
-        for (int p=0; p < model.getNumPeople(); p++) {
+        for (int peopleNum=0; peopleNum < model.getNumPeople(); peopleNum++) {
             // second int variable to access each element of triplet vertices (3 vertices per agent)
-            int pp = p * 3;
+            int index = peopleNum * 3;
 
             // Produce VertexLabels for each vertex in stateVector and add to static list
             // THIS IS NEW
-            VertexLabel lab0 = new VertexLabel("Person " + pp + 0);
-            VertexLabel lab1 = new VertexLabel("Person " + pp + 1);
-            VertexLabel lab2 = new VertexLabel("Person " + pp + 2);
+            VertexLabel lab0 = new VertexLabel("Person " + index + 0);
+            VertexLabel lab1 = new VertexLabel("Person " + index + 1);
+            VertexLabel lab2 = new VertexLabel("Person " + index + 2);
 
             // Add labels to list for reference
             vertexLabelList.add(lab0);
             vertexLabelList.add(lab1);
             vertexLabelList.add(lab2);
-
-            // create list and add three labels per ID
-            List<VertexLabel> labelsPerID = new ArrayList<>();
-            labelsPerID.add(lab0); labelsPerID.add(lab1); labelsPerID.add(lab2); // add all 3 labels
-
-            // Add to Map with link to id
-            vertexID_Map.put(p, labelsPerID);
 
             // Now build the initial state vector
             // Init new GaussianVertices with mean 0.0 as DoubleVertex is abstract
@@ -339,7 +328,7 @@ public class StationTransition {
     }
 
 
-    private static Vertex<DoubleTensor[]> buildStateVector(List<Person> personList, BayesianNetwork bayesNet) {
+    private static Vertex<DoubleTensor[]> updateStateVector(List<Person> personList) {
         System.out.println("\tBUILDING STATE VECTOR...");
         assert (!personList.isEmpty());
         assert (personList.size() == truthModel.getNumPeople()) : personList.size();
@@ -355,18 +344,33 @@ public class StationTransition {
             // get ID
             Integer id = person.getID();
 
-            // Get VertexLabels connected to persons ID (3 labels per person)
-            List<VertexLabel> vertList = vertexID_Map.get(id);
+            // Vertices linked to person will be at specific place in the state vector
+            // i.e. vertices for person 50 will start at index 50 * 3 = 150(,151,152)
+            int vectorIndex = id * 3;
 
+            // therefore xVertex is in position [vectorIndex], yVert in [vectorIndex + 1], etc.
+            // Use getAtElement to extract Vertex at specific index
+            Vertex<DoubleTensor> xVert = CombineDoubles.getAtElement(vectorIndex, stateVector);
+            Vertex<DoubleTensor> yVert = CombineDoubles.getAtElement(vectorIndex + 1, stateVector);
+            Vertex<DoubleTensor> speedVert = CombineDoubles.getAtElement(vectorIndex + 2, stateVector);
+
+            /*
             // get the vertices
             Vertex xVert = bayesNet.getVertexByLabel(vertList.get(0));
             Vertex yVert = bayesNet.getVertexByLabel(vertList.get(1));
             Vertex speedVert = bayesNet.getVertexByLabel(vertList.get(2));
+            */
 
             // set value of vertices from agent values
-            xVert.setValue(person.location.x);
-            yVert.setValue(person.location.y);
-            speedVert.setValue(person.getCurrentSpeed());
+            DoubleTensor xTens = xVert.getValue();
+            DoubleTensor yTens = yVert.getValue();
+            DoubleTensor speedTens = speedVert.getValue();
+
+            assert(xTens.isScalar());
+
+            xTens.setValue(person.location.x);
+            yTens.setValue(person.location.y);
+            speedTens.setValue(person.getCurrentSpeed());
 
             // Add agent exit to list for rebuilding later
             agentExits[counter] = person.getExit();
@@ -381,14 +385,14 @@ public class StationTransition {
     }
 
 
-    private static Vertex<DoubleTensor[]> buildStateVector(Bag people, BayesianNetwork bayesNet) {
+    private static Vertex<DoubleTensor[]> updateStateVector(Bag people) {
         List<Person> personList = new ArrayList<>(people);
-        return buildStateVector(personList, bayesNet);
+        return updateStateVector(personList);
     }
 
 
-    private static Vertex<DoubleTensor[]> buildStateVector(Station model, BayesianNetwork bayesNet) {
-        return buildStateVector(model.area.getAllObjects(), bayesNet);
+    private static Vertex<DoubleTensor[]> updateStateVector(Station model) {
+        return updateStateVector(model.area.getAllObjects());
     }
 
 
@@ -509,7 +513,7 @@ public class StationTransition {
                 truthModel.getNumPeople(), tempModel.area.getAllObjects().size() );
 
         // Get new stateVector
-        Vertex<DoubleTensor[]> state = buildStateVector(tempModel.area.getAllObjects()); // build stateVector directly from Bag people? YES
+        Vertex<DoubleTensor[]> state = updateStateVector(tempModel.area.getAllObjects()); // build stateVector directly from Bag people? YES
 
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
                 new long[0],

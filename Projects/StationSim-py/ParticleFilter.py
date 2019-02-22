@@ -82,6 +82,9 @@ class ParticleFilter:
         agents to the particle state with some noise, and
         then use the new particle state to set the location
         of the agents.
+
+        :param particle: The particle number to step
+        :param self: A pointer to this class.
         """
         self.models[particle].step()
         self.states[particle] = (self.models[particle].agents2state()
@@ -89,6 +92,7 @@ class ParticleFilter:
                                                     size=self.states[particle].shape))
         self.models[particle].state2agents(self.states[particle])
         return self.models[particle], self.states[particle]
+
     def step(self):
         '''
         Step Particle Filter
@@ -140,7 +144,8 @@ class ParticleFilter:
         '''
         self.base_model.step()
 
-        stepped_particles = pool.starmap(ParticleFilter.step_particles,list(zip(range(self.number_of_particles),[self]*self.number_of_particles)))
+        stepped_particles = pool.starmap(ParticleFilter.step_particles, \
+                        list(zip(range(self.number_of_particles), [self]*self.number_of_particles)))
             
         self.models = [stepped_particles[i][0] for i in range(len(stepped_particles))]
         self.states = np.array([stepped_particles[i][1] for i in range(len(stepped_particles))])

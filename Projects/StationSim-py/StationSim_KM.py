@@ -109,7 +109,7 @@ class Agent:
     @classmethod
     def collision(cls, model, new_location):
         """
-        Detects whether a move to the new_location will cause a colision 
+        Detects whether a move to the new_location will cause a collision
         (either with the model boundary or another agent).
         """
         within_bounds = all(model.boundaries[0] <= new_location) and all(new_location <= model.boundaries[1])

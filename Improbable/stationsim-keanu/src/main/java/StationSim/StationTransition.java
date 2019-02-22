@@ -21,6 +21,7 @@ import io.improbable.keanu.KeanuRandom;
 import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
 import io.improbable.keanu.algorithms.Samples;
+import io.improbable.keanu.algorithms.variational.GaussianKDE;
 import io.improbable.keanu.network.BayesianNetwork;
 import io.improbable.keanu.network.KeanuProbabilisticModel;
 import io.improbable.keanu.network.NetworkState;
@@ -28,7 +29,9 @@ import io.improbable.keanu.tensor.dbl.DoubleTensor;
 import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.VertexLabel;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
+import io.improbable.keanu.vertices.dbl.DoubleVertexSamples;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
+import io.improbable.keanu.vertices.dbl.probabilistic.KDEVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
 import sim.util.Bag;
 import sim.util.Double2D;
@@ -71,6 +74,8 @@ public class StationTransition {
     private static List<VertexLabel> vertexLabelList = new ArrayList<>();
 
     private static Map<Integer, List<VertexLabel>> vertexID_Map;
+
+    private static CombineDoubles stateVector;
 
 
     private static void runDataAssimilation() {
@@ -138,7 +143,10 @@ public class StationTransition {
         // Create the current state (initially 0). Use the temporary model because so far it is in its initial state
         tempModel.start(rand);
         System.out.println("tempModel.start() has executed successfully");
-        Vertex<DoubleTensor[]> currentStateEstimate = buildStateVector(tempModel);
+        //Vertex<DoubleTensor[]> currentStateEstimate = buildStateVector(tempModel);
+
+        // Build static stateVector
+        buildStateVector(tempModel);
 
         // Start data assimilation window
         for (int i = 0; i < NUM_WINDOWS; i++) {
@@ -149,7 +157,7 @@ public class StationTransition {
              ************ INITIALISE THE BLACK BOX MODEL ************
              */
 
-            Vertex<DoubleTensor[]> box = predict(WINDOW_SIZE, currentStateEstimate);
+            Vertex<DoubleTensor[]> box = predict(WINDOW_SIZE, stateVector);
 
             /*
              ************ OBSERVE SOME TRUTH DATA ************
@@ -239,7 +247,7 @@ public class StationTransition {
              */
 
             // for each DoubleTensor in Vertex<DoubleTensor[]> box
-            for (DoubleTensor dubTense : box.getValue()) {
+            //for (DoubleTensor dubTense : box.getValue()) {
                 // first sample from each DoubleTensor (What does each DoubleTensor represent? Need to be clear on this)
                 // using net.getSamplesByLabel()
                 // would I need to create array of VertexLabels as class variable? Then could loop through all these
@@ -251,13 +259,27 @@ public class StationTransition {
 
                 // Reintroduce this Gaussian (or Vertex<>) as currentStateEstimate
                 // (might need to cast these as DoubleVertex? i.e. DoubleVertex x = new GaussianKDE(vertSamples);)
-            }
+            //}
 
             // This is important! This is how we get individual vertices from their label
             // Vertex's are labelled when building the stateVector
-            Vertex pop = net.getVertexByLabel(vertexLabelList.get(0));
+            //Vertex pop = net.getVertexByLabel(vertexLabelList.get(0));
             // This is a Vertex? can I call getValue() and get the DoubleTensor?
             // Calling .getValue() returns a Java object. Can I cast this to something else?
+
+            List<KDEVertex> KDE_List = new ArrayList<>();
+
+            // trying out the getAtElement of CombineDoubles stateVector
+            for (int j=0; j<stateVector.getLength(); j++) {
+                //DoubleTensor tens = CombineDoubles.getAtElement(j, stateVector).getValue();
+
+                // get the vertex by label (position of label and vertex at same index)
+                Vertex pop2 = net.getVertexByLabel(vertexLabelList.get(j));
+
+                Samples<DoubleTensor> samples = sampler.get(pop2);
+
+                KDEVertex newKDE = GaussianKDE.approximate(samples);
+            }
 
 
 
@@ -272,15 +294,18 @@ public class StationTransition {
     }
 
 
-    private static Vertex<DoubleTensor[]> startVector() {
+    private static void buildStateVector(Station model) {
 
-        // Produce VertexLabels for each vertex in stateVector and add to static list
-        // THIS IS NEW
-        for (int p=0; p < tempModel.getNumPeople(); p++) {
+        // Create new collection to hold vertices for CombineDoubles
+        List<DoubleVertex> stateVertices = new ArrayList<>();
+
+        // loop through numPeople
+        for (int p=0; p < model.getNumPeople(); p++) {
             // second int variable to access each element of triplet vertices (3 vertices per agent)
             int pp = p * 3;
 
-            // Create labels for each vertex
+            // Produce VertexLabels for each vertex in stateVector and add to static list
+            // THIS IS NEW
             VertexLabel lab0 = new VertexLabel("Person " + pp + 0);
             VertexLabel lab1 = new VertexLabel("Person " + pp + 1);
             VertexLabel lab2 = new VertexLabel("Person " + pp + 2);
@@ -292,23 +317,29 @@ public class StationTransition {
 
             // create list and add three labels per ID
             List<VertexLabel> labelsPerID = new ArrayList<>();
-            labelsPerID.add(lab0);
-            labelsPerID.add(lab1);
-            labelsPerID.add(lab2);
+            labelsPerID.add(lab0); labelsPerID.add(lab1); labelsPerID.add(lab2); // add all 3 labels
 
             // Add to Map with link to id
             vertexID_Map.put(p, labelsPerID);
-        }
 
-        // Now build the initial state vector
-        // Init new GaussianVertices with mean 0.0 as DoubleVertex is abstract
-        DoubleVertex xLoc = new GaussianVertex(0.0, SIGMA_NOISE);
-        DoubleVertex yLoc = new GaussianVertex(0.0, SIGMA_NOISE);
-        DoubleVertex desSpeed = new GaussianVertex(0.0, SIGMA_NOISE);
+            // Now build the initial state vector
+            // Init new GaussianVertices with mean 0.0 as DoubleVertex is abstract
+            DoubleVertex xLoc = new GaussianVertex(0.0, SIGMA_NOISE);
+            DoubleVertex yLoc = new GaussianVertex(0.0, SIGMA_NOISE);
+            DoubleVertex desSpeed = new GaussianVertex(0.0, SIGMA_NOISE);
+
+            // set unique labels for vertices
+            xLoc.setLabel(lab0); yLoc.setLabel(lab1); desSpeed.setLabel(lab2);
+
+            // Add labelled vertices to collection
+            stateVertices.add(xLoc); stateVertices.add(yLoc); stateVertices.add(desSpeed);
+        }
+        // Instantiate stateVector with vertices
+        stateVector = new CombineDoubles(stateVertices);
     }
 
 
-    private static Vertex<DoubleTensor[]> buildStateVector(List<Person> personList) {
+    private static Vertex<DoubleTensor[]> buildStateVector(List<Person> personList, BayesianNetwork bayesNet) {
         System.out.println("\tBUILDING STATE VECTOR...");
         assert (!personList.isEmpty());
         assert (personList.size() == truthModel.getNumPeople()) : personList.size();
@@ -321,27 +352,21 @@ public class StationTransition {
         int counter = 0;
         for (Person person : personList) {
 
-            // Init new GaussianVertices with mean 0.0 as DoubleVertex is abstract
-            DoubleVertex xLoc = new GaussianVertex(0.0, SIGMA_NOISE);
-            DoubleVertex yLoc = new GaussianVertex(0.0, SIGMA_NOISE);
-            DoubleVertex desSpeed = new GaussianVertex(0.0, SIGMA_NOISE);
+            // get ID
+            Integer id = person.getID();
 
-            // Set value of Vertices to location and speed values of person agents
-            xLoc.setValue(person.getLocation().x);
-            yLoc.setValue(person.getLocation().y);
-            desSpeed.setValue(person.getDesiredSpeed());
+            // Get VertexLabels connected to persons ID (3 labels per person)
+            List<VertexLabel> vertList = vertexID_Map.get(id);
 
-            // Set labels of vertices dependant on counter
-            // '... + 1', '... + 2' etc. is to ensure unique labels when building the BayesNet
-            // Uniqueness is enforced on instantiation of the BayesNet
-            xLoc.setLabel(new VertexLabel("Person " + counter + 1));
-            yLoc.setLabel(new VertexLabel("Person " + counter + 2));
-            desSpeed.setLabel(new VertexLabel("Person " + counter + 3));
+            // get the vertices
+            Vertex xVert = bayesNet.getVertexByLabel(vertList.get(0));
+            Vertex yVert = bayesNet.getVertexByLabel(vertList.get(1));
+            Vertex speedVert = bayesNet.getVertexByLabel(vertList.get(2));
 
-            // Add labelled vertices to collection
-            stateVertices.add(xLoc);
-            stateVertices.add(yLoc);
-            stateVertices.add(desSpeed);
+            // set value of vertices from agent values
+            xVert.setValue(person.location.x);
+            yVert.setValue(person.location.y);
+            speedVert.setValue(person.getCurrentSpeed());
 
             // Add agent exit to list for rebuilding later
             agentExits[counter] = person.getExit();
@@ -356,14 +381,14 @@ public class StationTransition {
     }
 
 
-    private static Vertex<DoubleTensor[]> buildStateVector(Bag people) {
+    private static Vertex<DoubleTensor[]> buildStateVector(Bag people, BayesianNetwork bayesNet) {
         List<Person> personList = new ArrayList<>(people);
-        return buildStateVector(personList);
+        return buildStateVector(personList, bayesNet);
     }
 
 
-    private static Vertex<DoubleTensor[]> buildStateVector(Station model) {
-        return buildStateVector(model.area.getAllObjects());
+    private static Vertex<DoubleTensor[]> buildStateVector(Station model, BayesianNetwork bayesNet) {
+        return buildStateVector(model.area.getAllObjects(), bayesNet);
     }
 
 

@@ -45,7 +45,7 @@ public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabi
      * @param input     Vertex<DoubleTensor[]> of input
      * @return
      */
-    public static Vertex<DoubleTensor> getAtElement(int element, Vertex<DoubleTensor[]> input) {
+    static Vertex<DoubleTensor> getAtElement(int element, Vertex<DoubleTensor[]> input) {
 
         return new UnaryOpLambda<>(
                 new long[0],
@@ -53,6 +53,8 @@ public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabi
                 currentState -> currentState[element]
         );
     }
+
+    int getLength() { return vertices.length; }
 
 
     /*

@@ -290,7 +290,7 @@ class ParticleFilter:
 
 
 def single_run_particle_numbers():
-    particle_num = 5
+    particle_num = 40
     runs = 10
     print("Running filter with {} particles and {} runs (on {} cores)".format(
         particle_num, runs, multiprocessing.cpu_count()))

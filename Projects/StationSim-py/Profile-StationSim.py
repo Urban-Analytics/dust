@@ -1,5 +1,8 @@
 """
 Profile StationSim
+
+Simply run stationsim N (10) times. This can be called from the profiling tools in Intellij IDEA to
+profile the funtion times.
 """
 
 from StationSim_KM import Model

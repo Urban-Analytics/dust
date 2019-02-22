@@ -96,7 +96,7 @@ class ParticleFilter:
         particles choosing particles with higher weights. Then save
         and animate the data. When done, plot save figures.
         '''
-        print("Starting particle filter step()")
+        #print("Starting particle filter step()")
         while self.time < self.number_of_iterations:
             self.time += 1
             
@@ -105,7 +105,7 @@ class ParticleFilter:
                 self.predict()
                 
                 if self.time % self.resample_window == 0:
-                    print("\tWindow {}".format(self.window_counter))
+                    #print("\tWindow {}".format(self.window_counter))
                     self.reweight()
                     self.resample()
     
@@ -296,8 +296,8 @@ class ParticleFilter:
 def single_run_particle_numbers():
     particle_num = 40
     runs = 10
-    print("Running filter with {} particles and {} runs (on {} cores)".format(
-        particle_num, runs, multiprocessing.cpu_count()))
+    #print("Running filter with {} particles and {} runs (on {} cores)".format(
+    #    particle_num, runs, multiprocessing.cpu_count()))
 
     for i in range(runs):
 

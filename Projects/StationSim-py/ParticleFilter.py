@@ -340,9 +340,9 @@ class ParticleFilter:
 
 
 def single_run_particle_numbers():
-    runs = 5
+    runs = 40
     filter_params = {
-        'number_of_particles': 5,
+        'number_of_particles': 100,
         'resample_window': 100,
         'agents_to_visualise': 2,
         'particle_std': 1,

@@ -5,6 +5,7 @@ import numpy as np
 from copy import deepcopy
 import matplotlib.pyplot as plt
 import time
+import warnings
 
 
 
@@ -87,6 +88,10 @@ class ParticleFilter:
         :param particle_num: The particle number to step
         :param self: A pointer to the calling ParticleFilter object.
         """
+        warnings.warn(
+            "step_particles has been replaced with step_particle and should no longer be used",
+            DeprecationWarning
+        )
         self.models[particle_num].step()
         self.states[particle_num] = (self.models[particle_num].agents2state()
                                      + np.random.normal(0, self.particle_std ** 2,

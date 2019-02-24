@@ -85,7 +85,7 @@ class ParticleFilter:
         of the agents.
 
         :param particle_num: The particle number to step
-        :param self: A pointer to this ParticleFilter object class.
+        :param self: A pointer to the calling ParticleFilter object.
         """
         self.models[particle_num].step()
         self.states[particle_num] = (self.models[particle_num].agents2state()
@@ -105,8 +105,11 @@ class ParticleFilter:
         particles choosing particles with higher weights. Then save
         and animate the data. When done, plot save figures.
 
-        :return Information about the run:
-         max(self.mean_errors), np.average(self.mean_errors), max(self.variances), np.average(self.variances)
+        :return: Information about the run as a tuple:
+           max(self.mean_errors)
+           np.average(self.mean_errors)
+           max(self.variances)
+           np.average(self.variances)
         '''
         print("Starting particle filter step()")
         while self.time < self.number_of_iterations:
@@ -331,15 +334,15 @@ def single_run_particle_numbers():
     print("Running filter with {} particles and {} runs (on {} cores). Saving files to: {}".format(
         filter_params['number_of_particles'], runs, multiprocessing.cpu_count(), outfile))
 
+
     for i in range(runs):
 
         # Run the particle filter
-
         pf = ParticleFilter(Model, model_params, filter_params)
+        result = pf.step()
 
         # Write the results of this run
-        result = pf.step()
-        with open(outfile, 'w') as f:
+        with open(outfile, 'a') as f:
             f.write(str(result)[1:-1].replace(" ","")+"\n") # (slice to get rid of the brackets aruond the tuple)
         print("Run: {}, particles: {}, result: {}".format(i, filter_params['number_of_particles'], result))
 

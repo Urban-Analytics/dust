@@ -94,6 +94,24 @@ class ParticleFilter:
         self.models[particle_num].state2agents(self.states[particle_num])
         return self.models[particle_num], self.states[particle_num]
 
+    @classmethod
+    def step_particle(cls, particle_num, model, particle_std, particle_shape):
+        """
+        Step a particle, assign the locations of the
+        agents to the particle state with some noise, and
+        then use the new particle state to set the location
+        of the agents.
+
+        :param particle_num: The particle number to step
+        :param self: A pointer to the calling ParticleFilter object.
+        """
+        #self.models[particle_num].step()
+        model.step()
+        state = (model.agents2state() +
+                 np.random.normal(0, particle_std ** 2, size=particle_shape))
+        model.state2agents(state)
+        return model, state
+
     def step(self):
         '''
         Step Particle Filter
@@ -151,9 +169,16 @@ class ParticleFilter:
         '''
         self.base_model.step()
 
-        stepped_particles = pool.starmap(ParticleFilter.step_particles, \
-                        list(zip(range(self.number_of_particles), [self]*self.number_of_particles)))
-            
+        #stepped_particles = pool.starmap(ParticleFilter.step_particles, \
+        #                                 list(zip(range(self.number_of_particles), [self]*self.number_of_particles)))
+
+        stepped_particles = pool.starmap(ParticleFilter.step_particle, list(zip(
+            range(self.number_of_particles), # Particle numbers
+            [ m for m in self.models],  # Associated Models
+            [self.particle_std]*self.number_of_particles, # Particle std (for adding noise
+            [ s.shape for s in self.states], #Shape (for adding noise)
+        )))
+
         self.models = [stepped_particles[i][0] for i in range(len(stepped_particles))]
         self.states = np.array([stepped_particles[i][1] for i in range(len(stepped_particles))])
         
@@ -357,7 +382,7 @@ if __name__ == '__main__':
     model_params = {
         'width': 200,
         'height': 100,
-        'pop_total': 10, # XXXX
+        'pop_total': 700,
         'entrances': 3,
         'entrance_space': 2,
         'entrance_speed': .1,
@@ -367,7 +392,7 @@ if __name__ == '__main__':
         'speed_desire_mean': 1,
         'speed_desire_std': 1,
         'separation': 2,
-        'batch_iterations': 1000, # XXXX
+        'batch_iterations': 4000,
         'do_save': False,
         'do_ani': False,
         }

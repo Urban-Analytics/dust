@@ -4,6 +4,7 @@ import multiprocessing
 import numpy as np
 from copy import deepcopy
 import matplotlib.pyplot as plt
+import time
 
 
 
@@ -103,8 +104,11 @@ class ParticleFilter:
         reweight particles based on distance to base model and resample 
         particles choosing particles with higher weights. Then save
         and animate the data. When done, plot save figures.
+
+        :return Information about the run:
+         max(self.mean_errors), np.average(self.mean_errors), max(self.variances), np.average(self.variances)
         '''
-        #print("Starting particle filter step()")
+        print("Starting particle filter step()")
         while self.time < self.number_of_iterations:
             self.time += 1
             
@@ -113,7 +117,7 @@ class ParticleFilter:
                 self.predict()
                 
                 if self.time % self.resample_window == 0:
-                    #print("\tWindow {}".format(self.window_counter))
+                    print("\tWindow {}, step {}".format(self.window_counter, self.time))
                     self.reweight()
                     self.resample()
     
@@ -303,26 +307,43 @@ class ParticleFilter:
 
 
 def single_run_particle_numbers():
-    particle_num = 40
-    runs = 10
-    #print("Running filter with {} particles and {} runs (on {} cores)".format(
-    #    particle_num, runs, multiprocessing.cpu_count()))
+    runs = 5
+    filter_params = {
+        'number_of_particles': 5,
+        'resample_window': 100,
+        'agents_to_visualise': 2,
+        'particle_std': 1,
+        'model_std': 1,
+        'do_save': True,
+        'plot_save': False,
+        'do_ani': False,
+    }
+
+    # Open a file to write the results to
+    outfile = "results/pf"+str(int(time.time()*1000))+".csv"
+    with open(outfile, 'w') as f:
+        # Write the parameters first
+        f.write("PF params: "+str(filter_params)+"\n")
+        f.write("Model params: "+str(model_params)+"\n")
+        # Now write the csv headers
+        f.write("Max_Mean_errors,"+"Average_mean_errors,"+"Max_variances,"+"Average_variances\n")
+
+    print("Running filter with {} particles and {} runs (on {} cores). Saving files to: {}".format(
+        filter_params['number_of_particles'], runs, multiprocessing.cpu_count(), outfile))
 
     for i in range(runs):
 
         # Run the particle filter
-        filter_params = {
-            'number_of_particles': particle_num,
-            'resample_window': 100,
-            'agents_to_visualise': 2,
-            'particle_std': 1,
-            'model_std': 1,
-            'do_save': True,
-            'plot_save':False,
-            'do_ani': False,
-        }
+
         pf = ParticleFilter(Model, model_params, filter_params)
-        print(i, particle_num, pf.step())
+
+        # Write the results of this run
+        result = pf.step()
+        with open(outfile, 'w') as f:
+            f.write(str(result)[1:-1].replace(" ","")+"\n") # (slice to get rid of the brackets aruond the tuple)
+        print("Run: {}, particles: {}, result: {}".format(i, filter_params['number_of_particles'], result))
+
+    print("Finished single run")
 
 if __name__ == '__main__':
     __spec__ = None
@@ -333,7 +354,7 @@ if __name__ == '__main__':
     model_params = {
         'width': 200,
         'height': 100,
-        'pop_total': 700,
+        'pop_total': 10, # XXXX
         'entrances': 3,
         'entrance_space': 2,
         'entrance_speed': .1,
@@ -343,7 +364,7 @@ if __name__ == '__main__':
         'speed_desire_mean': 1,
         'speed_desire_std': 1,
         'separation': 2,
-        'batch_iterations': 4000,
+        'batch_iterations': 1000, # XXXX
         'do_save': False,
         'do_ani': False,
         }

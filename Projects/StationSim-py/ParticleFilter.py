@@ -362,7 +362,7 @@ def single_run_particle_numbers():
         f.write("Max_Mean_errors,"+"Average_mean_errors,"+"Max_variances,"+"Average_variances\n")
 
     print("Running filter with {} particles and {} runs (on {} cores). Saving files to: {}".format(
-        filter_params['number_of_particles'], runs, multiprocessing.cpu_count(), outfile))
+        filter_params['number_of_particles'], runs, multiprocessing.cpu_count(), outfile), flush=True)
 
 
     for i in range(runs):
@@ -374,7 +374,7 @@ def single_run_particle_numbers():
         # Write the results of this run
         with open(outfile, 'a') as f:
             f.write(str(result)[1:-1].replace(" ","")+"\n") # (slice to get rid of the brackets aruond the tuple)
-        print("Run: {}, particles: {}, result: {}".format(i, filter_params['number_of_particles'], result))
+        print("Run: {}, particles: {}, result: {}".format(i, filter_params['number_of_particles'], result), flush=True)
 
     print("Finished single run")
 

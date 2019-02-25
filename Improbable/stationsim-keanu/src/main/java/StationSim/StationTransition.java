@@ -69,13 +69,12 @@ public class StationTransition {
 
     private static List<Vertex<DoubleTensor[]>> truthHistory = new ArrayList<>();
 
-    private static List<VertexLabel> vertexLabelList = new ArrayList<>();
+    private static List<VertexLabel> tempVertexList = new ArrayList<>();
 
-    private static CombineDoubles stateVector;
+    private static Vertex<DoubleTensor[]> stateVector;
 
 
     private static void runDataAssimilation() {
-
 
         /*
          ************ CREATE THE TRUTH DATA ************
@@ -84,6 +83,9 @@ public class StationTransition {
         // Run the truth model
         truthModel.start(rand);
         System.out.println("truthModel.start() has executed successfully");
+
+        // Create initial stateVector
+        buildStateVector(truthModel);
 
         int counter = 0;
         results = new double[(NUM_WINDOWS)];
@@ -106,10 +108,6 @@ public class StationTransition {
                 // Add stateVector to history
                 truthHistory.add(truthVector);
                 System.out.println("\tSaving truthVector at step: " + truthModel.schedule.getSteps());
-
-                //for (Person p : truthList) {
-                //    System.out.println(p.toString());
-                //}
 
                 // Increment counter
                 counter++;
@@ -258,29 +256,24 @@ public class StationTransition {
 
             // This is important! This is how we get individual vertices from their label
             // Vertex's are labelled when building the stateVector
-            //Vertex pop = net.getVertexByLabel(vertexLabelList.get(0));
+            //Vertex pop = net.getVertexByLabel(tempVertexList.get(0));
             // This is a Vertex? can I call getValue() and get the DoubleTensor?
             // Calling .getValue() returns a Java object. Can I cast this to something else?
 
             List<KDEVertex> KDE_List = new ArrayList<>();
 
             // trying out the getAtElement of CombineDoubles stateVector
-            for (int j=0; j<stateVector.getLength(); j++) {
+            for (int j=0; j<stateVector.getValue().length; j++) {
                 //DoubleTensor tens = CombineDoubles.getAtElement(j, stateVector).getValue();
 
                 // get the vertex by label (position of label and vertex at same index)
-                Vertex pop2 = net.getVertexByLabel(vertexLabelList.get(j));
+                Vertex pop2 = net.getVertexByLabel(tempVertexList.get(j));
 
                 Samples<DoubleTensor> samples = sampler.get(pop2);
 
                 KDEVertex newKDE = GaussianKDE.approximate(samples);
 
             }
-
-
-
-
-
 
             //currentStateEstimate = meanStateVector;
         }
@@ -290,15 +283,31 @@ public class StationTransition {
     }
 
 
+    private static void buildTruthVector(Station model) {
+        // Truth vector only needs double values to observe
+        List<Double> truthValues = new ArrayList<>();
+
+        // loop through numPeople
+        for (int pNum=0; pNum < model.getNumPeople(); pNum++) {
+            int index = pNum * 3;
+
+            // init 3 double variables for xPos, yPos and speed
+            Double x = 0.0; Double y = 0.0; Double speed = 0.0;
+            // Add double variables to List
+            truthValues.add(x); truthValues.add(y); truthValues.add(speed);
+        }
+    }
+
+
     private static void buildStateVector(Station model) {
 
         // Create new collection to hold vertices for CombineDoubles
         List<DoubleVertex> stateVertices = new ArrayList<>();
 
         // loop through numPeople
-        for (int peopleNum=0; peopleNum < model.getNumPeople(); peopleNum++) {
+        for (int pNum=0; pNum < model.getNumPeople(); pNum++) {
             // second int variable to access each element of triplet vertices (3 vertices per agent)
-            int index = peopleNum * 3;
+            int index = pNum * 3;
 
             // Produce VertexLabels for each vertex in stateVector and add to static list
             // THIS IS NEW
@@ -307,9 +316,9 @@ public class StationTransition {
             VertexLabel lab2 = new VertexLabel("Person " + index + 2);
 
             // Add labels to list for reference
-            vertexLabelList.add(lab0);
-            vertexLabelList.add(lab1);
-            vertexLabelList.add(lab2);
+            tempVertexList.add(lab0);
+            tempVertexList.add(lab1);
+            tempVertexList.add(lab2);
 
             // Now build the initial state vector
             // Init new GaussianVertices with mean 0.0 as DoubleVertex is abstract
@@ -334,7 +343,7 @@ public class StationTransition {
         assert (personList.size() == truthModel.getNumPeople()) : personList.size();
 
         // Create new collection to hold vertices for CombineDoubles
-        List<DoubleVertex> stateVertices = new ArrayList<>();
+        List<DoubleTensor> stateVertices = new ArrayList<>();
         // Create array to hold exit list
         agentExits = new Exit[personList.size()];
 
@@ -354,13 +363,6 @@ public class StationTransition {
             Vertex<DoubleTensor> yVert = CombineDoubles.getAtElement(vectorIndex + 1, stateVector);
             Vertex<DoubleTensor> speedVert = CombineDoubles.getAtElement(vectorIndex + 2, stateVector);
 
-            /*
-            // get the vertices
-            Vertex xVert = bayesNet.getVertexByLabel(vertList.get(0));
-            Vertex yVert = bayesNet.getVertexByLabel(vertList.get(1));
-            Vertex speedVert = bayesNet.getVertexByLabel(vertList.get(2));
-            */
-
             // set value of vertices from agent values
             DoubleTensor xTens = xVert.getValue();
             DoubleTensor yTens = yVert.getValue();
@@ -368,9 +370,13 @@ public class StationTransition {
 
             assert(xTens.isScalar());
 
-            xTens.setValue(person.location.x);
-            yTens.setValue(person.location.y);
-            speedTens.setValue(person.getCurrentSpeed());
+            xTens.setValue(person.location.x, 0);
+            yTens.setValue(person.location.y, 0);
+            speedTens.setValue(person.getCurrentSpeed(), 0);
+
+            // Add vertices to list
+            stateVertices.add(xTens);
+
 
             // Add agent exit to list for rebuilding later
             agentExits[counter] = person.getExit();
@@ -378,7 +384,10 @@ public class StationTransition {
             counter++;
         }
         // Ensure exit array is same length as stateVertices / 3 (as 3 vertices per agent)
-        assert (agentExits.length == stateVertices.size() / 3);
+        System.out.println("AgentExits length: " + agentExits.length);
+        System.out.println("stateVertices size: " + stateVertices.size());
+        assert (agentExits.length == stateVertices.size() / 3) : "agentExits is length " + agentExits.length
+                                                                    + ", and stateVertices is size " + stateVertices.size();
         assert (stateVertices.size() == tempModel.getNumPeople() * 3) : "State Vector is incorrect size: " + stateVertices.size();
         System.out.println("\tSTATE VECTOR BUILT");
         return new CombineDoubles(stateVertices);

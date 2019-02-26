@@ -178,7 +178,7 @@ class Agent:
 
 class Model:
 
-    model_counter = 0 # So that each model can be given a unique ID so that we can track the number of models created
+    _model_counter = 0 # So that each model can be given a unique ID so that we can track the number of models created
 
     def __init__(self, params):
         """
@@ -188,8 +188,8 @@ class Model:
         """
         self.params = (params,)
         [setattr(self, key, value) for key, value in params.items()]
-        self.model_id = Model.model_counter
-        Model.model_counter += 1
+        self.model_id = Model._model_counter
+        Model._model_counter += 1
         self.speed_step = (self.speed_desire_mean - self.speed_min) / 3  # Average number of speeds to check
         # Batch Details
         self.time_id = 0
@@ -320,7 +320,7 @@ class Model:
         return
 
     def __repr__(self):
-        return "StationSim [{}]".format(self.model_counter)
+        return "StationSim [{}]".format(self.model_id)
     
     
     @classmethod

@@ -362,7 +362,7 @@ def single_run_particle_numbers():
         f.write("Max_Mean_errors,"+"Average_mean_errors,"+"Max_variances,"+"Average_variances\n")
 
     print("Running filter with {} particles and {} runs (on {} cores). Saving files to: {}".format(
-        filter_params['number_of_particles'], runs, multiprocessing.cpu_count(), outfile), flush=True)
+        filter_params['number_of_particles'], runs, numcores, outfile), flush=True)
 
 
     for i in range(runs):
@@ -382,7 +382,8 @@ if __name__ == '__main__':
     __spec__ = None
 
     # Pool object needed for multiprocessing
-    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+    numcores = multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(processes=numcores)
 
     model_params = {
         'width': 200,

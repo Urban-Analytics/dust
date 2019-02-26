@@ -320,7 +320,8 @@ class Model:
         return
 
     def __repr__(self):
-        return "StationSim [{}]".format(self.model_id)
+        """Print this model's ID and its memory location"""
+        return "StationSim [{}][{}]".format(self.model_id, hex(id(self)))
     
     
     @classmethod

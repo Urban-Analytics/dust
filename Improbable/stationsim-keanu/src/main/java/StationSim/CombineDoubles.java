@@ -42,7 +42,7 @@ public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabi
     /**
      *
      * @param element   integer index of element required
-     * @param input     Vertex<DoubleTensor[]> of input
+     * @param input     Vertex<DoubleTensor[]> of input (StateVector)
      * @return
      */
     static Vertex<DoubleTensor> getAtElement(int element, Vertex<DoubleTensor[]> input) {
@@ -54,16 +54,10 @@ public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabi
         );
     }
 
-    int getLength() { return vertices.length; }
-
-
-    /*
-    @Override
     public DoubleTensor[] sample(KeanuRandom random) {
         //ignore
         return null;
     }
-    */
 
 
     @Override
@@ -75,4 +69,7 @@ public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabi
         }
         return values;
     }
+
+    int getLength() { return vertices.length; }
+    
 }

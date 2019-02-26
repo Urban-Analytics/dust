@@ -343,7 +343,7 @@ public class StationTransition {
         assert (personList.size() == truthModel.getNumPeople()) : personList.size();
 
         // Create new collection to hold vertices for CombineDoubles
-        List<DoubleTensor> stateVertices = new ArrayList<>();
+        List<DoubleVertex> stateVertices = new ArrayList<>();
         // Create array to hold exit list
         agentExits = new Exit[personList.size()];
 
@@ -375,7 +375,7 @@ public class StationTransition {
             speedTens.setValue(person.getCurrentSpeed(), 0);
 
             // Add vertices to list
-            stateVertices.add(xTens);
+            //stateVertices.add(xTens);
 
 
             // Add agent exit to list for rebuilding later

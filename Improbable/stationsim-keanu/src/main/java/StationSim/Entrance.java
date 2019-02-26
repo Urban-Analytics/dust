@@ -115,9 +115,14 @@ public class Entrance extends Agent {
                  * Get all inactive agents in the model and take the first one
                  */
                 Bag inactivePeopleInModel = s.area.getObjectsAtLocation(new Double2D(0d,0d));
+
+                System.out.println("BAG SIZE: " + inactivePeopleInModel.size());
+
+                assert (inactivePeopleInModel.size() > 0) : "No more inactive people to activate, oops";
+
                 Person inactive = (Person) inactivePeopleInModel.get(0);
                 // Check agent is inactive
-                assert(!inactive.isActive()) : "New agent is not inactive, this is a problem.";
+                assert (!inactive.isActive()) : "New agent is not inactive, this is a problem.";
 
                 /* Make the agent active */
                 inactive.makeActive(spawnLocation, s, exit, this);

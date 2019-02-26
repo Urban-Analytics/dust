@@ -35,7 +35,7 @@ public class Person extends Agent {
     private double radius;
     private double currentSpeed;
     private boolean active = true; // Whether or not agents take part in the simulation. One constructor makes this false.
-    private int id; // Inactive agents have ID -1, real agents will have incrementally increasing IDs
+    private int id; // agents will have incrementally increasing IDs
     private static int ID_Counter = 0;
 
 
@@ -45,12 +45,13 @@ public class Person extends Agent {
      * available constructors. Agents created using this constructor have active=false so do nothing when their step()
      * method is called
      */
-     Person(int size, Double2D location, String name, Exit exit) {
+     Person(int size, Double2D location, String name, Exit exit, int id) {
         super(size, location, name);
         this.active = false;
         this.desiredSpeed = 0;
         this.exit = exit;
-        this.id = ID_Counter++; // Give inactive agents unique ID
+        // Give inactive agents unique ID
+        this.id = id; // This is the only constructor including IDs. ID's come from ID_Counter in Station.class
     }
 
     public void makeInactive(Station station) {
@@ -79,7 +80,7 @@ public class Person extends Agent {
         //System.out.println(desiredSpeed + ",");
         station.numRandoms++;
         currentSpeed = 0.0;
-        this.id = StationSim.Person.ID_Counter++;
+        //this.id = StationSim.Person.ID_Counter++; // This isn't necessary here (But might be useful later)
 
         double randDouble = station.random.nextDouble();
         station.numRandoms++;
@@ -265,6 +266,8 @@ public class Person extends Agent {
     double getCurrentSpeed() {
         return currentSpeed;
     }
+
+    void setCurrentSpeed(double currentSpeed) { this.currentSpeed = currentSpeed; }
 
     Station getStation() { return station; }
 

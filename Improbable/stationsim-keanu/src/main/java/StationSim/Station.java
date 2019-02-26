@@ -65,6 +65,8 @@ public class Station extends SimState {
     public int addedCount;
     private boolean writeResults = false;
 
+    private int ID_Counter = 0; // To assign unique IDs for each agent
+
     //public RandomGenerator random;
     public KeanuRandom random;
     //public RandomDoubleFactory random;
@@ -253,7 +255,7 @@ public class Station extends SimState {
         for (int i=0; i<(this.getNumPeople()); i++) {
             Double2D spawnLocation = new Double2D(0.0, 0.0);
             Exit exit = this.getExits().get(0); // Assign all inactive agents to first exit (Will change when activated)
-            Person person = new Person(personSize, spawnLocation, "Inactive Person: " + i, exit);
+            Person person = new Person(personSize, spawnLocation, "Inactive Person: " + i, exit, this.ID_Counter++);
             this.area.setObjectLocation(person, spawnLocation);
             this.inactivePeople.add(person);
         }

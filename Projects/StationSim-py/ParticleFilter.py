@@ -59,7 +59,6 @@ class ParticleFilter:
         base_model_state = self.base_model.agents2state()
         self.states = np.array([ self.initial_state2(i, base_model_state) for i in range(self.number_of_particles )])
         print("\t ... finished")
-
         #pool.starmap(ParticleFilter.initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
 
     def initial_state2(self, particle_number, base_model_state):
@@ -175,7 +174,7 @@ class ParticleFilter:
         
         return max(self.mean_errors), np.average(self.mean_errors), max(self.variances), np.average(self.variances)
     
-    def predict(self):
+    def predict(self, numiter=1):
         '''
         Predict
         
@@ -187,6 +186,8 @@ class ParticleFilter:
         locations of the particle agents using the new particle
         states. We extract the models and states from the stepped
         particles variable.
+
+        :param numiter: The number of iterations to make
         '''
         self.base_model.step()
 

@@ -54,9 +54,21 @@ class ParticleFilter:
             self.mean_errors = []
             self.variances = []
             self.unique_particles = []
-        
-        self.states = np.array(pool.starmap(ParticleFilter.initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
 
+        print("Creating initial states ... ")
+        base_model_state = self.base_model.agents2state()
+        self.states = np.array([ self.initial_state2(i, base_model_state) for i in range(self.number_of_particles )])
+        print("\t ... finished")
+
+        #pool.starmap(ParticleFilter.initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
+
+    def initial_state2(self, particle_number, base_model_state):
+        """
+        Set the state of the particles to the state of the
+        base model.
+        """
+        self.states[particle_number, :] = base_model_state
+        return self.states[particle_number]
 
     # Multiprocessing methods
     @classmethod
@@ -65,6 +77,10 @@ class ParticleFilter:
         Set the state of the particles to the state of the
         base model.
         """
+        warnings.warn(
+            "initial_state has been replaced with initial_state2 (non multiprocess) and should no longer be used",
+            DeprecationWarning
+        )
         self.states[particle,:] = self.base_model.agents2state()
         return self.states[particle]
 
@@ -342,7 +358,7 @@ class ParticleFilter:
 def single_run_particle_numbers():
     runs = 40
     filter_params = {
-        'number_of_particles': 100,
+        'number_of_particles': 1000,
         'resample_window': 100,
         'agents_to_visualise': 2,
         'particle_std': 1.0,

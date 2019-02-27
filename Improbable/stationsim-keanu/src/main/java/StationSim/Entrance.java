@@ -20,6 +20,8 @@ import sim.engine.SimState;
 import sim.util.Bag;
 import sim.util.Double2D;
 
+import java.util.Iterator;
+
 /**
  * An entrance that spawns n people per time step based on the size of the Entrance.
  * A target exit is assigned to a person to move toward at spawn time.
@@ -78,6 +80,8 @@ public class Entrance extends Agent {
         System.out.println();
         */
 
+        Iterator<Person> persIter = station.inactivePeople.iterator();
+
         // First check if this is a Person generating step
         if (station.schedule.getSteps() % entranceInterval == 0) {
             // Set number of people to be generated
@@ -114,13 +118,14 @@ public class Entrance extends Agent {
                 /**
                  * Get all inactive agents in the model and take the first one
                  */
-                Bag inactivePeopleInModel = s.area.getObjectsAtLocation(new Double2D(0d,0d));
+                //Bag inactivePeopleInModel = s.area.getObjectsAtLocation(new Double2D(0.0,0.0));
+                //System.out.println("BAG SIZE: " + inactivePeopleInModel.size());
+                //assert (inactivePeopleInModel.size() > 0) : "No more inactive people to activate, oops";
+                //Person inactive = (Person) inactivePeopleInModel.get(0);
 
-                System.out.println("BAG SIZE: " + inactivePeopleInModel.size());
+                // Get next inactive agent from inactive agents set
+                Person inactive = persIter.next();
 
-                assert (inactivePeopleInModel.size() > 0) : "No more inactive people to activate, oops";
-
-                Person inactive = (Person) inactivePeopleInModel.get(0);
                 // Check agent is inactive
                 assert (!inactive.isActive()) : "New agent is not inactive, this is a problem.";
 
@@ -133,6 +138,9 @@ public class Entrance extends Agent {
                     station.area.setObjectLocation(inactive, spawnLocation);
                     addedCount++; // save for later
                     station.addedCount++;
+                    // remove newly active agent from inactive people list
+                    persIter.remove();
+                    //station.inactivePeople.remove(inactive);
                 }
             }
             // Number of people left for further steps

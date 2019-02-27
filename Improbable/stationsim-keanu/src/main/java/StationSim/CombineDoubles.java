@@ -11,7 +11,8 @@ import java.util.List;
 
 public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabilistic<DoubleTensor[]> {
 
-    private DoubleVertex[] vertices;
+    // Removed private tag from this to access and update more easily
+    DoubleVertex[] vertices;
 
 
     /**
@@ -71,5 +72,5 @@ public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabi
     }
 
     int getLength() { return vertices.length; }
-    
+
 }

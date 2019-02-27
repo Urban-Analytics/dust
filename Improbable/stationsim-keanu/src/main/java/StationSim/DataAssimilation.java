@@ -91,7 +91,13 @@ public class DataAssimilation {
     }
 
 
-    private static Vertex<DoubleTensor[]> predict(CombineDoubles initialState) {
+    /**
+     * THIS NEEDS TO BE REWRITTEN MORE CLEANLY
+     *
+     * @param initialState
+     * @return
+     */
+    private static Vertex<DoubleTensor[]> predict(Vertex<DoubleTensor[]> initialState) {
         System.out.println("\tPREDICTING...");
 
         // Check model isn't empty
@@ -162,10 +168,9 @@ public class DataAssimilation {
             int pIndex = pID * 3;
 
             // Will this work? Do I need to cast stateVector to CombineDoubles first?
-            DoubleVertex xLocation = (DoubleVertex) CombineDoubles.getAtElement(pIndex, stateVector);
-            DoubleVertex yLocation = (DoubleVertex) CombineDoubles.getAtElement(pIndex + 1, stateVector);
-            DoubleVertex currentSpeed = (DoubleVertex) CombineDoubles.getAtElement(pIndex + 2, stateVector);
-
+            //DoubleVertex xLocation = (DoubleVertex) CombineDoubles.getAtElement(pIndex, stateVector);
+            //DoubleVertex yLocation = (DoubleVertex) CombineDoubles.getAtElement(pIndex + 1, stateVector);
+            //DoubleVertex currentSpeed = (DoubleVertex) CombineDoubles.getAtElement(pIndex + 2, stateVector);
             /* ***********
               Are these references? Or does casting change the object so that changes down the line
               won't affect the original? Need to ensure that changes made below (.setValue()) will also change the
@@ -173,31 +178,23 @@ public class DataAssimilation {
                ***********
              * */
 
-            // Update the location and speed vertices for each person
-            xLocation.setValue(person.getLocation().x);
-            yLocation.setValue(person.getLocation().y);
-            currentSpeed.setValue(person.getCurrentSpeed());
+            // Access DoubleVertex's directly from CombineDoubles class and update in place
+            // This is much simpler than previous attempts and doesn't require creation of new stateVector w/ every iter
+            stateVector.vertices[pIndex].setValue(person.getLocation().x);
+            stateVector.vertices[pIndex + 1].setValue(person.getLocation().y);
+            stateVector.vertices[pIndex + 2].setValue(person.getCurrentSpeed());
         }
-
-        DoubleTensor[] result = stateVector.calculate();
-
-        double total = 0;
-
-        for (int j=0; j < result.length; j++) {
-            total += result[j].getValue();
-        }
-
+        assert (stateVector.getLength() == tempModel.getNumPeople() * 3);
         System.out.println("\tFINISHED UPDATING STATE VECTOR.");
-        System.out.println("StateVector total: " + total);
     }
 
 
-    private static void updatePeople(CombineDoubles stateVector, List<Person> initialPeopleList) {
+    private static void updatePeople(Vertex<DoubleTensor[]> stateVector, List<Person> initialPeopleList) {
         System.out.println("\tREBUILDING PERSON LIST...");
 
         assert (stateVector.getValue().length == tempModel.getNumPeople() * 3) : "State Vector is incorrect length: " + stateVector.getValue().length;
 
-        System.out.println("StateVector length: " + stateVector.getLength());
+        System.out.println("StateVector length: " + stateVector.getValue().length);
 
         int counter = 0;
 

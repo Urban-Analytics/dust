@@ -143,8 +143,8 @@ class Agent:
     @classmethod
     def lerp(cls, loc1, loc2, speed):
         """
+        lerp - linear extrapolation
         Find the new position of after moving 'speed' distance from loc2 towards loc1.
-        XXXX IS this correct
         :param loc1: desired location
         :param loc2: current location
         :param speed: distance that can be covered in an iteration

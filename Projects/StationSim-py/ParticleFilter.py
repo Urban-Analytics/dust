@@ -202,8 +202,9 @@ class ParticleFilter:
         measured_state = (self.base_model.agents2state() 
                           + np.random.normal(0, self.model_std**2, size=self.states.shape))
         distance = np.linalg.norm(self.states - measured_state, axis=1)
-        self.weights = 1 / (distance + 1e-99)**2
+        self.weights = 1 / (distance + 1e-9)**2
         self.weights /= np.sum(self.weights)
+        
         return
 
     def resample(self):
@@ -340,13 +341,13 @@ class ParticleFilter:
 
 
 def single_run_particle_numbers():
-    runs = 40
+    runs = 100
     filter_params = {
-        'number_of_particles': 100,
+        'number_of_particles': 50,
         'resample_window': 100,
-        'agents_to_visualise': 2,
+        'agents_to_visualise': 20,
         'particle_std': 1,
-        'model_std': 1,
+        'model_std': 0,
         'do_save': True,
         'plot_save': False,
         'do_ani': False,
@@ -387,7 +388,7 @@ if __name__ == '__main__':
     model_params = {
         'width': 200,
         'height': 100,
-        'pop_total': 700,
+        'pop_total': 10,
         'entrances': 3,
         'entrance_space': 2,
         'entrance_speed': .1,

@@ -1,6 +1,11 @@
 package StationSim;
 
+import io.improbable.keanu.Keanu;
 import io.improbable.keanu.KeanuRandom;
+import io.improbable.keanu.algorithms.NetworkSamples;
+import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
+import io.improbable.keanu.network.BayesianNetwork;
+import io.improbable.keanu.network.KeanuProbabilisticModel;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
 import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.VertexLabel;
@@ -87,12 +92,107 @@ public class DataAssimilation {
              */
 
             Vertex<DoubleTensor[]> box = predict(stateVector);
+
+            //CombineDoubles box = predict(stateVector);
+
+            /*
+             ************ OBSERVE SOME TRUTH DATA ************
+             */
+
+            keanuObserve(box, i);
+
+            /*
+             ************ CREATE THE BAYES NET ************
+             */
+
+            System.out.println("Creating BayesNet");
+            // First create BayesNet, then create Probabilistic Model from BayesNet
+            BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
+            // Create probabilistic model from BayesNet
+            KeanuProbabilisticModel model = new KeanuProbabilisticModel(net);
+
+            /*
+             ************ OPTIMISE ************
+             */
+
+            //Optimizer optimizer = Keanu.Optimizer.of(net);
+            //optimizer.maxAPosteriori();
+
+            /*
+             ************ SAMPLE FROM THE POSTERIOR************
+             */
+
+            System.out.println("SAMPLING");
+
+            // Use Metropolis Hastings algo for sampling
+            PosteriorSamplingAlgorithm samplingAlgorithm = Keanu.Sampling.MetropolisHastings.withDefaultConfig();
+            // Create sampler from KeanuProbabilisticModel
+            NetworkSamples sampler = samplingAlgorithm.getPosteriorSamples(
+                    model,
+                    model.getLatentVariables(),
+                    NUM_SAMPLES
+            );
+
+            // Down sample and drop sample
+
+            sampler = sampler.drop(DROP_SAMPLES).downSample(DOWN_SAMPLE);
+
+            assert(sampler != null) : "Sampler is null, this is not good";
+
+            /*
+             ************ GET THE INFORMATION OUT OF THE SAMPLES ************
+             */
+
+            /*
+            GaussianKDE class!!!
+            More accurate approximation for posterior distribution
+
+            Can instantiate a GaussianKDE directly from samples of a DoubleVertex
+            HOWEVER if posterior distribution is simple (i.e. almost same as simple Gaussian) then much more simple and
+            efficient to produce another Gaussian from mu and sigma (these can be calculated from a separate BayesNet?)
+
+
+            Label samples in updateStateVector() and reference labels when sampling
+            Need to loop through each vertex and sample individually
+            Can then use the sampled distributions to reintroduce as Prior for next window
+
+            Caleb talked about swapping the prior for the black box model each time instead of recreating. Not sure
+            how this would look/work but he said it was possible and would be good for efficiency (also point below).
+
+            Try to swap prior for black box model instead of creating at each iteration (efficiency improvement)
+             */
+
+
         }
     }
 
 
+    private static void keanuObserve(Vertex<DoubleTensor[]> stateVec, int windowNum) {
+        System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
+
+        DoubleTensor[] output = stateVec.getValue();
+        assert (output.length == tempModel.getNumPeople() * 3) : "Output is incorrect length before observations";
+
+        // Output with a bit of noise. Lower sigma makes it more constrained
+        GaussianVertex[] noisyOutput = new GaussianVertex[output.length];
+        for (int k=0; k < output.length; k++) {
+            noisyOutput[k] = new GaussianVertex(output[k].scalar(), SIGMA_NOISE); // Take kth output and add Gaussian noise
+        }
+
+        // Observe the output (Could do this at same time as adding noise?)
+        Double[] history = truthHistory.get(windowNum); // Get corresponding history from list for each update window
+        assert (history.length == tempModel.getNumPeople() * 3) : String.format("History for iteration %d is incorrect length: %d",
+                windowNum, history.length);
+
+        for (int j=0; j < noisyOutput.length; j++) {
+            noisyOutput[j].observe(history[j]);
+        }
+        System.out.println("Observations complete");
+    }
+
+
     /**
-     * THIS NEEDS TO BE REWRITTEN MORE CLEANLY
+     * THIS NEEDS TO BE REWRITTEN MORE CLEANLY : (DONE?)
      *
      * @param initialState
      * @return
@@ -100,34 +200,37 @@ public class DataAssimilation {
     private static Vertex<DoubleTensor[]> predict(Vertex<DoubleTensor[]> initialState) {
         System.out.println("\tPREDICTING...");
 
-        // Check model isn't empty
-        assert(tempModel.area.getAllObjects().size() != 0);
+        // Check model contains agents
+        assert (tempModel.area.getAllObjects().size() > 0) : "No agents in tempModel before prediction";
 
         // Find all the people and add to list
         Bag people = new Bag(tempModel.area.getAllObjects());
         List<Person> initialPeopleList = new ArrayList<>(people);
-        // TODO: Is this step unnecessary? Do we even need to updatePeople before stepping? Any change from state from previous window?
-        updatePeople(initialState, initialPeopleList);
 
-        // Step all the new people in the model to make the prediction
+        // Update position and speed of agents from initialState
+        updatePeople(initialState, initialPeopleList); // TODO: Is this step necessary? Do we even need to updatePeople before stepping? Any change from end state from previous window?
+
+        // Run the model to make the prediction
         for (int i = 0; i < WINDOW_SIZE; i++) {
             // Step all the people window_size times
             tempModel.schedule.step(tempModel);
         }
 
         // Check that correct number of people in model before updating state vector
-        assert(tempModel.area.getAllObjects().size() == tempModel.getNumPeople()) : String.format(
+        assert (tempModel.area.getAllObjects().size() == tempModel.getNumPeople()) : String.format(
                 "Wrong number of people in the model before building state vector. Expected %d but got %d",
                 tempModel.getNumPeople(), tempModel.area.getAllObjects().size());
 
-        // Get new stateVector
+        // Get new stateVector after prediction
         List<Person> newPersonList = new ArrayList<>(tempModel.area.getAllObjects());
         updateStateVector(newPersonList);
 
+        // Return OpLambda wrapper
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
                 new long[0],
                 stateVector,
-                (currentState) -> step(currentState)
+                //(currentState) -> step(currentState)
+                DataAssimilation::step // IntelliJ suggested replacing lambda with method reference here
         );
 
         System.out.println("\tPREDICTION FINISHED.");
@@ -228,7 +331,7 @@ public class DataAssimilation {
     /**
      * Method to use when first creating the state vector for data assimilation model
      *
-     * @param model
+     * @param model The Station instance for which to create the state vector
      */
     private static void createStateVector(Station model) {
         // TODO: With agent locations now being updated (not created and destroyed), can we do this without speed? With only location vars? (i.e. do Keanu's algo's need speed?)
@@ -355,6 +458,7 @@ public class DataAssimilation {
 
     public static void main(String[] args) {
         runDataAssimilation();
+        System.out.println("Data Assimilation finished! Excellent!");
     }
 
 

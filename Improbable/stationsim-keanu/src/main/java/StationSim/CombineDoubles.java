@@ -72,5 +72,4 @@ public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabi
     }
 
     int getLength() { return vertices.length; }
-
 }

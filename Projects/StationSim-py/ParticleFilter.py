@@ -144,10 +144,12 @@ class ParticleFilter:
         and animate the data. When done, plot save figures.
 
         :return: Information about the run as a tuple:
-           max(self.mean_errors)
-           np.average(self.mean_errors)
-           max(self.variances)
-           np.average(self.variances)
+           min(self.mean_errors) - the error of the particle with the smallest error
+           max(self.mean_errors) - the error of the particle with the largest error
+           np.average(self.mean_errors) - average of all particle errors
+           min(self.variances) - min particle variance
+           max(self.variances) - max particle variance
+           np.average(self.variances) - mean particle variance
         '''
         print("Starting particle filter step()")
         while self.time < self.number_of_iterations:
@@ -172,7 +174,8 @@ class ParticleFilter:
             self.p_save()
             
         
-        return max(self.mean_errors), np.average(self.mean_errors), max(self.variances), np.average(self.variances)
+        return min(self.mean_errors), max(self.mean_errors), np.average(self.mean_errors), \
+               min(self.variances),   max(self.variances),   np.average(self.variances)
     
     def predict(self, numiter=1):
         '''
@@ -376,7 +379,7 @@ def single_run_particle_numbers():
         f.write("PF params: "+str(filter_params)+"\n")
         f.write("Model params: "+str(model_params)+"\n")
         # Now write the csv headers
-        f.write("Max_Mean_errors,"+"Average_mean_errors,"+"Max_variances,"+"Average_variances\n")
+        f.write("Min_Mean_errors,Max_Mean_errors,Average_mean_errors,Min_variances,Max_variances,Average_variances\n")
 
     print("Running filter with {} particles and {} runs (on {} cores). Saving files to: {}".format(
         filter_params['number_of_particles'], runs, numcores, outfile), flush=True)

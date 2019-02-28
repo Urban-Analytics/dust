@@ -388,9 +388,9 @@ class ParticleFilter:
 
 
 def single_run_particle_numbers():
-    runs = 1
+    runs = 10
     filter_params = {
-        'number_of_particles': 10,
+        'number_of_particles': 1000,
         'resample_window': 100,
         'multi_step' : True, # Whether to predict() repeatedly until the sampling window is reached
         'agents_to_visualise': 2,

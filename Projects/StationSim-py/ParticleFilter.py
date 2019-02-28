@@ -115,7 +115,7 @@ class ParticleFilter:
         return self.models[particle_num], self.states[particle_num]
 
     @classmethod
-    def step_particle(cls, particle_num, model, particle_std, particle_shape):
+    def step_particle(cls, particle_num, model, num_iter, particle_std, particle_shape):
         """
         Step a particle, assign the locations of the
         agents to the particle state with some noise, and
@@ -123,10 +123,15 @@ class ParticleFilter:
         of the agents.
 
         :param particle_num: The particle number to step
-        :param self: A pointer to the calling ParticleFilter object.
+        :param model: A pointer to the model object associated with the particle that needs to be stepped
+        :param num_iter: The number of iterations to step
+        :param particle_std: the particle noise standard deviation
+        :param particle_shape: the shape of the particle array
         """
         #self.models[particle_num].step()
-        model.step()
+        for i in range(num_iter):
+            model.step()
+
         state = (model.agents2state() +
                  np.random.normal(0, particle_std ** 2, size=particle_shape))
         model.state2agents(state)
@@ -143,6 +148,11 @@ class ParticleFilter:
         particles choosing particles with higher weights. Then save
         and animate the data. When done, plot save figures.
 
+        Note: if the multi_step is True then predict() is called once, but
+        steps the model forward until the next window. This is quicker but means that
+        animations and saves will only report once per window, rather than
+        every iteration
+
         :return: Information about the run as a tuple:
            min(self.mean_errors) - the error of the particle with the smallest error
            max(self.mean_errors) - the error of the particle with the largest error
@@ -152,28 +162,44 @@ class ParticleFilter:
            np.average(self.variances) - mean particle variance
         '''
         print("Starting particle filter step()")
+
+        window_start_time = time.time() # time how long each window takes
         while self.time < self.number_of_iterations:
-            self.time += 1
-            
+
+            # Whether to run predict repeatedly, or just once
+            numiter = 1
+            if self.multi_step:
+                self.time += self.resample_window
+                numiter = self.resample_window
+            else:
+                self.time += 1
+
+            # See if some particles still have active agents
             if any([agent.active != 2 for agent in self.base_model.agents]):
                 #print(self.time/self.number_of_iterations)
-                self.predict()
-                
+                self.predict(numiter=numiter)
+
                 if self.time % self.resample_window == 0:
-                    print("\tWindow {}, step {}".format(self.window_counter, self.time))
+                    self.window_counter += 1
                     self.reweight()
                     self.resample()
-    
+                    print("\tFinished window {}, step {} (took {}s)".format(
+                        self.window_counter, self.time, round(float(time.time() - window_start_time),2)))
+                    window_start_time = time.time()
+                elif self.multi_step:
+                    assert (False), "Should not get here, if multi_step is true then the condition above should always run"
+
+
+
                 if self.do_save:
                     self.save()
-    
+
             if self.do_ani:
                     self.ani()
-              
+
         if self.plot_save:
             self.p_save()
-            
-        
+
         return min(self.mean_errors), max(self.mean_errors), np.average(self.mean_errors), \
                min(self.variances),   max(self.variances),   np.average(self.variances)
     
@@ -190,9 +216,10 @@ class ParticleFilter:
         states. We extract the models and states from the stepped
         particles variable.
 
-        :param numiter: The number of iterations to make
+        :param numiter: The number of iterations to step (usually either 1, or the  resample window
         '''
-        self.base_model.step()
+        for i in range(numiter):
+            self.base_model.step()
 
         #stepped_particles = pool.starmap(ParticleFilter.step_particles, \
         #                                 list(zip(range(self.number_of_particles), [self]*self.number_of_particles)))
@@ -200,6 +227,7 @@ class ParticleFilter:
         stepped_particles = pool.starmap(ParticleFilter.step_particle, list(zip(
             range(self.number_of_particles), # Particle numbers
             [ m for m in self.models],  # Associated Models
+            [numiter]*self.number_of_particles, # Number of iterations to step each particle
             [self.particle_std]*self.number_of_particles, # Particle std (for adding noise
             [ s.shape for s in self.states], #Shape (for adding noise)
         )))
@@ -360,10 +388,11 @@ class ParticleFilter:
 
 
 def single_run_particle_numbers():
-    runs = 40
+    runs = 1
     filter_params = {
-        'number_of_particles': 1000,
+        'number_of_particles': 10,
         'resample_window': 100,
+        'multi_step' : True, # Whether to predict() repeatedly until the sampling window is reached
         'agents_to_visualise': 2,
         'particle_std': 1.0,
         'model_std': 1.0,
@@ -388,13 +417,16 @@ def single_run_particle_numbers():
     for i in range(runs):
 
         # Run the particle filter
+        start_time = time.time() # Time how long the whole run takes
         pf = ParticleFilter(Model, model_params, filter_params)
         result = pf.step()
 
         # Write the results of this run
         with open(outfile, 'a') as f:
             f.write(str(result)[1:-1].replace(" ","")+"\n") # (slice to get rid of the brackets aruond the tuple)
-        print("Run: {}, particles: {}, result: {}".format(i, filter_params['number_of_particles'], result), flush=True)
+        print("Run: {}, particles: {}, took: {}(s), result: {}".format(
+            i, filter_params['number_of_particles'], round(time.time()-start_time), result), flush=True)
+
 
     print("Finished single run")
 

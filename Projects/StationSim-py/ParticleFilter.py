@@ -409,8 +409,11 @@ def single_run_particle_numbers():
         # Now write the csv headers
         f.write("Min_Mean_errors,Max_Mean_errors,Average_mean_errors,Min_variances,Max_variances,Average_variances\n")
 
-    print("Running filter with {} particles and {} runs (on {} cores). Saving files to: {}".format(
-        filter_params['number_of_particles'], runs, numcores, outfile), flush=True)
+    print("Running filter with {} particles and {} runs (on {} cores) with {} agents. Saving files to: {}".format(
+        filter_params['number_of_particles'], runs, numcores, model_params["pop_total"], outfile), flush=True)
+    print("PF params: "+str(filter_params)+"\n")
+    print("Model params: "+str(model_params)+"\n")
+
 
 
     for i in range(runs):

@@ -4,6 +4,8 @@ import io.improbable.keanu.Keanu;
 import io.improbable.keanu.KeanuRandom;
 import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
+import io.improbable.keanu.algorithms.Samples;
+import io.improbable.keanu.algorithms.variational.GaussianKDE;
 import io.improbable.keanu.network.BayesianNetwork;
 import io.improbable.keanu.network.KeanuProbabilisticModel;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
@@ -11,6 +13,7 @@ import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.VertexLabel;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
+import io.improbable.keanu.vertices.dbl.probabilistic.KDEVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
 import sim.util.Bag;
 import sim.util.Double2D;
@@ -162,14 +165,31 @@ public class DataAssimilation {
             Try to swap prior for black box model instead of creating at each iteration (efficiency improvement)
              */
 
+            List<DoubleVertex> KDE_List = new ArrayList<>();
 
+            for (int j=0; j < stateVector.getLength(); j++) {
+                // Get vertex from bayesNet by label (loop counter used to access elements of tempVertexList)
+                Vertex vert = net.getVertexByLabel(tempVertexList.get(j));
+
+                Samples<DoubleTensor> samples = sampler.get(vert);
+
+                KDEVertex newKDE = GaussianKDE.approximate(samples);
+
+                DoubleVertex x = newKDE;
+
+                KDE_List.add(x);
+            }
+
+            stateVector = new CombineDoubles(KDE_List);
         }
+        tempModel.finish();
     }
 
 
     private static void keanuObserve(Vertex<DoubleTensor[]> stateVec, int windowNum) {
         System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
 
+        // Get DoubleTensor[] output from stateVector
         DoubleTensor[] output = stateVec.getValue();
         assert (output.length == tempModel.getNumPeople() * 3) : "Output is incorrect length before observations";
 
@@ -184,6 +204,7 @@ public class DataAssimilation {
         assert (history.length == tempModel.getNumPeople() * 3) : String.format("History for iteration %d is incorrect length: %d",
                 windowNum, history.length);
 
+        // Loop through and observe
         for (int j=0; j < noisyOutput.length; j++) {
             noisyOutput[j].observe(history[j]);
         }

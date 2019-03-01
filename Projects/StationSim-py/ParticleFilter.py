@@ -179,6 +179,10 @@ class ParticleFilter:
                 #print(self.time/self.number_of_iterations)
                 self.predict(numiter=numiter)
 
+                # Store the model states before resampling, otherwise they will be artificially low
+                if self.do_save:
+                    self.save()
+
                 if self.time % self.resample_window == 0:
                     self.window_counter += 1
                     self.reweight()
@@ -188,11 +192,6 @@ class ParticleFilter:
                     window_start_time = time.time()
                 elif self.multi_step:
                     assert (False), "Should not get here, if multi_step is true then the condition above should always run"
-
-
-
-                if self.do_save:
-                    self.save()
 
             if self.do_ani:
                     self.ani()
@@ -388,9 +387,9 @@ class ParticleFilter:
 
 
 def single_run_particle_numbers():
-    runs = 10
+    runs = 20
     filter_params = {
-        'number_of_particles': 1000,
+        'number_of_particles': 100,
         'resample_window': 100,
         'multi_step' : True, # Whether to predict() repeatedly until the sampling window is reached
         'agents_to_visualise': 2,

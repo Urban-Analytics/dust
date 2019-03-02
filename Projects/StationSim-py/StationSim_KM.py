@@ -90,6 +90,14 @@ class Agent:
             self.time_start = model.time_id
             self.time_expected = np.linalg.norm(self.location - self.loc_desire) / self.speed_desire
 
+    def is_within_bounds(self, model, new_location):
+        """
+        Check if new location is within the bounds of the model.
+        """
+        within0 = all(model.boundaries[0] <= new_location)
+        within1 = all(model.boundaries[1] <= new_location)
+        return within0 and within1
+
     def move(self, model):
         """
         Move the agent towards their destination. If the way is clear then the
@@ -107,8 +115,7 @@ class Agent:
                 # Wiggle
                 new_location = self.location + np.random.randint(-1, 1+1, 2)
         # Rebound
-        within_bounds = all(model.boundaries[0] <= new_location) and all(new_location <= model.boundaries[1])
-        if not within_bounds:
+        if not self.is_within_bounds(model, new_location):
             new_location = np.clip(new_location, model.boundaries[0], model.boundaries[1])
         # Move
         self.location = new_location
@@ -195,6 +202,7 @@ class Model:
         self.params = (params,)
         # There are a lot of required attributes here that we hope are in params
         # Perhaps we should have a way to ensure we get what we require?
+        # Also, consider using **kwargs
         [setattr(self, key, value) for key, value in params.items()]
         # Average number of speeds to check
         self.speed_step = (self.speed_desire_mean - self.speed_min) / 3
@@ -210,7 +218,7 @@ class Model:
         self.pop_finished = 0
         # Initialise
         self.initialise_gates()
-        self.agents = list([Agent(self, unique_id) for unique_id in range(self.pop_total)])
+        self.agents = [Agent(self, unique_id) for unique_id in range(self.pop_total)]
 
     def step(self):
         """
@@ -263,9 +271,11 @@ class Model:
         return state
 
     def state2agents(self, state):
+        """
+        Use state vector to set agent locations.
+        """
         for i in range(len(self.agents)):
             self.agents[i].location = state[2 * i:2 * i + 2]
-        return
 
     def batch(self):
         """

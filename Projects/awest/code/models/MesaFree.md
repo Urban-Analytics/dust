@@ -1,5 +1,5 @@
 # MesaFree
-The simplest agent based modelling module for python. Designed by Andrew West, for questions email `gyawe`.
+The simplest agent based modelling module for python.  Designed by Andrew West, for questions email `gyawe`.
 
 #### Sample Model
 Here agents are created with a random location.
@@ -17,9 +17,9 @@ Edit:
 `move()` and more
 
 #### Model
-The `model` class is the step function you would call. In `model.step() ~= agent[for all].step()`, a shuffle can be applied in case the order is significant.
+The `model` class is the step function you would call.  In `model.step() ~= agent[for all].step()`, a shuffle can be applied in case the order is significant.
 
-The rest creates all the agents at the start. In general the system design is pretty specific.
+The rest creates all the agents at the start.  In general the system design is pretty specific.
 
 Edit:
 `# parameters`
@@ -27,7 +27,7 @@ Edit:
 `initialise_agents()`
 
 #### Plotting
-This plotting uses generic `matplotlib` tools. But a warning before you run edit it:
+This plotting uses generic `matplotlib` tools.  But a warning before you run edit it:
 Using pause every iteration will keep showing you plots, so make sure the number of iterations isn't too long.
 Here 100 * .05 = 5s minimum (processing time per step may take longer than .05s)
 
@@ -41,5 +41,3 @@ line 45 > `shuffle` - shuffling order (only if requested).
 line 52 > `random` - initialising location.
 
 I call the animation created *pause-animations* as they aren't saved and run as the program does.
-
-Using `python` instead of `python3` will throw an error on line 75 > `SyntaxError: only named arguments may follow *expression`. Meaning you have to separate the coordinates `agent.location[0]`, `agent.location[1]`, but this is less elegant.

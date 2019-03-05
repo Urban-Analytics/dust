@@ -322,7 +322,7 @@
 {\*\expandedcolortbl;;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs32 \cf0 Forecasts should have reduced uncertainty}</string>
+\f0\fs32 \cf0 Forecasts should have improved accuracy}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -2187,7 +2187,7 @@ Model}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2019-03-04 16:25:43 +0000</string>
+	<string>2019-03-05 10:00:04 +0000</string>
 	<key>Modifier</key>
 	<string>nick</string>
 	<key>NotesVisible</key>

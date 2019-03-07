@@ -88,7 +88,7 @@ public class DataAssimilation {
         // Start data assimilation window
         for (int i = 0; i < NUM_WINDOWS; i++) {
 
-            System.out.println("\tEntered Data Assimilation window " + i);
+            System.out.println("Entered Data Assimilation window " + i);
 
             /*
              ************ INITIALISE THE BLACK BOX MODEL ************
@@ -108,7 +108,7 @@ public class DataAssimilation {
              ************ CREATE THE BAYES NET ************
              */
 
-            System.out.println("Creating BayesNet");
+            System.out.println("\tCreating BayesNet");
             // First create BayesNet, then create Probabilistic Model from BayesNet
             BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
             // Create probabilistic model from BayesNet
@@ -125,7 +125,7 @@ public class DataAssimilation {
              ************ SAMPLE FROM THE POSTERIOR************
              */
 
-            System.out.println("SAMPLING");
+            System.out.println("\tSAMPLING");
 
             // Use Metropolis Hastings algo for sampling
             PosteriorSamplingAlgorithm samplingAlgorithm = Keanu.Sampling.MetropolisHastings.withDefaultConfig();
@@ -146,6 +146,8 @@ public class DataAssimilation {
              ************ GET THE INFORMATION OUT OF THE SAMPLES ************
              */
 
+            System.out.println("\tEXTRACTING INFO FROM SAMPLES...");
+
             /*
             GaussianKDE class!!!
             More accurate approximation for posterior distribution
@@ -165,8 +167,9 @@ public class DataAssimilation {
             Try to swap prior for black box model instead of creating at each iteration (efficiency improvement)
              */
 
-            List<DoubleVertex> KDE_List = new ArrayList<>();
+            //List<DoubleVertex> KDE_List = new ArrayList<>();
 
+            /*
             for (int j=0; j < stateVector.getLength(); j++) {
                 // Get vertex from bayesNet by label (loop counter used to access elements of tempVertexList)
                 Vertex vert = net.getVertexByLabel(tempVertexList.get(j));
@@ -177,17 +180,35 @@ public class DataAssimilation {
 
                 DoubleVertex x = newKDE;
 
+                x.setLabel(tempVertexList.get(j));
+
                 KDE_List.add(x);
             }
 
             stateVector = new CombineDoubles(KDE_List);
+            */
+
+            for (int j=0; j < stateVector.getLength(); j++) {
+
+                // Get DoubleVertex from stateVector to update after sampling
+                DoubleVertex vert = stateVector.vertices[j];
+
+                // Get samples from vertex
+                Samples<DoubleTensor> samples = sampler.get(vert);
+
+                // Create new GaussianKDE from DoubleTensor samples
+                KDEVertex newKDE = GaussianKDE.approximate(samples);
+
+                // Assign value of vertex in stateVector from newKDE
+                stateVector.vertices[j].setValue(newKDE.getValue());
+            }
         }
         tempModel.finish();
     }
 
 
     private static void keanuObserve(Vertex<DoubleTensor[]> stateVec, int windowNum) {
-        System.out.println("Observing truth data. Adding noise with standard dev: " + SIGMA_NOISE);
+        System.out.println("\tObserving truth data. Adding noise with standard dev: " + SIGMA_NOISE);
 
         // Get DoubleTensor[] output from stateVector
         DoubleTensor[] output = stateVec.getValue();
@@ -208,7 +229,7 @@ public class DataAssimilation {
         for (int j=0; j < noisyOutput.length; j++) {
             noisyOutput[j].observe(history[j]);
         }
-        System.out.println("Observations complete");
+        System.out.println("\tObservations complete");
     }
 
 
@@ -318,7 +339,7 @@ public class DataAssimilation {
 
         assert (stateVector.getValue().length == tempModel.getNumPeople() * 3) : "State Vector is incorrect length: " + stateVector.getValue().length;
 
-        System.out.println("StateVector length: " + stateVector.getValue().length);
+        System.out.println("\tStateVector length: " + stateVector.getValue().length);
 
         int counter = 0;
 

@@ -582,10 +582,10 @@ public class StationTransition {
 
     public static void main(String[] args) {
 
-        StationTransition.runDataAssimilation();
+        //StationTransition.runDataAssimilation();
         System.out.println("Happy days, runDataAssimilation has executed successfully!");
 
-        System.exit(0);
+        //System.exit(0);
     }
 
 

@@ -113,6 +113,7 @@ class Agent:
                 break
             elif speed == self.speeds[-1]:
                 # Wiggle
+                # Why 1+1?
                 new_location = self.location + np.random.randint(-1, 1+1, 2)
         # Rebound
         if not self.is_within_bounds(model, new_location):
@@ -312,6 +313,16 @@ class Model:
         return
 
     def save_plot(self):
+        """
+        Produce plots for model.
+        """
+        self.plot_trails()
+        self.plot_agent_times()
+
+    def plot_trails(self):
+        """
+        Produce a plot of the trails of each agent in the 2-d corridor.
+        """
         # Trails
         plt.figure()
         for agent in self.agents:
@@ -327,6 +338,13 @@ class Model:
         plt.xlabel('Corridor Width')
         plt.ylabel('Corridor Height')
         plt.legend(['Agent trails'])
+        plt.show()
+
+    def plot_agent_times(self):
+        """
+        Produce a plot of the time taken by each agent, and the delay of each
+        agent.
+        """
         # Time Taken, Delay Amount
         plt.figure()
         plt.hist(self.time_taken, alpha=.5, label='Time taken')
@@ -334,9 +352,7 @@ class Model:
         plt.xlabel('Time')
         plt.ylabel('Number of Agents')
         plt.legend()
-
         plt.show()
-        return
 
     def save_stats(self):
         """

@@ -48,14 +48,15 @@ class Agent:
         self.active = 0  # 0 Not Started, 1 Active, 2 Finished
         model.pop_active += 1
 
-        # Location
+        # Choose at random at which of the entrances the agent starts
         self.location = model.loc_entrances[np.random.randint(model.entrances)]
-        # XXXX WHAT DOES THIS DO?
         self.location[1] += model.entrance_space * (np.random.uniform() - .5)
         self.loc_desire = model.loc_exits[np.random.randint(model.exits)]
 
         # Parameters
-        # XXXX WHAT DOES THIS DO?
+        # model.entrance_speed -> the rate at which agents enter
+        # self.time_activate -> the time at which the agent should become active
+        # time_activate is exponentially distributed based on entrance_speed
         self.time_activate = np.random.exponential(model.entrance_speed)
         # The maximum speed that this agent can travel at:
         self.speed_desire = max(np.random.normal(model.speed_desire_mean,

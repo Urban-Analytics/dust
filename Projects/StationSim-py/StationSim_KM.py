@@ -395,6 +395,7 @@ class Model:
         """
         Run a model with some common parameters. Mostly used for testing.
         """
+        np.random.seed(42)
         model_params = {
             'width': 200,
             'height': 100,

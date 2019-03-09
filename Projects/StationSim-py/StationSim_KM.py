@@ -201,7 +201,7 @@ class Model:
         Create a new model, reading parameters from a dictionary.
         XXXX Need to document the required parameters.
         """
-        self.params = (params,)
+        self.params = params
         # There are a lot of required attributes here that we hope are in params
         # Perhaps we should have a way to ensure we get what we require?
         # Also, consider using **kwargs
@@ -283,7 +283,11 @@ class Model:
         """
         Run the model.
         """
-        print("Starting batch mode with parameters:", self.params)
+        print("Starting batch mode with following parameters:")
+        print('\tParameter\tValue')
+        for k, v in self.params.items():
+            print('\t{0}:\t{1}'.format(k, v))
+        print('\n')
         for i in range(self.batch_iterations):
             self.step()
             if i % 100 == 0:

@@ -91,12 +91,12 @@ class Agent:
             self.time_start = model.time_id
             self.time_expected = np.linalg.norm(self.location - self.loc_desire) / self.speed_desire
 
-    def is_within_bounds(self, model, new_location):
+    def is_within_bounds(self, boundaries, new_location):
         """
         Check if new location is within the bounds of the model.
         """
-        within0 = all(model.boundaries[0] <= new_location)
-        within1 = all(model.boundaries[1] <= new_location)
+        within0 = all(boundaries[0] <= new_location)
+        within1 = all(boundaries[1] <= new_location)
         return within0 and within1
 
     def move(self, model):
@@ -117,7 +117,7 @@ class Agent:
                 # Why 1+1?
                 new_location = self.location + np.random.randint(-1, 1+1, 2)
         # Rebound
-        if not self.is_within_bounds(model, new_location):
+        if not self.is_within_bounds(model.boundaries, new_location):
             new_location = np.clip(new_location, model.boundaries[0], model.boundaries[1])
         # Move
         self.location = new_location
@@ -235,30 +235,16 @@ class Model:
     def initialise_gates(self):
         """
         Initialise the locations of the entrances and exits.
-        Note: This method relies on a lot of class attributes, many of which are
-        not explicitly required in the init method - perhaps we should be
-        careful of this?
         """
-        # Entrances
-#        self.loc_entrances = np.zeros((self.entrances, 2))
-#        self.loc_entrances[:, 0] = 0
-#        if self.entrances == 1:
-#            self.loc_entrances[0, 1] = self.height / 2
-#        else:
-#            self.loc_entrances[:, 1] = np.linspace(self.height / 4, 3 * self.height / 4, self.entrances)
-        # Exits
-#        self.loc_exits = np.zeros((self.exits, 2))
-#        self.loc_exits[:, 0] = self.width
-#        if self.exits == 1:
-#            self.loc_exits[0, 1] = self.height / 2
-#        else:
-#            self.loc_exits[:, 1] = np.linspace(self.height / 4, 3 * self.height / 4, self.exits)
         self.loc_entrances = self.initialise_gates_generic(self.entrances, 0)
         self.loc_exits = self.initialise_gates_generic(self.exits, self.width)
 
     def initialise_gates_generic(self, n_gates, x):
         """
         General method for initialising gates.
+        Note: This method relies on a lot of class attributes, many of which are
+        not explicitly required in the init method - perhaps we should be
+        careful of this?
         """
         gates = np.zeros((n_gates, 2))
         gates[:, 0] = x
@@ -281,10 +267,7 @@ class Model:
         Convert list of agents in model to state vector.
         """
         state = [agent.location for agent in self.agents]
-        if do_ravel:
-            state = np.ravel(state)
-        else:
-            state = np.array(state)
+        state = np.ravel(state) if do_ravel else np.array(state)
         return state
 
     def state2agents(self, state):

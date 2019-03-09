@@ -240,19 +240,34 @@ class Model:
         careful of this?
         """
         # Entrances
-        self.loc_entrances = np.zeros((self.entrances, 2))
-        self.loc_entrances[:, 0] = 0
-        if self.entrances == 1:
-            self.loc_entrances[0, 1] = self.height / 2
-        else:
-            self.loc_entrances[:, 1] = np.linspace(self.height / 4, 3 * self.height / 4, self.entrances)
+#        self.loc_entrances = np.zeros((self.entrances, 2))
+#        self.loc_entrances[:, 0] = 0
+#        if self.entrances == 1:
+#            self.loc_entrances[0, 1] = self.height / 2
+#        else:
+#            self.loc_entrances[:, 1] = np.linspace(self.height / 4, 3 * self.height / 4, self.entrances)
         # Exits
-        self.loc_exits = np.zeros((self.exits, 2))
-        self.loc_exits[:, 0] = self.width
-        if self.exits == 1:
-            self.loc_exits[0, 1] = self.height / 2
+#        self.loc_exits = np.zeros((self.exits, 2))
+#        self.loc_exits[:, 0] = self.width
+#        if self.exits == 1:
+#            self.loc_exits[0, 1] = self.height / 2
+#        else:
+#            self.loc_exits[:, 1] = np.linspace(self.height / 4, 3 * self.height / 4, self.exits)
+        self.loc_entrances = self.initialise_gates_generic(self.entrances, 0)
+        self.loc_exits = self.initialise_gates_generic(self.exits, self.width)
+
+    def initialise_gates_generic(self, n_gates, x):
+        """
+        General method for initialising gates.
+        """
+        gates = np.zeros((n_gates, 2))
+        gates[:, 0] = x
+        if n_gates == 1:
+            gates[0, 1] = self.height / 2
         else:
-            self.loc_exits[:, 1] = np.linspace(self.height / 4, 3 * self.height / 4, self.exits)
+            gates[:, 1] = np.linspace(self.height / 4, 3 * self.height / 4,
+                                      n_gates)
+        return gates
 
     def kdtree_build(self):
         """

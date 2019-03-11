@@ -50,10 +50,12 @@ class ParticleFilter:
         self.window_counter = 0 # Just for printing the progress of the PF
         if self.do_save:
             self.active_agents = []
-            self.means = []
-            self.mean_errors = []
+            self.mean_states = [] # Mean state of all partciles, weighted by distance from observations
+            self.mean_errors = [] # Mean distance between weighted mean state and the true state
             self.variances = []
+            self.absolute_errors = [] # Unweighted distance between mean state and the true state
             self.unique_particles = []
+            self.before_resample = [] # Records whether the errors were before or after resampling
 
         print("Creating initial states ... ")
         base_model_state = self.base_model.agents2state()
@@ -179,13 +181,16 @@ class ParticleFilter:
                 #print(self.time/self.number_of_iterations)
                 self.predict(numiter=numiter)
 
-                # Store the model states before resampling, otherwise they will be artificially low
-                if self.do_save:
-                    self.save()
+
 
                 if self.time % self.resample_window == 0:
                     self.window_counter += 1
                     self.reweight()
+
+                    # Store the model states before and after resampling
+                    if self.do_save:
+                        self.save(before=True)
+
                     self.resample()
                     print("\tFinished window {}, step {} (took {}s)".format(
                         self.window_counter, self.time, round(float(time.time() - window_start_time),2)))
@@ -193,14 +198,30 @@ class ParticleFilter:
                 elif self.multi_step:
                     assert (False), "Should not get here, if multi_step is true then the condition above should always run"
 
+                # Store the model states before and after resampling
+                if self.do_save:
+                    self.save(before=False)
+            else:
+                print("\tNo more active agents. Finishing particle step")
+
             if self.do_ani:
                     self.ani()
+
 
         if self.plot_save:
             self.p_save()
 
+        # Return the errors and variences before and after sampling
+        # XXXX HERE
+        # Useful for debugging in console:
+        #for i, a in enumerate(zip([x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == True],
+        #                          [x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == False])):
+        #    print("{} - before: {}, after: {}".format(i, a[0], a[1]))
+
+
         return min(self.mean_errors), max(self.mean_errors), np.average(self.mean_errors), \
                min(self.variances),   max(self.variances),   np.average(self.variances)
+
     
     def predict(self, numiter=1):
         '''
@@ -285,29 +306,35 @@ class ParticleFilter:
 
         return
 
-    def save(self):
+    def save(self, before:bool):
         '''
         Save
         
         DESCRIPTION
         Calculate number of active agents, mean, and variance 
         of particles and calculate mean error between the mean 
-        and the true base model state. Plot active agents,mean 
-        error and mean variance. 
+        and the true base model state.
+
+        :param before: whether this is being called before or after resampling as this will have a big impact on
+        what the errors mean (if they're after resampling then they should be low, before and they'll be high)
         '''
         self.active_agents.append(sum([agent.active == 1 for agent in self.base_model.agents]))
         
         active_states = [agent.active == 1 for agent in self.base_model.agents for _ in range(2)]
         
         if any(active_states):
+            # Mean and variance state of all particles, weighted by their distance to the observation
             mean = np.average(self.states[:,active_states], weights=self.weights, axis=0)
+            unweighted_mean = np.average(self.states[:,active_states], axis=0)
             variance = np.average((self.states[:,active_states] - mean)**2, weights=self.weights, axis=0)
             
-            self.means.append(mean)
+            self.mean_states.append(mean)
             self.variances.append(np.average(variance))
+            self.before_resample.append(before) # Whether this save reflects the errors before or after resampling
 
             truth_state = self.base_model.agents2state()
             self.mean_errors.append(np.linalg.norm(mean - truth_state[active_states], axis=0))
+            self.absolute_errors.append(np.linalg.norm(unweighted_mean - truth_state[active_states], axis=0))
         
         return
     
@@ -387,13 +414,13 @@ class ParticleFilter:
 
 
 def single_run_particle_numbers():
-    runs = 20
+    runs = 5
     filter_params = {
         'number_of_particles': 100,
         'resample_window': 100,
         'multi_step' : True, # Whether to predict() repeatedly until the sampling window is reached
-        'agents_to_visualise': 2,
-        'particle_std': 1.0,
+        'agents_to_visualise': 1,
+        'particle_std':1.5,
         'model_std': 1.0,
         'do_save': True,
         'plot_save': False,
@@ -442,7 +469,7 @@ if __name__ == '__main__':
     model_params = {
         'width': 200,
         'height': 100,
-        'pop_total': 700,
+        'pop_total': 10,
         'entrances': 3,
         'entrance_space': 2,
         'entrance_speed': .1,

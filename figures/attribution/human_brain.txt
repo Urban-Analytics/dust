@@ -1,0 +1,6 @@
+<figure class="right">
+    <img src="./figures/human_brain.png" alt="Human brain" />
+    <figcaption><p>Photo attributed to <ahref="http://www.flickr.com/photos/arselectronica/">
+        Arts Electronica</a> (<ahref="http://creativecommons.org/licenses/by-nc-nd/2.0/">
+        CC BY-NC-ND 2.0</a>)</p></figcaption>
+</figure>

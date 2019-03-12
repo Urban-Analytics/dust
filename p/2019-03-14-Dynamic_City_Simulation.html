@@ -1,0 +1,835 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="author" content="Nick Malleson">
+        <meta name="keywords" content="crime, ABM, ambient population, burglary, urban dynamics">
+
+		<title>Dynamic Simulation Models and Urban Analytics</title>
+
+		<link rel="stylesheet" href="reveal/css/reveal.css">
+		<link rel="stylesheet" href="reveal/css/theme/white.css">
+        
+        <!-- Some extra bits added by Nick -->
+        <link rel="stylesheet" href="reveal/css/nick.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+                
+                <!--
+                <section data-markdown id="index"
+                         data-background-image="http://surf.leeds.ac.uk/figures/cityscapes/chicago_bw.jpg">
+                -->
+                    
+                <section class="title" id="title" data-background-image="../figures/virtual_city.jpeg">
+                    <div class="whitebackground2">
+                        <h3>Dream CDT Symposium</h3>
+                        <hr/>
+                        <h2>Dynamic Simulation Models &amp; Urban Analytics</h2>
+                        <hr/>
+                        <h3>Nick Malleson</h3>
+                        <h4>Associate Professor</h4>
+                        <h4>School of Geography, University of Leeds, UK</h4>
+                        <hr/>
+                        <h4><a href="http://nickmalleson.co.uk">nickmalleson.co.uk</a></h4>
+                        <h4 style="text-align:center">These slides: <a href="http://surf.leeds.ac.uk/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></h4>
+                    </div>
+                </section>
+                
+                  <section id="Overview" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                    <div class="whitebackground2">
+                      <h2>Overview</h2>
+                      <p>Agent-Based Modelling</p>
+                      <p>Dynamic City Simulation</p>
+                      <p>Urban Analytics</p>
+                    </div>
+                </section>
+                
+                
+                
+                
+                  <!-- *****************************************************************
+                     ************* Intro to modelling and ABM **************************
+                     ***************************************************************** -->
+                
+                <section id="part1">
+                    <h2>Part 1: Agent-Based Modelling</h2>
+                    <img data-src="../figures/skylines-day1.jpg" alt="screenshot of virtual city"/>
+                </section>
+                
+                
+
+                <section id="whymodel" data-background-image="../figures/attribution/human_brain.png">
+                    
+                    <div class="whitebackground">
+                    <h2>Why Model?</h2>
+                    
+                    <p>Exploring theory ('explanatory' models)</p>
+                    <p class="l2">Simulation as a virtual laboratory.</p>
+                    <p class="l2">Linking theory with crime patterns to test it.</p>
+
+                    <p>Making predictions ('predictive' models)</p>
+                    <p class="l2">Forecasting the impacts of social / environmental change.</p>
+                    <p class="l2">Exploring aspects of current data patterns.</p>
+                    </div>
+                    
+                </section>
+                
+                
+                
+                <section id="whydifficult1" data-transition="fade">
+                    <figure class="right">
+                        <img data-src="../figures/attribution/people-time-square-small.jpg" 
+                             alt="picture of people in time square" />
+                        <figcaption>Photo by <a href="https://unsplash.com/photos/slapbg2mejw?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Meriç Dağlı]</a> on <a href="https://unsplash.com/search/photos/people-crowd?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+                        </figcaption>
+                    </figure>
+
+                    <h2>Why is it difficult to model urban spatial sytems?</h2>
+                    <p>Extremely complex system:</p>
+                    <p class="l2">Attributes of the environment (e.g. individual houses, pubs, transport hubs, parks, etc.).</p>
+                    <p class="l2">Personal characteristics (heterogeneity).</p>
+                    <p class="l2">Features of the local community.</p>
+                    <p class="l2">Physical layout of the neighbourhood (e.g. street networks).</p>
+                </section>
+                
+                <section id="whydifficult2" data-transition="fade">
+                    <figure class="right">
+                        <img data-src="../figures/attribution/people-time-square-small.jpg" 
+                             alt="picture of people in time square" />
+                        <figcaption>Photo by <a href="https://unsplash.com/photos/slapbg2mejw?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Meriç Dağlı]</a> on <a href="https://unsplash.com/search/photos/people-crowd?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+                        </figcaption>
+                    </figure>
+
+                    <h2>Why is it difficult to model urban spatial sytems?</h2>
+                    <p>Traditional approaches often work at large scales, struggle to predict local effects</p>
+                    <p class="l2">"Computationally convenient".</p>
+                    <p class="l2">But cannot capture non-linear, complex systems.</p>
+                </section>
+
+                
+                
+                
+              <section id="IntroToABM" data-transition="fade">
+                    <img class="right" data-src="../figures/regression.png"
+                         alt="Diagram of regression" />
+                    <h2>Introduction to ABM</h2>
+                    <h3>Aggregate v.s. Individual</h3>
+                    <p>'Traditional' modelling methods work at an aggregate level, from the <i>top-down</i></p>
+                    <p class="l2">E.g. Regression, spatial interaction modelling, location-allocation, etc.</p>
+                    <p>Aggregate models work very well in some situations</p>
+                    <p class="l2">Homogeneous individuals</p>
+                    <p class="l2">Interactions not important</p>
+                    <p class="l2">Very large systems (e.g. pressure-volume gas relationship)</p>
+                </section>
+                
+
+                <section id="IntroToABM2" data-transition="fade">
+                    <img class="right" data-src="../figures/regression.png"
+                         alt="Diagram of regression" />
+                    <h2>Introduction to ABM</h2>
+                    <h3>Aggregate v.s. Individual</h3>
+                    <p>But they miss some important things:</p>
+                    <p class="l2">Low-level dynamics, i.e. “smoothing out” (Batty, 2005)</p>
+                    <p class="l2">Interactions and emergence</p>
+                    <p class="l2">Individual heterogeneity</p>
+                    <p>Unsuitable for modelling <i>complex systems</i></p>
+
+                </section>
+                
+                <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
+                         data-background-video-loop="loop">
+                    <div class="whitebackground2 fragment">
+                        <img class="right" style="width:40%" data-src="../figures/sims.png"
+                         alt="Diagram of the sims" />
+                        <h2>Introduction to ABM</h2>
+                        <p>Systems are driven by individuals</p>
+                        <p class="l2">(cars, people, ants, trees, whatever)</p>
+                        <p>Bottom-up modelling</p>
+                        <p class="l2">An alternative approach to modelling</p>
+                        <p class="l2">Rather than controlling from the top, try to represent the individuals</p>
+                        <p class="l2">Account for system behaviour directly</p>
+                        <p>Autonomous, interacting agents</p>
+                        <p>Represent individuals or groups</p>
+                        <p>Situated in a virtual environment</p>
+                    </div>
+                    
+                </section>
+                
+                <section id="Emergence">
+                    <figure class="right">
+                        <img data-src="../figures/attribution/termite_mound.jpg" />
+                        <figcaption>A termite mound.<br/>Attribution: <a href="http://www.flickr.com/people/93452909@N00">JBrew</a> (<a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">CC BY-SA 2.0</a>).</figcaption>
+                    </figure>
+                    <h2>Emergence</h2>
+                    <p>One of the main attractions for ABM</p>
+                    
+                    <p>"The whole is greater than the sum of its parts." (Aristotle?)</p>
+                    
+                    <p> Simple rules &#8594; complex outcomes</p>
+                    <p class="l2">E.g. who plans the air-conditioning in termite mounds?</p>
+                    
+                    <p>Possible to prove the with simple computer programs</p>
+                    <p class="l2">Conways 'Game of Life'</p>
+
+
+                
+                </section>
+                
+                
+                <section id="Emergence-WhyImportant" data-background-image="../figures/attribution/termite_mound.jpg">
+                    <div class="whitebackground2">
+                        <h2>Emergence</h2>
+                        <h3>Why is it important?</h3>
+                        <p><strong>Key message</strong>: Complex structures can emerge from simple rules</p>
+                        <p>Emergence is hard to anticipate, and cannot be deduced from solely analysis
+                            of an individual's behaviour</p>
+                        <p>Individual-level modelling is focused on understanding how macro-level patterns emerge from micro-level through the process of simulation.</p>
+                        <p>How is this relevant to modelling cities?</p>
+                    </div>
+                </section>
+            
+                <section id="QuestionsForModellingCities">
+                    <h2>XXXX</h2>
+                    <p>SLIDE ABOUT THINGS WE MIGHT WANT TO MODEL IN CITIES</p>
+                    <p>Congestion / sustainable mobility</p>
+                    <p>Pollution (emission &amp; exposure)</p>
+                    <p>Crime (offenders  &amp; victims)</p>
+                    <p> ... </p>
+                </section>
+                
+
+                
+                <section id="abm-advantages">    
+                    <h2>Agent-Based Modelling - Appeal</h2>
+                    <img class="right" data-src="../figures/virtual_city.jpeg"/>
+                    <p>Modelling complexity, non-linearity, emergence</p>
+                    <p>Natural description of a system</p>
+                    <p>Bridge between verbal theories and mathematical models</p>
+                    <p>Produces a history of the evolution of the system</p>
+                </section>
+                
+                <section id="abm-advantages-history">
+                    <img style="width:70%;" data-src="../figures/burglar_behaviour-geotime.jpg" />
+                </section>
+                                
+                <section id="abm-Disadvantages">
+                    <h2>Agent-Based Modelling - Difficulties</h2>
+                    <figure class="right" >
+                        <img data-src="../figures/jacobs_choice.png" />
+                        <figcaption>Will I play with the truck, or the duck?<br/><br/>
+                            (<i>actually he played with his trains...</i>)</figcaption>
+                    </figure>
+                    
+                    <p>Tendency towards minimal behavioural complexity</p>
+                    <p>Stochasticity</p>
+                    <p>Computationally expensive (not amenable to optimisation)</p>
+                    <p class="l2">Complicated agent decisions, lots of decisions, multiple model runs</p>
+                    <p>Modelling "soft" human factors</p>
+                    <p class="l2">Need detailed, high-resolution, individual-level data</p>
+                    <p>Individual-level data</p>
+
+                </section>
+                
+  
+                
+                
+                <section id="running-abm">
+                    <img data-src="../figures/abm-running.png" />
+                </section>
+
+                <section id="AgentBehaviour" data-background-image="../figures/attribution/human_brain.png">
+
+                    <div class="whitebackground fragment">
+                        <h2>Modelling agent behaviours</h2>
+                        <p>Many behaviours are hard / impossible to model</p>
+                        <p class="l2">Choose those that are the most important. 
+                            <strong>Cannot include everything!</strong></p>
+                        <p>Some can be very simple - e.g. threshold-based rules (Kennedy, 2012)</p>
+                        <p class="l2"><code style="font-size:80%; text-align:left;">
+                            IF hunger IS ABOVE hunger_threshold THEN search_for_food<br/>
+                            OTHERWISE do_something_else
+                            </code></p>
+                        <p class="l2">These are the most common (Birks et al. 2012, 2013; 
+                            Dray et al. 2008; Groff 2007a,b; Hayslett-McCall, 2008)</p>
+                        <p>More advanced cognitive frameworks exist</p>
+                        <p class="l2">Beliefs, Desires, Intentions (Bratman et al., 1988)</p>
+                        <p class="l2">PECS (Schmidt, 2000). </p>
+                    </div>
+                </section>
+
+
+                <section id="Behaviour-Experiment" 
+                         data-background-image="../figures/attribution/human_brain.png">
+                    
+                    <div class="whitebackground2">
+
+                        <h2>An experiment:</h2>
+
+                        <p>Choose a number between 1 and 4 (inclusive)</p>
+
+                        <p class="fragment">Were you able to chose a number at random?</p>
+                        <p class="fragment">Or did most people choose the number 3?</p>
+                    </div>                
+                
+                </section>
+                
+                
+                <!-- *****************************************************************
+                     ************* Predictive Example ********************************
+                     ***************************************************************** -->
+                
+                
+                
+                
+                <section id="BurglaryABM-Predictive"  data-transition="fade"
+                         data-background-image="../figures/sims_burglar.png">
+                    
+                    <div class="whitebackground2">
+                    <h2>ABM Crime Example</h2>
+                        <p><i>Predictive:</i> exploring the real world</p>
+                        <p>ABM to explore the impacts of real-world policies</p>
+                        <p class="l2">Urban regeneration in Leeds</p>
+                    </div>
+                </section>
+
+                <!--
+                
+                <section id="Environment">
+                    <img style="width:80%;" data-src="../figures/mastermap_topography.png" alt="Example of MasterMap Topographic data"/>            
+                </section>
+                
+                <section id="EnvironmentLayers">
+                    <img data-src="../figures/burgd_enviroment_layers.png" alt="Input layers into the virtual environment" />
+                </section>
+                
+                
+                
+                <section id="Behaviour-pecs">
+                    <img data-src="../figures/pecs_motives_actions.png" alt="PECS motives and actions"/>
+                </section>
+                
+                <section id="Behaviour-burglary_decision">
+                    <img data-src="../figures/burglary_decision_process.png" alt="PECS motives and actions"/>
+                </section>
+
+                -->
+                
+                 <section data-background-video="../videos/sim.mp4,../videos/sim.webm"
+                         data-background-video-loop="loop"
+                         id="abm-example-awareness_test"
+                          data-transition="fade">
+                     <div class="fragment" >
+                        <h2 style="background-color: white;">ABM Predictive Example</h2>
+                        <h3 style="background-color: white;">Awareness space test</h3>
+                     </div>
+                    <figure class="fragment">
+                        <img  style="width:70%" data-src="../figures/transport_results.png" />
+                    </figure>
+
+                      
+                </section>
+                
+                <!--                                
+                <section id="DidItWork1" >
+                    <h2>Did it work?</h2>
+                    <h3>Aggregate results</h3>
+                    <img style="width:70%;"  data-src="../figures/burgd-calibration.png" alt="Results of model calibration" />
+                </section>
+                
+
+                <section id="abm-halton_mooor" >
+                    <h2 style="background-color: white;">Did it work?</h2>
+                    <h3>Halton Moor</h3>
+                    <figure>
+                        <img  style="width:50%" data-src="../figures/hotspots-halton_moore.png" />
+                        <figcaption style="background-color: white;">
+                            Malleson, N., A. Heppenstall, L. See, A. Evans (2013) Using an agent-based crime simulation to predict the effects of urban regeneration on individual household burglary risk. <i>Environment and Planning B: Planning and Design</i> 40 405-426. [DOI: <a href="http://www.envplan.com/abstract.cgi?id=b38057">10.1068/b38057</a>]
+                        </figcaption>
+                    </figure>
+                    <p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p>
+                    <p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p>
+                    <p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p>
+                    <p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p>
+                      
+                </section>
+                
+                
+                <section id="DidItWork2">
+                    <h2>Did it work?</h2>
+                    <h3>Journey to Crime</h3>
+                    <img data-src="../figures/burgd-jtc.png" alt="Results of model calibration" />
+                </section>
+
+                -->
+                
+                <!-- Version of the results slide with background video: -->
+                <!-- 
+                <section id="abm-example-predictive1"
+                         data-background-video="../videos/sim.mp4,../videos/sim.webm"
+                         data-background-video-loop="loop"
+                         data-transition="fade">
+                    <h2 style="background-color: white;">ABM Predictive Example</h2>
+                    <h3 style="background-color: white;">Predictive Results</h3>
+                    <figure class="fragment">
+                        <img  style="width:70%" data-src="../figures/thesis_results.png" />
+                        <figcaption style="background-color: white;">
+                            Malleson, N., A. Heppenstall, L. See, A. Evans (2013) Using an agent-based crime simulation to predict the effects of urban regeneration on individual household burglary risk. <i>Environment and Planning B: Planning and Design</i> 40 405-426. [DOI: <a href="http://www.envplan.com/abstract.cgi?id=b38057">10.1068/b38057</a>]
+                        </figcaption>
+                    </figure>
+                </section>
+                -->
+                
+                <section id="abm-example-predictive1"
+                         data-transition="fade">
+                    <h2>ABM Predictive Example</h2>
+                    <h3>Scenario Results</h3>
+                    <figure >
+                        <img  style="width:70%" data-src="../figures/thesis_results.png" />
+                        <figcaption>
+                            Malleson, N., A. Heppenstall, L. See, A. Evans (2013) Using an agent-based crime simulation to predict the effects of urban regeneration on individual household burglary risk. <i>Environment and Planning B: Planning and Design</i> 40 405-426. [DOI: <a href="http://www.envplan.com/abstract.cgi?id=b38057">10.1068/b38057</a>]
+                        </figcaption>
+                    </figure>
+                </section>
+                
+                
+                
+                
+                
+                
+                
+                            
+                <!-- *****************************************************************
+                     ************* 2. Dynamic City Simulation ************************
+                     ***************************************************************** -->
+                
+                
+                <section id="part2">
+                    <h2>Part 2: Dynamic City Simulation</h2>
+                    <img data-src="../figures/skylines-day1.jpg" alt="screenshot of virtual city"/>
+                </section>        
+                
+                <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                         data-background-video-loop="loop"
+                         id="Context-UrbanFlows">                     
+                    <div class="whitebackground2 fragment">
+                        <h3>How many people are there in Trafalgar Square right now?</h3>
+                        
+                        <p>We need to better understand urban flows:</p>
+                        
+                        <p class="l2">Crime – how many possible victims?</p>
+                        <p class="l2">Pollution – who is being exposed? Where are the hotspots?</p>
+                        <p class="l2">Economy – can we attract more people to our city centre?</p>
+                        <p class="l2">Health - can we encourage more active travel?</p>
+                        
+                    </div>
+                </section>
+                
+                                
+                <section id="smart_cities">
+                    
+                    <h2>Smart cities and the data deluge</h2>
+                    <figure class="right" style="width:40%;">
+                        <img data-src="../figures/paper_figures/census_mobile-correlation-map.png" alt="Comparing census daytime populations to aggregate mobile phone estimates" />
+                        <figcaption>Evaluating aggregate mobile phone population accuracy</figcaption>
+                    </figure>
+
+                    
+                    <p>Abundance of data about individuals and their environment</p>
+                    <p class="l2">"Big data revolution" (Mayer-Schonberger and Cukier, 2013)</p>
+                    <p class="l2">"Data deluge" (Kitchin, 2013a)</p>
+                    <p>Smart cities</p>
+                    <p class="l2">cities that "are increasingly composed of and monitored by pervasive and ubiquitous computing" (Kitchin, 2013a)</p>
+                    <p>Large and growing literature</p>
+                </section>
+                
+                <!-- 
+                <section id="forecasting">
+                    <h2>What about forecasting?</h2>  
+                    <p>Abundance of real-time analysis, but limited forecasting. E.g.:</p>
+                    <p class="l2">MassDOT Real Time Traffic Management system (Bond and Kanaan, 2015)</p>
+                    <p class="l3">Detect vehicles with Bluetooth to analyse current traffic flows</p>
+                    <p class="l2">Centro De Operacoes Prefeitura Do Rio (in Rio de Janeiro)</p>
+                    <p class="l3">Advertise some predictive ability, but sparse detail</p>
+                    <p class="l2">City dashboards</p>
+                    <p>Forecasting ability is surprisingly absent in the literature</p>
+                    <p class="l2">(<i>correct me if I'm wrong!</i>)</p>
+                </section>
+                <section id="forecasting2">    
+                    <h2>Why so little evidence of forecasting?</h2>
+                    <p>Proprietary systems? Company secrets?</p>
+                    <p>A methodological gap?</p>
+                    <p>Machine learning will probably help</p>
+                    <p class="l2">E.g. short-term traffic forecasting (Vlahogianni et al. 2014)</p>
+                    <p class="l2">But black box is a drawback - How to run diverse scenarios?</p>
+                    <p>Maybe <strong>agent-based modelling</strong> could have the answer</p>
+                
+                </section>
+                -->
+                
+                
+                
+                <section id="abm-calibration">
+                    
+                    <figure class="right" style="width:30%">
+                        <img data-src="../figures/modelling_process.png" alt="The process of calibration"/>
+                        <figcaption>Typical model development process</figcaption>
+                    </figure>
+                    
+                    <h2>Agent-Based Models of the Ambient Population</h2>
+                    <p>Agent-based modelling to the rescue?</p>
+                    <p class="l2">Could combine diverse, up-to-date data with a model to create
+                    the most accurate estimate of the real world</p>
+                    <p>But: </p>
+                    <p class="l2">Urban systems are complex</p>
+                    <p class="l2">They will <strong>diverge</strong> rapidly from model predictions</p>
+                    <p class="l2">ABM development typically uses 'waterfall' approach</p>
+                    <p><strong>We lack tools to calibrate models in response to new data <i>dynamically</i></strong></p>
+                </section>
+                
+                
+                
+                
+                
+                <section id="prob-divergence" 
+                         data-background-video="../videos/BBC_Swarm_Natures_Incredible_Invasions.mp4" 
+                         data-background-video-muted 
+                         data-background-video-loop="loop">
+                    
+                    <div class="whitebackground fragment">
+                        <h2>Divergence</h2>
+                        <p>Complex systems</p>
+                        <p>One-shot calibration</p>
+                        <p>Nonlinear models predict near future well, but diverge over time.</p>
+                    </div>
+                </section>
+                
+
+            
+                
+            
+                
+                            
+                <section id="dda" data-background-image="../figures/weather2.jpg" >
+                    <div class="whitebackground fragment">
+                        <h2>Dynamic Data Assimilation</h2>
+                        <p>Used in meteorology and hydrology to constrain models closer to reality.</p>
+                        <p>Try to improve estimates of the true system state by combining:</p>
+                        <p class="l2">Noisy, real-world observations</p>
+                        <p class="l2">Model estimates of the system state</p>
+                        <p>Should be more accurate than data / observations in isolation.</p>
+                    </div>
+                </section>
+                
+                
+                <section id="abm-dda-overview">
+                    <img data-src="../figures/paper_figures/dda.jpg" alt="Diagram of dynamic data assimilation and an ABM" />
+                </section>
+                
+                
+                <section id="dda2">
+                    <h2>Data Assimilation Methods</h2>
+                    <p>Particle filters</p>
+                    <p class="l2">Indoor footfall (Rai and Hu, 2013.; Wang and Hu, 2015)</p>
+                    <p>Kalman Filter</p>
+                    <p class="l2">Air traffic (Chen et al., 2012)</p>
+                    <p>Ensemble Kalman Filter (EnKF)</p>
+                    <p class="l2">Pedestrian footfall (Ward et al., 2016)</p>
+                    <p>Sequential Monte Carlo (SMC)</p>
+                    <p class="l2">Wildfire (Hu, 2011; Mandel et al., 2012)</p>
+                    <p>Approximate Bayesian Computation</p>
+                    <p class="l2">?</p>
+                </section>
+
+
+                <section id="enkf-maths">
+                    <h2>Example 1: <br/>Ensemble Kalman Filter (EnKF)</h2>
+                    <h3>Maths</h3>
+                    <p>Broad literature, but generally tied to mathematical models (e.g. differential equations and linear functions)</p>
+                    <!--<p>Not applicable to ABM (inherently non-linear)</p>-->
+                    <p>Working with a mathematician to do the hard work!</p>
+                    <p class="l2">In all its glory: Ward et al., (2016)</p>
+                    <h3>Advantages</h3>
+                    <p>Similar to <i>Kalman Filter</i> (best in class)</p>
+                    <p>But better for nonlinear systems</p>
+                    
+                </section>
+
+                
+                <section id="enfk-process1">
+                    <h2>Ensemble Kalman Filter - Basic Process</h2>
+                    <p>1. Forecast.</p>
+                    <p class="l2">Run an ensemble of models (ABMs) forward in time.</p>
+                    <p class="l2">Calculate ensemble mean and variance</p>
+                    <p>2. Analysis.</p>
+                    <p class="l2">New 'real' data are available</p>
+                    <p class="l2">Integrate these data with the model forecasts to create estimate of model parameter(s)</p>
+                    <p class="l2">Impact of new observations depends on their accuracy</p>
+                    <p>3. Repeat</p>                    
+                </section>
+                
+                <section id="enkf-darsos_diagram">
+                    
+                    <h2>Ensemble Kalman Filter (EnKF)</h2>
+                    <figure>
+                        <img data-src="../figures/paper_figures/darsos-fig2a.png"/>
+                        <figcaption>
+                            Ward, J., A. Evans, N. Malleson (2016) Dynamic calibration of agent-based models using data assimilation. <i>Royal Society Open Science</i>. 3:150703. (open access). [DOI: <a href="https://dx.doi.org/10.1098/rsos.150703">10.1098/rsos.150703</a>]
+                        </figcaption>
+                    </figure>                
+                </section>
+                
+                
+                
+                
+                <section id="pf-bussim">
+                    <h2>Example 2<br/>Bus Simulation with a Particle Filter</h2>
+                    <p>XXXX Slides from Minh</p>
+                </section>
+                
+                
+                
+                
+                
+                <section id="pf-stationsim">
+                    <h2>Example 3<br/>Crowd Simulation with a Particle Filter</h2>
+                    <p>XXXX Video of station sim</p>
+                </section>
+                
+                <section id="stationsim-video">
+                    
+                    <video controls width="49%" height="auto" style="float:left">
+                        <source src="../videos/StationSim-Videos/stationsim-no_crowding.mp4" type="video/mp4"/>
+                         Your browser does not support the video tag.
+                    </video>
+                </section>
+                
+                
+                <!-- Two station sim videos with and without crowding
+                <section id="StationSim-videos">
+                    
+                    <p><span style="float:left">No crowding</span> <span style="float:right">With crowding</span></p>
+                    
+                    <p>&nbsp;</p>
+                    
+                    <video controls width="49%" height="auto" style="float:left">
+                        <source src="../videos/StationSim-Videos/stationsim-no_crowding.mp4" type="video/mp4"/>
+                         Your browser does not support the video tag.
+                    </video>
+                    
+                    
+                    <video controls width="49%" height="auto" style="float:right">
+                        <source src="../videos/StationSim-Videos/stationsim-with_crowding.mp4" type="video/mp4"/>
+                         Your browser does not support the video tag.
+                    </video>
+                    
+                </section>
+                -->
+                
+                <section id="pf-stationsim">
+                    <h2>Example 3<br/>Crowd Simulation with a Particle Filter</h2>
+                    
+                </section>
+                
+                
+                    <!-- *****************************************************************
+                     ************* 3. Urban Analytics ********************************
+                     ***************************************************************** -->
+                
+                <section id="part3">
+                    <h2>Part 3: Urban Analytics</h2>
+                    <img data-src="../figures/skylines-day1.jpg" alt="screenshot of virtual city"/>
+                </section>
+                
+                
+                
+               
+                <section id="ATI-SmartCities" >
+                    
+                    <h2>Related Projects</h2>
+                    
+                    <h3>Understanding and Quantifying Uncertainty in Individual-Based Models for Smart City Forecasts</h3>
+                    
+                    <img  data-src="../figures/ensemble_uncertainty.png" />
+                    
+                    
+                </section>
+                <section id="ATI-SmartCities2" >
+                    
+                    <h2>Related Projects</h2>
+                    
+                    <h3>Understanding and Quantifying Uncertainty in Individual-Based Models for Smart City Forecasts</h3>
+                    
+                    <img  data-src="../figures/good_bad_ensembles.png" />
+                    
+                </section>
+                    
+                <section id="ATI-SmartCities-Intern" data-background-image="../figures/skylines-night1.jpg">
+                    
+                    <div class="whitebackground2">
+                        <h2>Related Projects</h2>
+
+                        <h3>Understanding Input Data Requirements for Successfully Modelling Cities</h3>
+
+                        <p>How much information about a city do we need to simulate it within
+                        acceptable levels of uncertainty?</p>
+
+                        <p>Method:</p>
+                        <p class="l2">Simple hypothetical city ABM</p>
+                        <p class="l2">Generate 'truth' data</p>
+                        <p class="l2">Take noisy samples from 'truth'</p>
+                        <p class="l2">How much data do we need?</p>
+                    </div>
+                    
+                
+                </section>
+                
+                <section id="current_research1">
+                    
+                    <h2>Agent-Based Urban Modelling</h2>
+                    <a href="https://esrc.ukri.org/">
+                        <img class="right" style="width:200px;" data-src="../figures/LOGO_ESRC.jpg" alt="ESRC Logo"/></a>
+                    <h3>Current Research</h3>
+                    <p>Simulating Urban Flows (<a href="http://surf.leeds.ac.uk">surf</a>)</p>                    
+                    <p class="l2">3 year research project funded by the UK ESRC</p>
+                    <p class="l2">Modelling a small town, using real footfall counters
+                    (more on this next...)</p>
+                    <p class="l2">One of the aims: <strong>calibrate an urban ABM using streaming data</strong></p>
+                    <p class="l2">Turns out this is really hard!</p>            
+                </section>
+                
+                <section id="current_research2-dust" data-background-image="https://erc.europa.eu/sites/default/files/content/pages/images/DUST_illustration_copyright-Shutterstock.jpg">
+                    <div class="whitebackground2">
+                        <h2>Agent-Based Urban Modelling</h2>
+                        <a href="https://erc.europa.eu/">
+                            <img class="right" style="width:200px;" data-src="../figures/LOGO_ERC.jpg" alt="ESRC Logo"/></a>
+                        <p>New project: <strong>Data Assimilation for Agent-Based Models</strong> (<a href="http://dust.leeds.ac.uk">dust</a>)</p>
+                        <p class="l2">5-year research project (&euro;1.5M)</p>
+                        <p class="l2">Funded by the European Research Council (Starting Grant)</p>
+                        <p class="l2">Started in January</p>
+                        <p>Main aim: create new methods for dynamically assimilating data into agent-based models.</p>
+                    </div>
+                
+                </section>
+                
+                
+                <section>
+                    <h2>For more information about what we're doing</h2>
+
+                    <p>ABMUS papers</p>
+                    <p>XXXX Minh's BusSim paper</p>
+                
+                </section>
+                
+                <section id="abm-book">
+                                    
+                    <img style="width:50%;"
+                         data-src="../figures/abm_book_cover.png" alt="Cover of the book 'Agent-Based Modelling and Geographical Information Systems" />
+                </section>
+                
+                
+                <section id="summary" data-background-image="https://erc.europa.eu/sites/default/files/content/pages/images/DUST_illustration_copyright-Shutterstock.jpg">
+                    <div class="whitebackground2">
+                      <h2>Summary</h2>
+                      <p>Dynamic Simulation - Agent Based Modelling</p>
+                      <p class="l2"><i>Explanatory</i> Agent-Based Crime Models</p>
+                      <p class="l2"><i>Predictive</i> Agent-Based Crime Models</p>
+                      <p>Modelling Broader Urban Dynamics</p>
+                      <p class="l2">Quantifying ambient Populations</p>
+                      <p class="l2">Dynamic Data Assimilation</p>
+                    </div>
+                </section>
+<!--
+                
+                <section id="references">
+                    
+                    <h2>References</h2>
+                    
+                    <p style="font-size:small">Andresen, M. A., Linning, S. J., and Malleson, N. (2016). Crime at Places and Spatial Concentrations: Exploring the Spatial Stability of Property Crime in Vancouver BC, 2003–2013. Journal of Quantitative Criminology, pages 1–21.</p>
+                    
+                    <p style="font-size:small">Birks, D., Townsley, M., and Stewart, A. (2012). Generative Explanations of Crime: Using Simulation to Test Criminological Theory. Criminology, 50(1):221–254</p>
+                    <p style="font-size:small">Birks, D., Townsley, M., and Stewart, A. (2013). Emergent Regularities of Interpersonal Victimization: An Agent-Based Investigation. Journal of Research in Crime and Delinquency.</p>
+                    
+                    <p style="font-size:small">Bratman, M. E., Israel, D. J., and Pollack, M. E. (1988). Plans and resource-bounded practical reasoning. Computational Intelligence, 4(3):349–355.</p>
+                    
+                    <p style="font-size:small">Dray, A., Mazerolle, L., Perez, P., and Ritter, A. (2008). Policing Australiaâ’s heroin drought: using an agent-based model to simulate alternative outcomes. Journal of Experimental Criminology, 4(3):267–287.</p>
+                    
+                    <p style="font-size:small">Eck, J. and Weisburd, D. (1995). Crime places in crime theory. In Eck, J. and Weisburd, D., editors, Crime and Place, pages 1–33. Criminal Justice Press.</p>
+                    
+                    <p style="font-size:small">Elffers, H., and P. van Baal. 2008. “Realistic Spatial Backcloth Is Not That Important in Agent Based Simulation Research: An Illustration from Simulating Perceptual Deterrence.” In Artificial Crime Analysis Systems: Using Computer Simulations and Geographic Information Systems, 19–34. Hershey, PA: Information Science Reference.</p>
+                    
+                  
+                    <p style="font-size:small">Groff, E. (2007a). Situating Simulation to Model Human Spatio Temporal Interactions: An Example Using Crime Events. Transactions in GIS, 11(4):507–530.</p>
+                    <p style="font-size:small">Groff, E. R. (2007b). Simulation for Theory Testing and Experimentation: An Example Using Routine Activity Theory and Street Robbery. Journal of Quantitative Criminology, 23(2):75–103.</p>
+                    
+                    <p style="font-size:small">Hayslett-McCall, K., Qui, F., Curtin, K. M., Chastain, B., Schubert, J., and Carver, V. (2008). The Simulation of the journey to residential burglary. In Liu, L. and Eck, J., editors, Artificial Crime Analysis Systems: Using Computer Simulations and Geographic Information Systems. Information Science Reference, Hershey, PA.</p>
+                    
+                    <p style="font-size:small">Kennedy, W. G. (2012). Modelling Human Behaviour in Agent-Based Models. In Heppenstall, A. J., Crooks, A. T., See, L. M., and Batty, M., editors, Agent-Based Models of Geographical Systems, pages 167–179. Springer Netherlands.</p>
+                    
+                    <p  style="font-size:small">Liu, L., Wang, X., Eck, J., and Liang, J. (2005). Simulating crime events and crime patterns in RA/CA model. In Wang, F., editor, Geographic Information Systems and Crime Analysis, pages 197–213. Idea Publishing, Reading, PA.</p>
+                    
+                    <p style="font-size:small">Malleson, N. and A. Evans (2013) Agent-Based Models to Predict Crime at Places. In G. Bruinsma and D. Weisburd (Eds) <i>Encyclopedia of Criminology and Criminal Justice</i> pp 41-48 . Springer.</p>
+                    
+                    <p style="font-size:small">Malleson, N. “Agent-Based Modelling of Burglary.” School of Geography, University of Leeds, UK, 2010.</p>
+                    
+                    <p style="font-size:small">Malleson, Nick, Alison Heppenstall, and Linda See. “Crime Reduction through Simulation: An Agent-Based Model of Burglary.” Computers, Environment and Urban Systems 34, no. 3 (2010): 236–50.</p>
+
+                    <p style="font-size:small">Malleson, Nick, Linda See, Andrew Evans, and Alison Heppenstall. “Optimising an Agent-Based Model to Explore the Behaviour of Simulated Burglars.” In Theories and Simulations of Complex Social Systems, edited by Vahid Dabbaghian and Vijay Kumar Mago, 179–204. Intelligent Systems Reference Library 52. Springer Berlin Heidelberg, 2014. </p>
+
+                    <p style="font-size:small">Ward, J., A. Evans, N. Malleson (2016) Dynamic calibration of agent-based models using data assimilation. <i>Royal Society Open Science</i>. 3:150703. (open access). [DOI: <a href="https://dx.doi.org/10.1098/rsos.150703">10.1098/rsos.150703</a>]</p>
+                    
+                    <p style="font-size:small">Weisburd, D. and Amram, S. (2014). The law of concentrations of crime at place: the case of Tel Aviv-Jaffa. Police Practice and Research, 15(2):101–114.</p>
+                
+                </section>
+                         -->
+                
+                <section class="title" id="thanks" data-background-image="../figures/virtual_city.jpeg">
+                    <div class="whitebackground2">
+                        <h2>Dynamic Simulation Models for Crime Analysis and Urban Flows</h2>
+                        <hr/>
+                        <h3>Nick Malleson</h3>
+                        <h4>Associate Professor</h4>
+                        <h4>School of Geography, University of Leeds, UK</h4>
+                        <h4><a href="http://nickmalleson.co.uk">nickmalleson.co.uk</a></h4>
+                        <h4 style="text-align:center">These slides: <a href="http://surf.leeds.ac.uk/presentations.html">http://surf.leeds.ac.uk/presentations.html</a></h4>
+                    </div>
+                </section>
+                
+                
+                
+			</div>
+		</div>
+
+		<script src="reveal/lib/js/head.min.js"></script>
+		<script src="reveal/js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'reveal/plugin/markdown/marked.js' },
+					{ src: 'reveal/plugin/markdown/markdown.js' },
+					{ src: 'reveal/plugin/notes/notes.js', async: true },
+					{ src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>

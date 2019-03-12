@@ -1,0 +1,4 @@
+                    <figure class="right" style="width:40%;">
+                        <img src="../figures/attribution/termite_mound.jpg" />
+                        <figcaption>A termite mound.<br/>Attribution: <a href="http://www.flickr.com/people/93452909@N00">JBrew</a> (<a href="https://en.wikipedia.org/wiki/en:Creative_Commons" class="extiw" title="w:en:Creative Commons">Creative Commons</a> <a href="//creativecommons.org/licenses/by-sa/2.0/deed.en">Attribution-Share Alike 2.0 Generic</a>).</figcaption>
+                    </figure>

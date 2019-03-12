@@ -598,21 +598,73 @@
                 
                 <section id="pf-bussim">
                     <h2>Example 2<br/>Bus Simulation with a Particle Filter</h2>
-                    <p>XXXX Slides from Minh</p>
+                    <p>Context: simulate bus routes <i>in real time</i></p>
+                    <p>We have GPS bus positions in real time</p>
+                    <p>But to make good term forecasts we need to be able to infer other factors</p>
+                    <p class="l2">Number of people waiting at bus stops</p>
+                    <p class="l2">Number of people on the bus</p>
+                    <p class="l2">Surrounding traffic levels</p>
+                    <p class="l2">Etc.</p>
+                    <p>Aim: test a <i>particle filter</i> as the means of assimilating real-time GPS positions into a model.</p>
+                </section>
+                
+                <section id="particle-filter">
+                    <h2>Particle Filter</h2>
+                    <p>A 'brute force' ensemble method</p>
+                    <p>Create N realisations of the model ('particles')</p>
+                    <p>Run each particle forward in time until you receive some new data</p>
+                    <p>Compare the particles to the observation and:</p>
+                    <p class="l2">Weight each particle depending on how close it is to the observations</p>
+                    <p class="l2">Resample the population of particles using the weights
+                    (good particles are kept, bad ones disappear)</p>
+                    <p>Repeat</p>
+                </section>
+                
+                <section id="pf-bussim-video">
+                    <h2>Bus Simulation</h2>
+                    <video controls autoplay >
+                        <source data-src="../videos/bussim-video.mp4" type="video/mp4"/>
+                         Your browser does not support the video tag.
+                    </video>
+                </section>
+
+                
+                <section id="pf-bussim3">
+                    <h2>Bus Simulation - No Data Assimilation</h2>
+                    <img data-src="../figures/bussim-calibration_no_da.png"
+                         alt="graph showing performance of model without data assimilation" />
+                </section>
+
+                
+                <section id="pf-bussim-pf-video">
+                    <h2>Bus Simulation with a Particle Filter</h2>
+                    <video controls autoplay>
+                        <source data-src="../videos/bussim-pf-video.mp4" type="video/mp4"/>
+                         Your browser does not support the video tag.
+                    </video>
                 </section>
                 
                 
                 
                 
-                
-                <section id="pf-stationsim">
+                                
+                <section id="pf-stationsim" >
+                    
                     <h2>Example 3<br/>Crowd Simulation with a Particle Filter</h2>
-                    <p>XXXX Video of station sim</p>
+                    <img class="right" src="../figures/train_station_pedestrian.jpg"
+                         alt="Image of escaltors in a train station" />
+                    <p>Context: simulate a crowd <i>in real time</i></p>
+                    <p class="l2">What methods can we use to assimilate data?</p>
+                    <p class="l2">How much data do we need?</p>
+                    <p class="l3">Track every individual?</p>
+                    <p class="l3">Track some individuals?</p>
+                    <p class="l3">Just aggregate counts (e.g. number of people passing a footfall camera)</p>
+                    <p>Case study: a simple, hypothetical train station (<i>Station Sim</i>)</p>
                 </section>
+                
                 
                 <section id="stationsim-video">
-                    
-                    <video controls width="49%" height="auto" style="float:left">
+                    <video controls width="80%" height="auto">
                         <source src="../videos/StationSim-Videos/stationsim-no_crowding.mp4" type="video/mp4"/>
                          Your browser does not support the video tag.
                     </video>
@@ -640,9 +692,28 @@
                 </section>
                 -->
                 
-                <section id="pf-stationsim">
-                    <h2>Example 3<br/>Crowd Simulation with a Particle Filter</h2>
-                    
+                <section id="pf-stationsim2">
+                    <h2>Crowd Simulation with a Particle Filter</h2>
+                    <img src="../figures/pf_animation.gif" 
+                         alt="Animation of bus simulation with data assimilation" />
+
+                </section>
+                
+
+                <section id="dynamicsimulation-whatnext" data-background-image="../figures/the-roaming-platypus-310824-unsplash-small.jpg">
+                    <div class="whitebackground">
+                        <h2>Dynamic City Simulation: What Next?</h2>
+                        <p>Short-term</p>
+                        <p class="l2">Crowd simulation with a * Kalman Filter - computationally feasible?</p>
+                        <p class="l2">Bus simulation with real GPS traces - applications to real cities</p>
+                        <p>Medium-term</p>
+                        <p class="l2">Simulations of larger systems - high streets, villages, towns</p>
+                        <p class="l2">Integrate disparate models (e.g. microsimulation, population projections ... )</p>
+                        <p>Long-term</p>
+                        <p class="l2">Real-time, dynamic simulation of an urban area (a 'digital twin')</p>
+                        <p class="l2">Provide the best representation of <i>now</i></p>
+                        <p class="l2">Could transform the way that cities are managed</p>
+                    </div>
                 </section>
                 
                 
@@ -732,7 +803,16 @@
 
                     <p>ABMUS papers</p>
                     <p>XXXX Minh's BusSim paper</p>
+                    
                 
+                </section>
+                
+                <section>
+                    <h2>Other things to watch out for</h2>
+                    
+                    <p>XXXX probabilistic programming and link to Bayesian Methods for Hackers</p>
+                    
+                    
                 </section>
                 
                 <section id="abm-book">

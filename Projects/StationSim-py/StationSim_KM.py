@@ -143,8 +143,8 @@ class Agent:
     @classmethod
     def lerp(cls, loc1, loc2, speed):
         """
+        lerp - linear extrapolation
         Find the new position of after moving 'speed' distance from loc2 towards loc1.
-        XXXX IS this correct
         :param loc1: desired location
         :param loc2: current location
         :param speed: distance that can be covered in an iteration
@@ -314,6 +314,10 @@ class Model:
         print('Active / Finished / Total agents: ' + str(self.pop_active) + '/' + str(self.pop_finished) + '/' + str(self.pop_total))
         print('Average time taken: ' + str(np.mean(self.time_taken)) + 's')
         return
+
+    def __repr__(self):
+        """Print this model's ID and its memory location"""
+        return "StationSim [{}]".format(hex(id(self)))
     
     
     @classmethod

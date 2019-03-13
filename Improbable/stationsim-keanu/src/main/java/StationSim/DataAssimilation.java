@@ -18,6 +18,7 @@ import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.Una
 import sim.util.Bag;
 import sim.util.Double2D;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class DataAssimilation {
     private static Station truthModel = new Station(System.currentTimeMillis()); // Station model used to produce truth data
     private static Station tempModel = new Station(System.currentTimeMillis() + 1); // Station model used for state estimation
 
-    private static int NUM_ITER = 5000; // Total number of iterations
+    private static int NUM_ITER = 2000; // Total number of iterations
     private static int WINDOW_SIZE = 200; // Number of iterations per update window
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE; // Number of update windows
 
@@ -45,13 +46,21 @@ public class DataAssimilation {
     //static DoubleVertex[][] stateVector;
     private static Exit[] agentExits;
 
-    private static double[] results;
+    private static double[] tempResults = new double[NUM_ITER + 1];
+
+    private static double[] truthResults = new double[NUM_ITER + 1];
 
     private static List<Double[]> truthHistory = new ArrayList<>();
 
     private static List<VertexLabel> tempVertexList = new ArrayList<>();
 
     private static CombineDoubles stateVector;
+
+    /* Admin parameters */
+    private static String dirName = "simulation_outputs/"; // Place to store results
+
+    private static Writer obsWriter;
+
 
     /**
      * Main function of model. Contains the data assimilation workflow. Namely:
@@ -66,7 +75,8 @@ public class DataAssimilation {
      *      * Get information out of the samples
      *
      */
-    private static void runDataAssimilation() {
+    private static void runDataAssimilation() throws IOException {
+
         /*
          ************ CREATE THE TRUTH DATA ************
          */
@@ -84,6 +94,8 @@ public class DataAssimilation {
         System.out.println("tempModel.start() has executed successfully");
         // initial state vector
         createStateVector(tempModel);
+
+
 
         // Start data assimilation window
         for (int i = 0; i < NUM_WINDOWS; i++) {
@@ -196,6 +208,8 @@ public class DataAssimilation {
                 // Get samples from vertex
                 Samples<DoubleTensor> samples = sampler.get(vert);
 
+                //samples.getMode();
+
                 // Create new GaussianKDE from DoubleTensor samples
                 KDEVertex newKDE = GaussianKDE.approximate(samples);
 
@@ -204,6 +218,34 @@ public class DataAssimilation {
             }
         }
         tempModel.finish();
+
+        writeObservations();
+    }
+
+
+    private static void writeObservations() throws IOException {
+
+        System.out.println("Writing out observations...");
+
+        // init files
+        String theTime = String.valueOf(System.currentTimeMillis()); // So files have unique names
+
+        obsWriter = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(dirName + "Observations_" + theTime + ".csv"), "utf-8"));
+
+        try {
+            obsWriter.write("Iteration,truthObservation,tempObservation,\n");
+
+            System.out.println("Length: " + truthResults.length);
+
+            for (int i = 0; i < truthResults.length; i++) {
+                obsWriter.write(String.format("%d,%f,%f,\n", i, truthResults[i], tempResults[i]));
+            }
+        } catch (IOException ex) {
+            System.err.println("Error writing thresholds to file: "+ ex.getMessage());
+            ex.printStackTrace();
+        }
+        System.out.println("Observations written to file");
     }
 
 
@@ -256,6 +298,12 @@ public class DataAssimilation {
         for (int i = 0; i < WINDOW_SIZE; i++) {
             // Step all the people window_size times
             tempModel.schedule.step(tempModel);
+
+            // take observations every 20th step
+            if (i % 20 == 0) {
+                getObservation(tempModel);
+            }
+
         }
 
         // Check that correct number of people in model before updating state vector
@@ -288,6 +336,27 @@ public class DataAssimilation {
             steppedState = initialState; // actually update the state here
         }
         return steppedState;
+    }
+
+
+    private static void getObservation(Station model) {
+
+        // take stateVector of new model state
+        List<Person> newPersonList = new ArrayList<>(tempModel.area.getAllObjects());
+        updateStateVector(newPersonList);
+
+        // get DoubleTensor values of each vertex
+        DoubleTensor[] calculatedVec = stateVector.calculate();
+
+        // total counter
+        Double total = 0d;
+
+        for (int i = 0; i < calculatedVec.length; i++) {
+            // take scalar value of each DoubleTensor and add to total
+            total += calculatedVec[i].scalar();
+        }
+        // Log total in results
+        tempResults[(int) model.schedule.getSteps()] = total;
     }
 
 
@@ -441,6 +510,10 @@ public class DataAssimilation {
             }
             // Step while condition is not true
             truthModel.schedule.step(truthModel);
+
+            // take numPeople in model at each step for observations
+            double numPeopleInModel = truthModel.getNumPeople() - truthModel.inactivePeople.size() - truthModel.finishedPeople.size();
+            truthResults[(int) truthModel.schedule.getSteps()] = numPeopleInModel;
         }
         System.out.println("\tHave stepped truth model for: " + truthModel.schedule.getSteps() + " steps.");
 
@@ -449,9 +522,9 @@ public class DataAssimilation {
                                                         truthHistory.size() + "), should have been: " + NUM_WINDOWS;
 
         // As the model has finished everyone should be inactive
-        assert truthModel.inactivePeople.size() == truthModel.getNumPeople() : "All (" + truthModel.getNumPeople() +
-                                                                                ") people should be inactive at end of " +
-                                                                                "model, there are only: " + truthModel.inactivePeople.size();
+        //assert truthModel.inactivePeople.size() == truthModel.getNumPeople() : "All (" + truthModel.getNumPeople() +
+          //                                                                      ") people should be inactive at end of " +
+            //                                                                    "model, there are only: " + truthModel.inactivePeople.size();
         // Finish model
         truthModel.finish();
         System.out.println("Executed truthModel.finish()");
@@ -498,7 +571,7 @@ public class DataAssimilation {
         System.out.println("\tTruth Vector Built at iteration: " + truthModel.schedule.getSteps());
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         runDataAssimilation();
         System.out.println("Data Assimilation finished! Excellent!");
     }

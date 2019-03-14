@@ -74,6 +74,8 @@ public class Station extends SimState {
     //Bag of people who have finished the simulation
     public Bag finishedPeople = new Bag();
 
+    int activeNum = 0;
+
     // Store  exit agents for passing to constructors
     public ArrayList<Exit> exits;
     public ArrayList<Entrance> entrances;
@@ -261,7 +263,7 @@ public class Station extends SimState {
         }
         System.out.println("... created "+this.inactivePeople.size()+" inactive agents. " +
                 "There are "+this.getNumPeople() + " agents in the model.");
-        //System.out.print(Entrance.inactivePeople.toString());
+        System.out.println("How many objects in the model: " + this.area.getAllObjects().size());
     }
 
 

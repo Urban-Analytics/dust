@@ -65,21 +65,6 @@ public class Entrance extends Agent {
     public void step(SimState state) {
         super.step(state);
 
-        //System.out.println("ONE: People in the model: " + station.area.getAllObjects().size());
-
-        // Print the agents for testing
-        /*
-        System.out.print("Ticks:"+ state.schedule.getSteps() + " -\n\t" +
-                "Num inactive: "+ inactivePeople.size()  + " -\n\t" +
-                "Total num agents:: "+ ((Station)state).area.getAllObjects().size()  + " -\n\t"
-                //Entrance.inactivePeople.toString() + "\n\t"
-        );
-        for (Object o : ((Station)state).area.getAllObjects()) {
-            System.out.print(((Person) o).toString() + " ");
-        }
-        System.out.println();
-        */
-
         Iterator<Person> persIter = station.inactivePeople.iterator();
 
         // First check if this is a Person generating step
@@ -90,7 +75,7 @@ public class Entrance extends Agent {
                 toEnter = size;
             }
             int addedCount = 0;
-            //System.out.println("TWO: People in the model: " + station.area.getAllObjects().size());
+
             // Generate people agents to pass through entrance and set as stoppables.
             for (int i = 0; i < toEnter; i++) {
                 double x = location.getX();
@@ -109,19 +94,10 @@ public class Entrance extends Agent {
                         cumulativeProb += exitProbs[j];
                     }
                 }
-                //System.out.println("THREE: People in the model: " + station.area.getAllObjects().size());
 
                 // TODO convert person to active rather than create new one. DONE?
                 Station s = ((Station)state);
                 //Person inactive = s.inactivePeople.iterator().next();
-
-                /**
-                 * Get all inactive agents in the model and take the first one
-                 */
-                //Bag inactivePeopleInModel = s.area.getObjectsAtLocation(new Double2D(0.0,0.0));
-                //System.out.println("BAG SIZE: " + inactivePeopleInModel.size());
-                //assert (inactivePeopleInModel.size() > 0) : "No more inactive people to activate, oops";
-                //Person inactive = (Person) inactivePeopleInModel.get(0);
 
                 // Get next inactive agent from inactive agents set
                 Person inactive = persIter.next();
@@ -131,6 +107,7 @@ public class Entrance extends Agent {
 
                 /* Make the agent active */
                 inactive.makeActive(spawnLocation, s, exit, this);
+                station.activeNum++; // increase activeNum, used for observations
 
                 /* Check if agent will collide when spawning, if not move new active agent through entrance */
                 if (!inactive.collision(spawnLocation)) {
@@ -147,6 +124,8 @@ public class Entrance extends Agent {
             totalAdded += addedCount;
             numPeople -= addedCount;
         }
+
+
         assert(station.area.getAllObjects().size() == station.getNumPeople()) : "Wrong number of people: ("
                                                                                 + station.area.getAllObjects().size()
                                                                                 + ") in the model after Entrance.step()";

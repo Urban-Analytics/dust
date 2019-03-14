@@ -60,15 +60,23 @@ public class Exit extends Agent {
 
         if (station.schedule.getSteps() % exitInterval == 0) {
             people = station.area.getAllObjects();
+            // Remove all inactive people from people
+            //for (Person person : station.inactivePeople) {
+            //    people.remove(person);
+            //}
+
             for (int i = 0; i < people.size(); i++) {
                 Person p = (Person) people.get(i);
                 personLocation = p.getLocation();
                 // If a person is in front of exit then remove
                 if (personLocation.getX() >= location.getX() - (station.wallWidth * 2.0) - (p.getRadius() * 2)  &&
                         personLocation.getY() < (location.getY() + (size / 2.0)) && // check this (size / 2.0)
-                                personLocation.getY() > (location.getY() - (size / 2.0))) {
+                                personLocation.getY() > (location.getY() - (size / 2.0)) &&
+                                    p.isActive()) {
+                    assert (p.isActive()) : "Person to be removed is inactive! This is very wrong";
                     station.finishedPeople.add(p); // Put into bag of finished people. This is used in the analysis
                     station.inactivePeople.add(p); // Make them inactive
+                    station.activeNum--; // reduce activeNum for housekeeping
                     p.makeInactive(station);
                     //station.area.remove(p); //remove from sim
                     totalRemoved++;

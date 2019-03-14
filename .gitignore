@@ -66,6 +66,8 @@ Improbable/NativeModel-keanu/results/*.html
 Improbable/NativeModel-keanu/results/figures/
 Improbable/NativeModel-keanu/results/*.png
 
+# ********** stationSim ***********
+Improbable/stationSim-keanu/simulation_outputs/
 
 # ********** **********
 # ********** **********

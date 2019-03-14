@@ -6,6 +6,7 @@ import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
 import io.improbable.keanu.algorithms.Samples;
 import io.improbable.keanu.algorithms.variational.GaussianKDE;
+import io.improbable.keanu.algorithms.variational.optimizer.Optimizer;
 import io.improbable.keanu.network.BayesianNetwork;
 import io.improbable.keanu.network.KeanuProbabilisticModel;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
@@ -28,7 +29,7 @@ public class DataAssimilation {
     private static Station truthModel = new Station(System.currentTimeMillis()); // Station model used to produce truth data
     private static Station tempModel = new Station(System.currentTimeMillis() + 1); // Station model used for state estimation
 
-    private static int NUM_ITER = 2000; // Total number of iterations
+    private static int NUM_ITER = 2400; // Total number of iterations
     private static int WINDOW_SIZE = 200; // Number of iterations per update window
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE; // Number of update windows
 
@@ -46,9 +47,11 @@ public class DataAssimilation {
     //static DoubleVertex[][] stateVector;
     private static Exit[] agentExits;
 
-    private static double[] tempResults = new double[NUM_ITER + 1];
+    private static double[] tempResults = new double[NUM_ITER];
+    private static double[] truthResults = new double[NUM_ITER];
 
-    private static double[] truthResults = new double[NUM_ITER + 1];
+    private static double[] truthVecTotals = new double[NUM_ITER];
+    private static double[] tempVecTotals = new double[NUM_ITER];
 
     private static List<Double[]> truthHistory = new ArrayList<>();
 
@@ -59,7 +62,8 @@ public class DataAssimilation {
     /* Admin parameters */
     private static String dirName = "simulation_outputs/"; // Place to store results
 
-    private static Writer obsWriter;
+    private static Writer numPeopleObsWriter;
+    private static Writer vecTotalsObsWriter;
 
 
     /**
@@ -130,8 +134,10 @@ public class DataAssimilation {
              ************ OPTIMISE ************
              */
 
-            //Optimizer optimizer = Keanu.Optimizer.of(net);
-            //optimizer.maxAPosteriori();
+            if (i > 0) {
+                Optimizer optimizer = Keanu.Optimizer.of(net);
+                optimizer.maxAPosteriori();
+            }
 
             /*
              ************ SAMPLE FROM THE POSTERIOR************
@@ -230,21 +236,35 @@ public class DataAssimilation {
         // init files
         String theTime = String.valueOf(System.currentTimeMillis()); // So files have unique names
 
-        obsWriter = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(dirName + "Observations_" + theTime + ".csv"), "utf-8"));
+        numPeopleObsWriter = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(dirName + "PeopleObs_" + theTime + ".csv"), "utf-8"));
 
+        vecTotalsObsWriter = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(dirName + "VectorObs_" + theTime + ".csv"), "utf-8"));
+
+        // try catch for the
         try {
-            obsWriter.write("Iteration,truthObservation,tempObservation,\n");
-
-            System.out.println("Length: " + truthResults.length);
+            numPeopleObsWriter.write("Iteration,truthObservation,tempObservation,\n");
 
             for (int i = 0; i < truthResults.length; i++) {
-                obsWriter.write(String.format("%d,%f,%f,\n", i, truthResults[i], tempResults[i]));
+                numPeopleObsWriter.write(String.format("%d,%f,%f,\n", i, truthResults[i], tempResults[i]));
             }
         } catch (IOException ex) {
-            System.err.println("Error writing thresholds to file: "+ ex.getMessage());
+            System.err.println("Error writing numPeople to file: "+ ex.getMessage());
             ex.printStackTrace();
         }
+
+        try {
+            vecTotalsObsWriter.write("Iteration, truthVecTotal, tempVecTotal,\n");
+
+            for (int i = 0; i < truthVecTotals.length; i++) {
+                vecTotalsObsWriter.write(String.format("%d,%f,%f,\n", i, truthVecTotals[i], tempVecTotals[i]));
+            }
+        } catch (IOException ex) {
+            System.err.println("Error writing vector totals to file: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+
         System.out.println("Observations written to file");
     }
 
@@ -296,14 +316,12 @@ public class DataAssimilation {
 
         // Run the model to make the prediction
         for (int i = 0; i < WINDOW_SIZE; i++) {
+            // take observations of tempModel (num active people at each step)
+            takeObservations(tempModel);
+            // Get sum of values from each vertex in stateVector, to use as additional observation
+            getStateVecTotal();
             // Step all the people window_size times
             tempModel.schedule.step(tempModel);
-
-            // take observations every 20th step
-            if (i % 20 == 0) {
-                getObservation(tempModel);
-            }
-
         }
 
         // Check that correct number of people in model before updating state vector
@@ -339,7 +357,7 @@ public class DataAssimilation {
     }
 
 
-    private static void getObservation(Station model) {
+    private static void getStateVecTotal() {
 
         // take stateVector of new model state
         List<Person> newPersonList = new ArrayList<>(tempModel.area.getAllObjects());
@@ -356,22 +374,12 @@ public class DataAssimilation {
             total += calculatedVec[i].scalar();
         }
         // Log total in results
-        tempResults[(int) model.schedule.getSteps()] = total;
+        tempVecTotals[(int) tempModel.schedule.getSteps()] = total;
     }
 
 
     private static void updateStateVector(List<Person> personList) {
-
-        /**
-         * Need to update the corresponding vertices in stateVector with positions and current speed of all agents.
-         * Loop through agents
-         *      Check id
-         *      Get location and speed
-         *      Update vertices with location and speed
-         *
-         */
-
-        System.out.println("\tUPDATING STATE VECTOR...");
+        //System.out.println("\tUPDATING STATE VECTOR...");
         assert (!personList.isEmpty());
         assert (personList.size() == tempModel.getNumPeople()) : personList.size();
 
@@ -381,17 +389,6 @@ public class DataAssimilation {
             int pID = person.getID();
             int pIndex = pID * 3;
 
-            // Will this work? Do I need to cast stateVector to CombineDoubles first?
-            //DoubleVertex xLocation = (DoubleVertex) CombineDoubles.getAtElement(pIndex, stateVector);
-            //DoubleVertex yLocation = (DoubleVertex) CombineDoubles.getAtElement(pIndex + 1, stateVector);
-            //DoubleVertex currentSpeed = (DoubleVertex) CombineDoubles.getAtElement(pIndex + 2, stateVector);
-            /* ***********
-              Are these references? Or does casting change the object so that changes down the line
-              won't affect the original? Need to ensure that changes made below (.setValue()) will also change the
-              values of the corresponding vertices in stateVector.
-               ***********
-             * */
-
             // Access DoubleVertex's directly from CombineDoubles class and update in place
             // This is much simpler than previous attempts and doesn't require creation of new stateVector w/ every iter
             stateVector.vertices[pIndex].setValue(person.getLocation().x);
@@ -399,7 +396,7 @@ public class DataAssimilation {
             stateVector.vertices[pIndex + 2].setValue(person.getCurrentSpeed());
         }
         assert (stateVector.getLength() == tempModel.getNumPeople() * 3);
-        System.out.println("\tFINISHED UPDATING STATE VECTOR.");
+        //System.out.println("\tFINISHED UPDATING STATE VECTOR.");
     }
 
 
@@ -491,6 +488,19 @@ public class DataAssimilation {
     }
 
 
+    private static void takeObservations(Station model) {
+
+        // take numPeople in model at each step for observations
+        double numPeopleInModel = model.activeNum;
+
+        if (model == truthModel) {
+            truthResults[(int) model.schedule.getSteps()] = numPeopleInModel;
+        } else if (model == tempModel) {
+            tempResults[(int) model.schedule.getSteps()] = numPeopleInModel;
+        }
+    }
+
+
     /**
      * Function to run truthModel and extract state information at specific iterations
      */
@@ -502,18 +512,22 @@ public class DataAssimilation {
 
         // Step truth model whilst step number is less than NUM_ITER
         while (truthModel.schedule.getSteps() < NUM_ITER) {
+
+            // get truthVector at this iteration
+            Double[] truthVector = getTruthVector(truthModel);
+            double total = getTruthVecTotal(truthVector);
+            truthVecTotals[(int)truthModel.schedule.getSteps()] = total;
+            // Take observations of people in model at every step (including before the first step)
+            takeObservations(truthModel);
+
             // Stop stepping and do something every 200 steps (every WINDOW_SIZE steps)
             if (truthModel.schedule.getSteps() % WINDOW_SIZE == 0.0) {
-
-                // get truthVector at this iteration (multiple of WINDOW_SIZE)
-                getTruthVector(truthModel);
+                // Add Double[] to truthHistory to be accessed later
+                truthHistory.add(truthVector);
             }
-            // Step while condition is not true
-            truthModel.schedule.step(truthModel);
 
-            // take numPeople in model at each step for observations
-            double numPeopleInModel = truthModel.getNumPeople() - truthModel.inactivePeople.size() - truthModel.finishedPeople.size();
-            truthResults[(int) truthModel.schedule.getSteps()] = numPeopleInModel;
+            // Step
+            truthModel.schedule.step(truthModel);
         }
         System.out.println("\tHave stepped truth model for: " + truthModel.schedule.getSteps() + " steps.");
 
@@ -537,7 +551,7 @@ public class DataAssimilation {
      *
      * @param model Station model from which to save truth vector (should always be truthModel)
      */
-    private static void getTruthVector(Station model) {
+    private static Double[] getTruthVector(Station model) {
         //System.out.println("\tBuilding Truth Vector...");
 
         // Get all objects from model area (all people) and initialise a list for sorting
@@ -566,10 +580,21 @@ public class DataAssimilation {
         }
         // NEED ASSERTION HERE?
 
-        // Add Double[] to truthHistory to be accessed later
-        truthHistory.add(truthVector);
-        System.out.println("\tTruth Vector Built at iteration: " + truthModel.schedule.getSteps());
+        //System.out.println("\tTruth Vector Built at iteration: " + truthModel.schedule.getSteps());
+
+        return truthVector;
     }
+
+
+    private static double getTruthVecTotal(Double[] truthVector) {
+        double total = 0;
+
+        for (int i = 0; i < truthVector.length; i++) {
+            total += truthVector[i];
+        }
+        return total;
+    }
+
 
     public static void main(String[] args) throws IOException {
         runDataAssimilation();

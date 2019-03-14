@@ -5,6 +5,8 @@ import io.improbable.keanu.KeanuRandom;
 import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
 import io.improbable.keanu.algorithms.Samples;
+import io.improbable.keanu.algorithms.particlefiltering.ParticleFilter;
+import io.improbable.keanu.algorithms.particlefiltering.ParticleFilterBuilder;
 import io.improbable.keanu.algorithms.variational.GaussianKDE;
 import io.improbable.keanu.algorithms.variational.optimizer.Optimizer;
 import io.improbable.keanu.network.BayesianNetwork;
@@ -29,7 +31,7 @@ public class DataAssimilation {
     private static Station truthModel = new Station(System.currentTimeMillis()); // Station model used to produce truth data
     private static Station tempModel = new Station(System.currentTimeMillis() + 1); // Station model used for state estimation
 
-    private static int NUM_ITER = 2400; // Total number of iterations
+    private static int NUM_ITER = 5000; // Total number of iterations
     private static int WINDOW_SIZE = 200; // Number of iterations per update window
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE; // Number of update windows
 
@@ -130,6 +132,16 @@ public class DataAssimilation {
             // Create probabilistic model from BayesNet
             KeanuProbabilisticModel model = new KeanuProbabilisticModel(net);
 
+
+            // Attempting to build a particle filter using in built Keanu algorithms
+            ParticleFilterBuilder partFilterBuilder = ParticleFilter.ofGraph(box.getConnectedGraph());
+
+            ParticleFilter partFilter = new ParticleFilter(box.getConnectedGraph(),
+                                                            100,
+                                                            10,
+                                                            0.5,
+                                                            rand);
+
             /*
              ************ OPTIMISE ************
              */
@@ -218,6 +230,12 @@ public class DataAssimilation {
 
                 // Create new GaussianKDE from DoubleTensor samples
                 KDEVertex newKDE = GaussianKDE.approximate(samples);
+
+                if (j % 200 == 0.0) {
+                    System.out.println("Vertex " + j + " value: " + vert.getValue(0));
+                    System.out.println("KDEVert " + j + " value: " + newKDE.getValue() + "\n");
+                }
+
 
                 // Assign value of vertex in stateVector from newKDE
                 stateVector.vertices[j].setValue(newKDE.getValue());

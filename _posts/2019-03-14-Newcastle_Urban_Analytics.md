@@ -6,7 +6,9 @@ category: announce
 tags: [conference, urban analytics]
 ---
 
-<img style="width:30%;float:right;" src="{{site.url}}{{site.baseurl}}/figures/LOGO_TURING.png" alt="The ALan Turing Institute logo" />
+<figure style="width:30%;float:right;" >
+<img src="{{site.url}}{{site.baseurl}}/figures/LOGO_TURING.png" alt="The ALan Turing Institute logo" />
+</figure>
 
 There is an interesting upcoming event at the University of Newcastle called [A Blueprint for Urban Analytics Research](https://www.turing.ac.uk/events/blueprint-urban-analytics-research) which has been organised with the [Alan Turing Institute](https://www.turing.ac.uk/) as part of their [Urban Analytics programme](https://www.turing.ac.uk/research/research-programmes/urban-analytics).
 

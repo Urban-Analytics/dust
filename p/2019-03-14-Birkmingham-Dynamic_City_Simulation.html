@@ -199,26 +199,35 @@
                 </section>
                 
                 
-                <section id="Emergence-WhyImportant" data-background-image="../figures/attribution/termite_mound.jpg">
+                <section id="Emergence-WhyImportant" data-background-image="../figures/attribution/termite_mound.jpg"
+                         data-transition="fade">
                     <div class="whitebackground2">
                         <h2>Emergence</h2>
                         <h3>Why is it important?</h3>
                         <p><strong>Key message</strong>: Complex structures can emerge from simple rules</p>
+                        <p><strong>Interactions</strong> are key</p>
                         <p>Emergence is hard to anticipate, and cannot be deduced from solely analysis
                             of an individual's behaviour</p>
                         <p>Individual-level modelling is focused on understanding how macro-level patterns emerge from micro-level through the process of simulation.</p>
                         <p>How is this relevant to modelling cities?</p>
                     </div>
                 </section>
-            
-                <section id="QuestionsForModellingCities">
-                    <h2>XXXX</h2>
-                    <p>SLIDE ABOUT THINGS WE MIGHT WANT TO MODEL IN CITIES</p>
-                    <p>Congestion / sustainable mobility</p>
-                    <p>Pollution (emission &amp; exposure)</p>
-                    <p>Crime (offenders  &amp; victims)</p>
-                    <p> ... </p>
+                
+                <section id="Emergence-ModellingCities" data-background-image="../figures/attribution/termite_mound.jpg"
+                         data-transition="fade">
+                    <div class="whitebackground2">
+                        <h2>Emergence</h2>
+                        <h3>Modelling Cities</h3>
+                        <p>Congestion / sustainable mobility</p>
+                        <p class="l2">Congestion is an unintended consequence of the behaviours and interactions between individuals</p><p class="l2">Building better transport systems: need to consider feedback loops, non-linear behaviour, etc.</p>
+                        <p>Crime (offenders  &amp; victims)</p>
+                        <p class="l2">Crime emerges through the behaviour of victims and offenders</p>
+                        <p>Pollution (emission &amp; exposure)</p>
+                        <p class="l2">Pollution is emission and exposure sometimes overlap, but not always</p>
+                        <p> ... loads of others ... </p>
+                    </div>
                 </section>
+            
                 
 
                 
@@ -467,6 +476,7 @@
                     <p>Smart cities</p>
                     <p class="l2">cities that "are increasingly composed of and monitored by pervasive and ubiquitous computing" (Kitchin, 2013a)</p>
                     <p>Large and growing literature</p>
+                    <p><strong>But how to combine messy, biased, disparate data?</strong></p>
                 </section>
                 
                 <!-- 
@@ -611,8 +621,7 @@
                 <section id="pf-bussim">
                     <h2>Example 2<br/>Bus Simulation with a Particle Filter</h2>
                     <p>Context: simulate bus routes <i>in real time</i></p>
-                    <p>We have GPS bus positions in real time</p>
-                    <p>But to make good term forecasts we need to be able to infer other factors</p>
+                    <p>We have GPS bus positions, but to make good term forecasts we need to be able to infer other factors</p>
                     <p class="l2">Number of people waiting at bus stops</p>
                     <p class="l2">Number of people on the bus</p>
                     <p class="l2">Surrounding traffic levels</p>
@@ -729,100 +738,45 @@
                 </section>
                 
                 
-                    <!-- *****************************************************************
-                     ************* 3. Urban Analytics ********************************
-                     ***************************************************************** -->
-                
-                <section id="part3">
-                    <h2>Part 3: Urban Analytics</h2>
-                    <img data-src="../figures/skylines-day1.jpg" alt="screenshot of virtual city"/>
-                </section>
-                
-                
-                
-               
-                <section id="ATI-SmartCities" >
-                    
-                    <h2>Related Projects</h2>
-                    
-                    <h3>Understanding and Quantifying Uncertainty in Individual-Based Models for Smart City Forecasts</h3>
-                    
-                    <img  data-src="../figures/ensemble_uncertainty.png" />
-                    
-                    
-                </section>
-                <section id="ATI-SmartCities2" >
-                    
-                    <h2>Related Projects</h2>
-                    
-                    <h3>Understanding and Quantifying Uncertainty in Individual-Based Models for Smart City Forecasts</h3>
-                    
-                    <img  data-src="../figures/good_bad_ensembles.png" />
-                    
-                </section>
-                    
-                <section id="ATI-SmartCities-Intern" data-background-image="../figures/skylines-night1.jpg">
-                    
+                <section id="moreinformation1" data-transition="fade" data-background-image="https://erc.europa.eu/sites/default/files/content/pages/images/DUST_illustration_copyright-Shutterstock.jpg">
                     <div class="whitebackground2">
-                        <h2>Related Projects</h2>
-
-                        <h3>Understanding Input Data Requirements for Successfully Modelling Cities</h3>
-
-                        <p>How much information about a city do we need to simulate it within
-                        acceptable levels of uncertainty?</p>
-
-                        <p>Method:</p>
-                        <p class="l2">Simple hypothetical city ABM</p>
-                        <p class="l2">Generate 'truth' data</p>
-                        <p class="l2">Take noisy samples from 'truth'</p>
-                        <p class="l2">How much data do we need?</p>
-                    </div>
-                    
-                
-                </section>
-                
-                <section id="current_research1">
-                    
-                    <h2>Agent-Based Urban Modelling</h2>
-                    <a href="https://esrc.ukri.org/">
-                        <img class="right" style="width:200px;" data-src="../figures/LOGO_ESRC.jpg" alt="ESRC Logo"/></a>
-                    <h3>Current Research</h3>
-                    <p>Simulating Urban Flows (<a href="http://surf.leeds.ac.uk">surf</a>)</p>                    
-                    <p class="l2">3 year research project funded by the UK ESRC</p>
-                    <p class="l2">Modelling a small town, using real footfall counters
-                    (more on this next...)</p>
-                    <p class="l2">One of the aims: <strong>calibrate an urban ABM using streaming data</strong></p>
-                    <p class="l2">Turns out this is really hard!</p>            
-                </section>
-                
-                <section id="current_research2-dust" data-background-image="https://erc.europa.eu/sites/default/files/content/pages/images/DUST_illustration_copyright-Shutterstock.jpg">
-                    <div class="whitebackground2">
-                        <h2>Agent-Based Urban Modelling</h2>
+                        <h2>For more information about what we're doing</h2>
                         <a href="https://erc.europa.eu/">
-                            <img class="right" style="width:200px;" data-src="../figures/LOGO_ERC.jpg" alt="ESRC Logo"/></a>
-                        <p>New project: <strong>Data Assimilation for Agent-Based Models</strong> (<a href="http://dust.leeds.ac.uk">dust</a>)</p>
-                        <p class="l2">5-year research project (&euro;1.5M)</p>
-                        <p class="l2">Funded by the European Research Council (Starting Grant)</p>
-                        <p class="l2">Started in January</p>
-                        <p>Main aim: create new methods for dynamically assimilating data into agent-based models.</p>
+                            <img class="right" style="width:100px;" data-src="../figures/LOGO_ERC.jpg" alt="ESRC Logo"/>
+                        </a>
+                        <p>Data Assimilation for Agent-Based Models (<a href="http://dust.leeds.ac.uk">dust</a>)</p>
+                        <p class="l2"><a href="http://dust.leeds.ac.uk/">http://dust.leeds.ac.uk/</a></p>
+                        <p class="l2">Main aim: create new methods for dynamically assimilating data into agent-based models.</p>
+                        <p>Uncertainty in agent-based models for smart city forecasts</p>
+                        <a href="https://www.turing.ac.uk/">
+                            <img class="right" style="width:100px;" data-src="../figures/LOGO_TURING.png" alt="Turing Logo"/>
+                        </a>
+                        <p class="l2"><a href="https://www.turing.ac.uk/research/research-projects/uncertainty-agent-based-models-smart-city-forecasts">turing.ac.uk</a></p>
+                        <p class="l2">Developing methods that can be used to better understand uncertainty in individual-level models of cities</p>
+
+                    </div>
+                
+                </section>
+                
+                <section id="moreinformation2" data-transition="fade" data-background-image="https://erc.europa.eu/sites/default/files/content/pages/images/DUST_illustration_copyright-Shutterstock.jpg">
+                    <div class="whitebackground2">
+                        <h2>For more information about what we're doing</h2>
+                        
+                        
+
                     </div>
                 
                 </section>
                 
                 
-                <section>
-                    <h2>For more information about what we're doing</h2>
+                <section data-background-image="../figures/shutterstock_615414464-small.jpg">
+                    <div class="whitebackground2">
 
-                    <p>ABMUS papers</p>
-                    <p>XXXX Minh's BusSim paper</p>
+                        <h2>Other things to watch out for</h2>
                     
-                
-                </section>
-                
-                <section>
-                    <h2>Other things to watch out for</h2>
-                    
-                    <p>XXXX probabilistic programming and link to Bayesian Methods for Hackers</p>
+                        <p>Probabilistic Programming</p>
+                        <p>XXXX probabilistic programming and link to Bayesian Methods for Hackers</p>
+                    </div>
                     
                     
                 </section>
@@ -834,7 +788,7 @@
                 </section>
                 
                 
-                <section id="summary" data-background-image="https://erc.europa.eu/sites/default/files/content/pages/images/DUST_illustration_copyright-Shutterstock.jpg">
+                <section id="summary" data-background-image="../figures/the-roaming-platypus-310824-unsplash-small.jpg">
                     <div class="whitebackground2">
                       <h2>Summary</h2>
                       <p>Dynamic Simulation - Agent Based Modelling</p>

@@ -36,7 +36,6 @@ public class Person extends Agent {
     private double currentSpeed;
     private boolean active = true; // Whether or not agents take part in the simulation. One constructor makes this false.
     private int id; // agents will have incrementally increasing IDs
-    private static int ID_Counter = 0;
 
 
     /**

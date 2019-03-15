@@ -5,8 +5,6 @@ import io.improbable.keanu.KeanuRandom;
 import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
 import io.improbable.keanu.algorithms.Samples;
-import io.improbable.keanu.algorithms.particlefiltering.ParticleFilter;
-import io.improbable.keanu.algorithms.particlefiltering.ParticleFilterBuilder;
 import io.improbable.keanu.algorithms.variational.GaussianKDE;
 import io.improbable.keanu.algorithms.variational.optimizer.Optimizer;
 import io.improbable.keanu.network.BayesianNetwork;
@@ -31,7 +29,7 @@ public class DataAssimilation {
     private static Station truthModel = new Station(System.currentTimeMillis()); // Station model used to produce truth data
     private static Station tempModel = new Station(System.currentTimeMillis() + 1); // Station model used for state estimation
 
-    private static int NUM_ITER = 5000; // Total number of iterations
+    private static int NUM_ITER = 3000; // Total number of iterations
     private static int WINDOW_SIZE = 200; // Number of iterations per update window
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE; // Number of update windows
 
@@ -132,24 +130,16 @@ public class DataAssimilation {
             // Create probabilistic model from BayesNet
             KeanuProbabilisticModel model = new KeanuProbabilisticModel(net);
 
-
-            // Attempting to build a particle filter using in built Keanu algorithms
-            ParticleFilterBuilder partFilterBuilder = ParticleFilter.ofGraph(box.getConnectedGraph());
-
-            ParticleFilter partFilter = new ParticleFilter(box.getConnectedGraph(),
-                                                            100,
-                                                            10,
-                                                            0.5,
-                                                            rand);
-
             /*
              ************ OPTIMISE ************
              */
 
+            /*
             if (i > 0) {
                 Optimizer optimizer = Keanu.Optimizer.of(net);
                 optimizer.maxAPosteriori();
             }
+            */
 
             /*
              ************ SAMPLE FROM THE POSTERIOR************
@@ -197,27 +187,23 @@ public class DataAssimilation {
             Try to swap prior for black box model instead of creating at each iteration (efficiency improvement)
              */
 
-            //List<DoubleVertex> KDE_List = new ArrayList<>();
 
-            /*
             for (int j=0; j < stateVector.getLength(); j++) {
-                // Get vertex from bayesNet by label (loop counter used to access elements of tempVertexList)
+
+                Vertex<DoubleTensor> vert1 = CombineDoubles.getAtElement(j, stateVector);
+
                 Vertex vert = net.getVertexByLabel(tempVertexList.get(j));
 
                 Samples<DoubleTensor> samples = sampler.get(vert);
 
-                KDEVertex newKDE = GaussianKDE.approximate(samples);
+                DoubleVertex x = GaussianKDE.approximate(samples);
 
-                DoubleVertex x = newKDE;
-
-                x.setLabel(tempVertexList.get(j));
-
-                KDE_List.add(x);
+                stateVector.vertices[j].setValue(x.getValue());
             }
 
-            stateVector = new CombineDoubles(KDE_List);
-            */
+            updatePeople(stateVector);
 
+            /*
             for (int j=0; j < stateVector.getLength(); j++) {
 
                 // Get DoubleVertex from stateVector to update after sampling
@@ -240,6 +226,7 @@ public class DataAssimilation {
                 // Assign value of vertex in stateVector from newKDE
                 stateVector.vertices[j].setValue(newKDE.getValue());
             }
+            */
         }
         tempModel.finish();
 
@@ -287,29 +274,52 @@ public class DataAssimilation {
     }
 
 
-    private static void keanuObserve(Vertex<DoubleTensor[]> stateVec, int windowNum) {
+    private static void keanuObserve(Vertex<DoubleTensor[]> box, int windowNum) {
         System.out.println("\tObserving truth data. Adding noise with standard dev: " + SIGMA_NOISE);
 
-        // Get DoubleTensor[] output from stateVector
-        DoubleTensor[] output = stateVec.getValue();
-        assert (output.length == tempModel.getNumPeople() * 3) : "Output is incorrect length before observations";
-
-        // Output with a bit of noise. Lower sigma makes it more constrained
-        GaussianVertex[] noisyOutput = new GaussianVertex[output.length];
-        for (int k=0; k < output.length; k++) {
-            noisyOutput[k] = new GaussianVertex(output[k].scalar(), SIGMA_NOISE); // Take kth output and add Gaussian noise
-        }
-
-        // Observe the output (Could do this at same time as adding noise?)
+        // Get truth history to observe
         Double[] history = truthHistory.get(windowNum); // Get corresponding history from list for each update window
         assert (history.length == tempModel.getNumPeople() * 3) : String.format("History for iteration %d is incorrect length: %d",
                 windowNum, history.length);
 
-        // Loop through and observe
-        for (int j=0; j < noisyOutput.length; j++) {
-            noisyOutput[j].observe(history[j]);
+        // Output with a bit of noise. Lower sigma makes it more constrained
+        GaussianVertex[] noisyOutput = new GaussianVertex[history.length];
+        for (int i = 0; i < noisyOutput.length; i++) {
+            noisyOutput[i] = new GaussianVertex(history[i], SIGMA_NOISE);
         }
+
+        // Create a DoubleTensor from history to observe the value in box
+        DoubleTensor[] histTensors = new DoubleTensor[history.length];
+        for (int j = 0; j < history.length; j++) {
+            histTensors[j] = DoubleTensor.create(noisyOutput[j].getValue(0));
+        }
+
+        // Using getAtElement to get correct part of box, Observe the new DoubleTensor created from truth history
+        for (int k = 0; k < tempModel.getNumPeople(); k++) {
+            CombineDoubles.getAtElement(k, box).observe(histTensors[k]);
+        }
+
         System.out.println("\tObservations complete");
+
+//        // Get DoubleTensor[] output from stateVector
+//        DoubleTensor[] output = box.getValue();
+//        assert (output.length == tempModel.getNumPeople() * 3) : "Output is incorrect length before observations";
+//
+//        // Output with a bit of noise. Lower sigma makes it more constrained
+//        GaussianVertex[] noisyOutput = new GaussianVertex[output.length];
+//        for (int k=0; k < output.length; k++) {
+//            noisyOutput[k] = new GaussianVertex(output[k].scalar(), SIGMA_NOISE); // Take kth output and add Gaussian noise
+//        }
+//
+//        // Observe the output (Could do this at same time as adding noise?)
+//        Double[] history = truthHistory.get(windowNum); // Get corresponding history from list for each update window
+//        assert (history.length == tempModel.getNumPeople() * 3) : String.format("History for iteration %d is incorrect length: %d",
+//                windowNum, history.length);
+//
+//        // Loop through and observe
+//        for (int j=0; j < noisyOutput.length; j++) {
+//            noisyOutput[j].observe(history[j]);
+//        }
     }
 
 
@@ -325,12 +335,8 @@ public class DataAssimilation {
         // Check model contains agents
         assert (tempModel.area.getAllObjects().size() > 0) : "No agents in tempModel before prediction";
 
-        // Find all the people and add to list
-        Bag people = new Bag(tempModel.area.getAllObjects());
-        List<Person> initialPeopleList = new ArrayList<>(people);
-
         // Update position and speed of agents from initialState
-        updatePeople(initialState, initialPeopleList); // TODO: Is this step necessary? Do we even need to updatePeople before stepping? Any change from end state from previous window?
+        updatePeople(initialState); // TODO: Is this step necessary? Do we even need to updatePeople before stepping? Any change from end state from previous window?
 
         // Run the model to make the prediction
         for (int i = 0; i < WINDOW_SIZE; i++) {
@@ -418,14 +424,16 @@ public class DataAssimilation {
     }
 
 
-    private static void updatePeople(Vertex<DoubleTensor[]> stateVector, List<Person> initialPeopleList) {
+    private static void updatePeople(Vertex<DoubleTensor[]> stateVector) {
         System.out.println("\tREBUILDING PERSON LIST...");
 
         assert (stateVector.getValue().length == tempModel.getNumPeople() * 3) : "State Vector is incorrect length: " + stateVector.getValue().length;
 
         System.out.println("\tStateVector length: " + stateVector.getValue().length);
 
-        int counter = 0;
+        // Find all the people and add to list
+        Bag people = new Bag(tempModel.area.getAllObjects());
+        List<Person> initialPeopleList = new ArrayList<>(people);
 
         // Loop through peopleList created before model was stepped
         for (Person person : initialPeopleList) {

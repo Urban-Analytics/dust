@@ -6,7 +6,6 @@ import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
 import io.improbable.keanu.algorithms.Samples;
 import io.improbable.keanu.algorithms.variational.GaussianKDE;
-import io.improbable.keanu.algorithms.variational.optimizer.Optimizer;
 import io.improbable.keanu.network.BayesianNetwork;
 import io.improbable.keanu.network.KeanuProbabilisticModel;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
@@ -14,7 +13,6 @@ import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.VertexLabel;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
-import io.improbable.keanu.vertices.dbl.probabilistic.KDEVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
 import sim.util.Bag;
 import sim.util.Double2D;
@@ -23,13 +21,17 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
+
 public class DataAssimilation {
 
     // Create truth and temporary model
     private static Station truthModel = new Station(System.currentTimeMillis()); // Station model used to produce truth data
     private static Station tempModel = new Station(System.currentTimeMillis() + 1); // Station model used for state estimation
 
-    private static int NUM_ITER = 3000; // Total number of iterations
+    private static int NUM_ITER = 1000; // Total number of iterations
     private static int WINDOW_SIZE = 200; // Number of iterations per update window
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE; // Number of update windows
 
@@ -45,15 +47,22 @@ public class DataAssimilation {
 
     // List of agent exits to use when rebuilding from stateVector
     //static DoubleVertex[][] stateVector;
-    private static Exit[] agentExits;
+    //private static Exit[] agentExits;
 
-    private static double[] tempResults = new double[NUM_ITER];
-    private static double[] truthResults = new double[NUM_ITER];
+    /* Observations */
+    private static double[] tempNumPeople = new double[NUM_ITER];
+    private static double[] truthNumPeople = new double[NUM_ITER];
 
-    private static double[] truthVecTotals = new double[NUM_ITER];
-    private static double[] tempVecTotals = new double[NUM_ITER];
+    private static double[] truthL1 = new double[NUM_ITER];
+    private static double[] tempL1 = new double[NUM_ITER];
 
-    private static List<Double[]> truthHistory = new ArrayList<>();
+    private static double[] truthL2 = new double[NUM_ITER];
+    private static double[] tempL2 = new double[NUM_ITER];
+
+    private static double[] totalError = new double[NUM_ITER];
+
+
+    private static List<double[]> truthHistory = new ArrayList<>();
 
     private static List<VertexLabel> tempVertexList = new ArrayList<>();
 
@@ -61,9 +70,6 @@ public class DataAssimilation {
 
     /* Admin parameters */
     private static String dirName = "simulation_outputs/"; // Place to store results
-
-    private static Writer numPeopleObsWriter;
-    private static Writer vecTotalsObsWriter;
 
 
     /**
@@ -190,8 +196,6 @@ public class DataAssimilation {
 
             for (int j=0; j < stateVector.getLength(); j++) {
 
-                Vertex<DoubleTensor> vert1 = CombineDoubles.getAtElement(j, stateVector);
-
                 Vertex vert = net.getVertexByLabel(tempVertexList.get(j));
 
                 Samples<DoubleTensor> samples = sampler.get(vert);
@@ -203,30 +207,6 @@ public class DataAssimilation {
 
             updatePeople(stateVector);
 
-            /*
-            for (int j=0; j < stateVector.getLength(); j++) {
-
-                // Get DoubleVertex from stateVector to update after sampling
-                DoubleVertex vert = stateVector.vertices[j];
-
-                // Get samples from vertex
-                Samples<DoubleTensor> samples = sampler.get(vert);
-
-                //samples.getMode();
-
-                // Create new GaussianKDE from DoubleTensor samples
-                KDEVertex newKDE = GaussianKDE.approximate(samples);
-
-                if (j % 200 == 0.0) {
-                    System.out.println("Vertex " + j + " value: " + vert.getValue(0));
-                    System.out.println("KDEVert " + j + " value: " + newKDE.getValue() + "\n");
-                }
-
-
-                // Assign value of vertex in stateVector from newKDE
-                stateVector.vertices[j].setValue(newKDE.getValue());
-            }
-            */
         }
         tempModel.finish();
 
@@ -234,232 +214,85 @@ public class DataAssimilation {
     }
 
 
-    private static void writeObservations() throws IOException {
+    // ***************************** TRUTH DATA *****************************
 
-        System.out.println("Writing out observations...");
+    /**
+     * This is the main function for running the pseudo-truth model and collecting truth data to observe.
+     *
+     * What this function does:
+     *  - Calls start to set up the truth model
+     *  - Runs the truth model for NUM_ITER steps
+     *      - Builds a truth vector from the model at every iteration
+     *      - Adds the total of this vector to a double array to write to file later
+     *      - Every 200 iterations (beginning at 0), saves the full truth vector to a list to observe in keanuObserve()
+     *  - Finally, calls truthModel.finish() to stop the model
+     *
+     */
+    private static void getTruthData() {
 
-        // init files
-        String theTime = String.valueOf(System.currentTimeMillis()); // So files have unique names
+        // start truthModel
+        truthModel.start(rand);
+        System.out.println("truthModel.start() has executed successfully");
 
-        numPeopleObsWriter = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(dirName + "PeopleObs_" + theTime + ".csv"), "utf-8"));
-
-        vecTotalsObsWriter = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(dirName + "VectorObs_" + theTime + ".csv"), "utf-8"));
-
-        // try catch for the
-        try {
-            numPeopleObsWriter.write("Iteration,truthObservation,tempObservation,\n");
-
-            for (int i = 0; i < truthResults.length; i++) {
-                numPeopleObsWriter.write(String.format("%d,%f,%f,\n", i, truthResults[i], tempResults[i]));
-            }
-        } catch (IOException ex) {
-            System.err.println("Error writing numPeople to file: "+ ex.getMessage());
-            ex.printStackTrace();
+        // Step truth model whilst step number is less than NUM_ITER
+        while (truthModel.schedule.getSteps() < NUM_ITER) {
+            // Take observations of people in model at every step (including before the first step)
+            takeObservations(truthModel);
+            // Step
+            truthModel.schedule.step(truthModel);
         }
+        System.out.println("\tHave stepped truth model for: " + truthModel.schedule.getSteps() + " steps.");
 
-        try {
-            vecTotalsObsWriter.write("Iteration, truthVecTotal, tempVecTotal,\n");
+        // Check correct number of truthVectors extracted
+        assert (truthHistory.size() == NUM_WINDOWS) : "truthHistory collected at wrong number of iterations (" +
+                truthHistory.size() + "), should have been: " + NUM_WINDOWS;
 
-            for (int i = 0; i < truthVecTotals.length; i++) {
-                vecTotalsObsWriter.write(String.format("%d,%f,%f,\n", i, truthVecTotals[i], tempVecTotals[i]));
-            }
-        } catch (IOException ex) {
-            System.err.println("Error writing vector totals to file: " + ex.getMessage());
-            ex.printStackTrace();
-        }
-
-        System.out.println("Observations written to file");
-    }
-
-
-    private static void keanuObserve(Vertex<DoubleTensor[]> box, int windowNum) {
-        System.out.println("\tObserving truth data. Adding noise with standard dev: " + SIGMA_NOISE);
-
-        // Get truth history to observe
-        Double[] history = truthHistory.get(windowNum); // Get corresponding history from list for each update window
-        assert (history.length == tempModel.getNumPeople() * 3) : String.format("History for iteration %d is incorrect length: %d",
-                windowNum, history.length);
-
-        // Output with a bit of noise. Lower sigma makes it more constrained
-        GaussianVertex[] noisyOutput = new GaussianVertex[history.length];
-        for (int i = 0; i < noisyOutput.length; i++) {
-            noisyOutput[i] = new GaussianVertex(history[i], SIGMA_NOISE);
-        }
-
-        // Create a DoubleTensor from history to observe the value in box
-        DoubleTensor[] histTensors = new DoubleTensor[history.length];
-        for (int j = 0; j < history.length; j++) {
-            histTensors[j] = DoubleTensor.create(noisyOutput[j].getValue(0));
-        }
-
-        // Using getAtElement to get correct part of box, Observe the new DoubleTensor created from truth history
-        for (int k = 0; k < tempModel.getNumPeople(); k++) {
-            CombineDoubles.getAtElement(k, box).observe(histTensors[k]);
-        }
-
-        System.out.println("\tObservations complete");
-
-//        // Get DoubleTensor[] output from stateVector
-//        DoubleTensor[] output = box.getValue();
-//        assert (output.length == tempModel.getNumPeople() * 3) : "Output is incorrect length before observations";
-//
-//        // Output with a bit of noise. Lower sigma makes it more constrained
-//        GaussianVertex[] noisyOutput = new GaussianVertex[output.length];
-//        for (int k=0; k < output.length; k++) {
-//            noisyOutput[k] = new GaussianVertex(output[k].scalar(), SIGMA_NOISE); // Take kth output and add Gaussian noise
-//        }
-//
-//        // Observe the output (Could do this at same time as adding noise?)
-//        Double[] history = truthHistory.get(windowNum); // Get corresponding history from list for each update window
-//        assert (history.length == tempModel.getNumPeople() * 3) : String.format("History for iteration %d is incorrect length: %d",
-//                windowNum, history.length);
-//
-//        // Loop through and observe
-//        for (int j=0; j < noisyOutput.length; j++) {
-//            noisyOutput[j].observe(history[j]);
-//        }
+        // Finish model
+        truthModel.finish();
+        System.out.println("Executed truthModel.finish()");
     }
 
 
     /**
-     * THIS NEEDS TO BE REWRITTEN MORE CLEANLY : (DONE?)
-     *
-     * @param initialState
-     * @return
+     * Function to produce the truthVector. truthVector index is based on person ID, so positions in the truthVector
+     *  remain fixed throughout the model.
      */
-    private static Vertex<DoubleTensor[]> predict(Vertex<DoubleTensor[]> initialState) {
-        System.out.println("\tPREDICTING...");
+    private static double[] getTruthVector() {
+        //System.out.println("\tBuilding Truth Vector...");
 
-        // Check model contains agents
-        assert (tempModel.area.getAllObjects().size() > 0) : "No agents in tempModel before prediction";
+        // Get all objects from model area (all people) and initialise a list for sorting
+        Bag people = truthModel.area.getAllObjects();
+        List<Person> truthPersonList = new ArrayList<>(people);
 
-        // Update position and speed of agents from initialState
-        updatePeople(initialState); // TODO: Is this step necessary? Do we even need to updatePeople before stepping? Any change from end state from previous window?
+        assert (!truthPersonList.isEmpty()) : "truthPersonList is empty, there is nobody in the truthModel";
+        assert (truthPersonList.size() == truthModel.getNumPeople()) : "truthPersonList (" + truthPersonList.size() +
+                ") is the wrong size, should be: " +
+                truthModel.getNumPeople();
 
-        // Run the model to make the prediction
-        for (int i = 0; i < WINDOW_SIZE; i++) {
-            // take observations of tempModel (num active people at each step)
-            takeObservations(tempModel);
-            // Get sum of values from each vertex in stateVector, to use as additional observation
-            getStateVecTotal();
-            // Step all the people window_size times
-            tempModel.schedule.step(tempModel);
-        }
+        // Create new Double[] to hold truthVector (Each person has 3 vertices (or doubles in this case))
+        double[] truthVector = new double[truthModel.getNumPeople() * 3];
 
-        // Check that correct number of people in model before updating state vector
-        assert (tempModel.area.getAllObjects().size() == tempModel.getNumPeople()) : String.format(
-                "Wrong number of people in the model before building state vector. Expected %d but got %d",
-                tempModel.getNumPeople(), tempModel.area.getAllObjects().size());
+        for (Person person : truthPersonList) {
 
-        // Get new stateVector after prediction
-        List<Person> newPersonList = new ArrayList<>(tempModel.area.getAllObjects());
-        updateStateVector(newPersonList);
-
-        // Return OpLambda wrapper
-        UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
-                new long[0],
-                stateVector,
-                //(currentState) -> step(currentState)
-                DataAssimilation::step // IntelliJ suggested replacing lambda with method reference here
-        );
-
-        System.out.println("\tPREDICTION FINISHED.");
-        return box;
-    }
-
-
-    private static DoubleTensor[] step(DoubleTensor[] initialState) {
-
-        DoubleTensor[] steppedState = new DoubleTensor[initialState.length];
-
-        for (int i=0; i < WINDOW_SIZE; i++) {
-            steppedState = initialState; // actually update the state here
-        }
-        return steppedState;
-    }
-
-
-    private static void getStateVecTotal() {
-
-        // take stateVector of new model state
-        List<Person> newPersonList = new ArrayList<>(tempModel.area.getAllObjects());
-        updateStateVector(newPersonList);
-
-        // get DoubleTensor values of each vertex
-        DoubleTensor[] calculatedVec = stateVector.calculate();
-
-        // total counter
-        Double total = 0d;
-
-        for (int i = 0; i < calculatedVec.length; i++) {
-            // take scalar value of each DoubleTensor and add to total
-            total += calculatedVec[i].scalar();
-        }
-        // Log total in results
-        tempVecTotals[(int) tempModel.schedule.getSteps()] = total;
-    }
-
-
-    private static void updateStateVector(List<Person> personList) {
-        //System.out.println("\tUPDATING STATE VECTOR...");
-        assert (!personList.isEmpty());
-        assert (personList.size() == tempModel.getNumPeople()) : personList.size();
-
-        for (Person person : personList) {
-
-            // get ID
+            // Get persons ID to create an index for truth vector
             int pID = person.getID();
-            int pIndex = pID * 3;
+            int index = pID * 3;
 
-            // Access DoubleVertex's directly from CombineDoubles class and update in place
-            // This is much simpler than previous attempts and doesn't require creation of new stateVector w/ every iter
-            stateVector.vertices[pIndex].setValue(person.getLocation().x);
-            stateVector.vertices[pIndex + 1].setValue(person.getLocation().y);
-            stateVector.vertices[pIndex + 2].setValue(person.getCurrentSpeed());
+            // Each person relates to 3 variables in truthVector
+            truthVector[index] = person.getLocation().x;
+            truthVector[index + 1] = person.getLocation().y;
+            // TODO: Try this with desired speed to see the difference (When finished and running experiments)
+            truthVector[index + 2] = person.getCurrentSpeed();
         }
-        assert (stateVector.getLength() == tempModel.getNumPeople() * 3);
-        //System.out.println("\tFINISHED UPDATING STATE VECTOR.");
+        // NEED ASSERTION HERE?
+
+        //System.out.println("\tTruth Vector Built at iteration: " + truthModel.schedule.getSteps());
+
+        return truthVector;
     }
 
 
-    private static void updatePeople(Vertex<DoubleTensor[]> stateVector) {
-        System.out.println("\tREBUILDING PERSON LIST...");
-
-        assert (stateVector.getValue().length == tempModel.getNumPeople() * 3) : "State Vector is incorrect length: " + stateVector.getValue().length;
-
-        System.out.println("\tStateVector length: " + stateVector.getValue().length);
-
-        // Find all the people and add to list
-        Bag people = new Bag(tempModel.area.getAllObjects());
-        List<Person> initialPeopleList = new ArrayList<>(people);
-
-        // Loop through peopleList created before model was stepped
-        for (Person person : initialPeopleList) {
-
-            //System.out.println(person.toString());
-
-            // get person ID to find correct vertices in stateVector
-            int pID = person.getID();
-            int pIndex = pID * 3;
-
-            // TODO: Is this right? Do we want the DoubleTensor from CombineDoubles or do we want the DoubleVertex?
-            // Extract DoubleTensor for each vertex using CombineDoubles.getAtElement()
-            Vertex<DoubleTensor> xLocation = CombineDoubles.getAtElement(pIndex, stateVector);
-            Vertex<DoubleTensor> yLocation = CombineDoubles.getAtElement(pIndex + 1, stateVector);
-            Vertex<DoubleTensor> currentSpeed = CombineDoubles.getAtElement(pIndex + 2, stateVector);
-
-            // Build Double2D
-            Double2D loc = new Double2D(xLocation.getValue().scalar(), yLocation.getValue().scalar()); // Build Double2D for location
-            // Get speed as double val
-            double speedAsDouble = currentSpeed.getValue().scalar();
-
-            // Set the location and current speed of the agent from the stateVector
-            tempModel.area.setObjectLocation(person, loc);
-            person.setCurrentSpeed(speedAsDouble); // TODO: CAREFUL HERE, THIS COULD BE WRONG
-        }
-    }
+    // ***************************** STATE VECTOR *****************************
 
 
     /**
@@ -514,144 +347,158 @@ public class DataAssimilation {
     }
 
 
-    private static void takeObservations(Station model) {
+    // ***************************** OBSERVE *****************************
 
-        // take numPeople in model at each step for observations
-        double numPeopleInModel = model.activeNum;
 
-        if (model == truthModel) {
-            truthResults[(int) model.schedule.getSteps()] = numPeopleInModel;
-        } else if (model == tempModel) {
-            tempResults[(int) model.schedule.getSteps()] = numPeopleInModel;
+    private static void keanuObserve(Vertex<DoubleTensor[]> box, int windowNum) {
+        System.out.println("\tObserving truth data. Adding noise with standard dev: " + SIGMA_NOISE);
+
+        // Get truth history to observe
+        double[] history = truthHistory.get(windowNum); // Get corresponding history from list for each update window
+        assert (history.length == tempModel.getNumPeople() * 3) : String.format("History for iteration %d is incorrect length: %d",
+                windowNum, history.length);
+
+        // Output with a bit of noise. Lower sigma makes it more constrained
+        GaussianVertex[] noisyOutput = new GaussianVertex[history.length];
+        for (int i = 0; i < noisyOutput.length; i++) {
+            noisyOutput[i] = new GaussianVertex(history[i], SIGMA_NOISE);
         }
+
+        // Create a DoubleTensor from history to observe the value in box
+        DoubleTensor[] histTensors = new DoubleTensor[history.length];
+        for (int j = 0; j < history.length; j++) {
+            histTensors[j] = DoubleTensor.create(noisyOutput[j].getValue(0));
+        }
+
+        // Using getAtElement to get correct part of box, Observe the new DoubleTensor created from truth history
+        for (int k = 0; k < tempModel.getNumPeople(); k++) {
+            CombineDoubles.getAtElement(k, box).observe(histTensors[k]);
+        }
+
+        System.out.println("\tObservations complete");
+
+//        // Get DoubleTensor[] output from stateVector
+//        DoubleTensor[] output = box.getValue();
+//        assert (output.length == tempModel.getNumPeople() * 3) : "Output is incorrect length before observations";
+//
+//        // Output with a bit of noise. Lower sigma makes it more constrained
+//        GaussianVertex[] noisyOutput = new GaussianVertex[output.length];
+//        for (int k=0; k < output.length; k++) {
+//            noisyOutput[k] = new GaussianVertex(output[k].scalar(), SIGMA_NOISE); // Take kth output and add Gaussian noise
+//        }
+//
+//        // Observe the output (Could do this at same time as adding noise?)
+//        Double[] history = truthHistory.get(windowNum); // Get corresponding history from list for each update window
+//        assert (history.length == tempModel.getNumPeople() * 3) : String.format("History for iteration %d is incorrect length: %d",
+//                windowNum, history.length);
+//
+//        // Loop through and observe
+//        for (int j=0; j < noisyOutput.length; j++) {
+//            noisyOutput[j].observe(history[j]);
+//        }
     }
 
 
-    /**
-     * Function to run truthModel and extract state information at specific iterations
-     */
-    private static void getTruthData() {
-
-        // start truthModel
-        truthModel.start(rand);
-        System.out.println("truthModel.start() has executed successfully");
-
-        // Step truth model whilst step number is less than NUM_ITER
-        while (truthModel.schedule.getSteps() < NUM_ITER) {
-
-            // get truthVector at this iteration
-            Double[] truthVector = getTruthVector(truthModel);
-            double total = getTruthVecTotal(truthVector);
-            truthVecTotals[(int)truthModel.schedule.getSteps()] = total;
-            // Take observations of people in model at every step (including before the first step)
-            takeObservations(truthModel);
-
-            // Stop stepping and do something every 200 steps (every WINDOW_SIZE steps)
-            if (truthModel.schedule.getSteps() % WINDOW_SIZE == 0.0) {
-                // Add Double[] to truthHistory to be accessed later
-                truthHistory.add(truthVector);
-            }
-
-            // Step
-            truthModel.schedule.step(truthModel);
-        }
-        System.out.println("\tHave stepped truth model for: " + truthModel.schedule.getSteps() + " steps.");
-
-        // Check correct number of truthVectors extracted
-        assert (truthHistory.size() == NUM_WINDOWS) : "truthHistory collected at wrong number of iterations (" +
-                                                        truthHistory.size() + "), should have been: " + NUM_WINDOWS;
-
-        // As the model has finished everyone should be inactive
-        //assert truthModel.inactivePeople.size() == truthModel.getNumPeople() : "All (" + truthModel.getNumPeople() +
-          //                                                                      ") people should be inactive at end of " +
-            //                                                                    "model, there are only: " + truthModel.inactivePeople.size();
-        // Finish model
-        truthModel.finish();
-        System.out.println("Executed truthModel.finish()");
-    }
+    // ***************************** PREDICT *****************************
 
 
     /**
-     * Function to produce the truthVector. truthVector index is based on person ID, so positions in the truthVector
-     *  remain fixed throughout the model.
+     * THIS NEEDS TO BE REWRITTEN MORE CLEANLY : (DONE?)
      *
-     * @param model Station model from which to save truth vector (should always be truthModel)
+     * @param initialState
+     * @return
      */
-    private static Double[] getTruthVector(Station model) {
-        //System.out.println("\tBuilding Truth Vector...");
+    private static Vertex<DoubleTensor[]> predict(Vertex<DoubleTensor[]> initialState) {
+        System.out.println("\tPREDICTING...");
 
-        // Get all objects from model area (all people) and initialise a list for sorting
-        Bag people = model.area.getAllObjects();
-        List<Person> truthPersonList = new ArrayList<>(people);
+        // Check model contains agents
+        assert (tempModel.area.getAllObjects().size() > 0) : "No agents in tempModel before prediction";
 
-        assert (!truthPersonList.isEmpty()) : "truthPersonList is empty, there is nobody in the truthModel";
-        assert (truthPersonList.size() == model.getNumPeople()) : "truthPersonList (" + truthPersonList.size() +
-                                                                        ") is the wrong size, should be: " +
-                                                                        model.getNumPeople();
+        // Update position and speed of agents from initialState
+        updatePeople(initialState); // TODO: Is this step necessary? Do we even need to updatePeople before stepping? Any change from end state from previous window?
 
-        // Create new Double[] to hold truthVector (Each person has 3 vertices (or doubles in this case))
-        Double[] truthVector = new Double[model.getNumPeople() * 3];
+        // Run the model to make the prediction
+        for (int i = 0; i < WINDOW_SIZE; i++) {
+            // take observations of tempModel (num active people at each step)
+            takeObservations(tempModel);
+            // Step all the people window_size times
+            tempModel.schedule.step(tempModel);
+        }
 
-        for (Person person : truthPersonList) {
+        // Check that correct number of people in model before updating state vector
+        assert (tempModel.area.getAllObjects().size() == tempModel.getNumPeople()) : String.format(
+                "Wrong number of people in the model before building state vector. Expected %d but got %d",
+                tempModel.getNumPeople(), tempModel.area.getAllObjects().size());
 
-            // Get persons ID to create an index for truth vector
+        // Get new stateVector after prediction
+        List<Person> newPersonList = new ArrayList<>(tempModel.area.getAllObjects());
+        updateStateVector(newPersonList);
+
+        // Return OpLambda wrapper
+        UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
+                new long[0],
+                stateVector,
+                //(currentState) -> step(currentState)
+                DataAssimilation::step // IntelliJ suggested replacing lambda with method reference here
+        );
+
+        System.out.println("\tPREDICTION FINISHED.");
+        return box;
+    }
+
+
+    private static DoubleTensor[] step(DoubleTensor[] initialState) {
+
+        DoubleTensor[] steppedState = new DoubleTensor[initialState.length];
+
+        for (int i=0; i < WINDOW_SIZE; i++) {
+            steppedState = initialState; // actually update the state here
+        }
+        return steppedState;
+    }
+
+
+    // ***************************** UPDATE *****************************
+
+
+    private static void updateStateVector(List<Person> personList) {
+        //System.out.println("\tUPDATING STATE VECTOR...");
+        assert (!personList.isEmpty());
+        assert (personList.size() == tempModel.getNumPeople()) : personList.size();
+
+        for (Person person : personList) {
+
+            // get ID
             int pID = person.getID();
-            int index = pID * 3;
+            int pIndex = pID * 3;
 
-            // Each person relates to 3 variables in truthVector
-            truthVector[index] = person.getLocation().x;
-            truthVector[index + 1] = person.getLocation().y;
-            // TODO: Try this with desired speed to see the difference (When finished and running experiments)
-            truthVector[index + 2] = person.getCurrentSpeed();
+            // Access DoubleVertex's directly from CombineDoubles class and update in place
+            // This is much simpler than previous attempts and doesn't require creation of new stateVector w/ every iter
+            stateVector.vertices[pIndex].setValue(person.getLocation().x);
+            stateVector.vertices[pIndex + 1].setValue(person.getLocation().y);
+            stateVector.vertices[pIndex + 2].setValue(person.getCurrentSpeed());
         }
-        // NEED ASSERTION HERE?
-
-        //System.out.println("\tTruth Vector Built at iteration: " + truthModel.schedule.getSteps());
-
-        return truthVector;
+        assert (stateVector.getLength() == tempModel.getNumPeople() * 3);
+        //System.out.println("\tFINISHED UPDATING STATE VECTOR.");
     }
 
 
-    private static double getTruthVecTotal(Double[] truthVector) {
-        double total = 0;
-
-        for (int i = 0; i < truthVector.length; i++) {
-            total += truthVector[i];
-        }
-        return total;
-    }
-
-
-    public static void main(String[] args) throws IOException {
-        runDataAssimilation();
-        System.out.println("Data Assimilation finished! Excellent!");
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-    private static List<Person> updatePeople(Vertex<DoubleTensor[]> stateVector, List<Person> initialPeopleList) {
-        System.out.println("REBUILDING PERSON LIST...");
+    private static void updatePeople(Vertex<DoubleTensor[]> stateVector) {
+        //System.out.println("\tUPDATING PERSON LIST...");
 
         assert (stateVector.getValue().length == tempModel.getNumPeople() * 3) : "State Vector is incorrect length: " + stateVector.getValue().length;
 
-        // list to hold the people
-        List<Person> newPersonList = new ArrayList<>();
+        //System.out.println("\tStateVector length: " + stateVector.getValue().length);
+
+        // Find all the people and add to list
+        Bag people = new Bag(tempModel.area.getAllObjects());
+        List<Person> initialPeopleList = new ArrayList<>(people);
 
         // Loop through peopleList created before model was stepped
         for (Person person : initialPeopleList) {
+
+            //System.out.println(person.toString());
+
             // get person ID to find correct vertices in stateVector
             int pID = person.getID();
             int pIndex = pID * 3;
@@ -670,30 +517,184 @@ public class DataAssimilation {
             // Set the location and current speed of the agent from the stateVector
             tempModel.area.setObjectLocation(person, loc);
             person.setCurrentSpeed(speedAsDouble); // TODO: CAREFUL HERE, THIS COULD BE WRONG
-
-            // Add person to newPersonList
-            newPersonList.add(person);
         }
-        assert (newPersonList.size() == tempModel.getNumPeople()) : "personList contains " + newPersonList.size() + " agents, this is wrong!";
-
-        System.out.println("PERSON LIST REBUILT.");
-        return newPersonList;
     }
-*/
 
 
+    // ***************************** TAKE OBSERVATIONS *****************************
 
 
+    private static void takeObservations(Station model) {
+
+        // take numPeople in model at each step for observations
+        double numPeopleInModel = model.activeNum;
+
+        if (model == truthModel) {
+
+            truthNumPeople[(int) model.schedule.getSteps()] = numPeopleInModel; // record numPeople in model
+            double[] truthVector = getTruthVector(); // get truthVector of current model state
+
+            // Every WINDOW_SIZE steps (& 0), add truthVector to truthHistory for observations
+            if (truthModel.schedule.getSteps() % WINDOW_SIZE == 0.0) {
+                truthHistory.add(truthVector); // Add Double[] to truthHistory to be accessed later
+            }
+
+            // **** get L1 Norm **** (sum of absolute values of the vector)
+            double L1Norm = getL1Norm(truthVector);
+            truthL1[(int) tempModel.schedule.getSteps()] = L1Norm; // save L1 Norm for later
+
+            // **** get L2 Norm **** (square root of the sum of squared vector values)
+            double L2Norm = getL2Norm(truthVector);
+            truthL2[(int) tempModel.schedule.getSteps()] = L2Norm;
+        }
+        else if (model == tempModel) {
+
+            tempNumPeople[(int) model.schedule.getSteps()] = numPeopleInModel; // record numPeople
+
+            // update stateVector with current model state
+            List<Person> newPersonList = new ArrayList<>(model.area.getAllObjects());
+            updateStateVector(newPersonList);
+
+            // get DoubleTensor values of each vertex
+            DoubleTensor[] calculatedVec = stateVector.calculate();
+
+            // **** get L1 norm ****
+            double L1Norm = getL1Norm(calculatedVec);
+            tempL1[(int) tempModel.schedule.getSteps()] = L1Norm;
+
+            // **** get L2 norm ****
+            double L2Norm = getL2Norm(calculatedVec);
+            tempL2[(int) tempModel.schedule.getSteps()] = L2Norm;
+
+            double[] truthVector = getTruthVector(); // get truthVector of current model state
+            double error = getTotalError(truthVector, calculatedVec);
+            totalError[(int) tempModel.schedule.getSteps()] = error;
+        }
+    }
+
+    /**
+     * L1 Norm is the sum of absolute values of the vector. This is used as an observation to assess data assimilation.
+     * Each absolute value of the vector is added to a rolling total, which is then returned.
+     *
+     * @param truthVector
+     * @return
+     */
+    private static double getL1Norm(double[] truthVector) {
+        // Calculate sum of the truthVector for this iteration (L1 Norm)
+        double sumTotal = 0d;
+        for (int i = 0; i < truthVector.length; i++) {
+            sumTotal += abs(truthVector[i]);
+        }
+        return sumTotal;
+    }
+
+    private static double getL1Norm(DoubleTensor[] calculatedVec) {
+        // total counter
+        double sumTotal = 0d;
+        for (DoubleTensor aTensor : calculatedVec) {
+            sumTotal += abs(aTensor.sum()); // take sum of each DoubleTensor and add to total
+        }
+        return sumTotal;
+    }
+
+    /**
+     * L2 Norm is the square root of the sum of squared vector values. Used as an observation.
+     * Each value in the vector is squared and added to a rolling total. This square root of this total
+     * is returned.
+     *
+     * @param truthVector   The vector from the 'truth' model.
+     * @return              The square root of the sum of squared values.
+     */
+    private static double getL2Norm(double[] truthVector) {
+        double squaredTotal = 0d;
+        for (int i = 0; i < truthVector.length; i++) {
+            squaredTotal += pow(truthVector[i], 2);
+        }
+        return sqrt(squaredTotal);
+    }
+
+    private static double getL2Norm(DoubleTensor[] calculatedVec) {
+        double squaredTotal = 0d;
+        for (DoubleTensor aTensor : calculatedVec) {
+            squaredTotal += pow(aTensor.sum(), 2);
+        }
+        return sqrt(squaredTotal);
+    }
+
+    /**
+     * Get the absolute error (difference) between each vertex at each element
+     * @return
+     */
+    private static double getTotalError(double[] truthVector, DoubleTensor[] calculatedVec) {
+        Double[] calculatedVecValues = new Double[calculatedVec.length];
+
+        for (int i = 0; i < calculatedVec.length; i++) {
+            calculatedVecValues[i] = calculatedVec[i].sum();
+        }
+
+        double totalError = 0d;
+
+        for (int j = 0; j < truthVector.length; j++) {
+            totalError += abs(truthVector[j] - calculatedVecValues[j]);
+        }
+        return totalError;
+    }
 
 
+    private static void writeObservations() throws IOException {
+
+        System.out.println("\tWriting out observations...");
+
+        // init files
+        String theTime = String.valueOf(System.currentTimeMillis()); // So files have unique names
+
+        Writer numPeopleObsWriter = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(dirName + "PeopleObs_" + theTime + ".csv"), "utf-8"));
+        Writer L1ObsWriter = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(dirName + "L1Obs_" + theTime + ".csv"), "utf-8"));
+        Writer L2ObsWriter = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(dirName + "L2Obs_" + theTime + ".csv"), "utf-8"));
+        Writer errorWriter = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(dirName + "ErrorObs_" + theTime + ".csv"), "utf-8"));
+
+        // try catch for the writing
+        try {
+            numPeopleObsWriter.write("Iteration,truth,temp,\n");
+
+            for (int i = 0; i < truthNumPeople.length; i++) {
+                numPeopleObsWriter.write(String.format("%d,%f,%f,\n", i, truthNumPeople[i], tempNumPeople[i]));
+            }
+
+            L1ObsWriter.write("Iteration, truth, temp,\n");
+
+            for (int i = 0; i < truthL1.length; i++) {
+                L1ObsWriter.write(String.format("%d,%f,%f,\n", i, truthL1[i], tempL1[i]));
+            }
+
+            L2ObsWriter.write("Iteration, truth, temp,\n");
+
+            for (int i = 0; i < truthL2.length; i++) {
+                L2ObsWriter.write(String.format("%d,%f,%f,\n", i, truthL2[i], tempL2[i]));
+            }
+
+            errorWriter.write("Iteration,error,\n");
+
+            for (int i = 0; i < totalError.length; i++) {
+                errorWriter.write(String.format("%d,%f,\n", i, totalError[i]));
+            }
+        } catch (IOException ex) {
+            System.err.println("Error writing observations to file: "+ ex.getMessage());
+            ex.printStackTrace();
+        }
+        System.out.println("\tObservations written to file");
+    }
 
 
+    // ***************************** MAIN *****************************
 
 
-
-
-
-
-
-
+    public static void main(String[] args) throws IOException {
+        runDataAssimilation();
+        System.out.println("Data Assimilation finished! Excellent!");
+    }
 }

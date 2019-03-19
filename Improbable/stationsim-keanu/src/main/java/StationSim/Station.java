@@ -247,7 +247,7 @@ public class Station extends SimState {
 
 
     /** Creates inactive agents at the start of the simulation run. This is to ensure the
-     * state vector does not change length throughout the data assimilation windows in StationTransition.java
+     * state vector does not change length throughout the data assimilation windows in DataAssimilation.java
      */
     private void createInactivePeople() {
         // Create all of the people (unless another entrance has done this already
@@ -257,7 +257,7 @@ public class Station extends SimState {
         for (int i=0; i<(this.getNumPeople()); i++) {
             Double2D spawnLocation = new Double2D(0.0, 0.0);
             Exit exit = this.getExits().get(0); // Assign all inactive agents to first exit (Will change when activated)
-            Person person = new Person(personSize, spawnLocation, "Inactive Person: " + i, exit, this.ID_Counter++);
+            Person person = new Person(personSize, spawnLocation, "Inactive Person", exit, this.ID_Counter++);
             this.area.setObjectLocation(person, spawnLocation);
             this.inactivePeople.add(person);
         }

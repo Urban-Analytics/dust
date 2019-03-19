@@ -32,6 +32,7 @@ public class Entrance extends Agent {
     public int numPeople;
     //private double buffer = 0.2;
     private int entranceInterval; // How often are Person objects produced
+    protected Station station;
 
     // Exit for people agents to aim for
     public Exit exit;
@@ -42,7 +43,7 @@ public class Entrance extends Agent {
 
     public Entrance(int size, Double2D location, String name, int numPeople, double[] exitProbs, Station state) {
         super(size, location, name);
-        Station station = state;
+        this.station = state;
         this.entranceInterval = station.getEntranceInterval();
         this.personSize = station.getPersonSize();
         this.size *= personSize;
@@ -65,8 +66,6 @@ public class Entrance extends Agent {
     public void step(SimState state) {
         super.step(state);
 
-        Iterator<Person> persIter = station.inactivePeople.iterator();
-
         // First check if this is a Person generating step
         if (station.schedule.getSteps() % entranceInterval == 0) {
             // Set number of people to be generated
@@ -75,6 +74,8 @@ public class Entrance extends Agent {
                 toEnter = size;
             }
             int addedCount = 0;
+
+            Iterator<Person> persIter = station.inactivePeople.iterator();
 
             // Generate people agents to pass through entrance and set as stoppables.
             for (int i = 0; i < toEnter; i++) {
@@ -95,29 +96,27 @@ public class Entrance extends Agent {
                     }
                 }
 
-                // TODO convert person to active rather than create new one. DONE?
-                Station s = ((Station)state);
-                //Person inactive = s.inactivePeople.iterator().next();
+                // Get next inactivePerson agent from inactivePerson agents set
+                Person inactivePerson = persIter.next();
 
-                // Get next inactive agent from inactive agents set
-                Person inactive = persIter.next();
-
-                // Check agent is inactive
-                assert (!inactive.isActive()) : "New agent is not inactive, this is a problem.";
+                // Check agent is inactivePerson
+                assert (!inactivePerson.isActive()) : "New agent is not inactive, this is a problem.";
 
                 /* Make the agent active */
-                inactive.makeActive(spawnLocation, s, exit, this);
-                station.activeNum++; // increase activeNum, used for observations
+                inactivePerson.makeActive(spawnLocation, station, exit, this);
 
                 /* Check if agent will collide when spawning, if not move new active agent through entrance */
-                if (!inactive.collision(spawnLocation)) {
+                if (!inactivePerson.collision(spawnLocation)) {
                     // add the person to the model
-                    station.area.setObjectLocation(inactive, spawnLocation);
+                    station.area.setObjectLocation(inactivePerson, spawnLocation);
                     addedCount++; // save for later
                     station.addedCount++;
-                    // remove newly active agent from inactive people list
+                    station.activeNum++; // increase activeNum, used for observations
+                    // remove newly active agent from inactivePeople list
                     persIter.remove();
-                    //station.inactivePeople.remove(inactive);
+                    //station.inactivePeople.remove(inactivePerson);
+                } else {
+                    inactivePerson.makeInactive(station, "Inactive Person");
                 }
             }
             // Number of people left for further steps

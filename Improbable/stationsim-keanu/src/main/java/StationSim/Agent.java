@@ -27,21 +27,21 @@ public abstract class Agent implements Steppable {
     private static final long serialVersionUID = 1;
 
     // location
-    protected Double2D location;
+    Double2D location;
 
     protected int size;
     protected Station station;
-    protected String name;
+    String name;
 
 
-    public Agent(int size, Double2D location, String name) {
+    Agent(int size, Double2D location, String name) {
         this.size = size;
         this.location = location;
         this.name = name;
     }
 
 
-    public Double2D getLocation() {
+    Double2D getLocation() {
         return location;
     }
 

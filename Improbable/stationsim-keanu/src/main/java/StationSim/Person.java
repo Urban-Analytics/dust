@@ -42,30 +42,33 @@ public class Person extends Agent {
      * Used for creating inactive agents. These are used so that all agents can be created initially, but when
      * we actually need an agent this inactive agent will be deleted and a new one will be created one of the other
      * available constructors. Agents created using this constructor have active=false so do nothing when their step()
-     * method is called
+     * method is called.
      */
-     Person(int size, Double2D location, String name, Exit exit, int id) {
+    Person(int size, Double2D location, String name, Exit exit, int id) {
         super(size, location, name);
         this.active = false;
         this.desiredSpeed = 0;
+        radius = size / 2.0;
         this.exit = exit;
         // Give inactive agents unique ID
-        this.id = id; // This is the only constructor including IDs. ID's come from ID_Counter in Station.class
+        // this.id = id; // This is the only constructor including IDs. ID's come from ID_Counter in Station.class
     }
 
-    public void makeInactive(Station station) {
+    public void makeInactive(Station station, String name) {
         this.active = false;
-        this.name = "PreviouslyActive";
+        this.name = name;
         station.area.setObjectLocation(this, new Double2D(0d,0d));
     }
 
     public void makeActive(Double2D location, Station station, Exit exit, Entrance entrance) {
-         this.active = true;
-         this.location = location;
-         this.station = station;
-         this.exit = exit;
-         this.entrance = entrance;
-         desiredSpeed = station.random.nextDouble() + minSpeed;
+        this.active = true;
+        this.name = "Person";
+        this.location = location;
+        this.station = station;
+        this.exit = exit;
+        this.entrance = entrance;
+        desiredSpeed = station.random.nextDouble() + minSpeed;
+        station.numRandoms++;
     }
 
 
@@ -75,8 +78,8 @@ public class Person extends Agent {
         this.entrance = entrance;
         radius = size / 2.0;
         desiredSpeed = station.random.nextDouble() + minSpeed;
-        //desiredSpeed = nextExponential(1.0) + minSpeed;
-        //System.out.println(desiredSpeed + ",");
+        desiredSpeed = nextExponential(1.0) + minSpeed;
+        // System.out.println(desiredSpeed + ",");
         station.numRandoms++;
         currentSpeed = 0.0;
         //this.id = StationSim.Person.ID_Counter++; // This isn't necessary here (But might be useful later)
@@ -112,6 +115,7 @@ public class Person extends Agent {
     Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance, double desiredSpeed) {
         this(size, location, name, station, exit, entrance); // Use the other Person constructor, saves on code repetition
         this.desiredSpeed = desiredSpeed;
+        radius = size / 2.0;
     }
 
 
@@ -207,7 +211,7 @@ public class Person extends Agent {
      * @param location Test location for this object
      * @return Whether this object will intersect with any other people at the given location
      */
-    public boolean collision(Double2D location) {
+    boolean collision(Double2D location) {
         StationSim.Person p;
         Bag people = station.area.getNeighborsWithinDistance(location, radius * 5);
         if (people != null) {
@@ -228,7 +232,7 @@ public class Person extends Agent {
      * @param other Another person with this current location in the simulation
      * @return Whether the two people will intersect
      */
-    public boolean intersect(Double2D location, StationSim.Person other) {
+    private boolean intersect(Double2D location, StationSim.Person other) {
         double distX = location.getX() - other.getLocation().getX();
         double distY = location.getY() - other.getLocation().getY();
 

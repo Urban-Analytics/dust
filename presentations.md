@@ -6,6 +6,10 @@ tagline: Presentations about, or relating to, the surf project
 
 ### Presentations about, or relating to, the dust project (most recent first)
 
+ - 2019
+
+   - [Dynamic Simulation Models & Data Assimilation]({{site.baseurl}}/p/2019-03-14-Birmingham-Dynamic_City_Simulation.html). Keynote presentation for the DREAM CDT Symposium, University of Birmingham. 19-21 March 2019.
+
  - 2018
 
     - [Simulating cities with streaming data and a suite of (agent-based?) models]({{site.baseurl}}/p/2018-12-04-virtuociy.html). Presentation to the Virtuocity workshop, Leeds, 4 Dec 2018.

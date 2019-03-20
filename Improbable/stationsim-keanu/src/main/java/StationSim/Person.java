@@ -51,7 +51,7 @@ public class Person extends Agent {
         radius = size / 2.0;
         this.exit = exit;
         // Give inactive agents unique ID
-        // this.id = id; // This is the only constructor including IDs. ID's come from ID_Counter in Station.class
+        this.id = id; // This is the only constructor including IDs. ID's come from ID_Counter in Station.class
     }
 
     public void makeInactive(Station station, String name) {

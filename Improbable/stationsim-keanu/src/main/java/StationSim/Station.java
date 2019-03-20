@@ -257,13 +257,13 @@ public class Station extends SimState {
         for (int i=0; i<(this.getNumPeople()); i++) {
             Double2D spawnLocation = new Double2D(0.0, 0.0);
             Exit exit = this.getExits().get(0); // Assign all inactive agents to first exit (Will change when activated)
-            Person person = new Person(personSize, spawnLocation, "Inactive Person", exit, this.ID_Counter++);
+            int id = ID_Counter++;
+            Person person = new Person(personSize, spawnLocation, "Inactive Person: ", exit, id);
             this.area.setObjectLocation(person, spawnLocation);
             this.inactivePeople.add(person);
         }
         System.out.println("... created "+this.inactivePeople.size()+" inactive agents. " +
                 "There are "+this.getNumPeople() + " agents in the model.");
-        System.out.println("How many objects in the model: " + this.area.getAllObjects().size());
     }
 
 

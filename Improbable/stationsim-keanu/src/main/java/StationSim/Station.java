@@ -258,7 +258,7 @@ public class Station extends SimState {
             Double2D spawnLocation = new Double2D(0.0, 0.0);
             Exit exit = this.getExits().get(0); // Assign all inactive agents to first exit (Will change when activated)
             int id = ID_Counter++;
-            Person person = new Person(personSize, spawnLocation, "Inactive Person: ", exit, id);
+            Person person = new Person(personSize, spawnLocation, "Inactive Person", exit, id);
             this.area.setObjectLocation(person, spawnLocation);
             this.inactivePeople.add(person);
         }

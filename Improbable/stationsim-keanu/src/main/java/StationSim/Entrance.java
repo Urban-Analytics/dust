@@ -20,7 +20,9 @@ import sim.engine.SimState;
 import sim.util.Bag;
 import sim.util.Double2D;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * An entrance that spawns n people per time step based on the size of the Entrance.
@@ -75,6 +77,7 @@ public class Entrance extends Agent {
             }
             int addedCount = 0;
 
+            // Iterator for iterating through all inactive people
             Iterator<Person> persIter = station.inactivePeople.iterator();
 
             // Generate people agents to pass through entrance and set as stoppables.
@@ -89,7 +92,7 @@ public class Entrance extends Agent {
                 station.numRandoms++;
                 double cumulativeProb = 0.0;
                 for (int j = 0; j < exitProbs.length; j++) {
-                    if(randDouble < exitProbs[j] + cumulativeProb) {
+                    if (randDouble < exitProbs[j] + cumulativeProb) {
                         exit = station.exits.get(j);
                     } else {
                         cumulativeProb += exitProbs[j];
@@ -116,6 +119,7 @@ public class Entrance extends Agent {
                     persIter.remove();
                     //station.inactivePeople.remove(inactivePerson);
                 } else {
+                    /* If the agent does not make it into the model (because collision stopped it), then make inactive again */
                     inactivePerson.makeInactive(station, "Inactive Person");
                 }
             }

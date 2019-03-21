@@ -157,7 +157,7 @@ public class NativeModel {
 
                 GaussianVertex observedVertex = new GaussianVertex(currentHist, SIGMA_NOISE);
 
-                observedVertex.observe(truthData.get(t).getValue(0));
+                observedVertex.observe(truthData.get(t).getValue());
             }
 
             /*

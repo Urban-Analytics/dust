@@ -15,6 +15,7 @@
  */
 
 package StationSim;
+import org.jetbrains.annotations.NotNull;
 import sim.engine.SimState;
 import sim.util.Bag;
 import sim.util.Double2D;
@@ -22,7 +23,7 @@ import sim.util.Double2D;
 /**
  * An agent that moves toward a set target while interacting with other Person agents along the way.
  */
-public class Person extends Agent {
+public class Person extends Agent implements Comparable<Person> {
     private static final long serialVersionUID = 1;
 
     private Station station;
@@ -54,13 +55,14 @@ public class Person extends Agent {
         this.id = id; // This is the only constructor including IDs. ID's come from ID_Counter in Station.class
     }
 
-    public void makeInactive(Station station, String name) {
+    void makeInactive(Station station, String name) {
         this.active = false;
         this.name = name;
+        this.desiredSpeed = 0;
         station.area.setObjectLocation(this, new Double2D(0d,0d));
     }
 
-    public void makeActive(Double2D location, Station station, Exit exit, Entrance entrance) {
+    void makeActive(Double2D location, Station station, Exit exit, Entrance entrance) {
         this.active = true;
         this.name = "Person";
         this.location = location;
@@ -262,9 +264,11 @@ public class Person extends Agent {
         return Math.hypot(a.getX() - b.getX(), a.getY() - b.getY());
     }
 
-    public double nextExponential(double lambda) {
+    private double nextExponential(double lambda) {
         return  Math.log(1 - station.random.nextDouble()) / (-lambda);
     }
+
+
 
     double getCurrentSpeed() {
         return currentSpeed;
@@ -276,7 +280,7 @@ public class Person extends Agent {
 
     double getDesiredSpeed() { return desiredSpeed; }
 
-    Integer getID() { return id; }
+    int getID() { return id; }
 
     public Exit getExit() {
         return exit;
@@ -311,4 +315,8 @@ public class Person extends Agent {
         return this.id == p.id;
     }
 
+    @Override
+    public int compareTo(@NotNull Person anotherPerson) {
+        return this.getID() - anotherPerson.getID();
+    }
 }

@@ -24,6 +24,7 @@ import sim.util.Interval;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -48,7 +49,7 @@ public class Station extends SimState {
 
     // A bank of people who are inactive. Everyone is created at the beginning, but they are inactive until
     // the entrance activates them
-    Set<Person> inactivePeople = null;
+    List<Person> inactivePeople = null;
 
     // Default values for parameters
     private final int numPeople = 700;
@@ -253,7 +254,7 @@ public class Station extends SimState {
         // Create all of the people (unless another entrance has done this already
 
         System.out.print("Populating inactive set: ");
-        this.inactivePeople = new HashSet<>();
+        this.inactivePeople = new ArrayList<>();
         for (int i=0; i<(this.getNumPeople()); i++) {
             Double2D spawnLocation = new Double2D(0.0, 0.0);
             Exit exit = this.getExits().get(0); // Assign all inactive agents to first exit (Will change when activated)

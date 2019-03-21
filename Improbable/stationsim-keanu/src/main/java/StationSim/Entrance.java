@@ -20,9 +20,7 @@ import sim.engine.SimState;
 import sim.util.Bag;
 import sim.util.Double2D;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * An entrance that spawns n people per time step based on the size of the Entrance.
@@ -77,8 +75,8 @@ public class Entrance extends Agent {
             }
             int addedCount = 0;
 
-            // Iterator for iterating through all inactive people
-            Iterator<Person> persIter = station.inactivePeople.iterator();
+            // Get all remaining inactive agents
+            List<Person> inacPeople = station.inactivePeople;
 
             // Generate people agents to pass through entrance and set as stoppables.
             for (int i = 0; i < toEnter; i++) {
@@ -99,6 +97,12 @@ public class Entrance extends Agent {
                     }
                 }
 
+                // Sort inactive people by ID (lowest first) (this logic specified by compareTo() in Person.class)
+                Collections.sort(inacPeople); // Allows agents to be added in ID order (important for comparing model runs)
+
+                // Iterator for iterating through all inactive people
+                Iterator<Person> persIter = inacPeople.iterator();
+
                 // Get next inactivePerson agent from inactivePerson agents set
                 Person inactivePerson = persIter.next();
 
@@ -110,13 +114,11 @@ public class Entrance extends Agent {
 
                 /* Check if agent will collide when spawning, if not move new active agent through entrance */
                 if (!inactivePerson.collision(spawnLocation)) {
-                    // add the person to the model
-                    station.area.setObjectLocation(inactivePerson, spawnLocation);
+                    station.area.setObjectLocation(inactivePerson, spawnLocation); // add the person to the model
                     addedCount++; // save for later
                     station.addedCount++;
                     station.activeNum++; // increase activeNum, used for observations
-                    // remove newly active agent from inactivePeople list
-                    persIter.remove();
+                    persIter.remove(); // remove newly active agent from inactivePeople list
                     //station.inactivePeople.remove(inactivePerson);
                 } else {
                     /* If the agent does not make it into the model (because collision stopped it), then make inactive again */

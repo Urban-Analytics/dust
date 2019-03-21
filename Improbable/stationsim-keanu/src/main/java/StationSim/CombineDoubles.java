@@ -7,7 +7,9 @@ import io.improbable.keanu.vertices.Vertex;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabilistic<DoubleTensor[]> {
 

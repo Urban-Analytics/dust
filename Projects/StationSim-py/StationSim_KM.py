@@ -91,9 +91,13 @@ class Agent:
             self.time_start = model.time_id
             self.time_expected = np.linalg.norm(self.location - self.loc_desire) / self.speed_desire
 
-    def is_within_bounds(self, boundaries, new_location):
+    @staticmethod
+    def is_within_bounds(boundaries, new_location):
         """
         Check if new location is within the bounds of the model.
+        :param boundaries      The boundaries of the model
+        :param new_location    The proposed location for the agent
+        :return                Is new location within boundaries, boolean
         """
         within0 = all(boundaries[0] <= new_location)
         within1 = all(boundaries[1] <= new_location)
@@ -285,7 +289,7 @@ class Model:
         print('\tParameter\tValue')
         for k, v in self.params.items():
             print('\t{0}:\t{1}'.format(k, v))
-        print('\n')
+        print('')
         for i in range(self.batch_iterations):
             self.step()
             if i % 100 == 0:

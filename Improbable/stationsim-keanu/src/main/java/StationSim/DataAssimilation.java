@@ -33,7 +33,7 @@ public class DataAssimilation {
     private static Station truthModel = new Station(System.currentTimeMillis()); // Station model used to produce truth data
     private static Station tempModel = new Station(System.currentTimeMillis() + 1); // Station model used for state estimation
 
-    private static int NUM_ITER = 1000; // Total number of iterations
+    private static int NUM_ITER = 2000; // Total number of iterations
     private static int WINDOW_SIZE = 200; // Number of iterations per update window
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE; // Number of update windows
 
@@ -120,8 +120,6 @@ public class DataAssimilation {
             /*
              ************ OBSERVE SOME TRUTH DATA ************
              */
-
-            DoubleTensor[] calculatedVec = stateVector.calculate();
 
             /* NEW IDEA: Do we need to observe using box? Box runs the model and produces output but
              * doesn't necessarily mean that box has to be observed, wouldn't stateVector need to be observed?
@@ -432,6 +430,7 @@ public class DataAssimilation {
         System.out.println("Collected history from iteration: " + (windowNum * WINDOW_SIZE));
 
         // GET L1 Norm to check if BayesNet has updated
+        System.out.println("L1 Norm before observe: " + getL1Norm(stateVector.calculate()));
 
         assert (history.length == tempModel.getNumPeople() * 3) : String.format("History for iteration %d is incorrect length: %d",
                 windowNum, history.length);
@@ -439,15 +438,24 @@ public class DataAssimilation {
         // Output with a bit of noise. Lower sigma makes it more constrained
         GaussianVertex[] noisyOutput = new GaussianVertex[history.length];
         for (int i=0; i < history.length; i++) {
+            // Add a bit of noise to each value in 'truth history'
             noisyOutput[i] = new GaussianVertex(history[i], SIGMA_NOISE);
+            // Access each element of the box through the loop
+            Vertex<DoubleTensor> element = CombineDoubles.getAtElement(i, box);
+            // Observe the new noisyOutput value for element
+            element.observe(noisyOutput[i].getValue());
+            // Use the new observed element to set the value of the stateVector
+            //stateVector.vertices[i].setValue(element.getValue());
+            stateVector.vertices[i].setValue(element.getValue());
 
-            CombineDoubles.getAtElement(i, box).observe(noisyOutput[i].getValue());
+            //CombineDoubles.getAtElement(i, box).observe(noisyOutput[i].getValue());
         }
         System.out.println("Observations complete.");
 
         // Get L1 Norm again and compare to L1 Norm before obs
+        System.out.println("L1 Norm after observe: " + getL1Norm(stateVector.calculate()));
 
-        return box;
+        return stateVector;
     }
 
 
@@ -578,7 +586,8 @@ public class DataAssimilation {
 
         // get truthVector from the correct timestep
         double[] truthVector = truthHistory.get(stepNum);
-        double error = getTotalError(truthVector, calculatedVec);
+        //double error = getTotalError(truthVector, calculatedVec);
+        double error = getTotalError(truthVector, stateVector);
         totalError[stepNum] = error;
     }
 
@@ -635,20 +644,21 @@ public class DataAssimilation {
      * Get the absolute error (difference) between each vertex at each element
      * @return
      */
-    private static double getTotalError(double[] truthVector, DoubleTensor[] calculatedVec) {
+    private static double getTotalError(double[] truthVector, CombineDoubles stateVector) {
+
+        DoubleTensor[] calculatedVec = stateVector.calculate();
+
         double[] sumVecValues = new double[calculatedVec.length];
 
-        for (int i = 0; i < calculatedVec.length; i++) {
-            sumVecValues[i] = calculatedVec[i].sum();
+        for (int j = 0; j < calculatedVec.length; j++) {
+            sumVecValues[j] = calculatedVec[j].sum();
         }
 
         double totalSumError = 0d;
 
-        for (int j = 0; j < truthVector.length; j++) {
-            totalSumError += abs(truthVector[j] - sumVecValues[j]);
+        for (int k = 0; k < truthVector.length; k++) {
+            totalSumError += abs(sumVecValues[k] - truthVector[k]);
         }
-
-        //double averageError = totalSumError / totalSumError.length;
 
         return totalSumError;
     }
@@ -669,7 +679,7 @@ public class DataAssimilation {
 
         System.out.println("Error length: " + totalError.length);
 
-        System.out.println("truthHistory length: " + truthHistory);
+        System.out.println("truthHistory length: " + truthHistory.size());
 
         /* INIT FILES */
         String theTime = String.valueOf(System.currentTimeMillis()); // So files have unique names

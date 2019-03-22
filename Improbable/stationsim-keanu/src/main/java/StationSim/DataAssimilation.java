@@ -127,7 +127,7 @@ public class DataAssimilation {
              * doesn't necessarily mean that box has to be observed, wouldn't stateVector need to be observed?
               * But then what would box do? What does predict() do?*/
 
-            stateVector = keanuObserve(box, i);
+            stateVector = keanuObserve(box, i, stateVector);
 
             /*
              ************ CREATE THE BAYES NET ************
@@ -402,8 +402,8 @@ public class DataAssimilation {
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
                 new long[0],
                 stateVector,
-                //(currentState) -> step(currentState)
-                DataAssimilation::step // IntelliJ suggested replacing lambda with method reference here
+                (currentState) -> step(currentState)
+                //DataAssimilation::step // IntelliJ suggested replacing lambda with method reference here
         );
 
         System.out.println("\tPREDICTION FINISHED.");
@@ -425,37 +425,27 @@ public class DataAssimilation {
     // ***************************** OBSERVE *****************************
 
 
-    private static Vertex<DoubleTensor[]> keanuObserve(Vertex<DoubleTensor[]> box, int windowNum, CombineDoubles stateVector) {
+    private static CombineDoubles keanuObserve(Vertex<DoubleTensor[]> box, int windowNum, CombineDoubles stateVector) {
         System.out.println("\tObserving truth data. Adding noise with standard dev: " + SIGMA_NOISE);
 
-        /*// Horrible hacky chunk, really need to find better way to do this but just to check if it works
-        Set<Vertex> vertSet = box.getConnectedGraph();
-        List<DoubleVertex> dubList = new ArrayList<>();
-        for (Vertex vert : vertSet) {
-            dubList.add((DoubleVertex) vert);
-        }
-        CombineDoubles combinedBox = new CombineDoubles(dubList);*/
+        double[] history = truthHistory.get(windowNum * WINDOW_SIZE); // Get history from correct iteration
+        System.out.println("Collected history from iteration: " + (windowNum * WINDOW_SIZE));
 
-        //System.out.println("L1 Norm before: " + getL1Norm(combinedBox.calculate()));
-
-        // Get truth history to observe
-        double[] history = truthHistory.get(windowNum * WINDOW_SIZE); // Get corresponding history from list for each update window
-
-        System.out.println("Collected truth data from iteration: " + (windowNum * WINDOW_SIZE));
+        // GET L1 Norm to check if BayesNet has updated
 
         assert (history.length == tempModel.getNumPeople() * 3) : String.format("History for iteration %d is incorrect length: %d",
                 windowNum, history.length);
 
         // Output with a bit of noise. Lower sigma makes it more constrained
         GaussianVertex[] noisyOutput = new GaussianVertex[history.length];
-        for (int i = 0; i < history.length; i++) {
+        for (int i=0; i < history.length; i++) {
             noisyOutput[i] = new GaussianVertex(history[i], SIGMA_NOISE);
 
             CombineDoubles.getAtElement(i, box).observe(noisyOutput[i].getValue());
         }
+        System.out.println("Observations complete.");
 
-        System.out.println("\tObservations complete");
-        //System.out.println("L1 Norm before: " + getL1Norm(combinedBox.calculate()));
+        // Get L1 Norm again and compare to L1 Norm before obs
 
         return box;
     }

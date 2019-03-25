@@ -109,7 +109,6 @@ public class Person extends Agent implements Comparable<Person> {
         desiredSpeed = station.random.nextDouble() + minSpeed;
         station.numRandoms++;
         currentSpeed = 0.0;
-        //this.id = StationSim.Person.ID_Counter++; // Dont need this anymore? Commented out just to see if it would break
     }
 
 

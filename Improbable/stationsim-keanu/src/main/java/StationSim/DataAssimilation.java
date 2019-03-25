@@ -81,7 +81,8 @@ public class DataAssimilation {
      *      * Create the BayesNet and Probabilistic Model
      *     (* Optimise??)
      *      * Sample from the Posterior
-     *      * Get information out of the samples
+     *      * Get information on posterior distribution from samples
+     *      * Reintroduce posterior as prior for next window
      *
      */
     private static void runDataAssimilation() throws IOException {
@@ -90,7 +91,28 @@ public class DataAssimilation {
          ************ CREATE THE TRUTH DATA ************
          */
 
-        getTruthData();
+        // start truthModel
+        truthModel.start(rand);
+        System.out.println("truthModel.start() has executed successfully");
+
+        // Step truth model whilst step number is less than NUM_ITER
+        while (truthModel.schedule.getSteps() < NUM_ITER) {
+            // get truthVector for observations
+            double[] truthVector = getTruthVector();
+            // Take observations of people in model at every step (including before the first step)
+            takeTruthObservations(truthVector);
+            // Step
+            truthModel.schedule.step(truthModel);
+        }
+        System.out.println("\tHave stepped truth model for: " + truthModel.schedule.getSteps() + " steps.");
+
+        // Check correct number of truthVectors extracted
+        assert (truthHistory.size() == NUM_ITER) : "truthHistory collected at wrong number of iterations (" +
+                truthHistory.size() + "), should have been: " + NUM_ITER;
+
+        // Finish model
+        truthModel.finish();
+        System.out.println("Executed truthModel.finish()");
 
         /*
          ************ START THE MAIN LOOP ************
@@ -120,10 +142,6 @@ public class DataAssimilation {
             /*
              ************ OBSERVE SOME TRUTH DATA ************
              */
-
-            /* NEW IDEA: Do we need to observe using box? Box runs the model and produces output but
-             * doesn't necessarily mean that box has to be observed, wouldn't stateVector need to be observed?
-              * But then what would box do? What does predict() do?*/
 
             stateVector = keanuObserve(box, i, stateVector);
 
@@ -179,9 +197,9 @@ public class DataAssimilation {
             GaussianKDE class!!!
             More accurate approximation for posterior distribution
 
-            Can instantiate a GaussianKDE directly from samples of a DoubleVertex
+            Can instantiate a GaussianKDE directly from samples of a DoubleVertex (Samples<DoubleTensor>)
             HOWEVER if posterior distribution is simple (i.e. almost same as simple Gaussian) then much more simple and
-            efficient to produce another Gaussian from mu and sigma (these can be calculated from a separate BayesNet?)
+            efficient to produce another Gaussian from mu and sigma (these can be calculated from a separate BayesNet??? What does this mean?)
 
 
             Label samples in updateStateVector() and reference labels when sampling
@@ -194,7 +212,7 @@ public class DataAssimilation {
             Try to swap prior for black box model instead of creating at each iteration (efficiency improvement)
              */
 
-            List<KDEVertex> KDE_List = new ArrayList<>();
+            //List<KDEVertex> KDE_List = new ArrayList<>();
 
             // Get samples from each individual vertex
             for (int j=0; j < stateVector.getLength(); j++) {
@@ -204,15 +222,10 @@ public class DataAssimilation {
                 Samples<DoubleTensor> samples = sampler.get(vert);
 
                 //DoubleVertex x = GaussianKDE.approximate(samples);
-
                 KDEVertex x = GaussianKDE.approximate(samples);
 
-                KDE_List.add(x);
-            }
-
-            for (int k=0; k < stateVector.getLength(); k++) {
-                // Think .setAndCascade() is important here? Used in Lorenz example to update priors
-                stateVector.vertices[k].setAndCascade(KDE_List.get(k).getValue());
+                //stateVector.vertices[j].setValue(x.getValue());
+                stateVector.vertices[j].setAndCascade(x.getValue());
             }
 
             updatePeople(stateVector);
@@ -226,48 +239,10 @@ public class DataAssimilation {
 
     // ***************************** TRUTH DATA *****************************
 
-    /**
-     * This is the main function for running the pseudo-truth model and collecting truth data to observe.
-     *
-     * What this function does:
-     *  - Calls start to set up the truth model
-     *  - Runs the truth model for NUM_ITER steps
-     *      - Builds a truth vector from the model at every iteration
-     *      - Adds the total of this vector to a double array to write to file later
-     *      - Every 200 iterations (beginning at 0), saves the full truth vector to a list to observe in keanuObserve()
-     *  - Finally, calls truthModel.finish() to stop the model
-     *
-     */
-    private static void getTruthData() {
-
-        // start truthModel
-        truthModel.start(rand);
-        System.out.println("truthModel.start() has executed successfully");
-
-        // Step truth model whilst step number is less than NUM_ITER
-        while (truthModel.schedule.getSteps() < NUM_ITER) {
-            // get truthVector for observations
-            double[] truthVector = getTruthVector();
-            // Take observations of people in model at every step (including before the first step)
-            takeTruthObservations(truthVector);
-            // Step
-            truthModel.schedule.step(truthModel);
-        }
-        System.out.println("\tHave stepped truth model for: " + truthModel.schedule.getSteps() + " steps.");
-
-        // Check correct number of truthVectors extracted
-        assert (truthHistory.size() == NUM_ITER) : "truthHistory collected at wrong number of iterations (" +
-                truthHistory.size() + "), should have been: " + NUM_ITER;
-
-        // Finish model
-        truthModel.finish();
-        System.out.println("Executed truthModel.finish()");
-    }
-
 
     /**
      * Function to produce the truthVector. truthVector index is based on person ID, so positions in the truthVector
-     *  remain fixed throughout the model.
+     *  remain fixed throughout the model. This is important when the truth vector is observed by tempModel
      */
     private static double[] getTruthVector() {
         //System.out.println("\tBuilding Truth Vector...");
@@ -294,7 +269,7 @@ public class DataAssimilation {
             truthVector[index] = person.getLocation().x;
             truthVector[index + 1] = person.getLocation().y;
             // TODO: Try this with desired speed to see the difference (When finished and running experiments)
-            truthVector[index + 2] = person.getCurrentSpeed();
+            truthVector[index + 2] = person.getDesiredSpeed();
         }
         // NEED ASSERTION HERE?
 
@@ -308,9 +283,15 @@ public class DataAssimilation {
 
 
     /**
-     * Method to use when first creating the state vector for data assimilation model
+     * Method to use when first creating the state vector for data assimilation model. It creates a stateVector of
+     * the x position, y position and desired speed for each agent (so length of stateVector is 3 times the number of
+     * agents in the model). The method then creates VertexLabels for each vertex, based on an agents ID
+     * (i.e. for agent 15 vertex 2, the label would be: "Person 151" - Person + ID + vertNum(0-2)).
+     * Each label is added to the corresponding vertex, and when all vertices are produced and held in a collection,
+     * a CombineDoubles object is created from this collection and returned as the original stateVector
      *
-     * @param model The Station instance for which to create the state vector
+     * @param model     The Station instance for which to create the state vector
+     * @return
      */
     private static CombineDoubles createStateVector(Station model) {
         // TODO: With agent locations now being updated (not created and destroyed), can we do this without speed? With only location vars? (i.e. do Keanu's algo's need speed?)
@@ -322,8 +303,6 @@ public class DataAssimilation {
         Bag people = model.area.getAllObjects();
         List<Person> tempPersonList = new ArrayList<>(people);
 
-        // loop through numPeople
-        //for (int pNum=0; pNum < model.getNumPeople(); pNum++) {
         for (Person person : tempPersonList) {
             // second int variable to access each element of triplet vertices (3 vertices per agent)
             //int index = pNum * 3;
@@ -366,7 +345,7 @@ public class DataAssimilation {
 
 
     /**
-     * THIS NEEDS TO BE REWRITTEN MORE CLEANLY : (DONE?)
+     * This is a key method, one of two where the
      *
      * @param initialState
      * @return
@@ -382,10 +361,11 @@ public class DataAssimilation {
 
         // Run the model to make the prediction
         for (int i = 0; i < WINDOW_SIZE; i++) {
+            // update the stateVector
             initialState = updateStateVector(initialState);
             // take observations of tempModel (num active people at each step)
             takeTempObservations(initialState);
-            // Step all the people window_size times
+            // Step all the people
             tempModel.schedule.step(tempModel);
         }
 
@@ -400,8 +380,8 @@ public class DataAssimilation {
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
                 new long[0],
                 stateVector,
-                (currentState) -> step(currentState)
-                //DataAssimilation::step // IntelliJ suggested replacing lambda with method reference here
+                //(currentState) -> step(currentState)
+                DataAssimilation::step // IntelliJ suggested replacing lambda with method reference here
         );
 
         System.out.println("\tPREDICTION FINISHED.");
@@ -426,8 +406,12 @@ public class DataAssimilation {
     private static CombineDoubles keanuObserve(Vertex<DoubleTensor[]> box, int windowNum, CombineDoubles stateVector) {
         System.out.println("\tObserving truth data. Adding noise with standard dev: " + SIGMA_NOISE);
 
-        double[] history = truthHistory.get(windowNum * WINDOW_SIZE); // Get history from correct iteration
-        System.out.println("Collected history from iteration: " + (windowNum * WINDOW_SIZE));
+        // windowNum + 1 (ensures start at iter 200), ALL - 1 (ensures 199 and not 200 as starts at 0)
+        int historyIter = ((windowNum + 1) * WINDOW_SIZE) - 1;
+
+        // Get history from correct iteration
+        double[] history = truthHistory.get(historyIter);
+        System.out.println("Collected history from iteration: " + (historyIter));
 
         // GET L1 Norm to check if BayesNet has updated
         System.out.println("L1 Norm before observe: " + getL1Norm(stateVector.calculate()));
@@ -595,25 +579,30 @@ public class DataAssimilation {
      * L1 Norm is the sum of absolute values of the vector. This is used as an observation to assess data assimilation.
      * Each absolute value of the vector is added to a rolling total, which is then returned.
      *
-     * @param truthVector
+     * @param vector
      * @return
      */
-    private static double getL1Norm(double[] truthVector) {
-        // Calculate sum of the truthVector for this iteration (L1 Norm)
+    private static double getL1Norm(double[] vector) {
+        // Calculate sum of the vector for this iteration (L1 Norm)
         double sumTotal = 0d;
-        for (int i = 0; i < truthVector.length; i++) {
-            sumTotal += abs(truthVector[i]);
+        for (int i = 0; i < vector.length; i++) {
+            sumTotal += abs(vector[i]);
         }
         return sumTotal;
     }
 
+    /**
+     * Overloaded from method above to allow DoubleTensor[] vector.
+     *
+     * @param calculatedVec
+     * @return
+     */
     private static double getL1Norm(DoubleTensor[] calculatedVec) {
-        // total counter
-        double sumTotal = 0d;
-        for (DoubleTensor aTensor : calculatedVec) {
-            sumTotal += abs(aTensor.sum()); // take sum of each DoubleTensor and add to total
+        double[] vector = new double[calculatedVec.length];
+        for (int i = 0; i < calculatedVec.length; i++) {
+            vector[i] = calculatedVec[i].scalar();
         }
-        return sumTotal;
+        return getL1Norm(vector);
     }
 
     /**
@@ -632,12 +621,18 @@ public class DataAssimilation {
         return sqrt(squaredTotal);
     }
 
+    /**
+     * Overloaded from method above to allow DoubleTensor[] vector.
+     *
+     * @param calculatedVec
+     * @return
+     */
     private static double getL2Norm(DoubleTensor[] calculatedVec) {
-        double squaredTotal = 0d;
-        for (DoubleTensor aTensor : calculatedVec) {
-            squaredTotal += pow(aTensor.sum(), 2);
+        double[] vector = new double[calculatedVec.length];
+        for (int i = 0; i < calculatedVec.length; i++) {
+            vector[i] = calculatedVec[i].scalar();
         }
-        return sqrt(squaredTotal);
+        return getL2Norm(vector);
     }
 
     /**

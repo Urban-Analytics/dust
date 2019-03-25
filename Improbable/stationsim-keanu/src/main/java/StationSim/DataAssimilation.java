@@ -6,6 +6,7 @@ import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
 import io.improbable.keanu.algorithms.Samples;
 import io.improbable.keanu.algorithms.variational.GaussianKDE;
+import io.improbable.keanu.algorithms.variational.optimizer.Optimizer;
 import io.improbable.keanu.network.BayesianNetwork;
 import io.improbable.keanu.network.KeanuProbabilisticModel;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
@@ -21,7 +22,6 @@ import sim.util.Double2D;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.pow;
@@ -41,7 +41,9 @@ public class DataAssimilation {
     private static int DROP_SAMPLES = 1; // Burn-in period
     private static int DOWN_SAMPLE = 5; // Only keep every x sample
 
-    private static double SIGMA_NOISE = 2.0; //
+    private static double SIGMA_NOISE = 1.0;
+
+    private static int numVectorsPP = 2; // Number of vectors per person (x_pos, y_pos, speed)
 
     // Initialise random var
     // random generator for start() method
@@ -127,7 +129,7 @@ public class DataAssimilation {
         CombineDoubles stateVector = createStateVector(tempModel);
 
         // Start data assimilation window
-        for (int i = 0; i < NUM_WINDOWS; i++) {
+        for (int i = 1; i < NUM_WINDOWS + 1; i++) {
 
             System.out.println("Entered Data Assimilation window " + i);
 
@@ -159,12 +161,14 @@ public class DataAssimilation {
              ************ OPTIMISE ************
              */
 
-            /*
-            if (i > 0) {
+
+            /*if (i > 0) {
                 Optimizer optimizer = Keanu.Optimizer.of(net);
                 optimizer.maxAPosteriori();
-            }
-            */
+            }*/
+            Optimizer optimizer = Keanu.Optimizer.of(net);
+            optimizer.maxAPosteriori();
+
 
             /*
              ************ SAMPLE FROM THE POSTERIOR************
@@ -257,19 +261,19 @@ public class DataAssimilation {
                 truthModel.getNumPeople();
 
         // Create new double[] to hold truthVector (Each person has 3 vertices (or doubles in this case))
-        double[] truthVector = new double[truthModel.getNumPeople() * 3];
+        double[] truthVector = new double[truthModel.getNumPeople() * numVectorsPP];
 
         for (Person person : truthPersonList) {
 
             // Get persons ID to create an index for truth vector
             int pID = person.getID();
-            int index = pID * 3;
+            int index = pID * numVectorsPP;
 
             // Each person relates to 3 variables in truthVector
             truthVector[index] = person.getLocation().x;
             truthVector[index + 1] = person.getLocation().y;
             // TODO: Try this with desired speed to see the difference (When finished and running experiments)
-            truthVector[index + 2] = person.getDesiredSpeed();
+            //truthVector[index + 2] = person.getDesiredSpeed();
         }
         // NEED ASSERTION HERE?
 
@@ -314,25 +318,25 @@ public class DataAssimilation {
             // Labels are named based on person ID, i.e. "Person 0(pID) 0(vertNumber), Person 01, Person 02, Person 10" etc.
             VertexLabel lab0 = new VertexLabel("Person " + pID + 0);
             VertexLabel lab1 = new VertexLabel("Person " + pID + 1);
-            VertexLabel lab2 = new VertexLabel("Person " + pID + 2);
+            //VertexLabel lab2 = new VertexLabel("Person " + pID + 2);
 
             // Add labels to list for reference
             tempVertexList.add(lab0);
             tempVertexList.add(lab1);
-            tempVertexList.add(lab2);
+            //tempVertexList.add(lab2);
 
             // Now build the initial state vector
             // Init new GaussianVertices as DoubleVertex is abstract
             // mean = 0.0, sigma = 0.0
             DoubleVertex xLoc = new GaussianVertex(0.0, 0.0);
             DoubleVertex yLoc = new GaussianVertex(0.0, 0.0);
-            DoubleVertex desSpeed = new GaussianVertex(0.0, 0.0);
+            //DoubleVertex desSpeed = new GaussianVertex(0.0, 0.0);
 
             // set unique labels for vertices
-            xLoc.setLabel(lab0); yLoc.setLabel(lab1); desSpeed.setLabel(lab2);
+            xLoc.setLabel(lab0); yLoc.setLabel(lab1); //desSpeed.setLabel(lab2);
 
             // Add labelled vertices to collection
-            stateVertices.add(xLoc); stateVertices.add(yLoc); stateVertices.add(desSpeed);
+            stateVertices.add(xLoc); stateVertices.add(yLoc); //stateVertices.add(desSpeed);
         }
         // Instantiate stateVector with vertices
         //stateVector = new CombineDoubles(stateVertices);
@@ -407,21 +411,25 @@ public class DataAssimilation {
         System.out.println("\tObserving truth data. Adding noise with standard dev: " + SIGMA_NOISE);
 
         // windowNum + 1 (ensures start at iter 200), ALL - 1 (ensures 199 and not 200 as starts at 0)
-        int historyIter = ((windowNum + 1) * WINDOW_SIZE) - 1;
+        int historyIter = (windowNum * WINDOW_SIZE) - 1;
 
         // Get history from correct iteration
         double[] history = truthHistory.get(historyIter);
-        System.out.println("Collected history from iteration: " + (historyIter));
+        System.out.println("\tCollected history from iteration: " + (historyIter));
 
         // GET L1 Norm to check if BayesNet has updated
-        System.out.println("L1 Norm before observe: " + getL1Norm(stateVector.calculate()));
+        System.out.println("\tL1 Norm before observe: " + getL1Norm(stateVector.calculate()));
 
-        assert (history.length == tempModel.getNumPeople() * 3) : String.format("History for iteration %d is incorrect length: %d",
+        assert (history.length == tempModel.getNumPeople() * numVectorsPP) : String.format("History for iteration %d is incorrect length: %d",
                 windowNum, history.length);
 
         // Output with a bit of noise. Lower sigma makes it more constrained
         GaussianVertex[] noisyOutput = new GaussianVertex[history.length];
         for (int i=0; i < history.length; i++) {
+            if (history[i] == 0.0) {
+                //System.out.println("\t\tCan't observe nothing");
+                continue;
+            }
             // Add a bit of noise to each value in 'truth history'
             noisyOutput[i] = new GaussianVertex(history[i], SIGMA_NOISE);
             // Access each element of the box through the loop
@@ -434,10 +442,10 @@ public class DataAssimilation {
 
             //CombineDoubles.getAtElement(i, box).observe(noisyOutput[i].getValue());
         }
-        System.out.println("Observations complete.");
+        System.out.println("\tObservations complete.");
 
         // Get L1 Norm again and compare to L1 Norm before obs
-        System.out.println("L1 Norm after observe: " + getL1Norm(stateVector.calculate()));
+        System.out.println("\tL1 Norm after observe: " + getL1Norm(stateVector.calculate()));
 
         return stateVector;
     }
@@ -452,22 +460,13 @@ public class DataAssimilation {
         List<Person> personList = new ArrayList<>(tempModel.area.getAllObjects());
 
         assert (!personList.isEmpty());
-        assert (personList.size() == tempModel.getNumPeople()) : personList.size();
+        assert (personList.size() == tempModel.getNumPeople()) : "personList size is wrong: " + personList.size();
 
         for (Person person : personList) {
 
             // get ID
             int pID = person.getID();
-            int pIndex = pID * 3;
-
-            //getAtElement -> get Vertex<DoubleTensor>  (Can only .setValue() on these with DoubleTensor
-            //.getValue() -> get DoubleTensor           (Can .setValue() with double)
-            //.setValue() -> set DoubleTensor value     (Don't know if this DoubleTensor is a reference or a new object)
-            /*
-            CombineDoubles.getAtElement(pIndex, stateVector).getValue().setValue(person.getLocation().getX());
-            CombineDoubles.getAtElement(pID + 1, stateVector).getValue().setValue(person.getLocation().getY());
-            CombineDoubles.getAtElement(pID + 2, stateVector).getValue().setValue(person.getCurrentSpeed());
-            */
+            int pIndex = pID * numVectorsPP;
 
             // Access DoubleVertex's directly from CombineDoubles class and update in place
             // This is much simpler than previous attempts and doesn't require creation of new stateVector w/ every iter
@@ -478,10 +477,10 @@ public class DataAssimilation {
             */
             stateVector.vertices[pIndex].setValue(person.getLocation().getX());
             stateVector.vertices[pIndex + 1].setValue(person.getLocation().getY());
-            stateVector.vertices[pIndex + 2].setValue(person.getCurrentSpeed());
+            //stateVector.vertices[pIndex + 2].setValue(person.getCurrentSpeed());
 
         }
-        assert (stateVector.getLength() == tempModel.getNumPeople() * 3);
+        assert (stateVector.getLength() == tempModel.getNumPeople() * numVectorsPP);
         //System.out.println("\tFINISHED UPDATING STATE VECTOR.");
 
         return stateVector;
@@ -491,7 +490,7 @@ public class DataAssimilation {
     private static void updatePeople(Vertex<DoubleTensor[]> stateVector) {
         //System.out.println("\tUPDATING PERSON LIST...");
 
-        assert (stateVector.getValue().length == tempModel.getNumPeople() * 3) : "State Vector is incorrect length: " + stateVector.getValue().length;
+        assert (stateVector.getValue().length == tempModel.getNumPeople() * numVectorsPP) : "State Vector is incorrect length: " + stateVector.getValue().length;
 
         //System.out.println("\tStateVector length: " + stateVector.getValue().length);
 
@@ -506,22 +505,22 @@ public class DataAssimilation {
 
             // get person ID to find correct vertices in stateVector
             int pID = person.getID();
-            int pIndex = pID * 3;
+            int pIndex = pID * numVectorsPP;
 
             // TODO: Is this right? Do we want the DoubleTensor from CombineDoubles or do we want the DoubleVertex?
             // Extract DoubleTensor for each vertex using CombineDoubles.getAtElement()
             Vertex<DoubleTensor> xLocation = CombineDoubles.getAtElement(pIndex, stateVector);
             Vertex<DoubleTensor> yLocation = CombineDoubles.getAtElement(pIndex + 1, stateVector);
-            Vertex<DoubleTensor> currentSpeed = CombineDoubles.getAtElement(pIndex + 2, stateVector);
+            //Vertex<DoubleTensor> currentSpeed = CombineDoubles.getAtElement(pIndex + 2, stateVector);
 
             // Build Double2D
             Double2D loc = new Double2D(xLocation.getValue().scalar(), yLocation.getValue().scalar()); // Build Double2D for location
             // Get speed as double val
-            double speedAsDouble = currentSpeed.getValue().scalar();
+            //double speedAsDouble = currentSpeed.getValue().scalar();
 
             // Set the location and current speed of the agent from the stateVector
             tempModel.area.setObjectLocation(person, loc);
-            person.setCurrentSpeed(speedAsDouble); // TODO: CAREFUL HERE, THIS COULD BE WRONG
+            //person.setCurrentSpeed(speedAsDouble); // TODO: CAREFUL HERE, THIS COULD BE WRONG
         }
     }
 
@@ -571,7 +570,7 @@ public class DataAssimilation {
         // get truthVector from the correct timestep
         double[] truthVector = truthHistory.get(stepNum);
         //double error = getTotalError(truthVector, calculatedVec);
-        double error = getTotalError(truthVector, stateVector);
+        double error = getError(truthVector, stateVector);
         totalError[stepNum] = error;
     }
 
@@ -585,8 +584,8 @@ public class DataAssimilation {
     private static double getL1Norm(double[] vector) {
         // Calculate sum of the vector for this iteration (L1 Norm)
         double sumTotal = 0d;
-        for (int i = 0; i < vector.length; i++) {
-            sumTotal += abs(vector[i]);
+        for (double aVector : vector) {
+            sumTotal += abs(aVector);
         }
         return sumTotal;
     }
@@ -594,8 +593,8 @@ public class DataAssimilation {
     /**
      * Overloaded from method above to allow DoubleTensor[] vector.
      *
-     * @param calculatedVec
-     * @return
+     * @param calculatedVec     calculated form of CombineDoubles stateVector (see CombineDoubles.calculate() for info)
+     * @return                  calls getL1Norm() with a double[] produced from calculatedVec
      */
     private static double getL1Norm(DoubleTensor[] calculatedVec) {
         double[] vector = new double[calculatedVec.length];
@@ -615,8 +614,8 @@ public class DataAssimilation {
      */
     private static double getL2Norm(double[] truthVector) {
         double squaredTotal = 0d;
-        for (int i = 0; i < truthVector.length; i++) {
-            squaredTotal += pow(truthVector[i], 2);
+        for (double aTruthVector : truthVector) {
+            squaredTotal += pow(aTruthVector, 2);
         }
         return sqrt(squaredTotal);
     }
@@ -639,7 +638,7 @@ public class DataAssimilation {
      * Get the absolute error (difference) between each vertex at each element
      * @return
      */
-    private static double getTotalError(double[] truthVector, CombineDoubles stateVector) {
+    private static double getError(double[] truthVector, CombineDoubles stateVector) {
 
         DoubleTensor[] calculatedVec = stateVector.calculate();
 
@@ -692,27 +691,27 @@ public class DataAssimilation {
 
         // try catch for the writing
         try {
-            numPeopleObsWriter.write("Iteration,truth,temp,\n");
+            numPeopleObsWriter.write("Iteration,truth,temp\n");
             for (int i = 0; i < truthNumPeople.length; i++) {
-                numPeopleObsWriter.write(String.format("%d,%f,%f,\n", i, truthNumPeople[i], tempNumPeople[i]));
+                numPeopleObsWriter.write(String.format("%d,%f,%f\n", i, truthNumPeople[i], tempNumPeople[i]));
             }
             numPeopleObsWriter.close();
 
-            L1ObsWriter.write("Iteration, truth, temp,\n");
+            L1ObsWriter.write("Iteration, truth, temp\n");
             for (int j = 0; j < truthL1.length; j++) {
-                L1ObsWriter.write(String.format("%d,%f,%f,\n", j, truthL1[j], tempL1[j]));
+                L1ObsWriter.write(String.format("%d,%f,%f\n", j, truthL1[j], tempL1[j]));
             }
             L1ObsWriter.close();
 
-            L2ObsWriter.write("Iteration, truth, temp,\n");
+            L2ObsWriter.write("Iteration, truth, temp\n");
             for (int k = 0; k < truthL2.length; k++) {
-                L2ObsWriter.write(String.format("%d,%f,%f,\n", k, truthL2[k], tempL2[k]));
+                L2ObsWriter.write(String.format("%d,%f,%f\n", k, truthL2[k], tempL2[k]));
             }
             L2ObsWriter.close();
 
-            errorWriter.write("Iteration,error,\n");
+            errorWriter.write("Iteration,error\n");
             for (int l = 0; l < totalError.length; l++) {
-                errorWriter.write(String.format("%d,%f,\n", l, totalError[l]));
+                errorWriter.write(String.format("%d,%f\n", l, totalError[l]));
             }
             errorWriter.close();
 

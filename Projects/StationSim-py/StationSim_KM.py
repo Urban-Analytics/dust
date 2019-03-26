@@ -27,6 +27,19 @@ def error(text='Self created error.'):
     print()
     exit(text)
 
+def two_element_norm(arr):
+    """
+    A helpful function to calculate the norm for an array of two elements.
+    This simply takes the square root of the sum of the square of the elements.
+    This appears to be faster than np.linalg.norm.
+    No doubt the numpy implementation would be faster for large arrays.
+    Fortunately, all of our norms are of two-element arrays.
+
+    :param arr:     A numpy array (or array-like DS) with length two.
+    :return norm:   The norm of the array.
+    """
+    return np.sqrt(arr[0] * arr[0] + arr[1] * arr[1])
+
 #%% MODEL
 class Agent:
     """
@@ -90,6 +103,7 @@ class Agent:
             self.active = 1
             self.time_start = model.time_id
             self.time_expected = np.linalg.norm(self.location - self.loc_desire) / self.speed_desire
+#            self.time_expected = two_element_norm(self.location - self.loc_desire) / self.speed_desire
 
     @staticmethod
     def is_within_bounds(boundaries, new_location):
@@ -109,7 +123,7 @@ class Agent:
         agent moves the maximum distance they can given their maximum possible
         speed (self.speed_desire). If not, then they iteratively test smaller
         and smaller distances until they find one that they can travel to
-        without causing a colision with another agent.
+        without causing a collision with another agent.
         """
         for speed in self.speeds:
             # Direct
@@ -118,8 +132,8 @@ class Agent:
                 break
             elif speed == self.speeds[-1]:
                 # Wiggle
-                # Why 1+1?
-                new_location = self.location + np.random.randint(-1, 1+1, 2)
+                # randint is upper-bound exclusive, so 2 instead of 1
+                new_location = self.location + np.random.randint(-1, 2, 2)
         # Rebound
         if not self.is_within_bounds(model.boundaries, new_location):
             new_location = np.clip(new_location, model.boundaries[0], model.boundaries[1])
@@ -170,6 +184,8 @@ class Agent:
         :param speed: distance that can be covered in an iteration
         :return: The new location
         """
+        diff = loc1 - loc2
+#        distance = two_element_norm(diff)
         distance = np.linalg.norm(loc1 - loc2)
         loc = loc2 + speed * (loc1 - loc2) / distance
         return loc
@@ -180,6 +196,7 @@ class Agent:
         remove them. Otherwise do nothing.
         """
         if np.linalg.norm(self.location - self.loc_desire) < model.exit_space:
+#        if two_element_norm(self.location - self.loc_desire) < model.exit_space:
             self.active = 2
             model.pop_active -= 1
             model.pop_finished += 1
@@ -302,7 +319,7 @@ class Model:
         print("Finished at iteration", i)
         if self.do_save:
             self.save_stats()
-            self.save_plot()
+            #self.save_plot()
 
     def ani(self):
         plt.figure(1)

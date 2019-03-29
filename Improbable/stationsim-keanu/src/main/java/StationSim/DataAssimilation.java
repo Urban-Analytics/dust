@@ -395,6 +395,11 @@ public class DataAssimilation {
 
     private static DoubleTensor[] step(DoubleTensor[] initialState) {
 
+        // TODO: Take observations from this point? Whats happening to the state here?
+
+        // Would this give us the box output for every iteration?
+        // OpLambda calls DataAssimilation::step
+
         DoubleTensor[] steppedState = new DoubleTensor[initialState.length];
 
         for (int i=0; i < WINDOW_SIZE; i++) {

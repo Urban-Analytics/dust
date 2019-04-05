@@ -32,9 +32,6 @@ public class NativeModel {
     private static final int DOWN_SAMPLE = 5; // Only keep every x sample
 
     // Initialise random number generator used throughout
-    //public static final int NUM_RANDOM_DOUBLES = 10000;
-    //private static final VertexBackedRandomGenerator RAND_GENERATOR =
-    //        new VertexBackedRandomGenerator(NUM_RANDOM_DOUBLES, 0, 0);
     private static final KeanuRandom RAND_GENERATOR = new KeanuRandom();
 
     /* Admin parameters */
@@ -55,7 +52,7 @@ public class NativeModel {
                 "\tWindow size: " + WINDOW_SIZE +"\n"+
                 "\tNumber of windows: " + NUM_WINDOWS);
 
-        // Initialise stuff
+        // Initialise threshold for model run
         Double truthThreshold = threshold.sample(KeanuRandom.getDefaultRandom()).getValue(0);
 
         /*
@@ -64,14 +61,21 @@ public class NativeModel {
 
         System.out.println("Making truth data");
 
-        // Generate truth data
+
+
+        // Create list to hold truth data for each iteration
         List<DoubleVertex> truthData = new ArrayList<>();
-        DoubleVertex currentTruthState = new GaussianVertex(0, 1.0);
+
+        // Create initial state Vertex as Gaussian distribution with mu=0 and sigma=1
+        DoubleVertex truthState = new GaussianVertex(0, 1.0);
+
+        // Generate truth data
         for (int i=0; i < NUM_ITER; i++) {
-            currentTruthState =
-                    RAND_GENERATOR.nextGaussian() > truthThreshold ? currentTruthState.plus(1) : currentTruthState.minus(1);
+            truthState =
+                    RAND_GENERATOR.nextGaussian() > truthThreshold ? truthState.plus(1) : truthState.minus(1);
+
             // add state to history
-            truthData.add(currentTruthState);
+            truthData.add(truthState);
         }
 
         System.out.println("SimpleModel configured with truth threshold: "+ truthThreshold);
@@ -90,8 +94,6 @@ public class NativeModel {
          */
         int iter = 0; // Record the total number of iterations we have been through
         double currentStateEstimate = 0.0; // Save our estimate of the state at the end of the window. Initially 0
-        double currentThresholdEstimate = -1.0; //  Interesting to see what the threshold estimate is (not used in assimilation)
-        //double priorMu = 0.0;
         DoubleVertex priorMu = new GaussianVertex(0.0, SIGMA_NOISE);
         List<DoubleVertex> totalStateHistory = new ArrayList<>(); // Store history from each iteration
         List<DoubleTensor> stateSamplesHistory = new ArrayList<>(); // Store state samples
@@ -104,7 +106,6 @@ public class NativeModel {
                     iter,
                     currentStateEstimate,
                     truthData.get(iter).getValue(0)));
-            System.out.println(String.format("\tCurrent threshold estimate (for info): %.2f", currentThresholdEstimate));
 
             //Increment the counter with how many iterations the model has been run for.
             // In first window increment by -1 otherwise we run off end of truth array on last iteration
@@ -118,6 +119,11 @@ public class NativeModel {
             DoubleVertex state = new GaussianVertex(priorMu, SIGMA_NOISE);
 
             List<DoubleVertex> history = new ArrayList<>();
+
+//            // Don't know if this should be here or above STEP?
+//            if (window == 0) {
+//                state.setAndCascade(priorMu.getValue(0));
+//            }
 
             /*
              ************ STEP ************
@@ -135,15 +141,11 @@ public class NativeModel {
             //totalStateHistory.add(history);
             totalStateHistory.addAll(history);
 
-            // Don't know if this should be here or above STEP?
-            if (window == 0) {
-                state.setAndCascade(priorMu.getValue(0));
-            }
-
-
             /*
-             ************ OBSERVE SOME TRUTH DATA ************
+             ************ OBSERVE TRUTH DATA ************
              */
+
+            System.out.println("State value before obs: " + state.getValue(0));
 
             // Loop through and apply some observations
             for (int i=0; i < WINDOW_SIZE; i++) {
@@ -151,14 +153,30 @@ public class NativeModel {
                 // This is model iteration number:
                 int t = window==0 ?
                         window * (WINDOW_SIZE - 1) + i : // on first iteration reduce the window size by 1
-                        window * (WINDOW_SIZE ) + i;
+                        window * (WINDOW_SIZE) + i;
 
                 DoubleVertex currentHist = history.get(i);
 
                 GaussianVertex observedVertex = new GaussianVertex(currentHist, SIGMA_NOISE);
 
                 observedVertex.observe(truthData.get(t).getValue());
+
+                state.setValue(observedVertex.getValue());
             }
+
+            System.out.println("State value after obs: " + state.getValue(0));
+
+            /*
+
+            // This is model iteration number:
+            int t = window==0 ?
+                    window * (WINDOW_SIZE - 1) : // on first iteration reduce the window size by 1
+                    window * (WINDOW_SIZE);
+
+            GaussianVertex noisyObservation = new GaussianVertex(truthData.get(t), SIGMA_NOISE);
+
+            state.observe(noisyObservation.getValue());
+            */
 
             /*
              ************ CREATE THE BAYES NET ************
@@ -175,7 +193,7 @@ public class NativeModel {
              ************ OPTIMISE ************
              */
 
-
+            /*
             System.out.println("\t\tOptimising with Max A Posteriori");
             System.out.println("\t\tPrevious state value: " + state.getValue(0));
 
@@ -184,7 +202,7 @@ public class NativeModel {
             netOptimiser.maxAPosteriori();
 
             System.out.println("\t\tNew state value: " + state.getValue(0));
-
+            */
 
             /*
              ************ SAMPLE FROM THE POSTERIOR ************
@@ -260,6 +278,7 @@ public class NativeModel {
             System.out.println("\tstateSamplesMean: " + stateSamplesMean);
             System.out.println("\tcurrentStateEstimate == " + currentStateEstimate);
             System.out.println("\tCurrent truth state: " + truthData.get(iter).getValue(0));
+            System.out.println("\tTruth threshold is: "+ truthThreshold);
 
         } // Update window
 
@@ -317,19 +336,6 @@ public class NativeModel {
 
         } catch (IOException ex) {
             System.err.println("Error writing states to file: " + ex.getMessage());
-            ex.printStackTrace();
-        }
-    }
-
-
-    private static void writeBayesNetToFile(BayesianNetwork net) {
-        try {
-            Writer graphWriter = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream(dirName + "Graph_" + System.currentTimeMillis() + ".dot"), "utf-8"));
-            //graphWriter.write(GraphvizKt.toGraphvizString(net, new HashMap<>()));
-            graphWriter.close();
-        } catch (IOException ex) {
-            System.err.println("Error writing graph to file: " + ex.getMessage());
             ex.printStackTrace();
         }
     }

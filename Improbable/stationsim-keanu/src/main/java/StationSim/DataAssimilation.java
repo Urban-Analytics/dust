@@ -129,12 +129,24 @@ public class DataAssimilation {
         CombineDoubles stateVector = createStateVector(tempModel);
 
         // Start data assimilation window
+        /** i = 1 , check this is correct. Could be totally wrong. Don't like it should start at 0 */
         for (int i = 1; i < NUM_WINDOWS + 1; i++) {
 
             System.out.println("Entered Data Assimilation window " + i);
 
             /*
              ************ INITIALISE THE BLACK BOX MODEL ************
+             */
+
+            /**
+             * IDEA::
+             *      What if we sort the state vector by x position each iteration? Or at least each time we observe
+             *      data? This would potentially fix the problem of observing data from the wrong agent/observing
+             *      from agent in a different position when a more suitable agent to observe exists.
+             *
+             *      HOWEVER this could mean temp agents are observing a different agent each time, would this be a
+             *      problem if each time it was the truth agent in the closest position to the temp agent? Would this
+             *      artificially make the results look better?
              */
 
             Vertex<DoubleTensor[]> box = predict(stateVector);
@@ -166,8 +178,8 @@ public class DataAssimilation {
                 Optimizer optimizer = Keanu.Optimizer.of(net);
                 optimizer.maxAPosteriori();
             }*/
-            Optimizer optimizer = Keanu.Optimizer.of(net);
-            optimizer.maxAPosteriori();
+            //Optimizer optimizer = Keanu.Optimizer.of(net);
+            //optimizer.maxAPosteriori();
 
 
             /*
@@ -371,6 +383,24 @@ public class DataAssimilation {
             takeTempObservations(initialState);
             // Step all the people
             tempModel.schedule.step(tempModel);
+
+            /**
+             * Would it improve anything to change the way tempModel agents move in the model?
+             *      i.e. instead of relying on the already written step() function for people, can we create a new
+             *      AssimilationPerson class? This class would be mostly very similar to current Person.class but:
+             *      - x,y position to be replaced with DoubleVertex (or GaussianV)
+             *      - Must extend Agent.class, so when constructing AssimilationPerson could call super with new Double2D
+             *          e.g. constructor... super(size, new Double2D(x.scalar(), y.scalar()), name)
+             *      - (Could possibly remove the Comparator then from non-assimilation Person, unsure though if needed)
+             *      - Then use Keanu's algorithms where possible (as in x_position.plus(x_speed), y_pos.plus(y_speed))
+             *          this would be quite a large change to how the model works but could still keep the same functionality
+             *          - Could use Pythag to calculate the movement of the agents (or dot product? More efficient?)
+             *
+             *      Not entirely sure how this would look at the minute but it could make it easier to apply Keanu's
+             *      algorithms to this data. Also could make the BayesNet more accurate? Would be able to build a BayesNet
+             *      over the previous 200 iterations rather than just the assimilation iteration? I don't fully understand how
+             *      Keanu's BayesNet works so not sure if that's a stupid thing to say.
+             */
         }
 
         // Check that correct number of people in model before updating state vector
@@ -384,8 +414,8 @@ public class DataAssimilation {
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
                 new long[0],
                 stateVector,
-                //(currentState) -> step(currentState)
-                DataAssimilation::step // IntelliJ suggested replacing lambda with method reference here
+                (currentState) -> step(currentState)
+                //DataAssimilation::step // IntelliJ suggested replacing lambda with method reference here
         );
 
         System.out.println("\tPREDICTION FINISHED.");
@@ -427,6 +457,19 @@ public class DataAssimilation {
 
         assert (history.length == tempModel.getNumPeople() * numVectorsPP) : String.format("History for iteration %d is incorrect length: %d",
                 windowNum, history.length);
+
+        /**
+         * IDEA FOR CHANGE HERE::
+         *      SimpleWrapperB adds noise to the output of box, not history.
+         *
+         *      SO we could get output of box and apply noise,
+         *      then do noisyOutput.observe(truthData[i])
+         *
+         *      We currently do this the other way round and it isn't working properly.
+         *
+         *      Is the reason that SimpleModel worked better because it was observing data from the whole 200 iterations?
+         *      and not just the 200th, 400th, etc.?
+         */
 
         // Output with a bit of noise. Lower sigma makes it more constrained
         GaussianVertex[] noisyOutput = new GaussianVertex[history.length];

@@ -3,7 +3,6 @@
 A genuinely interacting agent based model.
 
 TODO:
-	time scaling  1) time_id, step_id  2) dt*new_location
 	Add gates too animation
 	repr
 
@@ -13,14 +12,13 @@ lerp5
 markersizescale
 
 '''
-# todo
-# fixme
+# Imports
 import numpy as np
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 import names
 
-# Agent object and methods
+# Agent (object and methods)
 class Agent:
 
 	def __init__(self, model, unique_id):
@@ -36,7 +34,7 @@ class Agent:
 		self.speed_desire = 0
 		while self.speed_desire <= model.speed_min:
 			self.speed_desire = np.random.normal(model.speed_desire_mean, model.speed_desire_std)
-		self.wiggle = min(model.wiggle, self.speed_desire)
+		self.wiggle = min(model.max_wiggle, self.speed_desire)
 		self.speeds = np.arange(self.speed_desire, model.speed_min, -model.speed_step)
 		self.time_activate = int(np.random.exponential(model.entrance_speed * self.speed_desire))
 		if model.do_save:
@@ -46,10 +44,7 @@ class Agent:
 		return
 
 	def __repr__(self):
-		print('sspmm Agent: {}'.format(self.unique_id))
-		print('Object ID: {}'.format(hex(id(self))))
-		return ''
-
+		return '\nObject ID: {}, sspmm Agent: {} {}'.format(hex(id(self)), hex(self.unique_id), self.name)
 
 def agent_step(agent, model):
 	if agent.status == 0:
@@ -61,10 +56,10 @@ def agent_step(agent, model):
 	return
 
 def activate(agent, model):
-	if not agent.status and model.time_id > agent.time_activate:
+	if not agent.status and model.time > agent.time_activate:
 		agent.status = 1
 		model.pop_active += 1
-		agent.time_start = model.time_id
+		agent.time_start = model.time
 	return
 
 def move(agent, model):
@@ -124,7 +119,7 @@ def exit_query(agent, model):
 		model.pop_active -= 1
 		model.pop_finished += 1
 		if model.do_save:
-			time_delta = model.time_id - agent.time_start
+			time_delta = model.time - agent.time_start
 			model.time_taken.append(time_delta)
 			time_delta -= (np.linalg.norm(agent.location - agent.loc_desire) - model.exit_space) / agent.speed_desire
 			model.time_delay.append(time_delta)
@@ -136,7 +131,7 @@ def save(agent, model):
 	return
 
 
-# Model object and methods
+# Model (object and methods)
 class Model:
 
 	def __init__(self, params=dict()):
@@ -154,7 +149,7 @@ class Model:
 		self.speed_desire_mean = 1
 		self.speed_desire_std = 1
 		self.separation = 4
-		self.wiggle = 1
+		self.max_wiggle = 1
 		self.batch_iterations = 2_000
 		self.do_save = False
 		self.do_plot = False
@@ -167,8 +162,7 @@ class Model:
 		self.speed_step = (self.speed_desire_mean - self.speed_min) / 3  # 3 - Average number of speeds to check
 		self.boundaries = np.array([[0, 0], [self.width, self.height]])
 		# Model Variables
-		self.time_id = 0
-		self.step_id = 0
+		self.time = 0
 		self.pop_active = 0
 		self.pop_finished = 0
 		self.loc_entrances = None
@@ -182,17 +176,23 @@ class Model:
 		return
 
 	def __repr__(self):
-		print('sspmm Model {}'.format(self.unique_id))
-		[print(key, value) for key, value in self.params.items()]
-		print('Object ID: {}'.format(hex(id(self))))
-		return ''
+		text = 'sspmm Model {}'.format(self.unique_id)
+		align_max = max([len(key) for key, _ in self.params.items()])
+		align = [align_max-len(key) for key, _ in self.params.items()]
+		text += ''.join('\n  {}{}: {}'.format(' '*align[i], key, val) for i, (key, val) in enumerate(self.params.items()))
+		text += '\nObject ID: {}'.format(hex(id(self)))
+		return text
+
+	def method(self):
+		return self.unique_id
 
 def step(model):
-	if model.pop_finished < model.pop_total and model.step_id:
+	print(hex(id(model.method())))
+	exit()
+	if model.pop_finished < model.pop_total and model.time:
 		kdtree_build(model)
 		[agent_step(agent, model) for agent in model.agents]
-	model.time_id += 1
-	model.step_id += 1
+	model.time += 1
 	mask(model)
 	return
 
@@ -307,7 +307,7 @@ def save_plot(model):
 def save_stats(model):
 	print()
 	print('Stats:')
-	print('    Finish Time: ' + str(model.time_id))
+	print('    Finish Time: ' + str(model.time))
 	print('    Active / Finished / Total agents: ' + str(model.pop_active) + '/' + str(model.pop_finished) + '/' + str(model.pop_total))
 	print('    Average time taken: {:.2f}s'.format(np.mean(model.time_taken)))
 	print('    Average time delay: {:.2f}s'.format(np.mean(model.time_delay)))
@@ -317,7 +317,7 @@ def save_stats(model):
 
 def parametric_study():
 	import time
-	print('CPU Time (seconds), Time Taken (steps), Time Delay (steps), |, Interactions (per Agent), Wiggles (per Agent), |, None Default Params')
+	print('Process Time (seconds), Time Taken (steps), Time Delay (steps), |, Interactions (per Agent), Wiggles (per Agent), |, None Default Params')
 	for pop, sep in [(100, 4), (300, 3), (700, 2)]:
 		t = time.time()
 		params = {
@@ -330,4 +330,5 @@ def parametric_study():
 	return
 
 if __name__ == '__main__':
-	parametric_study()
+	batch(Model({'do_ani': True}))
+	#parametric_study()

@@ -10,8 +10,8 @@ TODO:
 from data_assimilation.ParticleFilter import ParticleFilter
 import numpy as np
 import matplotlib.pyplot as plt
-# from jupyterthemes.jtplot import style as jtstyle
-# jtstyle('gruvbox')
+from jupyterthemes.jtplot import style as jtstyle
+jtstyle('gruvboxd')
 import time
 
 

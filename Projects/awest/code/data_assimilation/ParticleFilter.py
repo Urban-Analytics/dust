@@ -27,7 +27,7 @@ from multiprocessing.dummy import Pool
 class ParticleFilter:
 
 	def __init__(self, model0, particles=10, window=1, do_copies=True, do_save=False):
-		self.step_id = 0
+		self.time = 0
 		# Params
 		self.window = window
 		self.particles = particles
@@ -35,8 +35,8 @@ class ParticleFilter:
 		self.models = [deepcopy(model0) for _ in range(self.particles)]
 		if not do_copies:
 			[model.__init__(*model.params) for model in self.models]
-			for unique_id in range(self.particles):
-				self.models[unique_id].unique_id = unique_id
+		for unique_id in range(self.particles):
+			self.models[unique_id].unique_id = unique_id
 		# Save
 		self.do_save = do_save  # save stats
 		if self.do_save:
@@ -48,7 +48,7 @@ class ParticleFilter:
 		return
 
 	def step(self, state_obs):
-		self.step_id += self.window
+		self.time += self.window
 		states = np.array([model.agents2state() for model in self.models])
 		states = self.predict(states)
 		weights = self.reweight(states, state_obs)

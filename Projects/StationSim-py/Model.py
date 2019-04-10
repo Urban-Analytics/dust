@@ -56,10 +56,13 @@ class Model:
         """
         Initialise the locations of the entrances and exits.
         """
-        self.loc_entrances = self.initialise_gates_generic(self.entrances, 0)
-        self.loc_exits = self.initialise_gates_generic(self.exits, self.width)
+        self.loc_entrances = self.initialise_gates_generic(self.height,
+                                                           self.entrances, 0)
+        self.loc_exits = self.initialise_gates_generic(self.height,
+                                                       self.exits, self.width)
 
-    def initialise_gates_generic(self, n_gates, x):
+    @staticmethod
+    def initialise_gates_generic(height, n_gates, x):
         """
         General method for initialising gates.
         Note: This method relies on a lot of class attributes, many of which are
@@ -69,20 +72,24 @@ class Model:
         gates = np.zeros((n_gates, 2))
         gates[:, 0] = x
         if n_gates == 1:
-            gates[0, 1] = self.height / 2
+            gates[0, 1] = height / 2
         else:
-            gates[:, 1] = np.linspace(self.height / 4, 3 * self.height / 4,
-                                      n_gates)
+            gates[:, 1] = np.linspace(height / 4, 3 * height / 4, n_gates)
         return gates
+
+    def is_within_bounds(self, new_location):
+        within0 = all(self.boundaries[0] <= new_location)
+        within1 = all(new_location <= self.boundaries[1])
+        return within0 and within1
 
     def kdtree_build(self):
         """
         Build kdtree for the model.
         """
-        state = self.agents2state(do_ravel=False)
+        state = self.get_state(do_ravel=False)
         self.tree = cKDTree(state)
 
-    def agents2state(self, do_ravel=True):
+    def get_state(self, do_ravel=True):
         """
         Convert list of agents in model to state vector.
         """
@@ -90,7 +97,7 @@ class Model:
         state = np.ravel(state) if do_ravel else np.array(state)
         return state
 
-    def state2agents(self, state):
+    def set_state(self, state):
         """
         Use state vector to set agent locations.
         """
@@ -216,10 +223,10 @@ class Model:
         model_params = {
             'width': 200,
             'height': 100,
-            'pop_total': 700,
+            'pop_total': 100,
             'entrances': 3,
             'entrance_space': 2,
-            'entrance_speed': 1,
+            'entrance_speed': 4,
             'exits': 2,
             'exit_space': 1,
             'speed_min': .1,
@@ -229,7 +236,7 @@ class Model:
             'wiggle': 1,
             'batch_iterations': 900,
             'do_save': True,
-            'do_plot': False,
+            'do_plot': True,
             'do_ani': False
         }
         # Run the model

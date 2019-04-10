@@ -74,7 +74,7 @@ class Agent:
         if not self.active and model.time_id > self.time_activate:
             self.active = 1
             self.time_start = model.time_id
-            norm_diff = self.two_element_norm(self.location - self.loc_desire)
+            norm_diff = self.distance(self.location, self.loc_desire)
             self.time_expected = (norm_diff - model.exit_space) / self.speed_desire
 
     @staticmethod
@@ -94,9 +94,11 @@ class Agent:
         and smaller distances until they find one that they can travel to
         without causing a colision with another agent.
         """
+        diff = self.loc_desire - self.location
+        lerp_vector = diff / self.distance(self.loc_desire, self.location)
         for speed in self.speeds:
             # Direct
-            new_location = Agent.lerp(self.loc_desire, self.location, speed)
+            new_location = self.location + speed * lerp_vector
             if not Agent.collision(model, new_location):
                 break
             elif speed == self.speeds[-1]:
@@ -115,8 +117,7 @@ class Agent:
         Detects whether a move to the new_location will cause a collision
         (either with the model boundary or another agent).
         """
-        within_bounds = all(model.boundaries[0] <= new_location) and all(new_location <= model.boundaries[1])
-        if not within_bounds:
+        if not model.is_within_bounds(new_location):
             collide = True
         elif Agent.neighbourhood(model, new_location):
             collide = True
@@ -156,8 +157,7 @@ class Agent:
         lerp is a intensively used method hence profiling and adjustments have been made
         see 'github dust/Projects/awest/code/experiments/lerp.py' for more understanding.
         """
-        diff = loc1 - loc2
-        distance = Agent.two_element_norm(diff)
+        distance = Agent.distance(loc1, loc2)
         loc = loc2 + speed * (loc1 - loc2) / distance
         return loc
 
@@ -166,7 +166,7 @@ class Agent:
         Determine whether the agent should leave the model and, if so,
         remove them. Otherwise do nothing.
         """
-        if self.two_element_norm(self.location - self.loc_desire) < model.exit_space:
+        if self.distance(self.location, self.loc_desire) < model.exit_space:
             self.active = 2
             model.pop_active -= 1
             model.pop_finished += 1
@@ -184,14 +184,16 @@ class Agent:
             self.history_loc.append(self.location)
 
     @staticmethod
-    def two_element_norm(arr):
+    def distance(loc1, loc2):
         """
-        A helpful function to calculate the norm for an array of two elements.
+        A helpful function to calculate the distance between two points.
         This simply takes the square root of the sum of the square of the elements.
-        This appears to be faster than np.linalg.norm.
+        This appears to be faster than using np.linalg.norm.
         No doubt the numpy implementation would be faster for large arrays.
         Fortunately, all of our norms are of two-element arrays.
         :param arr:     A numpy array (or array-like DS) with length two.
         :return norm:   The norm of the array.
         """
-        return (arr[0] * arr[0] + arr[1] * arr[1])**0.5
+        x = loc1[0] - loc2[0]
+        y = loc1[1] - loc2[1]
+        return (x * x + y * y) ** 0.5

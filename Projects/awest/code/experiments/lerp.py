@@ -1,3 +1,21 @@
+# Lerp experiments
+'''
+Here we went through a few linear extrapolation experiments
+trying different norms (euclidean, manhattan, adjusted manhattan)
+choosing elements seperately (diff in x, diff in y) - gave even better result
+for squaring use x*x instead of x**2
+for square rooting use (x)**.5 instead of np.sqrt(x)
+then manhattan computation is slower than the euclidean equation
+
+Lerp was a lie.  A lerp_vector could be precalcuated.
+	lerp_vector = (old_loc - new_loc) / distance
+	for speed in speeds:
+		new_loc = old_loc + speed * lerp_vector
+With this distance improvements make a minor difference.
+
+TLDR:  lerp7 is the fastest, with no accuracy compromises.
+'''
+
 import time
 import numpy as np
 
@@ -46,42 +64,80 @@ def lerp5(loc1, loc2, speed):
     loc = loc2 + speed * (loc1 - loc2) * reciprocal_distance
     return loc
 
+def lerp6(loc1, loc2, speed):
+	# Elementwise Euclidean Norm by Keiran
+	arr = loc1 - loc2
+	distance = np.sqrt(arr[0]*arr[0] + arr[1]*arr[1])
+	loc = loc2 + speed * (loc1 - loc2) / distance
+	return loc
+
+def lerp7(loc1, loc2, speed):
+	# Elementwise Euclidean Norm
+	x = loc1[0] - loc2[0]
+	y = loc1[1] - loc2[1]
+	distance =  (x*x + y*y)**.5
+	loc = loc2 + speed * (loc1 - loc2) / distance
+	return loc
+
+def lerp8(loc1, loc2, speed):
+	# Elementwise adjMan Norm
+	x = loc1[0] - loc2[0]
+	y = loc1[1] - loc2[1]
+	distance =  abs(x) + abs(y)
+	loc = loc2 + speed * (loc1 - loc2) * sqrt2 / distance
+	return loc
+
 
 # Lerps Profiling
 if 1:
-    n = int(1e6)
+    n = int(1e5)
 
-    t = time.time()
-    [lerp0(*rand()) for _ in range(n)]
-    t = time.time() - t
-    print(t/n)  # 8.050957202911376e-06
+    # t = -time.time()
+    # [lerp0(*rand()) for _ in range(n)]
+    # t += time.time()
+    # print(t/n)  # 10.671477317810058e-06
+    # t = -time.time()
+    # [lerp1(*rand()) for _ in range(n)]
+    # t += time.time()
+    # print(t/n)  # 10.013232231140136e-06
+	#
+    # t = -time.time()
+    # [lerp2(*rand()) for _ in range(n)]
+    # t += time.time()
+    # print(t/n)  # 8.277862071990967e-06
+	#
+    # t = -time.time()
+    # [lerp3(*rand()) for _ in range(n)]
+    # t += time.time()
+    # print(t/n)  # 8.4972882270813e-06
+	#
+    # t = -time.time()
+    # [lerp4(*rand()) for _ in range(n)]
+    # t += time.time()
+    # print(t/n)  # 9.404857158660888e-06
+	#
+    # t = -time.time()
+    # [lerp5(*rand()) for _ in range(n)]
+    # t += time.time()
+    # print(t/n)  # 8.168158531188965e-06
+	#
+    t = -time.time()
+    [lerp6(*rand()) for _ in range(n)]
+    t += time.time()
+    print(t/n)  # 8.19807767868042e-06
 
-    t = time.time()
-    [lerp1(*rand()) for _ in range(n)]
-    t = time.time() - t
-    print(t/n)  # 7.817470788955688e-06
-    t = time.time()
-    [lerp2(*rand()) for _ in range(n)]
-    t = time.time() - t
-    print(t/n)  # 6.1941430568695065e-06
+    t = -time.time()
+    [lerp7(*rand()) for _ in range(n)]
+    t += time.time()
+    print(t/n)  # 6.909528255462646e-06
 
-    t = time.time()
-    [lerp3(*rand()) for _ in range(n)]
-    t = time.time() - t
-    print(t/n)  # 6.3906128406524655e-06
-
-    t = time.time()
-    [lerp4(*rand()) for _ in range(n)]
-    t = time.time() - t
-    print(t/n)  # 7.330006837844849e-06
-
-    t = time.time()
-    [lerp5(*rand()) for _ in range(n)]
-    t = time.time() - t
-    print(t/n)  # 6.407449245452881e-06
+    t = -time.time()
+    [lerp8(*rand()) for _ in range(n)]
+    t += time.time()
+    print(t/n)  # 7.5494670867919925e-06
 
 # Manhattan Adjustment
-if 1:
+if 0:
     sqrt2 = np.sqrt(2)
     import matplotlib.pyplot as plt
     I = int(1e5)

@@ -75,7 +75,7 @@ class Agent:
 		# Euclidean distance between two 2D points.
 		x = loc1[0] - loc2[0]
 		y = loc1[1] - loc2[1]
-		norm =  np.sqrt(x*x + y*y)
+		norm =  (x*x + y*y)**.5
 		# The default np.linalg.norm(loc1-loc2) was not use because it took 2.45s while this method took 1.71s.
 		return norm
 

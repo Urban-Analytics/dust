@@ -1,18 +1,7 @@
 # Exercise File
-'''
-TODO:
-	sspmm.py
-	sspmm.md
-	profile.py
-	ParticleFilter.py
-	ParticleFilter.md
-'''
 from data_assimilation.ParticleFilter import ParticleFilter
-import numpy as np
-import matplotlib.pyplot as plt
-from jupyterthemes.jtplot import style as jtstyle
-jtstyle('gruvboxd')
-import time
+# from jupyterthemes.jtplot import style as jtstyle
+# jtstyle('gruvboxd')
 
 
 if 0:  # screensaver
@@ -25,10 +14,10 @@ if 0:  # screensaver
 if 1:  # sspmm
 
 	from models.sspmm import Model
-	model = Model({'pop_total': 20})
+	model = Model({'batch_iterations': 200})
 
 	if 0:  # Test Model
 		model.batch()
 	else:  # Test PF
-		pf = ParticleFilter(model, particles=10, window=1, do_copies=True, do_save=False)
-		pf.batch(model, iterations=10, do_ani=False, agents=None)
+		pf = ParticleFilter(model, particles=10, window=1, do_copies=False, do_save=False)
+		pf.batch(model, iterations=100, do_ani=True, agents=5)

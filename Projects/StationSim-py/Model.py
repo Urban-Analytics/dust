@@ -216,7 +216,7 @@ class Model:
         model_params = {
             'width': 200,
             'height': 100,
-            'pop_total': 100,
+            'pop_total': 700,
             'entrances': 3,
             'entrance_space': 2,
             'entrance_speed': 1,
@@ -227,7 +227,7 @@ class Model:
             'speed_desire_std': 1,
             'separation': 4,
             'wiggle': 1,
-            'batch_iterations': 10_000,
+            'batch_iterations': 900,
             'do_save': True,
             'do_plot': False,
             'do_ani': False

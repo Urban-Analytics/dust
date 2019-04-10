@@ -8,6 +8,8 @@ tagline: Presentations about, or relating to, the surf project
 
  - 2019
 
+   - [Dynamic Simulation Models, Data Assimilation and Uncertainty]({{site.baseurl}}/p/2019-04-10-Newcastle_Blueprint-ABM_Uncertainty.html). Presentation to the workshop '[A Blueprint for Urban Analytics](https://www.turing.ac.uk/events/blueprint-urban-analytics-research)'. Newcastle University, 11-12 April 2019.
+
    - [Dynamic Simulation Models & Data Assimilation]({{site.baseurl}}/p/2019-03-14-Birmingham-Dynamic_City_Simulation.html). Keynote presentation for the DREAM CDT Symposium, University of Birmingham. 19-21 March 2019.
 
  - 2018

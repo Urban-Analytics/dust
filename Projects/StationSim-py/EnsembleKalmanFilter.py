@@ -1,7 +1,8 @@
 """
 Script to run an implementation of the Ensemble Kalman Filter (EnKF).
 @author: ksuchak1990
-last_modified: 19/04/08
+date_created: 19/04/10
+A class to represent a genearl Ensemble Kalman Filter for use with StationSim.
 """
 # Imports
 import warnings as warns
@@ -28,7 +29,7 @@ class EnsembleKalmanFilter:
 
         # Ensure that model has correct attributes
         # Should probably make sure that step is callable too
-        if not is_good_model(model):
+        if not self.is_good_model(model):
             raise AttributeError('Model does not have required attributes')
 
         # Filter attributes - outlines the expected params
@@ -207,8 +208,8 @@ class EnsembleKalmanFilter:
         diff = state_covariance - self.data_covariance
         return C @ self.H_transpose @ np.linalg.inv(diff)
 
-    @staticmethod
-    def is_good_model(model):
+    @classmethod
+    def is_good_model(cls, model):
         """
         A utility function to ensure that we've been provided with a good model.
         This means that the model should have the following:
@@ -216,7 +217,7 @@ class EnsembleKalmanFilter:
         - state (attribute)
         - state2agent (method)
         - agent2state (method)
-        
+
         Params:
             model
 
@@ -225,8 +226,8 @@ class EnsembleKalmanFilter:
         """
         methods = ['step', 'state2agent', 'agent2state']
         attribute = 'state'
-        has_methods = [has_method(model, m) for m in methods]
-        b = True if all(has_methods) and hasattr(mode, attribute) else False
+        has_methods = [EnsembleKalmanFilter.has_method(model, m) for m in methods]
+        b = all(has_methods) and hasattr(model, attribute)
         return b
 
     @staticmethod

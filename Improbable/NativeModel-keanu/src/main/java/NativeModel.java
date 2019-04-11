@@ -193,7 +193,7 @@ public class NativeModel {
              ************ OPTIMISE ************
              */
 
-            /*
+
             System.out.println("\t\tOptimising with Max A Posteriori");
             System.out.println("\t\tPrevious state value: " + state.getValue(0));
 
@@ -202,7 +202,7 @@ public class NativeModel {
             netOptimiser.maxAPosteriori();
 
             System.out.println("\t\tNew state value: " + state.getValue(0));
-            */
+
 
             /*
              ************ SAMPLE FROM THE POSTERIOR ************

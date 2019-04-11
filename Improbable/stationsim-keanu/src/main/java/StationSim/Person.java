@@ -38,6 +38,10 @@ public class Person extends Agent implements Comparable<Person> {
     private boolean active = true; // Whether or not agents take part in the simulation. One constructor makes this false.
     private int id; // agents will have incrementally increasing IDs
 
+    public double[][] exitProbs = {{0.2, 0.8},
+                                {0.3, 0.7},
+                                {0.9, 0.1}};
+
 
     /**
      * Used for creating inactive agents. These are used so that all agents can be created initially, but when

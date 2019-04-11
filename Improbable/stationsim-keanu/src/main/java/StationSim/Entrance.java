@@ -85,6 +85,7 @@ public class Entrance extends Agent {
                 Double2D spawnLocation = new Double2D(x + 1,
                         (y + i) - ((size / 2.0) - personSize / 2.0)); // need to add a buffer
 
+
                 // Assign exit from exit probs
                 double randDouble = station.random.nextDoubleNonZero();
                 station.numRandoms++;
@@ -96,6 +97,7 @@ public class Entrance extends Agent {
                         cumulativeProb += exitProbs[j];
                     }
                 }
+
 
                 // Sort inactive people by ID (lowest first) (this logic specified by compareTo() in Person.class)
                 Collections.sort(inacPeople); // Allows agents to be added in ID order (important for comparing model runs)

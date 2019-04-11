@@ -5,6 +5,7 @@ import io.improbable.keanu.KeanuRandom;
 import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
 import io.improbable.keanu.algorithms.Samples;
+import io.improbable.keanu.algorithms.mcmc.NetworkSamplesGenerator;
 import io.improbable.keanu.algorithms.variational.GaussianKDE;
 import io.improbable.keanu.algorithms.variational.optimizer.Optimizer;
 import io.improbable.keanu.network.BayesianNetwork;
@@ -129,7 +130,9 @@ public class DataAssimilation {
         CombineDoubles stateVector = createStateVector(tempModel);
 
         // Start data assimilation window
-        /** i = 1 , check this is correct. Could be totally wrong. Don't like it should start at 0 */
+        /** i = 1 , check this is correct. Could be totally wrong. Don't like it should start at 0
+         * Changed because i is now used to find the correct truthdata iteration, leaving at 0
+         * caused model to observe data from the previous window*/
         for (int i = 1; i < NUM_WINDOWS + 1; i++) {
 
             System.out.println("Entered Data Assimilation window " + i);
@@ -165,7 +168,7 @@ public class DataAssimilation {
 
             System.out.println("\tCreating BayesNet");
             // First create BayesNet, then create Probabilistic Model from BayesNet
-            BayesianNetwork net = new BayesianNetwork(stateVector.getConnectedGraph());
+            BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
             // Create probabilistic model from BayesNet
             KeanuProbabilisticModel model = new KeanuProbabilisticModel(net);
 
@@ -178,15 +181,20 @@ public class DataAssimilation {
                 Optimizer optimizer = Keanu.Optimizer.of(net);
                 optimizer.maxAPosteriori();
             }*/
-            //Optimizer optimizer = Keanu.Optimizer.of(net);
-            //optimizer.maxAPosteriori();
 
+            // MAP optimizer allows us to calculate the most probable values of model components given certain conditions
+            // or 'observations'
+            Optimizer optimizer = Keanu.Optimizer.of(net);
+            optimizer.maxAPosteriori();
 
             /*
              ************ SAMPLE FROM THE POSTERIOR************
              */
 
             System.out.println("\tSAMPLING");
+
+            //NetworkSamplesGenerator samplesGenerator = Keanu.Sampling.MetropolisHastings.withDefaultConfig()
+              //      .generatePosteriorSamples(model,);
 
             // Use Metropolis Hastings algo for sampling
             PosteriorSamplingAlgorithm samplingAlgorithm = Keanu.Sampling.MetropolisHastings.withDefaultConfig();
@@ -378,9 +386,9 @@ public class DataAssimilation {
         // Run the model to make the prediction
         for (int i = 0; i < WINDOW_SIZE; i++) {
             // update the stateVector
-            initialState = updateStateVector(initialState);
+            //initialState = updateStateVector(initialState);
             // take observations of tempModel (num active people at each step)
-            takeTempObservations(initialState);
+            //takeTempObservations(initialState);
             // Step all the people
             tempModel.schedule.step(tempModel);
 
@@ -435,6 +443,15 @@ public class DataAssimilation {
         for (int i=0; i < WINDOW_SIZE; i++) {
             steppedState = initialState; // actually update the state here
         }
+
+        int stepNum = (int) tempModel.schedule.getSteps();
+        if (stepNum > NUM_ITER - 1) {
+            // take observations of tempModel (num active people at each step)
+            takeTempObservations(steppedState);
+        }
+        // take observations of tempModel (num active people at each step)
+        //takeTempObservations(steppedState);
+
         return steppedState;
     }
 
@@ -469,6 +486,14 @@ public class DataAssimilation {
          *
          *      Is the reason that SimpleModel worked better because it was observing data from the whole 200 iterations?
          *      and not just the 200th, 400th, etc.?
+         *
+         *
+         * IDEA #2::
+         *      Look at NativeModel observations - state observes the value of state for each iteration in the previous window
+         *      Could we do this here instead of a single observation at 200, 400 etc.?
+         *
+         *      Might be less realistic to pass it the complete information from every iteration but it would be a good test to see
+         *      if the problem is in the observations or elsewhere in the model (like the BayesNet).
          */
 
         // Output with a bit of noise. Lower sigma makes it more constrained
@@ -485,7 +510,6 @@ public class DataAssimilation {
             // Observe the new noisyOutput value for element
             element.observe(noisyOutput[i].getValue());
             // Use the new observed element to set the value of the stateVector
-            //stateVector.vertices[i].setValue(element.getValue());
             stateVector.vertices[i].setValue(element.getValue());
 
             //CombineDoubles.getAtElement(i, box).observe(noisyOutput[i].getValue());
@@ -596,16 +620,18 @@ public class DataAssimilation {
     }
 
 
-    private static void takeTempObservations(CombineDoubles stateVector) {
+    private static void takeTempObservations(DoubleTensor[] calculatedVec) {
 
         // take numPeople in model at each step for observations
         double numPeopleInModel = tempModel.activeNum;
         int stepNum = (int) tempModel.schedule.getSteps();
 
+
+
         tempNumPeople[stepNum] = numPeopleInModel; // record numPeople
 
         // get DoubleTensor values of each vertex
-        DoubleTensor[] calculatedVec = stateVector.calculate();
+        //DoubleTensor[] calculatedVec = stateVector.calculate();
 
         // **** get L1 norm ****
         double L1Norm = getL1Norm(calculatedVec);
@@ -618,7 +644,7 @@ public class DataAssimilation {
         // get truthVector from the correct timestep
         double[] truthVector = truthHistory.get(stepNum);
         //double error = getTotalError(truthVector, calculatedVec);
-        double error = getError(truthVector, stateVector);
+        double error = getError(truthVector, calculatedVec);
         totalError[stepNum] = error;
     }
 
@@ -686,9 +712,9 @@ public class DataAssimilation {
      * Get the absolute error (difference) between each vertex at each element
      * @return
      */
-    private static double getError(double[] truthVector, CombineDoubles stateVector) {
+    private static double getError(double[] truthVector, DoubleTensor[] calculatedVec) {
 
-        DoubleTensor[] calculatedVec = stateVector.calculate();
+        //DoubleTensor[] calculatedVec = stateVector.calculate();
 
         double[] sumVecValues = new double[calculatedVec.length];
 

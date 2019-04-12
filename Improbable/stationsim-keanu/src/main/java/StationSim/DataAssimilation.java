@@ -5,7 +5,6 @@ import io.improbable.keanu.KeanuRandom;
 import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.PosteriorSamplingAlgorithm;
 import io.improbable.keanu.algorithms.Samples;
-import io.improbable.keanu.algorithms.mcmc.NetworkSamplesGenerator;
 import io.improbable.keanu.algorithms.variational.GaussianKDE;
 import io.improbable.keanu.algorithms.variational.optimizer.Optimizer;
 import io.improbable.keanu.network.BayesianNetwork;
@@ -44,34 +43,31 @@ public class DataAssimilation {
 
     private static double SIGMA_NOISE = 1.0;
 
-    private static int numVectorsPP = 2; // Number of vectors per person (x_pos, y_pos, speed)
+    private static int numVerticesPP = 2; // Number of vectors per person (x_pos, y_pos, speed)
 
     // Initialise random var
     // random generator for start() method
     private static KeanuRandom rand = new KeanuRandom();
 
-    // List of agent exits to use when rebuilding from stateVector
-    //static DoubleVertex[][] stateVector;
-    //private static Exit[] agentExits;
+    private static List<double[]> truthHistory = new ArrayList<>(); // List of double arrays to store the truthVector at every iteration
+
+    private static List<VertexLabel> tempVertexList = new ArrayList<>(); // List of VertexLabels to help in selecting specific vertices from BayesNet
 
     /* Observations */
-    private static double[] tempNumPeople = new double[NUM_ITER];
-    private static double[] truthNumPeople = new double[NUM_ITER];
+    private static List<DoubleTensor[]> tempVectorList = new ArrayList<>();
 
-    private static double[] truthL1 = new double[NUM_ITER];
-    private static double[] tempL1 = new double[NUM_ITER];
+    private static int county = 0;
 
-    private static double[] truthL2 = new double[NUM_ITER];
-    private static double[] tempL2 = new double[NUM_ITER];
-
-    private static double[] totalError = new double[NUM_ITER];
-
-
-    private static List<double[]> truthHistory = new ArrayList<>();
-
-    private static List<VertexLabel> tempVertexList = new ArrayList<>();
-
-    //private static CombineDoubles stateVector;
+//    private static double[] tempNumPeople = new double[NUM_ITER];
+//    private static double[] truthNumPeople = new double[NUM_ITER];
+//
+//    private static double[] truthL1 = new double[NUM_ITER];
+//    private static double[] tempL1 = new double[NUM_ITER];
+//
+//    private static double[] truthL2 = new double[NUM_ITER];
+//    private static double[] tempL2 = new double[NUM_ITER];
+//
+//    private static double[] totalError = new double[NUM_ITER];
 
 
     /**
@@ -100,12 +96,10 @@ public class DataAssimilation {
 
         // Step truth model whilst step number is less than NUM_ITER
         while (truthModel.schedule.getSteps() < NUM_ITER) {
-            // get truthVector for observations
-            double[] truthVector = getTruthVector();
-            // Take observations of people in model at every step (including before the first step)
-            takeTruthObservations(truthVector);
-            // Step
-            truthModel.schedule.step(truthModel);
+            double[] truthVector = getTruthVector(); // get truthVector for observations
+            truthHistory.add(truthVector); // Save for later
+            //takeTruthObservations(truthVector); // Take observations of people in model at every step (including before the first step)
+            truthModel.schedule.step(truthModel); // Step
         }
         System.out.println("\tHave stepped truth model for: " + truthModel.schedule.getSteps() + " steps.");
 
@@ -257,7 +251,7 @@ public class DataAssimilation {
         }
         tempModel.finish();
 
-        writeObservations();
+        takeObservations();
     }
 
 
@@ -281,13 +275,13 @@ public class DataAssimilation {
                 truthModel.getNumPeople();
 
         // Create new double[] to hold truthVector (Each person has 3 vertices (or doubles in this case))
-        double[] truthVector = new double[truthModel.getNumPeople() * numVectorsPP];
+        double[] truthVector = new double[truthModel.getNumPeople() * numVerticesPP];
 
         for (Person person : truthPersonList) {
 
             // Get persons ID to create an index for truth vector
             int pID = person.getID();
-            int index = pID * numVectorsPP;
+            int index = pID * numVerticesPP;
 
             // Each person relates to 3 variables in truthVector
             truthVector[index] = person.getLocation().x;
@@ -444,13 +438,9 @@ public class DataAssimilation {
             steppedState = initialState; // actually update the state here
         }
 
-        int stepNum = (int) tempModel.schedule.getSteps();
-        if (stepNum > NUM_ITER - 1) {
-            // take observations of tempModel (num active people at each step)
-            takeTempObservations(steppedState);
-        }
-        // take observations of tempModel (num active people at each step)
-        //takeTempObservations(steppedState);
+        tempVectorList.add(steppedState);
+        System.out.println("Just saved a tempVector! Numero " + county);
+        county++;
 
         return steppedState;
     }
@@ -472,7 +462,7 @@ public class DataAssimilation {
         // GET L1 Norm to check if BayesNet has updated
         System.out.println("\tL1 Norm before observe: " + getL1Norm(stateVector.calculate()));
 
-        assert (history.length == tempModel.getNumPeople() * numVectorsPP) : String.format("History for iteration %d is incorrect length: %d",
+        assert (history.length == tempModel.getNumPeople() * numVerticesPP) : String.format("History for iteration %d is incorrect length: %d",
                 windowNum, history.length);
 
         /**
@@ -538,7 +528,7 @@ public class DataAssimilation {
 
             // get ID
             int pID = person.getID();
-            int pIndex = pID * numVectorsPP;
+            int pIndex = pID * numVerticesPP;
 
             // Access DoubleVertex's directly from CombineDoubles class and update in place
             // This is much simpler than previous attempts and doesn't require creation of new stateVector w/ every iter
@@ -552,7 +542,7 @@ public class DataAssimilation {
             //stateVector.vertices[pIndex + 2].setValue(person.getCurrentSpeed());
 
         }
-        assert (stateVector.getLength() == tempModel.getNumPeople() * numVectorsPP);
+        assert (stateVector.getLength() == tempModel.getNumPeople() * numVerticesPP);
         //System.out.println("\tFINISHED UPDATING STATE VECTOR.");
 
         return stateVector;
@@ -562,7 +552,7 @@ public class DataAssimilation {
     private static void updatePeople(Vertex<DoubleTensor[]> stateVector) {
         //System.out.println("\tUPDATING PERSON LIST...");
 
-        assert (stateVector.getValue().length == tempModel.getNumPeople() * numVectorsPP) : "State Vector is incorrect length: " + stateVector.getValue().length;
+        assert (stateVector.getValue().length == tempModel.getNumPeople() * numVerticesPP) : "State Vector is incorrect length: " + stateVector.getValue().length;
 
         //System.out.println("\tStateVector length: " + stateVector.getValue().length);
 
@@ -577,7 +567,7 @@ public class DataAssimilation {
 
             // get person ID to find correct vertices in stateVector
             int pID = person.getID();
-            int pIndex = pID * numVectorsPP;
+            int pIndex = pID * numVerticesPP;
 
             // TODO: Is this right? Do we want the DoubleTensor from CombineDoubles or do we want the DoubleVertex?
             // Extract DoubleTensor for each vertex using CombineDoubles.getAtElement()
@@ -599,54 +589,100 @@ public class DataAssimilation {
 
     // ***************************** TAKE OBSERVATIONS *****************************
 
+    private static void takeObservations() throws IOException {
 
-    private static void takeTruthObservations(double[] truthVector) {
-        // take numPeople in model at each step for observations
-        double numPeopleInModel = truthModel.activeNum;
-        int stepNum = (int) truthModel.schedule.getSteps();
+        assert(truthHistory.size() == tempVectorList.size()) : "truthHistory and tempVectorList are not the same size, " +
+                "truthHistory: " + truthHistory.size() + ", tempVectorList: " + tempVectorList.size();
 
-        truthNumPeople[stepNum] = numPeopleInModel; // record numPeople in model
-        //double[] truthVector = getTruthVector(); // get truthVector of current model state
+        //double[] tempNumPeople = new double[NUM_ITER];
+        //double[] truthNumPeople = new double[NUM_ITER];
 
-        truthHistory.add(truthVector); // Add Double[] to truthHistory to be accessed later
+        double[] truthL1 = new double[NUM_ITER];
+        double[] tempL1 = new double[NUM_ITER];
 
-        // **** get L1 Norm **** (sum of absolute values of the vector)
-        double L1Norm = getL1Norm(truthVector);
-        truthL1[stepNum] = L1Norm; // save L1 Norm for later
+        double[] truthL2 = new double[NUM_ITER];
+        double[] tempL2 = new double[NUM_ITER];
 
-        // **** get L2 Norm **** (square root of the sum of squared vector values)
-        double L2Norm = getL2Norm(truthVector);
-        truthL2[stepNum] = L2Norm;
+        double[] totalError = new double[NUM_ITER];
+
+        for (int i = 0; i < truthHistory.size(); i++) {
+            double[] truthVec = truthHistory.get(i);
+            DoubleTensor[] tempVec = tempVectorList.get(i);
+
+            truthL1[i] = getL1Norm(truthVec);
+            truthL2[i] = getL2Norm(truthVec);
+
+            tempL1[i] = getL1Norm(tempVec);
+            tempL2[i] = getL2Norm(tempVec);
+
+            totalError[i] = getError(truthVec, tempVec);
+        }
+
+        System.out.println("\tWriting out observations...");
+
+        //System.out.println("truthNumPeople length: " + truthNumPeople.length);
+        //System.out.println("tempNumPeople length: " + tempNumPeople.length);
+
+        System.out.println("L1Obs truth length: " + truthL1.length);
+        System.out.println("L1Obs temp length: " + tempL1.length);
+
+        System.out.println("L2Obs truth length: " + truthL2.length);
+        System.out.println("L2Obs temp length: " + tempL2.length);
+
+        System.out.println("Error length: " + totalError.length);
+
+        System.out.println("truthHistory length: " + truthHistory.size());
+
+        /* INIT FILES */
+        String theTime = String.valueOf(System.currentTimeMillis()); // So files have unique names
+        // Place to store results
+        String dirName = "simulation_outputs/";
+
+        //Writer numPeopleObsWriter = new BufferedWriter(new OutputStreamWriter(
+        //            new FileOutputStream(dirName + "PeopleObs_" + theTime + ".csv"), "utf-8"));
+        Writer L1ObsWriter = new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(dirName + "L1Obs_" + theTime + ".csv"), "utf-8"));
+        Writer L2ObsWriter = new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(dirName + "L2Obs_" + theTime + ".csv"), "utf-8"));
+        Writer errorWriter = new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(dirName + "ErrorObs_" + theTime + ".csv"), "utf-8"));
+
+
+        // try catch for the writing
+        try {
+            /*
+            numPeopleObsWriter.write("Iteration,truth,temp\n");
+            for (int i = 0; i < truthNumPeople.length; i++) {
+                numPeopleObsWriter.write(String.format("%d,%f,%f\n", i, truthNumPeople[i], tempNumPeople[i]));
+            }
+            numPeopleObsWriter.close();
+            */
+
+            L1ObsWriter.write("Iteration, truth, temp\n");
+            for (int j = 0; j < truthL1.length; j++) {
+                L1ObsWriter.write(String.format("%d,%f,%f\n", j, truthL1[j], tempL1[j]));
+            }
+            L1ObsWriter.close();
+
+            L2ObsWriter.write("Iteration, truth, temp\n");
+            for (int k = 0; k < truthL2.length; k++) {
+                L2ObsWriter.write(String.format("%d,%f,%f\n", k, truthL2[k], tempL2[k]));
+            }
+            L2ObsWriter.close();
+
+            errorWriter.write("Iteration,error\n");
+            for (int l = 0; l < totalError.length; l++) {
+                errorWriter.write(String.format("%d,%f\n", l, totalError[l]));
+            }
+            errorWriter.close();
+
+        } catch (IOException ex) {
+            System.err.println("Error writing observations to file: "+ ex.getMessage());
+            ex.printStackTrace();
+        }
+        System.out.println("\tObservations written to file");
     }
 
-
-    private static void takeTempObservations(DoubleTensor[] calculatedVec) {
-
-        // take numPeople in model at each step for observations
-        double numPeopleInModel = tempModel.activeNum;
-        int stepNum = (int) tempModel.schedule.getSteps();
-
-
-
-        tempNumPeople[stepNum] = numPeopleInModel; // record numPeople
-
-        // get DoubleTensor values of each vertex
-        //DoubleTensor[] calculatedVec = stateVector.calculate();
-
-        // **** get L1 norm ****
-        double L1Norm = getL1Norm(calculatedVec);
-        tempL1[stepNum] = L1Norm;
-
-        // **** get L2 norm ****
-        double L2Norm = getL2Norm(calculatedVec);
-        tempL2[stepNum] = L2Norm;
-
-        // get truthVector from the correct timestep
-        double[] truthVector = truthHistory.get(stepNum);
-        //double error = getTotalError(truthVector, calculatedVec);
-        double error = getError(truthVector, calculatedVec);
-        totalError[stepNum] = error;
-    }
 
     /**
      * L1 Norm is the sum of absolute values of the vector. This is used as an observation to assess data assimilation.
@@ -729,71 +765,6 @@ public class DataAssimilation {
         }
 
         return totalSumError;
-    }
-
-
-    private static void writeObservations() throws IOException {
-
-        System.out.println("\tWriting out observations...");
-
-        System.out.println("truthNumPeople length: " + truthNumPeople.length);
-        System.out.println("tempNumPeople length: " + tempNumPeople.length);
-
-        System.out.println("L1Obs truth length: " + truthL1.length);
-        System.out.println("L1Obs temp length: " + tempL1.length);
-
-        System.out.println("L2Obs truth length: " + truthL2.length);
-        System.out.println("L2Obs temp length: " + tempL2.length);
-
-        System.out.println("Error length: " + totalError.length);
-
-        System.out.println("truthHistory length: " + truthHistory.size());
-
-        /* INIT FILES */
-        String theTime = String.valueOf(System.currentTimeMillis()); // So files have unique names
-        // Place to store results
-        String dirName = "simulation_outputs/";
-
-        Writer numPeopleObsWriter = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(dirName + "PeopleObs_" + theTime + ".csv"), "utf-8"));
-        Writer L1ObsWriter = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(dirName + "L1Obs_" + theTime + ".csv"), "utf-8"));
-        Writer L2ObsWriter = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(dirName + "L2Obs_" + theTime + ".csv"), "utf-8"));
-        Writer errorWriter = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(dirName + "ErrorObs_" + theTime + ".csv"), "utf-8"));
-
-        // try catch for the writing
-        try {
-            numPeopleObsWriter.write("Iteration,truth,temp\n");
-            for (int i = 0; i < truthNumPeople.length; i++) {
-                numPeopleObsWriter.write(String.format("%d,%f,%f\n", i, truthNumPeople[i], tempNumPeople[i]));
-            }
-            numPeopleObsWriter.close();
-
-            L1ObsWriter.write("Iteration, truth, temp\n");
-            for (int j = 0; j < truthL1.length; j++) {
-                L1ObsWriter.write(String.format("%d,%f,%f\n", j, truthL1[j], tempL1[j]));
-            }
-            L1ObsWriter.close();
-
-            L2ObsWriter.write("Iteration, truth, temp\n");
-            for (int k = 0; k < truthL2.length; k++) {
-                L2ObsWriter.write(String.format("%d,%f,%f\n", k, truthL2[k], tempL2[k]));
-            }
-            L2ObsWriter.close();
-
-            errorWriter.write("Iteration,error\n");
-            for (int l = 0; l < totalError.length; l++) {
-                errorWriter.write(String.format("%d,%f\n", l, totalError[l]));
-            }
-            errorWriter.close();
-
-        } catch (IOException ex) {
-            System.err.println("Error writing observations to file: "+ ex.getMessage());
-            ex.printStackTrace();
-        }
-        System.out.println("\tObservations written to file");
     }
 
 

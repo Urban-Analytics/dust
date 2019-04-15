@@ -33,7 +33,7 @@ public class DataAssimilation {
     private static Station truthModel = new Station(System.currentTimeMillis()); // Station model used to produce truth data
     private static Station tempModel = new Station(System.currentTimeMillis() + 1); // Station model used for state estimation
 
-    private static int NUM_ITER = 2000; // Total number of iterations
+    private static int NUM_ITER = 800; // Total number of iterations
     private static int WINDOW_SIZE = 200; // Number of iterations per update window
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE; // Number of update windows
 
@@ -49,25 +49,11 @@ public class DataAssimilation {
     // random generator for start() method
     private static KeanuRandom rand = new KeanuRandom();
 
-    private static List<double[]> truthHistory = new ArrayList<>(); // List of double arrays to store the truthVector at every iteration
-
     private static List<VertexLabel> tempVertexList = new ArrayList<>(); // List of VertexLabels to help in selecting specific vertices from BayesNet
 
     /* Observations */
+    private static List<double[]> truthHistory = new ArrayList<>(); // List of double arrays to store the truthVector at every iteration
     private static List<DoubleTensor[]> tempVectorList = new ArrayList<>();
-
-    private static int county = 0;
-
-//    private static double[] tempNumPeople = new double[NUM_ITER];
-//    private static double[] truthNumPeople = new double[NUM_ITER];
-//
-//    private static double[] truthL1 = new double[NUM_ITER];
-//    private static double[] tempL1 = new double[NUM_ITER];
-//
-//    private static double[] truthL2 = new double[NUM_ITER];
-//    private static double[] tempL2 = new double[NUM_ITER];
-//
-//    private static double[] totalError = new double[NUM_ITER];
 
 
     /**
@@ -98,7 +84,6 @@ public class DataAssimilation {
         while (truthModel.schedule.getSteps() < NUM_ITER) {
             double[] truthVector = getTruthVector(); // get truthVector for observations
             truthHistory.add(truthVector); // Save for later
-            //takeTruthObservations(truthVector); // Take observations of people in model at every step (including before the first step)
             truthModel.schedule.step(truthModel); // Step
         }
         System.out.println("\tHave stepped truth model for: " + truthModel.schedule.getSteps() + " steps.");
@@ -120,13 +105,10 @@ public class DataAssimilation {
         // Start tempModel and create the initial state
         tempModel.start(rand);
         System.out.println("tempModel.start() has executed successfully");
-        // initial state vector
-        CombineDoubles stateVector = createStateVector(tempModel);
+
+        CombineDoubles stateVector = createStateVector(tempModel); // initial state vector
 
         // Start data assimilation window
-        /** i = 1 , check this is correct. Could be totally wrong. Don't like it should start at 0
-         * Changed because i is now used to find the correct truthdata iteration, leaving at 0
-         * caused model to observe data from the previous window*/
         for (int i = 1; i < NUM_WINDOWS + 1; i++) {
 
             System.out.println("Entered Data Assimilation window " + i);
@@ -138,8 +120,8 @@ public class DataAssimilation {
             /**
              * IDEA::
              *      What if we sort the state vector by x position each iteration? Or at least each time we observe
-             *      data? This would potentially fix the problem of observing data from the wrong agent/observing
-             *      from agent in a different position when a more suitable agent to observe exists.
+             *      data? This would potentially fix the problem of agents being produced in different orders in each
+             *      model.
              *
              *      HOWEVER this could mean temp agents are observing a different agent each time, would this be a
              *      problem if each time it was the truth agent in the closest position to the temp agent? Would this
@@ -162,7 +144,7 @@ public class DataAssimilation {
 
             System.out.println("\tCreating BayesNet");
             // First create BayesNet, then create Probabilistic Model from BayesNet
-            BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
+            BayesianNetwork net = new BayesianNetwork(stateVector.getConnectedGraph());
             // Create probabilistic model from BayesNet
             KeanuProbabilisticModel model = new KeanuProbabilisticModel(net);
 
@@ -260,12 +242,14 @@ public class DataAssimilation {
 
     /**
      * Function to produce the truthVector. truthVector index is based on person ID, so positions in the truthVector
-     *  remain fixed throughout the model. This is important when the truth vector is observed by tempModel
+     * remain fixed throughout the model. This is important when the truth vector data is observed by tempModel.
+     *
+     * @return  a vector of x,y coordinates of all agents in truthModel
      */
     private static double[] getTruthVector() {
         //System.out.println("\tBuilding Truth Vector...");
 
-        // Get all objects from model area (all people) and initialise a list for sorting
+        // Get all objects from model area (all people) and initialise a list
         Bag people = truthModel.area.getAllObjects();
         List<Person> truthPersonList = new ArrayList<>(people);
 
@@ -283,10 +267,9 @@ public class DataAssimilation {
             int pID = person.getID();
             int index = pID * numVerticesPP;
 
-            // Each person relates to 3 variables in truthVector
+            // Each person relates to 2 variables in truthVector (previously 3 with desiredSpeed)
             truthVector[index] = person.getLocation().x;
             truthVector[index + 1] = person.getLocation().y;
-            // TODO: Try this with desired speed to see the difference (When finished and running experiments)
             //truthVector[index + 2] = person.getDesiredSpeed();
         }
         // NEED ASSERTION HERE?
@@ -302,28 +285,25 @@ public class DataAssimilation {
 
     /**
      * Method to use when first creating the state vector for data assimilation model. It creates a stateVector of
-     * the x position, y position and desired speed for each agent (so length of stateVector is 3 times the number of
+     * the x position, y position (and previously desired speed) for each agent (so length of stateVector is 2 times the number of
      * agents in the model). The method then creates VertexLabels for each vertex, based on an agents ID
-     * (i.e. for agent 15 vertex 2, the label would be: "Person 151" - Person + ID + vertNum(0-2)).
+     * (i.e. for agent 15 vertex 2, the label would be: "Person 151" - Person + ID + vertNum(0-1)).
      * Each label is added to the corresponding vertex, and when all vertices are produced and held in a collection,
      * a CombineDoubles object is created from this collection and returned as the original stateVector
      *
      * @param model     The Station instance for which to create the state vector
-     * @return
+     * @return          New CombineDoubles object from the stateVertices
      */
     private static CombineDoubles createStateVector(Station model) {
-        // TODO: With agent locations now being updated (not created and destroyed), can we do this without speed? With only location vars? (i.e. do Keanu's algo's need speed?)
 
         // Create new collection to hold vertices for CombineDoubles
         List<DoubleVertex> stateVertices = new ArrayList<>();
 
-        // Get all objects from model area (all people) and initialise a list for sorting
+        // Get all objects from model area (all people) and initialise a list
         Bag people = model.area.getAllObjects();
         List<Person> tempPersonList = new ArrayList<>(people);
 
         for (Person person : tempPersonList) {
-            // second int variable to access each element of triplet vertices (3 vertices per agent)
-            //int index = pNum * 3;
 
             // Get person ID for labelling
             int pID = person.getID();
@@ -363,7 +343,9 @@ public class DataAssimilation {
 
 
     /**
-     * This is a key method, one of two where the
+     * This is where the temporary Model is stepped for WINDOW_SIZE iterations, collecting the stateVector for each
+     * iteration. Observations are taken before each step, and the stateVector is updated after each with the new agent
+     * positions. A UnaryOpLambda model wrapper object is used to update the
      *
      * @param initialState
      * @return
@@ -375,16 +357,18 @@ public class DataAssimilation {
         assert (tempModel.area.getAllObjects().size() > 0) : "No agents in tempModel before prediction";
 
         // Update position and speed of agents from initialState
-        updatePeople(initialState); // TODO: Is this step necessary? Do we even need to updatePeople before stepping? Any change from end state from previous window?
+        //updatePeople(initialState); // TODO: Is this step necessary? Do we even need to updatePeople before stepping? Any change from end state from previous window?
+
+        CombineDoubles stateVector = updateStateVector(initialState);
 
         // Run the model to make the prediction
         for (int i = 0; i < WINDOW_SIZE; i++) {
-            // update the stateVector
-            //initialState = updateStateVector(initialState);
             // take observations of tempModel (num active people at each step)
-            //takeTempObservations(initialState);
+            tempVectorList.add(stateVector.calculate());
             // Step all the people
             tempModel.schedule.step(tempModel);
+            // update the stateVector
+            stateVector = updateStateVector(stateVector);
 
             /**
              * Would it improve anything to change the way tempModel agents move in the model?
@@ -396,12 +380,12 @@ public class DataAssimilation {
              *      - (Could possibly remove the Comparator then from non-assimilation Person, unsure though if needed)
              *      - Then use Keanu's algorithms where possible (as in x_position.plus(x_speed), y_pos.plus(y_speed))
              *          this would be quite a large change to how the model works but could still keep the same functionality
-             *          - Could use Pythag to calculate the movement of the agents (or dot product? More efficient?)
+             *          - Could use Pythag to calculate the movement of the agents (or dot product more efficient?)
              *
              *      Not entirely sure how this would look at the minute but it could make it easier to apply Keanu's
              *      algorithms to this data. Also could make the BayesNet more accurate? Would be able to build a BayesNet
              *      over the previous 200 iterations rather than just the assimilation iteration? I don't fully understand how
-             *      Keanu's BayesNet works so not sure if that's a stupid thing to say.
+             *      Keanu's BayesNet works so not sure if that's a stupid idea.
              */
         }
 
@@ -410,14 +394,13 @@ public class DataAssimilation {
                 "Wrong number of people in the model before building state vector. Expected %d but got %d",
                 tempModel.getNumPeople(), tempModel.area.getAllObjects().size());
 
-        CombineDoubles stateVector = updateStateVector(initialState);
+        stateVector = updateStateVector(stateVector);
 
         // Return OpLambda wrapper
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
                 new long[0],
                 stateVector,
-                (currentState) -> step(currentState)
-                //DataAssimilation::step // IntelliJ suggested replacing lambda with method reference here
+                DataAssimilation::step
         );
 
         System.out.println("\tPREDICTION FINISHED.");
@@ -429,18 +412,11 @@ public class DataAssimilation {
 
         // TODO: Take observations from this point? Whats happening to the state here?
 
-        // Would this give us the box output for every iteration?
-        // OpLambda calls DataAssimilation::step
-
         DoubleTensor[] steppedState = new DoubleTensor[initialState.length];
 
         for (int i=0; i < WINDOW_SIZE; i++) {
             steppedState = initialState; // actually update the state here
         }
-
-        tempVectorList.add(steppedState);
-        System.out.println("Just saved a tempVector! Numero " + county);
-        county++;
 
         return steppedState;
     }
@@ -582,7 +558,7 @@ public class DataAssimilation {
 
             // Set the location and current speed of the agent from the stateVector
             tempModel.area.setObjectLocation(person, loc);
-            //person.setCurrentSpeed(speedAsDouble); // TODO: CAREFUL HERE, THIS COULD BE WRONG
+            //person.setCurrentSpeed(speedAsDouble);
         }
     }
 
@@ -605,7 +581,7 @@ public class DataAssimilation {
 
         double[] totalError = new double[NUM_ITER];
 
-        for (int i = 0; i < truthHistory.size(); i++) {
+        for (int i = 0; i < NUM_ITER; i++) {
             double[] truthVec = truthHistory.get(i);
             DoubleTensor[] tempVec = tempVectorList.get(i);
 

@@ -37,16 +37,38 @@ def make_observation_data(truth, noise_mean=0, noise_std=1):
         observations.append(ob)
     return observations
 
-def run_enkf(observations, model_params):
+def run_enkf(observations, model_params, filter_params):
     """
     Run Ensemble Kalman Filter on model using the generated noisy data.
     Plot rmse per agent over time.
     """
-    results = None
-    plot_results(results)
+    # Initialise filter with StationSim and params
+    filter = EnsembleKalmanFilter(Model, filter_params, model_params)
+
+    # Step filter
+#    for i in range(filter_params['max_iterations']):
+    for i in range(filter_params['max_iterations']):
+        print('step {0}'.format(i))
+        if i % filter_params['assimilation_period'] == 0:
+            print('step with update')
+            filter.step(observations[i])
+        else:
+            filter.step()
+    return filter.results
 
 def plot_results(results):
     pass
+
+def make_errors(results):
+    pass
+
+def process_results(results, truth):
+    """
+    Function to process results, comparing against truth.
+    Calculate x-error and y-error for each agent at each timestep.
+    Average over all agents.
+    Plot how average error varies over timestep. 
+    """
 
 def run_all():
     """
@@ -59,11 +81,23 @@ def run_all():
                     'speed_desire_mean': 1, 'speed_desire_std': 1, 'separation': 4,
                     'wiggle': 1, 'batch_iterations': 900, 'do_save': True,
                     'do_plot': False, 'do_ani': False}
+
     OBS_NOISE_MEAN = 0
     OBS_NOISE_STD = 1
+
+    vec_length = 2 * model_params['pop_total']
+
+    filter_params = {'max_iterations': model_params['batch_iterations'],
+                     'assimilation_period': 5,
+                     'ensemble_size': 10,
+                     'state_vector_length': vec_length,
+                     'data_vector_length': vec_length,
+                     'H': np.identity(vec_length),
+                     'R_vector': OBS_NOISE_STD * np.ones(vec_length)}
 
     truth_data = make_truth_data(model_params)
     observation_data = make_observation_data(truth_data, OBS_NOISE_MEAN,
                                              OBS_NOISE_STD)
+    results = run_enkf(observation_data, model_params, filter_params)
 
 run_all()

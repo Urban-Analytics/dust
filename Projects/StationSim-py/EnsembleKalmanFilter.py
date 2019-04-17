@@ -227,7 +227,8 @@ class EnsembleKalmanFilter:
         methods = ['step', 'set_state', 'get_state']
         attribute = 'state'
         has_methods = [EnsembleKalmanFilter.has_method(model, m) for m in methods]
-        b = all(has_methods) and hasattr(model, attribute)
+#        b = all(has_methods) and hasattr(model, attribute)
+        b = all(has_methods)
         return b
 
     @staticmethod

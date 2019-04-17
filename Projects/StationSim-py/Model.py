@@ -42,6 +42,7 @@ class Model:
         self.initialise_gates()
         self.agents = [Agent(self, unique_id) for unique_id in range(self.pop_total)]
         self.state_history = list()
+        self.state = None
 
     def step(self):
         """
@@ -51,6 +52,7 @@ class Model:
             self.kdtree_build()
             [agent.step(self) for agent in self.agents]
         self.state_history.append(self.get_state())
+        self.state = self.get_state()
         self.time_id += 1
         self.step_id += 1
 

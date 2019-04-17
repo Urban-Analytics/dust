@@ -14,7 +14,6 @@ public class CombineDoubles extends Vertex<DoubleTensor[]> implements NonProbabi
     // Removed private tag from this to access and update more easily
     DoubleVertex[] vertices;
 
-
     /**
      * @param x0
      * @param x1

@@ -16,7 +16,7 @@ import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.KDEVertex;
 import io.improbable.keanu.vertices.generic.nonprobabilistic.operators.unary.UnaryOpLambda;
-import sim.util.Bag;
+
 import sim.util.Double2D;
 
 import java.io.*;
@@ -33,7 +33,7 @@ public class DataAssimilation {
     private static Station truthModel = new Station(System.currentTimeMillis()); // Station model used to produce truth data
     private static Station tempModel = new Station(System.currentTimeMillis() + 1); // Station model used for state estimation
 
-    private static int NUM_ITER = 800; // Total number of iterations
+    private static int NUM_ITER = 2000; // Total number of iterations
     private static int WINDOW_SIZE = 200; // Number of iterations per update window
     private static int NUM_WINDOWS = NUM_ITER / WINDOW_SIZE; // Number of update windows
 
@@ -43,17 +43,17 @@ public class DataAssimilation {
 
     private static double SIGMA_NOISE = 1.0;
 
-    private static int numVerticesPP = 2; // Number of vectors per person (x_pos, y_pos, speed)
+    private static int numVerticesPP = 3; // Number of vectors per person (x_pos, y_pos, speed)
 
     // Initialise random var
     // random generator for start() method
     private static KeanuRandom rand = new KeanuRandom();
 
-    private static List<VertexLabel> tempVertexList = new ArrayList<>(); // List of VertexLabels to help in selecting specific vertices from BayesNet
+    private static List<VertexLabel> vertexLabelList = new ArrayList<>(); // List of VertexLabels to help in selecting specific vertices from BayesNet
 
     /* Observations */
     private static List<double[]> truthHistory = new ArrayList<>(); // List of double arrays to store the truthVector at every iteration
-    private static List<DoubleTensor[]> tempVectorList = new ArrayList<>();
+    private static List<DoubleTensor[]> tempHistory = new ArrayList<>(); // List of DoubleTensor arrays to store the tempModel state vector at each iteration
 
 
     /**
@@ -72,16 +72,110 @@ public class DataAssimilation {
      */
     private static void runDataAssimilation() throws IOException {
 
-        /*
-         ************ CREATE THE TRUTH DATA ************
-         */
+        // ************ CREATE THE TRUTH DATA ************
 
+        getTruthData(); // Run truth model, collect truth vector at each iter and store in truthHistory
+
+        // ************ START THE MAIN LOOP ************
+
+        System.out.println("Starting DA loop");
+
+        // Start tempModel and create the initial state
+        tempModel.start(rand);
+        System.out.println("tempModel.start() has executed successfully");
+
+        CombineDoubles stateVector = createStateVector(tempModel); // initial state vector
+
+        // Start data assimilation window
+        for (int i = 0; i < NUM_WINDOWS; i++) {
+            System.out.println("Entered Data Assimilation window " + i);
+
+            // ************ INITIALISE THE BLACK BOX MODEL ************
+
+            Vertex<DoubleTensor[]> box = predict(stateVector);
+
+            // If this is the last window, we don't need to observe or sample anything as they won't show up in the graphs
+            // We only need to run predict to show the tempModel to the end, to compare the model after the last observation
+            // with truthModel
+            if (i == NUM_WINDOWS - 1) {
+                continue; // skip the last run and finish the model/take observations
+            }
+
+            // ************ OBSERVE SOME TRUTH DATA ************
+
+            stateVector = keanuObserve(box, i, stateVector);
+
+            // ************ CREATE THE BAYES NET ************
+
+            System.out.println("\tCreating BayesNet");
+            // First create BayesNet, then create Probabilistic Model from BayesNet
+            BayesianNetwork net = new BayesianNetwork(box.getConnectedGraph());
+            // Create probabilistic model from BayesNet
+            KeanuProbabilisticModel model = new KeanuProbabilisticModel(net);
+
+            // ************ OPTIMISE ************
+
+            // MAP optimizer allows us to calculate the most probable values of model components given certain conditions
+            // or 'observations'
+            Optimizer optimizer = Keanu.Optimizer.of(net);
+            optimizer.maxAPosteriori();
+
+            // ************ SAMPLE FROM THE POSTERIOR************
+
+            System.out.println("\tSAMPLING");
+
+            // Use Metropolis Hastings algo for sampling
+            PosteriorSamplingAlgorithm samplingAlgorithm = Keanu.Sampling.MetropolisHastings.withDefaultConfig();
+
+            // Create sampler from KeanuProbabilisticModel
+            NetworkSamples sampler = samplingAlgorithm.getPosteriorSamples(
+                    model,
+                    model.getLatentVariables(),
+                    NUM_SAMPLES
+            );
+
+            // Down sample and drop sample
+            sampler = sampler.drop(DROP_SAMPLES).downSample(DOWN_SAMPLE);
+
+            assert(sampler != null) : "Sampler is null, this is not good";
+
+            // ************ GET THE INFORMATION OUT OF THE SAMPLES ************
+
+            System.out.println("\tEXTRACTING INFO FROM SAMPLES...");
+
+            /*
+            GaussianKDE class!!!
+            More accurate approximation for posterior distribution
+
+            HOWEVER if posterior distribution is simple (i.e. almost same as simple Gaussian) then much more simple and
+            efficient to produce another Gaussian from mu and sigma (these can be calculated from a separate BayesNet??? What does this mean?)
+
+            Caleb talked about swapping the prior for the black box model each time instead of recreating. Not sure
+            how this would look/work but he said it was possible and would be good for efficiency (also point below).
+
+            Try to swap prior for black box model instead of creating at each iteration (efficiency improvement)
+             */
+            getSampleInfo(stateVector, net, sampler);
+        }
+        tempModel.finish();
+        getMetrics();
+    }
+
+
+    // ***************************** TRUTH DATA *****************************
+
+
+    /**
+     * This method runs the truth model, collecting a truth vector at each iteration. The truth vector consists
+     * of 3 double precision values for each agent; an x and y position and desired speed.
+     */
+    private static void getTruthData() {
         // start truthModel
         truthModel.start(rand);
         System.out.println("truthModel.start() has executed successfully");
 
         // Step truth model whilst step number is less than NUM_ITER
-        while (truthModel.schedule.getSteps() < NUM_ITER) {
+        while (truthModel.schedule.getSteps() < NUM_ITER) { // +1 to account for an error on final run, trying to access iteration 2000 of history
             double[] truthVector = getTruthVector(); // get truthVector for observations
             truthHistory.add(truthVector); // Save for later
             truthModel.schedule.step(truthModel); // Step
@@ -95,163 +189,19 @@ public class DataAssimilation {
         // Finish model
         truthModel.finish();
         System.out.println("Executed truthModel.finish()");
-
-        /*
-         ************ START THE MAIN LOOP ************
-         */
-
-        System.out.println("Starting DA loop");
-
-        // Start tempModel and create the initial state
-        tempModel.start(rand);
-        System.out.println("tempModel.start() has executed successfully");
-
-        CombineDoubles stateVector = createStateVector(tempModel); // initial state vector
-
-        // Start data assimilation window
-        for (int i = 1; i < NUM_WINDOWS + 1; i++) {
-
-            System.out.println("Entered Data Assimilation window " + i);
-
-            /*
-             ************ INITIALISE THE BLACK BOX MODEL ************
-             */
-
-            /**
-             * IDEA::
-             *      What if we sort the state vector by x position each iteration? Or at least each time we observe
-             *      data? This would potentially fix the problem of agents being produced in different orders in each
-             *      model.
-             *
-             *      HOWEVER this could mean temp agents are observing a different agent each time, would this be a
-             *      problem if each time it was the truth agent in the closest position to the temp agent? Would this
-             *      artificially make the results look better?
-             */
-
-            Vertex<DoubleTensor[]> box = predict(stateVector);
-
-            //CombineDoubles box = predict(stateVector);
-
-            /*
-             ************ OBSERVE SOME TRUTH DATA ************
-             */
-
-            stateVector = keanuObserve(box, i, stateVector);
-
-            /*
-             ************ CREATE THE BAYES NET ************
-             */
-
-            System.out.println("\tCreating BayesNet");
-            // First create BayesNet, then create Probabilistic Model from BayesNet
-            BayesianNetwork net = new BayesianNetwork(stateVector.getConnectedGraph());
-            // Create probabilistic model from BayesNet
-            KeanuProbabilisticModel model = new KeanuProbabilisticModel(net);
-
-            /*
-             ************ OPTIMISE ************
-             */
-
-
-            /*if (i > 0) {
-                Optimizer optimizer = Keanu.Optimizer.of(net);
-                optimizer.maxAPosteriori();
-            }*/
-
-            // MAP optimizer allows us to calculate the most probable values of model components given certain conditions
-            // or 'observations'
-            Optimizer optimizer = Keanu.Optimizer.of(net);
-            optimizer.maxAPosteriori();
-
-            /*
-             ************ SAMPLE FROM THE POSTERIOR************
-             */
-
-            System.out.println("\tSAMPLING");
-
-            //NetworkSamplesGenerator samplesGenerator = Keanu.Sampling.MetropolisHastings.withDefaultConfig()
-              //      .generatePosteriorSamples(model,);
-
-            // Use Metropolis Hastings algo for sampling
-            PosteriorSamplingAlgorithm samplingAlgorithm = Keanu.Sampling.MetropolisHastings.withDefaultConfig();
-            // Create sampler from KeanuProbabilisticModel
-            NetworkSamples sampler = samplingAlgorithm.getPosteriorSamples(
-                    model,
-                    model.getLatentVariables(),
-                    NUM_SAMPLES
-            );
-
-            // Down sample and drop sample
-
-            sampler = sampler.drop(DROP_SAMPLES).downSample(DOWN_SAMPLE);
-
-            assert(sampler != null) : "Sampler is null, this is not good";
-
-            /*
-             ************ GET THE INFORMATION OUT OF THE SAMPLES ************
-             */
-
-            System.out.println("\tEXTRACTING INFO FROM SAMPLES...");
-
-            /*
-            GaussianKDE class!!!
-            More accurate approximation for posterior distribution
-
-            Can instantiate a GaussianKDE directly from samples of a DoubleVertex (Samples<DoubleTensor>)
-            HOWEVER if posterior distribution is simple (i.e. almost same as simple Gaussian) then much more simple and
-            efficient to produce another Gaussian from mu and sigma (these can be calculated from a separate BayesNet??? What does this mean?)
-
-
-            Label samples in updateStateVector() and reference labels when sampling
-            Need to loop through each vertex and sample individually
-            Can then use the sampled distributions to reintroduce as Prior for next window
-
-            Caleb talked about swapping the prior for the black box model each time instead of recreating. Not sure
-            how this would look/work but he said it was possible and would be good for efficiency (also point below).
-
-            Try to swap prior for black box model instead of creating at each iteration (efficiency improvement)
-             */
-
-            //List<KDEVertex> KDE_List = new ArrayList<>();
-
-            // Get samples from each individual vertex
-            for (int j=0; j < stateVector.getLength(); j++) {
-
-                Vertex vert = net.getVertexByLabel(tempVertexList.get(j));
-
-                Samples<DoubleTensor> samples = sampler.get(vert);
-
-                //DoubleVertex x = GaussianKDE.approximate(samples);
-                KDEVertex x = GaussianKDE.approximate(samples);
-
-                //stateVector.vertices[j].setValue(x.getValue());
-                stateVector.vertices[j].setAndCascade(x.getValue());
-            }
-
-            updatePeople(stateVector);
-
-        }
-        tempModel.finish();
-
-        takeObservations();
     }
 
 
-    // ***************************** TRUTH DATA *****************************
-
-
     /**
-     * Function to produce the truthVector. truthVector index is based on person ID, so positions in the truthVector
-     * remain fixed throughout the model. This is important when the truth vector data is observed by tempModel.
+     * Method to produce the truthVector, called inside getTruthData(). truthVector index is based on person ID,
+     * so positions in the truthVector remain fixed throughout the model. This is important when the truth vector data
+     * is observed by tempModel.
      *
      * @return  a vector of x,y coordinates of all agents in truthModel
      */
     private static double[] getTruthVector() {
-        //System.out.println("\tBuilding Truth Vector...");
-
         // Get all objects from model area (all people) and initialise a list
-        Bag people = truthModel.area.getAllObjects();
-        List<Person> truthPersonList = new ArrayList<>(people);
+        List<Person> truthPersonList = new ArrayList<>(truthModel.area.getAllObjects());
 
         assert (!truthPersonList.isEmpty()) : "truthPersonList is empty, there is nobody in the truthModel";
         assert (truthPersonList.size() == truthModel.getNumPeople()) : "truthPersonList (" + truthPersonList.size() +
@@ -262,7 +212,6 @@ public class DataAssimilation {
         double[] truthVector = new double[truthModel.getNumPeople() * numVerticesPP];
 
         for (Person person : truthPersonList) {
-
             // Get persons ID to create an index for truth vector
             int pID = person.getID();
             int index = pID * numVerticesPP;
@@ -270,12 +219,8 @@ public class DataAssimilation {
             // Each person relates to 2 variables in truthVector (previously 3 with desiredSpeed)
             truthVector[index] = person.getLocation().x;
             truthVector[index + 1] = person.getLocation().y;
-            //truthVector[index + 2] = person.getDesiredSpeed();
+            truthVector[index + 2] = person.getCurrentSpeed();
         }
-        // NEED ASSERTION HERE?
-
-        //System.out.println("\tTruth Vector Built at iteration: " + truthModel.schedule.getSteps());
-
         return truthVector;
     }
 
@@ -295,46 +240,38 @@ public class DataAssimilation {
      * @return          New CombineDoubles object from the stateVertices
      */
     private static CombineDoubles createStateVector(Station model) {
-
         // Create new collection to hold vertices for CombineDoubles
         List<DoubleVertex> stateVertices = new ArrayList<>();
-
         // Get all objects from model area (all people) and initialise a list
-        Bag people = model.area.getAllObjects();
-        List<Person> tempPersonList = new ArrayList<>(people);
+        List<Person> tempPersonList = new ArrayList<>(model.area.getAllObjects());
 
         for (Person person : tempPersonList) {
-
             // Get person ID for labelling
             int pID = person.getID();
 
             // Produce VertexLabels for each vertex in stateVector and add to static list
-            // Labels are named based on person ID, i.e. "Person 0(pID) 0(vertNumber), Person 01, Person 02, Person 10" etc.
-            VertexLabel lab0 = new VertexLabel("Person " + pID + 0);
-            VertexLabel lab1 = new VertexLabel("Person " + pID + 1);
-            //VertexLabel lab2 = new VertexLabel("Person " + pID + 2);
+            // Labels are named based on person ID, i.e. "Vertex 0(pID) 0(vertNumber), Vertex 0 1, Vertex 0 2, Vertex 1 0, Vertex 1 1" etc.
+            VertexLabel lab0 = new VertexLabel("Vertex " + pID + " " + 0);
+            VertexLabel lab1 = new VertexLabel("Vertex " + pID + " " + 1);
+            VertexLabel lab2 = new VertexLabel("Vertex " + pID + " " + 2);
 
             // Add labels to list for reference
-            tempVertexList.add(lab0);
-            tempVertexList.add(lab1);
-            //tempVertexList.add(lab2);
+            vertexLabelList.add(lab0);
+            vertexLabelList.add(lab1);
+            vertexLabelList.add(lab2);
 
             // Now build the initial state vector
-            // Init new GaussianVertices as DoubleVertex is abstract
-            // mean = 0.0, sigma = 0.0
+            // Init new GaussianVertices as DoubleVertex is abstract; mean = 0.0, sigma = 0.0
             DoubleVertex xLoc = new GaussianVertex(0.0, 0.0);
             DoubleVertex yLoc = new GaussianVertex(0.0, 0.0);
-            //DoubleVertex desSpeed = new GaussianVertex(0.0, 0.0);
+            DoubleVertex currentSpeed = new GaussianVertex(0.0, 0.0);
 
             // set unique labels for vertices
-            xLoc.setLabel(lab0); yLoc.setLabel(lab1); //desSpeed.setLabel(lab2);
+            xLoc.setLabel(lab0); yLoc.setLabel(lab1); currentSpeed.setLabel(lab2);
 
             // Add labelled vertices to collection
-            stateVertices.add(xLoc); stateVertices.add(yLoc); //stateVertices.add(desSpeed);
+            stateVertices.add(xLoc); stateVertices.add(yLoc); stateVertices.add(currentSpeed);
         }
-        // Instantiate stateVector with vertices
-        //stateVector = new CombineDoubles(stateVertices);
-
         return new CombineDoubles(stateVertices);
     }
 
@@ -345,56 +282,28 @@ public class DataAssimilation {
     /**
      * This is where the temporary Model is stepped for WINDOW_SIZE iterations, collecting the stateVector for each
      * iteration. Observations are taken before each step, and the stateVector is updated after each with the new agent
-     * positions. A UnaryOpLambda model wrapper object is used to update the
+     * positions. A UnaryOpLambda model wrapper object is used to update the state using the output of the predictive
+     * model, that allows creation of the Bayesian Network from its output.
      *
-     * @param initialState
-     * @return
+     * @param initialState  The stateVector of tempModel, to update with a new prediction
+     * @return              The output of the UnaryOpLambda, used to build the BayesianNetwork
      */
     private static Vertex<DoubleTensor[]> predict(CombineDoubles initialState) {
-        System.out.println("\tPREDICTING...");
-
         // Check model contains agents
         assert (tempModel.area.getAllObjects().size() > 0) : "No agents in tempModel before prediction";
 
-        // Update position and speed of agents from initialState
-        //updatePeople(initialState); // TODO: Is this step necessary? Do we even need to updatePeople before stepping? Any change from end state from previous window?
-
-        CombineDoubles stateVector = updateStateVector(initialState);
+        CombineDoubles stateVector = updateStateVector(initialState); // stateVector before prediction
 
         // Run the model to make the prediction
         for (int i = 0; i < WINDOW_SIZE; i++) {
-            // take observations of tempModel (num active people at each step)
-            tempVectorList.add(stateVector.calculate());
-            // Step all the people
-            tempModel.schedule.step(tempModel);
-            // update the stateVector
-            stateVector = updateStateVector(stateVector);
-
-            /**
-             * Would it improve anything to change the way tempModel agents move in the model?
-             *      i.e. instead of relying on the already written step() function for people, can we create a new
-             *      AssimilationPerson class? This class would be mostly very similar to current Person.class but:
-             *      - x,y position to be replaced with DoubleVertex (or GaussianV)
-             *      - Must extend Agent.class, so when constructing AssimilationPerson could call super with new Double2D
-             *          e.g. constructor... super(size, new Double2D(x.scalar(), y.scalar()), name)
-             *      - (Could possibly remove the Comparator then from non-assimilation Person, unsure though if needed)
-             *      - Then use Keanu's algorithms where possible (as in x_position.plus(x_speed), y_pos.plus(y_speed))
-             *          this would be quite a large change to how the model works but could still keep the same functionality
-             *          - Could use Pythag to calculate the movement of the agents (or dot product more efficient?)
-             *
-             *      Not entirely sure how this would look at the minute but it could make it easier to apply Keanu's
-             *      algorithms to this data. Also could make the BayesNet more accurate? Would be able to build a BayesNet
-             *      over the previous 200 iterations rather than just the assimilation iteration? I don't fully understand how
-             *      Keanu's BayesNet works so not sure if that's a stupid idea.
-             */
+            tempHistory.add(stateVector.calculate()); // take observations of tempModel (num active people at each step)
+            tempModel.schedule.step(tempModel); // Step all the people
+            stateVector = updateStateVector(stateVector); // update the stateVector
         }
-
         // Check that correct number of people in model before updating state vector
         assert (tempModel.area.getAllObjects().size() == tempModel.getNumPeople()) : String.format(
                 "Wrong number of people in the model before building state vector. Expected %d but got %d",
                 tempModel.getNumPeople(), tempModel.area.getAllObjects().size());
-
-        stateVector = updateStateVector(stateVector);
 
         // Return OpLambda wrapper
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
@@ -402,22 +311,25 @@ public class DataAssimilation {
                 stateVector,
                 DataAssimilation::step
         );
-
-        System.out.println("\tPREDICTION FINISHED.");
         return box;
     }
 
 
+    /**
+     * This method is provided as the operation that the UnaryOpLambda needs to transform the input vertex.
+     * For each element of the stateVector, the UnaryOpLambda loops through and assigns the value of that element
+     * to a different state object. This process of mapping the vector after each step using the UnaryOpLambda is
+     * crucial as the resulting object will be used to build the Bayesian Network.
+     *
+     * @param initialState
+     * @return
+     */
     private static DoubleTensor[] step(DoubleTensor[] initialState) {
-
-        // TODO: Take observations from this point? Whats happening to the state here?
-
         DoubleTensor[] steppedState = new DoubleTensor[initialState.length];
 
         for (int i=0; i < WINDOW_SIZE; i++) {
             steppedState = initialState; // actually update the state here
         }
-
         return steppedState;
     }
 
@@ -425,11 +337,23 @@ public class DataAssimilation {
     // ***************************** OBSERVE *****************************
 
 
+    /**
+     * Observe is a key function here, and is where vectors in the Bayesian Network are observed using data from
+     * the digital twin. First the truth history from the correct iteration is retrieved, and the L1 norm is
+     * checked to assess both before and after the vector is observed. Noise is added to each truth observation in a
+     * loop, which then collects the correct element of the stateVector and observes the truth observation on the
+     * distribution. The observed element is then used to set the value of the corresponding vertex inside
+     * the CombineDoubles object.
+     *
+     * @param box           The output of UnaryOpLambda, the black box model
+     * @param windowNum     Current window number
+     * @param stateVector   vector of x,y positions for each agent
+     * @return              An observed CombineDoubles state vector, for use when building the box
+     */
     private static CombineDoubles keanuObserve(Vertex<DoubleTensor[]> box, int windowNum, CombineDoubles stateVector) {
         System.out.println("\tObserving truth data. Adding noise with standard dev: " + SIGMA_NOISE);
 
-        // windowNum + 1 (ensures start at iter 200), ALL - 1 (ensures 199 and not 200 as starts at 0)
-        int historyIter = (windowNum * WINDOW_SIZE) - 1;
+        int historyIter = ((windowNum + 1) * WINDOW_SIZE); // find the correct iteration
 
         // Get history from correct iteration
         double[] history = truthHistory.get(historyIter);
@@ -441,33 +365,11 @@ public class DataAssimilation {
         assert (history.length == tempModel.getNumPeople() * numVerticesPP) : String.format("History for iteration %d is incorrect length: %d",
                 windowNum, history.length);
 
-        /**
-         * IDEA FOR CHANGE HERE::
-         *      SimpleWrapperB adds noise to the output of box, not history.
-         *
-         *      SO we could get output of box and apply noise,
-         *      then do noisyOutput.observe(truthData[i])
-         *
-         *      We currently do this the other way round and it isn't working properly.
-         *
-         *      Is the reason that SimpleModel worked better because it was observing data from the whole 200 iterations?
-         *      and not just the 200th, 400th, etc.?
-         *
-         *
-         * IDEA #2::
-         *      Look at NativeModel observations - state observes the value of state for each iteration in the previous window
-         *      Could we do this here instead of a single observation at 200, 400 etc.?
-         *
-         *      Might be less realistic to pass it the complete information from every iteration but it would be a good test to see
-         *      if the problem is in the observations or elsewhere in the model (like the BayesNet).
-         */
-
         // Output with a bit of noise. Lower sigma makes it more constrained
         GaussianVertex[] noisyOutput = new GaussianVertex[history.length];
         for (int i=0; i < history.length; i++) {
             if (history[i] == 0.0) {
-                //System.out.println("\t\tCan't observe nothing");
-                continue;
+                continue; // If vertex == 0.0, agent must be inactive so don't need to observe
             }
             // Add a bit of noise to each value in 'truth history'
             noisyOutput[i] = new GaussianVertex(history[i], SIGMA_NOISE);
@@ -477,10 +379,10 @@ public class DataAssimilation {
             element.observe(noisyOutput[i].getValue());
             // Use the new observed element to set the value of the stateVector
             stateVector.vertices[i].setValue(element.getValue());
-
-            //CombineDoubles.getAtElement(i, box).observe(noisyOutput[i].getValue());
         }
         System.out.println("\tObservations complete.");
+
+        updatePeople(stateVector);
 
         // Get L1 Norm again and compare to L1 Norm before obs
         System.out.println("\tL1 Norm after observe: " + getL1Norm(stateVector.calculate()));
@@ -492,55 +394,51 @@ public class DataAssimilation {
     // ***************************** UPDATE *****************************
 
 
+    /**
+     * This method loops through all the agents in the model via their ID number, and updates the corresponding
+     * vertices in the state vector with new x,y positions. Previously speed was also included.
+     *
+     * @param stateVector   Current vector of agent coordinates to be updated
+     * @return              Updated vector with new x,y positions
+     */
     private static CombineDoubles updateStateVector(CombineDoubles stateVector) {
-        //System.out.println("\tUPDATING STATE VECTOR...");
-
         List<Person> personList = new ArrayList<>(tempModel.area.getAllObjects());
 
         assert (!personList.isEmpty());
         assert (personList.size() == tempModel.getNumPeople()) : "personList size is wrong: " + personList.size();
 
         for (Person person : personList) {
-
             // get ID
             int pID = person.getID();
             int pIndex = pID * numVerticesPP;
 
             // Access DoubleVertex's directly from CombineDoubles class and update in place
             // This is much simpler than previous attempts and doesn't require creation of new stateVector w/ every iter
-            /*
-            stateVector.vertices[pIndex].setAndCascade(person.getLocation().getX());
-            stateVector.vertices[pIndex + 1].setAndCascade(person.getLocation().getY());
-            stateVector.vertices[pIndex + 2].setAndCascade(person.getCurrentSpeed());
-            */
             stateVector.vertices[pIndex].setValue(person.getLocation().getX());
             stateVector.vertices[pIndex + 1].setValue(person.getLocation().getY());
-            //stateVector.vertices[pIndex + 2].setValue(person.getCurrentSpeed());
-
+            stateVector.vertices[pIndex + 2].setValue(person.getCurrentSpeed());
         }
         assert (stateVector.getLength() == tempModel.getNumPeople() * numVerticesPP);
-        //System.out.println("\tFINISHED UPDATING STATE VECTOR.");
 
         return stateVector;
     }
 
 
-    private static void updatePeople(Vertex<DoubleTensor[]> stateVector) {
-        //System.out.println("\tUPDATING PERSON LIST...");
-
+    /**
+     * Method to update the positions of the people from the stateVector. A Double2D object is created from the x,y
+     * positions of each agent in the vector. This Double2D is then used to update the position of the agent to fit
+     * with the stateVector.
+     *
+     * @param stateVector   Vector of x,y positions
+     */
+    private static void updatePeople(CombineDoubles stateVector) {
         assert (stateVector.getValue().length == tempModel.getNumPeople() * numVerticesPP) : "State Vector is incorrect length: " + stateVector.getValue().length;
 
-        //System.out.println("\tStateVector length: " + stateVector.getValue().length);
-
         // Find all the people and add to list
-        Bag people = new Bag(tempModel.area.getAllObjects());
-        List<Person> initialPeopleList = new ArrayList<>(people);
+        List<Person> initialPeopleList = new ArrayList<>(tempModel.area.getAllObjects());
 
         // Loop through peopleList created before model was stepped
         for (Person person : initialPeopleList) {
-
-            //System.out.println(person.toString());
-
             // get person ID to find correct vertices in stateVector
             int pID = person.getID();
             int pIndex = pID * numVerticesPP;
@@ -549,29 +447,53 @@ public class DataAssimilation {
             // Extract DoubleTensor for each vertex using CombineDoubles.getAtElement()
             Vertex<DoubleTensor> xLocation = CombineDoubles.getAtElement(pIndex, stateVector);
             Vertex<DoubleTensor> yLocation = CombineDoubles.getAtElement(pIndex + 1, stateVector);
-            //Vertex<DoubleTensor> currentSpeed = CombineDoubles.getAtElement(pIndex + 2, stateVector);
+            Vertex<DoubleTensor> currentSpeed = CombineDoubles.getAtElement(pIndex + 2, stateVector);
 
             // Build Double2D
             Double2D loc = new Double2D(xLocation.getValue().scalar(), yLocation.getValue().scalar()); // Build Double2D for location
             // Get speed as double val
-            //double speedAsDouble = currentSpeed.getValue().scalar();
+            double speedAsDouble = currentSpeed.getValue().scalar();
 
             // Set the location and current speed of the agent from the stateVector
             tempModel.area.setObjectLocation(person, loc);
-            //person.setCurrentSpeed(speedAsDouble);
+            person.setCurrentSpeed(speedAsDouble);
         }
+    }
+
+
+    // ***************************** GET SAMPLE INFO *****************************
+
+
+    private static void getSampleInfo(CombineDoubles stateVector, BayesianNetwork net, NetworkSamples sampler) {
+        // Get samples from each individual vertex
+        for (int j=0; j < stateVector.getLength(); j++) {
+
+            Vertex vert = net.getVertexByLabel(vertexLabelList.get(j));
+
+            Samples<DoubleTensor> samples = sampler.get(vert);
+
+            //DoubleVertex x = GaussianKDE.approximate(samples);
+            KDEVertex x = GaussianKDE.approximate(samples);
+
+            //stateVector.vertices[j].setValue(x.getValue());
+            stateVector.vertices[j].setAndCascade(x.getValue());
+        }
+        updatePeople(stateVector); // update people to reflect the observations
     }
 
 
     // ***************************** TAKE OBSERVATIONS *****************************
 
-    private static void takeObservations() throws IOException {
 
-        assert(truthHistory.size() == tempVectorList.size()) : "truthHistory and tempVectorList are not the same size, " +
-                "truthHistory: " + truthHistory.size() + ", tempVectorList: " + tempVectorList.size();
-
-        //double[] tempNumPeople = new double[NUM_ITER];
-        //double[] truthNumPeople = new double[NUM_ITER];
+    /**
+     * This method collects all model observations into one place, first producing them from the vectors created for
+     * each iteration. Observations taken are L1 norm, L2 norm and total error between vectors.
+     *
+     * @throws IOException      IntelliJ recommended throwing this exception due to opening files for writing
+     */
+    private static void getMetrics() throws IOException {
+        assert(truthHistory.size() == tempHistory.size()) : "truthHistory and tempHistory are not the same size, " +
+                "truthHistory: " + truthHistory.size() + ", tempHistory: " + tempHistory.size();
 
         double[] truthL1 = new double[NUM_ITER];
         double[] tempL1 = new double[NUM_ITER];
@@ -583,7 +505,7 @@ public class DataAssimilation {
 
         for (int i = 0; i < NUM_ITER; i++) {
             double[] truthVec = truthHistory.get(i);
-            DoubleTensor[] tempVec = tempVectorList.get(i);
+            DoubleTensor[] tempVec = tempHistory.get(i);
 
             truthL1[i] = getL1Norm(truthVec);
             truthL2[i] = getL2Norm(truthVec);
@@ -593,29 +515,17 @@ public class DataAssimilation {
 
             totalError[i] = getError(truthVec, tempVec);
         }
-
         System.out.println("\tWriting out observations...");
-
-        //System.out.println("truthNumPeople length: " + truthNumPeople.length);
-        //System.out.println("tempNumPeople length: " + tempNumPeople.length);
-
         System.out.println("L1Obs truth length: " + truthL1.length);
         System.out.println("L1Obs temp length: " + tempL1.length);
-
         System.out.println("L2Obs truth length: " + truthL2.length);
         System.out.println("L2Obs temp length: " + tempL2.length);
-
         System.out.println("Error length: " + totalError.length);
-
-        System.out.println("truthHistory length: " + truthHistory.size());
 
         /* INIT FILES */
         String theTime = String.valueOf(System.currentTimeMillis()); // So files have unique names
-        // Place to store results
-        String dirName = "simulation_outputs/";
+        String dirName = "simulation_outputs/"; // Place to store results
 
-        //Writer numPeopleObsWriter = new BufferedWriter(new OutputStreamWriter(
-        //            new FileOutputStream(dirName + "PeopleObs_" + theTime + ".csv"), "utf-8"));
         Writer L1ObsWriter = new BufferedWriter(new OutputStreamWriter(
                     new FileOutputStream(dirName + "L1Obs_" + theTime + ".csv"), "utf-8"));
         Writer L2ObsWriter = new BufferedWriter(new OutputStreamWriter(
@@ -626,14 +536,6 @@ public class DataAssimilation {
 
         // try catch for the writing
         try {
-            /*
-            numPeopleObsWriter.write("Iteration,truth,temp\n");
-            for (int i = 0; i < truthNumPeople.length; i++) {
-                numPeopleObsWriter.write(String.format("%d,%f,%f\n", i, truthNumPeople[i], tempNumPeople[i]));
-            }
-            numPeopleObsWriter.close();
-            */
-
             L1ObsWriter.write("Iteration, truth, temp\n");
             for (int j = 0; j < truthL1.length; j++) {
                 L1ObsWriter.write(String.format("%d,%f,%f\n", j, truthL1[j], tempL1[j]));
@@ -651,7 +553,6 @@ public class DataAssimilation {
                 errorWriter.write(String.format("%d,%f\n", l, totalError[l]));
             }
             errorWriter.close();
-
         } catch (IOException ex) {
             System.err.println("Error writing observations to file: "+ ex.getMessage());
             ex.printStackTrace();
@@ -709,8 +610,8 @@ public class DataAssimilation {
     /**
      * Overloaded from method above to allow DoubleTensor[] vector.
      *
-     * @param calculatedVec
-     * @return
+     * @param calculatedVec     calculated form of CombineDoubles stateVector
+     * @return                  calls getL2Norm() with a double[] produced from calculatedVec
      */
     private static double getL2Norm(DoubleTensor[] calculatedVec) {
         double[] vector = new double[calculatedVec.length];
@@ -721,25 +622,20 @@ public class DataAssimilation {
     }
 
     /**
-     * Get the absolute error (difference) between each vertex at each element
+     * Get the absolute error (difference) between each vertex at each element.
+     *
      * @return
      */
     private static double getError(double[] truthVector, DoubleTensor[] calculatedVec) {
-
-        //DoubleTensor[] calculatedVec = stateVector.calculate();
-
         double[] sumVecValues = new double[calculatedVec.length];
-
         for (int j = 0; j < calculatedVec.length; j++) {
-            sumVecValues[j] = calculatedVec[j].sum();
+            sumVecValues[j] = calculatedVec[j].sum(); // call .sum() on each vertex to get a double precision value
         }
 
         double totalSumError = 0d;
-
         for (int k = 0; k < truthVector.length; k++) {
-            totalSumError += abs(sumVecValues[k] - truthVector[k]);
+            totalSumError += abs(sumVecValues[k] - truthVector[k]); // take the absolute error between each vertex and add to cumulative total
         }
-
         return totalSumError;
     }
 

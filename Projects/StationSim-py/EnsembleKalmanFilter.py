@@ -80,7 +80,8 @@ class EnsembleKalmanFilter:
 
         self.update_state_ensemble()
         self.update_state_mean()
-        self.results = [self.state_mean]
+        self.results = list()
+#        self.results = [self.state_mean]
 
     def step(self, data=None):
         """

@@ -41,6 +41,7 @@ class Model:
         # Initialise
         self.initialise_gates()
         self.agents = [Agent(self, unique_id) for unique_id in range(self.pop_total)]
+        self.state_history = list()
 
     def step(self):
         """
@@ -49,6 +50,7 @@ class Model:
         if self.pop_finished < self.pop_total and self.step:
             self.kdtree_build()
             [agent.step(self) for agent in self.agents]
+        self.state_history.append(self.get_state())
         self.time_id += 1
         self.step_id += 1
 
@@ -78,6 +80,9 @@ class Model:
         return gates
 
     def is_within_bounds(self, new_location):
+        """
+        Utility function to check whether new_location is within model bounds.
+        """
         within0 = all(self.boundaries[0] <= new_location)
         within1 = all(new_location <= self.boundaries[1])
         return within0 and within1

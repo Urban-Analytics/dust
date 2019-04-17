@@ -1,12 +1,13 @@
 """
-Script to run an implementation of the Ensemble Kalman Filter (EnKF).
+EnsembleKalmanFilter.py
 @author: ksuchak1990
 date_created: 19/04/10
-A class to represent a genearl Ensemble Kalman Filter for use with StationSim.
+A class to represent a general Ensemble Kalman Filter for use with StationSim.
 """
 # Imports
 import warnings as warns
 import numpy as np
+from copy import deepcopy
 
 # Classes
 class EnsembleKalmanFilter:
@@ -28,9 +29,7 @@ class EnsembleKalmanFilter:
         self.time = 0
 
         # Ensure that model has correct attributes
-        # Should probably make sure that step is callable too
-        if not self.is_good_model(model):
-            raise AttributeError('Model does not have required attributes')
+        assert self.is_good_model(model), 'Model missing attributes.'
 
         # Filter attributes - outlines the expected params
         self.max_iterations = None
@@ -40,6 +39,7 @@ class EnsembleKalmanFilter:
         self.H = None
         self.R_vector = None
         self.data_covariance = None
+        self.base_model = model(model_params)
 
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():
@@ -49,7 +49,7 @@ class EnsembleKalmanFilter:
             setattr(self, k, v)
 
         # Set up ensemble of models
-        self.models = [model(model_params) for _ in range(self.ensemble_size)]
+        self.models = [deepcopy(self.base_model) for _ in range(self.ensemble_size)]
 
         # Make sure that models have state
         for m in self.models:
@@ -215,8 +215,8 @@ class EnsembleKalmanFilter:
         This means that the model should have the following:
         - step (method)
         - state (attribute)
-        - state2agent (method)
-        - agent2state (method)
+        - set_state (method)
+        - set_state (method)
 
         Params:
             model
@@ -224,7 +224,7 @@ class EnsembleKalmanFilter:
         Returns:
             boolean
         """
-        methods = ['step', 'state2agent', 'agent2state']
+        methods = ['step', 'set_state', 'get_state']
         attribute = 'state'
         has_methods = [EnsembleKalmanFilter.has_method(model, m) for m in methods]
         b = all(has_methods) and hasattr(model, attribute)

@@ -243,7 +243,7 @@ class Model:
             'wiggle': 1,
             'batch_iterations': 900,
             'do_save': True,
-            'do_plot': True,
+            'do_plot': False,
             'do_ani': False
         }
         # Run the model

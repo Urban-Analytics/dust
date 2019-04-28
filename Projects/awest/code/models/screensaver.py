@@ -57,7 +57,7 @@ class Model:
 		mask = np.ravel(np.stack([mask, mask], axis=1))  # Two pieces of data per agent
 		return mask, active
 
-	def agents2state(self, do_ravel=True):
+	def get_state(self, do_ravel=True):
 		state = [agent.location for agent in self.agents]
 		if do_ravel:
 			state = np.ravel(state)
@@ -65,7 +65,7 @@ class Model:
 			state = np.array(state)
 		return state
 
-	def state2agents(self, state, noise=False):
+	def set_state(self, state, noise=False):
 		for i in range(len(self.agents)):
 			self.agents[i].location = state[2 * i:2 * i + 2]
 			if noise:
@@ -73,7 +73,7 @@ class Model:
 		return
 
 	def ani(self, agents=None, colour=None, alpha=1):
-		state = self.agents2state(do_ravel=False)[:agents].T
+		state = self.get_state(do_ravel=False)[:agents].T
 		plt.scatter(state[0], state[1], marker='.', color=colour, alpha=alpha)
 		plt.axis((0, 1, 0, 1))
 		return

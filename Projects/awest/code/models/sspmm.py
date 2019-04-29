@@ -3,44 +3,56 @@
 A genuinely interacting agent based model.
 
 TODO:
-	time scaling  1) time_id, step_id  2) dt*new_location
-	Add gates too animation
-	fix sspmm ani for pf ani
-	clean up sspmm params
-	line 83,84
-	nest functions
+	ani gates
+	ani markersize
+	ani save
+	difference between pf and pf_km
+	removal of stationsim_km
+	update sspmm.md?
 
-added agent names
+speed_desire -> speed_max (to fit speed_min)
+classmethods out - statics and internal are in
+default params are defined using dictionaries as to keiran's plan
+gates construtor methods from keiran are used
+lerp deleted and lerp_vector increases speed dramatically
+norm edited to kerian's improved euclidean distance
+
+TLDR: Speed updates and back to functioning with PF
 '''
-# todo
-# fixme
+# Imports
 import numpy as np
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 import names
 
 
+# Agent
 class Agent:
 
 	def __init__(self, model, unique_id):
-		# Required
 		self.unique_id = unique_id
 		self.name = names.get_full_name()
+		# Required
 		self.status = 0  # 0 Not Started, 1 Active, 2 Finished
-		model.pop_active += 1
 		# Location
 		self.location = model.loc_entrances[np.random.randint(model.entrances)]
 		self.location[1] += model.entrance_space * (np.random.uniform() - .5)
 		self.loc_desire = model.loc_exits[np.random.randint(model.exits)]
 		# Parameters
-		self.speed_desire = 0
-		while self.speed_desire <= model.speed_min:
-			self.speed_desire = np.random.normal(model.speed_desire_mean, model.speed_desire_std)
-		self.speeds = np.arange(self.speed_desire, model.speed_min, -model.speed_step)
-		self.time_activate = int(np.random.exponential(model.entrance_speed * self.speed_desire))
+		self.speed_max = 0
+		while self.speed_max <= model.speed_min:
+			self.speed_max = np.random.normal(model.speed_desire_mean, model.speed_desire_std)
+		self.wiggle = min(model.max_wiggle, self.speed_max)
+		self.speeds = np.arange(self.speed_max, model.speed_min, -model.speed_step)
+		self.time_activate = int(np.random.exponential(model.entrance_speed * self.speed_max))
 		if model.do_save:
+			self.wiggles = 0  # number of wiggles this agent has experienced
+			self.collisions = 0  # number of speed limitations/collisions this agent has experienced
 			self.history_loc = []
 		return
+
+	def __repr__(self):
+		return '\nObject ID: {}, sspmm Agent: {} {}'.format(hex(id(self)), hex(self.unique_id), self.name)
 
 	def step(self, model):
 		if self.status == 0:
@@ -52,32 +64,45 @@ class Agent:
 		return
 
 	def activate(self, model):
-		if not self.status and model.time_id > self.time_activate:
+		if not self.status and model.time > self.time_activate:
 			self.status = 1
-			self.time_start = model.time_id
-			self.time_expected = np.linalg.norm(self.location - self.loc_desire) / self.speed_desire
+			model.pop_active += 1
+			self.time_start = model.time
 		return
 
+	@staticmethod
+	def distance(loc1, loc2):
+		# Euclidean distance between two 2D points.
+		x = loc1[0] - loc2[0]
+		y = loc1[1] - loc2[1]
+		norm =  (x*x + y*y)**.5
+		# The default np.linalg.norm(loc1-loc2) was not use because it took 2.45s while this method took 1.71s.
+		return norm
+
 	def move(self, model):
+		lerp_vector = (self.loc_desire - self.location) / self.distance(self.loc_desire, self.location)
 		for speed in self.speeds:
 			# Direct
-			new_location = self.lerp(self.loc_desire, self.location, speed)
+			new_location = self.location + speed * lerp_vector
 			if not self.collision(model, new_location):
 				break
-			elif speed == self.speeds[-1]:
+			else:
+				if model.do_save:
+					self.collisions += 1
+			if speed == self.speeds[-1]:
+				if model.do_save:
+					self.wiggles += 1
 				# Wiggle
-				new_location = self.location + np.random.randint(-1, 1 +1, 2)
+				new_location = self.location + self.wiggle*np.random.randint(-1, 1 +1, 2)
 				# Rebound
-				within_bounds = all(model.boundaries[0] <= new_location) and all(new_location <= model.boundaries[1])
-				if not within_bounds:
+				if not model.is_within_bounds(new_location):
 					new_location = np.clip(new_location, model.boundaries[0], model.boundaries[1])
 		# Move
 		self.location = new_location
 		return
 
 	def collision(self, model, new_location):
-		within_bounds = all(model.boundaries[0] <= new_location) and all(new_location <= model.boundaries[1])
-		if not within_bounds:
+		if not model.is_within_bounds(new_location):
 			collide = True
 		elif self.neighbourhood(model, new_location):
 			collide = True
@@ -90,26 +115,21 @@ class Agent:
 		neighbouring_agents = model.tree.query_ball_point(new_location, model.separation)
 		for neighbouring_agent in neighbouring_agents:
 			agent = model.agents[neighbouring_agent]
-			if agent.status == 1 and new_location[0] <= agent.location[0]:
+			if agent.status == 1 and self.unique_id != agent.unique_id and new_location[0] <= agent.location[0]:
 				neighbours = True
 				break
 		return neighbours
 
-	def lerp(self, loc1, loc2, speed):
-		distance = np.linalg.norm(loc1 - loc2)
-		loc = loc2 + speed * (loc1 - loc2) / distance
-		return loc
-
 	def exit_query(self, model):
-		if np.linalg.norm(self.location - self.loc_desire) < model.exit_space:
+		if self.distance(self.location, self.loc_desire) < model.exit_space:
 			self.status = 2
 			model.pop_active -= 1
 			model.pop_finished += 1
 			if model.do_save:
-				time_delta = model.time_id - self.time_start
+				time_delta = model.time - self.time_start
 				model.time_taken.append(time_delta)
-				time_delta -= self.time_expected
-				model.time_delayed.append(time_delta)
+				time_delta -= (self.distance(self.location, self.loc_desire) - model.exit_space) / self.speed_max
+				model.time_delay.append(time_delta)
 		return
 
 	def save(self, model):
@@ -118,76 +138,98 @@ class Agent:
 		return
 
 
+# Model
 class Model:
 
-	def __init__(self, params={}):
+	def __init__(self, params=dict()):
+		self.unique_id = None
 		# Default Params
-		self.width = 200
-		self.height = 100
-		self.pop_total = 200
-		self.entrances = 3
-		self.entrance_space = 2
-		self.entrance_speed = 4
-		self.exits = 2
-		self.exit_space = 1
-		self.speed_min = .1
-		self.speed_desire_mean = 1
-		self.speed_desire_std = 1
-		self.separation = 3
-		self.batch_iterations = 200
-		self.do_save = False
-		self.do_ani = False
-		# Dictionary Params Edit
-		self.params = (params,)
-		[setattr(self, key, value) for key, value in params.items()]
+		self.params = {
+			'width': 200,
+			'height': 100,
+			'pop_total': 100,
+			'entrances': 3,
+			'entrance_space': 2,
+			'entrance_speed': 4,
+			'exits': 2,
+			'exit_space': 1,
+			'speed_min': .1,
+			'speed_desire_mean': 1,
+			'speed_desire_std': 1,
+			'separation': 4,
+			'max_wiggle': 1,
+			'batch_iterations': 2_000,
+			'do_save': False,
+			'do_plot': False,
+			'do_print': True,
+			'do_ani': False
+		}
+		# Params Edit
+		for key in params.keys():
+			if key in self.params:
+				self.params[key] = params[key]
+			else:
+				print('BadKeyWarning: {} is not a model parameter.'.format(key))
+		[setattr(self, key, value) for key, value in self.params.items()]
+		# Functional Params
 		self.speed_step = (self.speed_desire_mean - self.speed_min) / 3  # 3 - Average number of speeds to check
-		# Batch Details
-		self.time_id = 0
-		self.step_id = 0
-		if self.do_save:
-			self.time_taken = []
-			self.time_delayed = []
-		# Model Parameters
 		self.boundaries = np.array([[0, 0], [self.width, self.height]])
+		# Model Variables
+		self.time = 0
 		self.pop_active = 0
 		self.pop_finished = 0
-		# Initialise
+		self.loc_entrances = None
+		self.loc_exits = None
 		self.initialise_gates()
 		self.agents = list([Agent(self, unique_id) for unique_id in range(self.pop_total)])
+		self.tree = None
+		if self.do_save:
+			self.time_taken = []
+			self.time_delay = []
 		return
 
+	def __repr__(self):
+		text = 'sspmm Model {}'.format(self.unique_id)
+		align_max = max([len(key) for key, _ in self.params.items()])
+		align = [align_max-len(key) for key, _ in self.params.items()]
+		text += ''.join('\n  {}{}: {}'.format(' '*align[i], key, val) for i, (key, val) in enumerate(self.params.items()))
+		text += '\nObject ID: {}'.format(hex(id(self)))
+		return text
+
 	def step(self):
-		if self.pop_finished < self.pop_total and self.step_id:
+		if self.pop_finished < self.pop_total and self.time:
 			self.kdtree_build()
 			[agent.step(self) for agent in self.agents]
-		self.time_id += 1
-		self.step_id += 1
+		self.time += 1
 		self.mask()
 		return
 
 	def initialise_gates(self):
-		# Entrances
-		self.loc_entrances = np.zeros((self.entrances, 2))
-		self.loc_entrances[:, 0] = 0
-		if self.entrances == 1:
-			self.loc_entrances[:, 1] = self.height / 2
-		else:
-			self.loc_entrances[:, 1] = np.linspace(self.height / 4, 3 * self.height / 4, self.entrances)
-		# Exits
-		self.loc_exits = np.zeros((self.exits, 2))
-		self.loc_exits[:, 0] = self.width
-		if self.exits == 1:
-			self.loc_exits[0, 1] = self.height / 2
-		else:
-			self.loc_exits[:, 1] = np.linspace(self.height / 4, 3 * self.height / 4, self.exits)
+		# Initialise the locations of the entrances and exits.
+		self.loc_entrances = self.initialise_gates_generic(self.height, self.entrances, 0)
+		self.loc_exits = self.initialise_gates_generic(self.height, self.exits, self.width)
 		return
 
+	@staticmethod
+	def initialise_gates_generic(height, n_gates, x):
+		# General method for initialising gates.
+		gates = np.zeros((n_gates, 2))
+		gates[:, 0] = x
+		if n_gates == 1:
+			gates[0, 1] = height/2
+		else:
+			gates[:, 1] = np.linspace(height/4, 3*height/4, n_gates)
+		return gates
+
+	def is_within_bounds(self, new_location):
+		return all(self.boundaries[0] <= new_location) and all(new_location <= self.boundaries[1])
+
 	def kdtree_build(self):
-		state = self.agents2state(do_ravel=False)
+		state = self.get_state(do_ravel=False)
 		self.tree = cKDTree(state)
 		return
 
-	def agents2state(self, do_ravel=True):
+	def get_state(self, do_ravel=True):
 		state = [agent.location for agent in self.agents]
 		if do_ravel:
 			state = np.ravel(state)
@@ -195,47 +237,46 @@ class Model:
 			state = np.array(state)
 		return state
 
-	def state2agents(self, state, noise=False):
+	def set_state(self, state, noise=False):
 		for i, agent in enumerate(self.agents):
-			agent.location = state[2 * i:2 * i + 2]
+			agent.location = state[2*i : 2*i+2]
 			if noise:
 				agent.location += np.random.normal(0, noise, size=2)
 		return
 
 	def mask(self):
-		mask = np.array([agent.status == 1 for agent in self.agents])
+		mask = np.array([agent.status==1 for agent in self.agents])
 		active = np.sum(mask)
-		mask = np.ravel(np.stack([mask, mask], axis=1))  # Two pieces of data per agent, not none agent data in state
+		mask = np.ravel(np.stack([mask, mask], axis=1))  # Two pieces of data per agent
 		return mask, active
 
-	def batch(self):
-		for i in range(self.batch_iterations):
-			self.step()
-			if self.do_ani:
-				self.ani()
-			if self.pop_finished == self.pop_total:
-				print('Everyone made it!')
-				break
-		if self.do_save:
-			self.save_stats()
-			self.save_plot()
-		return
-
-	def ani(self, agents=None, colour='k', alpha=1):
-		plt.figure(1)
-		plt.clf()
+	def ani(self, agents=None, colour='k', alpha=1, show_separation=False):
+		# Design for use in PF
+		wid = 8  # image size
+		hei = wid * self.height / self.width
+		if show_separation:
+			# the magic formular for marksize scaling
+			magic = 1.9  # dependant on the amount of figure space used
+			markersizescale = magic*72*hei/self.height
+		plt.figure(1, figsize=(wid, hei))
+		plt.axis(np.ravel(self.boundaries, 'F'))
+		plt.axes().set_aspect('equal')
+		x = np.arange(10)
 		for agent in self.agents[:agents]:
 			if agent.status == 1:
+				if show_separation:
+					plt.plot(*agent.location, marker='.', markersize=markersizescale*self.separation, color=colour, alpha=.05)
 				plt.plot(*agent.location, marker='.', markersize=2, color=colour, alpha=alpha)
-		plt.axis(np.ravel(self.boundaries, 'F'))
 		plt.xlabel('Corridor Width')
 		plt.ylabel('Corridor Height')
-		plt.pause(1 / 30)
 		return
+
+	def ani_save(self):
+		pass
 
 	def save_plot(self):
 		# Trails
-		plt.figure()
+		plt.subplot(2, 1, 1)
 		for agent in self.agents:
 			if agent.status == 0:
 				colour = 'r'
@@ -249,10 +290,11 @@ class Model:
 		plt.xlabel('Corridor Width')
 		plt.ylabel('Corridor Height')
 		plt.legend(['Agent trails', 'Finished Agents'])
+
 		# Time Taken, Delay Amount
-		plt.figure()
+		plt.subplot(2, 1, 2)
 		plt.hist(self.time_taken, alpha=.5, label='Time taken')
-		plt.hist(self.time_delayed, alpha=.5, label='Time delay')
+		plt.hist(self.time_delay, alpha=.5, label='Time delay')
 		plt.xlabel('Time')
 		plt.ylabel('Number of Agents')
 		plt.legend()
@@ -263,12 +305,64 @@ class Model:
 	def save_stats(self):
 		print()
 		print('Stats:')
-		print('Finish Time: ' + str(self.time_id))
-		print('Active / Finished / Total agents: ' + str(self.pop_active) + '/' + str(self.pop_finished) + '/' + str(self.pop_total))
-		print('Average time taken: ' + str(np.mean(self.time_taken)) + 's')
+		print('    Finish Time: ' + str(self.time))
+		print('    Active / Finished / Total agents: ' + str(self.pop_active) + '/' + str(self.pop_finished) + '/' + str(self.pop_total))
+		print('    Average time taken: {:.2f}s'.format(np.mean(self.time_taken)))
+		print('    Average time delay: {:.2f}s'.format(np.mean(self.time_delay)))
+		print('    Interactions/Agent: {:.2f}'.format(np.mean([agent.collisions for agent in self.agents])))
+		print('    Wiggles/Agent: {:.2f}'.format(np.mean([agent.wiggles for agent in self.agents])))
+		return
+
+	def batch(self):
+		for i in range(self.batch_iterations):
+			self.step()
+			if self.do_ani:
+				plt.clf()
+				self.ani(show_separation=True)
+				plt.pause(1/30)
+			if self.pop_finished == self.pop_total:
+				if self.do_print:
+					print('Everyone made it!')
+				break
+		if self.do_save:
+			if self.do_print:
+				self.save_stats()
+			if self.do_plot:
+				self.save_plot()
 		return
 
 
-if __name__ == '__main__':
-	model = Model({'do_ani': True, 'do_save': True})
+# Batches
+def animated_batch():
+	params = {
+		'batch_iterations': 200,
+		'do_ani': True,
+		'do_save': True,
+		'do_print': False,
+		'do_plot': True,
+		#'false_param': 'expect a warning'
+		}
+	model = Model(params)
 	model.batch()
+	return
+
+def parametric_study():
+	import time
+	print('Process Time (seconds), Time Taken (steps), Time Delay (steps), |, Interactions (per Agent), Wiggles (per Agent), |, None Default Params')
+	for pop, sep in [(100, 4), (300, 3), (700, 2)]:
+		t = time.time()
+		params = {
+			'pop_total': pop,
+			'separation': sep,
+			}
+		model = Model(dict(params, **{'do_save': True, 'do_print': False}))
+		model.batch()
+		print('{:.2f}, {:.2f}, {:.2f}, |, {:.2f}, {:.2f}, |, '.format(time.time()-t, np.mean(model.time_taken), np.mean(model.time_delay), np.mean([agent.collisions for agent in model.agents]), np.mean([agent.wiggles for agent in model.agents]))+str(params))
+	return
+
+
+if __name__ == '__main__':
+	# animated_batch()
+	# parametric_study()
+	# Model().batch()
+	pass

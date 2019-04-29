@@ -42,11 +42,11 @@ class Model:
 		[agent.step(self) for agent in self.agents]
 		return
 
-	def agents2state(self, do_ravel=True):
+	def get_state(self, do_ravel=True):
 		state = zip(*[agent.location for agent in self.agents])
 		return state
 
-	def state2agents(self, state):
+	def set_state(self, state):
 		for i in range(self.population):
 			self.agents[i].location = state[2*i:2*i+2]
 		return

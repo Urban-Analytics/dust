@@ -142,19 +142,6 @@ public class DataAssimilation {
             // ************ GET THE INFORMATION OUT OF THE SAMPLES ************
 
             System.out.println("\tEXTRACTING INFO FROM SAMPLES...");
-
-            /*
-            GaussianKDE class!!!
-            More accurate approximation for posterior distribution
-
-            HOWEVER if posterior distribution is simple (i.e. almost same as simple Gaussian) then much more simple and
-            efficient to produce another Gaussian from mu and sigma (these can be calculated from a separate BayesNet??? What does this mean?)
-
-            Caleb talked about swapping the prior for the black box model each time instead of recreating. Not sure
-            how this would look/work but he said it was possible and would be good for efficiency (also point below).
-
-            Try to swap prior for black box model instead of creating at each iteration (efficiency improvement)
-             */
             getSampleInfo(stateVector, net, sampler);
         }
         tempModel.finish();
@@ -197,7 +184,7 @@ public class DataAssimilation {
      * so positions in the truthVector remain fixed throughout the model. This is important when the truth vector data
      * is observed by tempModel.
      *
-     * @return  a vector of x,y coordinates of all agents in truthModel
+     * @return  a vector of x,y coordinates and speed of all agents in truthModel
      */
     private static double[] getTruthVector() {
         // Get all objects from model area (all people) and initialise a list
@@ -305,7 +292,7 @@ public class DataAssimilation {
                 "Wrong number of people in the model before building state vector. Expected %d but got %d",
                 tempModel.getNumPeople(), tempModel.area.getAllObjects().size());
 
-        // Return OpLambda wrapper
+        // Return OpLambda wrapper, calling step() function below multiple times
         UnaryOpLambda<DoubleTensor[], DoubleTensor[]> box = new UnaryOpLambda<>(
                 new long[0],
                 stateVector,
@@ -321,8 +308,8 @@ public class DataAssimilation {
      * to a different state object. This process of mapping the vector after each step using the UnaryOpLambda is
      * crucial as the resulting object will be used to build the Bayesian Network.
      *
-     * @param initialState
-     * @return
+     * @param initialState  The state vector of the initial state to be 'stepped'
+     * @return              The initial state at every iteration through WINDOW_SIZE? This one is confusing.
      */
     private static DoubleTensor[] step(DoubleTensor[] initialState) {
         DoubleTensor[] steppedState = new DoubleTensor[initialState.length];
@@ -347,8 +334,8 @@ public class DataAssimilation {
      *
      * @param box           The output of UnaryOpLambda, the black box model
      * @param windowNum     Current window number
-     * @param stateVector   vector of x,y positions for each agent
-     * @return              An observed CombineDoubles state vector, for use when building the box
+     * @param stateVector   vector of x,y positions and speed for each agent
+     * @return              An observed CombineDoubles state vector, for use when building the BayesianNetwork
      */
     private static CombineDoubles keanuObserve(Vertex<DoubleTensor[]> box, int windowNum, CombineDoubles stateVector) {
         System.out.println("\tObserving truth data. Adding noise with standard dev: " + SIGMA_NOISE);

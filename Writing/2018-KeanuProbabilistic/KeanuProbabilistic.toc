@@ -1,0 +1,11 @@
+\contentsline {section}{\numberline {1}Introduction}{2}
+\contentsline {section}{\numberline {2}Background}{2}
+\contentsline {subsection}{\numberline {2.1}Data Assimilation and Probabilistic Programming}{2}
+\contentsline {subsection}{\numberline {2.2}An Example Agent-Based Model: \textit {StationSim}}{2}
+\contentsline {subsection}{\numberline {2.3}A Framework for Data Assimilation}{2}
+\contentsline {section}{\numberline {3}Probabilistic Data Assimilation with a Trivial Model}{2}
+\contentsline {section}{\numberline {4}Probabilistic Data Assimilation with StationSim}{2}
+\contentsline {subsection}{\numberline {4.1}Full Knowledge of the System}{2}
+\contentsline {subsection}{\numberline {4.2}Partial Knowledge of Some Agents}{2}
+\contentsline {subsection}{\numberline {4.3}Aggregate Knowledge of the System}{3}
+\contentsline {section}{\numberline {5}Conclusions}{3}

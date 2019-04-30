@@ -15,6 +15,7 @@
  */
 
 package StationSim;
+import org.jetbrains.annotations.NotNull;
 import sim.engine.SimState;
 import sim.util.Bag;
 import sim.util.Double2D;
@@ -22,7 +23,7 @@ import sim.util.Double2D;
 /**
  * An agent that moves toward a set target while interacting with other Person agents along the way.
  */
-public class Person extends Agent {
+public class Person extends Agent implements Comparable<Person> {
     private static final long serialVersionUID = 1;
 
     private Station station;
@@ -31,21 +32,63 @@ public class Person extends Agent {
     public Exit exit;
     private double desiredSpeed;
     private double minSpeed = 0.05;
-    private double speedMultilpler = 1.0;
+    private double speedMultiplier = 1.0;
     private double radius;
     private double currentSpeed;
+    private boolean active = true; // Whether or not agents take part in the simulation. One constructor makes this false.
+    private int id; // agents will have incrementally increasing IDs
+
+    public double[][] exitProbs = {{0.2, 0.8},
+                                {0.3, 0.7},
+                                {0.9, 0.1}};
 
 
-    public Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
+    /**
+     * Used for creating inactive agents. These are used so that all agents can be created initially, but when
+     * we actually need an agent this inactive agent will be deleted and a new one will be created one of the other
+     * available constructors. Agents created using this constructor have active=false so do nothing when their step()
+     * method is called.
+     */
+    Person(int size, Double2D location, String name, Exit exit, int id) {
+        super(size, location, name);
+        this.active = false;
+        this.desiredSpeed = 0;
+        radius = size / 2.0;
+        this.exit = exit;
+        // Give inactive agents unique ID
+        this.id = id; // This is the only constructor including IDs. ID's come from ID_Counter in Station.class
+    }
+
+    void makeInactive(Station station, String name) {
+        this.active = false;
+        this.name = name;
+        this.desiredSpeed = 0;
+        station.area.setObjectLocation(this, new Double2D(0d,0d));
+    }
+
+    void makeActive(Double2D location, Station station, Exit exit, Entrance entrance) {
+        this.active = true;
+        this.name = "Person";
+        this.location = location;
+        this.station = station;
+        this.exit = exit;
+        this.entrance = entrance;
+        desiredSpeed = station.random.nextDouble() + minSpeed;
+        station.numRandoms++;
+    }
+
+
+    Person(int size, Double2D location, String name, Station station, double[] exitProbs, Entrance entrance) {
         super(size, location, name);
         this.station = station;
         this.entrance = entrance;
         radius = size / 2.0;
         desiredSpeed = station.random.nextDouble() + minSpeed;
-        //desiredSpeed = nextExponential(1.0) + minSpeed;
-        //System.out.println(desiredSpeed + ",");
+        desiredSpeed = nextExponential(1.0) + minSpeed;
+        // System.out.println(desiredSpeed + ",");
         station.numRandoms++;
         currentSpeed = 0.0;
+        //this.id = StationSim.Person.ID_Counter++; // This isn't necessary here (But might be useful later)
 
         double randDouble = station.random.nextDouble();
         station.numRandoms++;
@@ -59,23 +102,37 @@ public class Person extends Agent {
         }
     }
 
-    public double getCurrentSpeed() {
-        return currentSpeed;
+
+    // New Person constructor to accept Exit object instead of exitProbs. Easier to build state vector with.
+    Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance) {
+        super(size, location, name);
+        this.station = station;
+        this.entrance = entrance;
+        this.exit = exit;
+        radius = size / 2.0;
+        desiredSpeed = station.random.nextDouble() + minSpeed;
+        station.numRandoms++;
+        currentSpeed = 0.0;
     }
 
-    public Exit getExit() {
-        return exit;
+
+    // Constructor with desiredSpeed included
+    Person(int size, Double2D location, String name, Station station, Exit exit, Entrance entrance, double desiredSpeed) {
+        this(size, location, name, station, exit, entrance); // Use the other Person constructor, saves on code repetition
+        this.desiredSpeed = desiredSpeed;
+        radius = size / 2.0;
     }
 
-    public double getRadius() {
-        return radius;
-    }
 
     /** Moves the Person closer to their exit and interacts with other Person agents if necessary.
      * @param state Current sim state
      */
     @Override
     public void step(SimState state) {
+        if (!this.active) { // If the person has not been activated yet then don't do anything
+            return;
+        }
+        assert this.active ;
         station = (Station) state;
 
         Double2D newLocation;
@@ -132,14 +189,11 @@ public class Person extends Agent {
                 }
             }
         }
-
-        // Update location (or not)
         // Update location (or not)
         if(!collision(newLocation)) {
             currentSpeed = getDistance(getLocation(), newLocation);
             location = newLocation;
         }
-
         station.area.setObjectLocation(this, location);
     }
 
@@ -160,14 +214,14 @@ public class Person extends Agent {
     /**
      * Check for collision with any other people at a given location
      * @param location Test location for this object
-     * @return Wheteher this object will intersect with any other people at the given location
+     * @return Whether this object will intersect with any other people at the given location
      */
-    public boolean collision(Double2D location) {
-        Person p;
+    boolean collision(Double2D location) {
+        StationSim.Person p;
         Bag people = station.area.getNeighborsWithinDistance(location, radius * 5);
         if (people != null) {
             for (int i = 0; i < people.size(); i++) {
-                p = (Person) people.get(i);
+                p = (StationSim.Person) people.get(i);
                 if (p != this && intersect(location, p)) { //check if evaluation is lazy
                     return true;
                 }
@@ -183,7 +237,7 @@ public class Person extends Agent {
      * @param other Another person with this current location in the simulation
      * @return Whether the two people will intersect
      */
-    public boolean intersect(Double2D location, Person other) {
+    private boolean intersect(Double2D location, StationSim.Person other) {
         double distX = location.getX() - other.getLocation().getX();
         double distY = location.getY() - other.getLocation().getY();
 
@@ -197,8 +251,10 @@ public class Person extends Agent {
      * @return The distance to the chosen exit of this person
      */
     public double distanceToExit() {
-        return getDistance(getLocation(), exit.getLocation());
-
+        if (!active) {// Inactive agents don't have an exit yet, so just give them an arbitrary large distance
+            return Double.MAX_VALUE;
+        }
+        return getDistance(this.getLocation(), exit.getLocation());
     }
 
     /**
@@ -211,8 +267,59 @@ public class Person extends Agent {
         return Math.hypot(a.getX() - b.getX(), a.getY() - b.getY());
     }
 
-    public double nextExponential(double lambda) {
+    private double nextExponential(double lambda) {
         return  Math.log(1 - station.random.nextDouble()) / (-lambda);
     }
 
+
+
+    double getCurrentSpeed() {
+        return currentSpeed;
+    }
+
+    void setCurrentSpeed(double currentSpeed) { this.currentSpeed = currentSpeed; }
+
+    Station getStation() { return station; }
+
+    double getDesiredSpeed() { return desiredSpeed; }
+
+    int getID() { return id; }
+
+    public Exit getExit() {
+        return exit;
+    }
+
+    double getRadius() {
+        return radius;
+    }
+
+    boolean isActive() { return active; }
+
+    @Override
+    public String toString() {
+        return "["+ this.id+"]"+this.name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        // If the object is compared with itself then return true
+        if (o == this) {
+            return true;
+        }
+
+        /* Check if o is an instance of Person or not
+          "null instanceof [type]" also returns false */
+        if (!(o instanceof StationSim.Person)) {
+            return false;
+        }
+
+        // typecast o to Complex so that we can compare data members
+        StationSim.Person p = (StationSim.Person) o;
+        return this.id == p.id;
+    }
+
+    @Override
+    public int compareTo(@NotNull Person anotherPerson) {
+        return this.getID() - anotherPerson.getID();
+    }
 }

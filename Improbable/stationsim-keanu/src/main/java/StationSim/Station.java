@@ -15,8 +15,7 @@
  */
 package StationSim;
 
-import io.improbable.keanu.research.randomfactory.VertexBackedRandomGenerator;
-import org.apache.commons.math3.random.RandomGenerator;
+import io.improbable.keanu.KeanuRandom;
 import sim.engine.SimState;
 import sim.field.continuous.Continuous2D;
 import sim.util.Bag;
@@ -24,12 +23,15 @@ import sim.util.Double2D;
 import sim.util.Interval;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Simulates a very simple train station with a given number of entrances and exits which are set through
  * GUI or command line arguments. People move from the entrance to a given exit, interacting on the way.
  */
-public class Station extends SimState{
+public class Station extends SimState {
 
     public int numRandoms = 0;
 
@@ -37,18 +39,22 @@ public class Station extends SimState{
     public static int modelCount = 0 ; // Record the total number of models created.
 
     // Representations of simulation space
-    private double areaWidth = 200.0;
-    private double areaHeight = 100.0;
+    private final double areaWidth = 200.0;
+    private final double areaHeight = 100.0;
     int wallWidth = 2;
     double wallHeight;
     public Continuous2D area = new Continuous2D(1.0, areaWidth, areaHeight);
     public Continuous2D doorways = new Continuous2D(1.0, areaWidth, areaHeight);
     public Continuous2D walls = new Continuous2D(1.0, areaWidth, areaHeight);
 
+    // A bank of people who are inactive. Everyone is created at the beginning, but they are inactive until
+    // the entrance activates them
+    List<Person> inactivePeople = null;
+
     // Default values for parameters
-    private int numPeople = 700;
-    private int numEntrances = 3;
-    private int numExits = 2;
+    private final int numPeople = 700;
+    private final int numEntrances = 3;
+    private final int numExits = 2;
     public double[][] exitProbs = {{0.2, 0.8},
                                     {0.3, 0.7},
                                     {0.9, 0.1}};
@@ -60,10 +66,16 @@ public class Station extends SimState{
     public int addedCount;
     private boolean writeResults = false;
 
-    public RandomGenerator random;
+    private int ID_Counter = 0; // To assign unique IDs for each agent
+
+    //public RandomGenerator random;
+    public KeanuRandom random;
+    //public RandomDoubleFactory random;
 
     //Bag of people who have finished the simulation
     public Bag finishedPeople = new Bag();
+
+    int activeNum = 0;
 
     // Store  exit agents for passing to constructors
     public ArrayList<Exit> exits;
@@ -75,27 +87,29 @@ public class Station extends SimState{
     // Run with default settings only
     private boolean hideParameters = false;
 
+
     public Station(long seed) {
         super(seed);
     }
-
 
 
     /**
      * Start a simulation. This is the version that is called directly from the Wrapper and uses the
      * random factory supplied as a parameter.
      */
-    public void start(RandomGenerator rand) {
-        System.out.println("Model "+Station.modelCount++ +" starting");
+    public void start(KeanuRandom rand) {
+        System.out.println("Model "+ StationSim.Station.modelCount++ +" starting");
         super.start();
         random = rand;
         area.clear();
         doorways.clear();
         walls.clear();
         addedCount = 0;
+
         createWalls();
         createExits();
         createEntrances();
+        createInactivePeople();
 
         // This changes when number of exits of size of exits do
         wallHeight = (areaHeight / (numExits + 1)) - (exitSize * 2.0  * personSize / 2.0);
@@ -108,6 +122,7 @@ public class Station extends SimState{
         analysis = new Analysis(this);
         schedule.scheduleRepeating(analysis, 3, 1.0);
     }
+
 
     /**
      * Start the simulation. This is the version that is called from the GUI or Station.main() methods. It needs to
@@ -121,12 +136,14 @@ public class Station extends SimState{
         doorways.clear();
         walls.clear();
         addedCount = 0;
-        random = new VertexBackedRandomGenerator(Wrapper.numRandomDoubles, 0, 0);
+        //random = new VertexBackedRandomGenerator(Wrapper.numRandomDoubles, 0, 0);
+        random = new KeanuRandom();
         numRandoms = 0;
 
         createWalls();
         createExits();
         createEntrances();
+        createInactivePeople();
 
         // This changes when number of exits of size of exits do
         wallHeight = (areaHeight / (numExits + 1)) - (exitSize * 2.0  * personSize / 2.0);
@@ -138,8 +155,8 @@ public class Station extends SimState{
         // Analysis and outputs from the model are contained in this agent
         analysis = new Analysis(this);
         schedule.scheduleRepeating(analysis, 3, 1.0);
-
     }
+
 
     /** Call appropriate analysis methods and cleans up
      */
@@ -149,10 +166,36 @@ public class Station extends SimState{
         System.out.println("Number of random draws: " + numRandoms);
     }
 
+
+    /** Setup walls on the right side of the simulation. These the position and size of these are
+     * change based on the number of exits and size of the exits.
+     */
+    public void createWalls() {
+        Double2D pos;
+        Wall wall;
+
+        for (int i = 0; i < numExits + 1; i++) {
+            pos = new Double2D(areaWidth - (wallWidth), areaHeight / (numExits * 2 + 2) * (i * 2 + 1));
+            wall = new Wall(pos, wallWidth / 2, wallHeight /2);
+            walls.setObjectLocation(wall, wall.getLocation());
+
+        }
+
+        // back corners - These cover gaps in the top and bottom corners
+        pos = new Double2D(areaWidth - (wallWidth), exitSize / 1.5);
+        wall = new Wall(pos, wallWidth, exitSize + 1);
+        walls.setObjectLocation(wall, wall.getLocation());
+
+        pos = new Double2D(areaWidth - (wallWidth), areaHeight - (exitSize / 1.5));
+        wall = new Wall(pos, wallWidth, exitSize + 1); //exitSize  * personSize / 2
+        walls.setObjectLocation(wall, wall.getLocation());
+    }
+
+
     /** Creates entrance agents based on the number of entrances and size of entrances set in GUI.
      * The size of the entrance represents how many people can pass through it per step (i.e. the number
      * of person agents that are generated by an entrance per step). People are evenly assigned to the
-     * entrances using integer division (remainers discarded). Entrances are evenly spaced on left side
+     * entrances using integer division (remainders discarded). Entrances are evenly spaced on left side
      * of the simulation.
      */
     private void createEntrances() {
@@ -176,6 +219,7 @@ public class Station extends SimState{
 
     }
 
+
     /** Creates exit agents based on the number of exits and size of exits set in GUI.
      * The size of the entrance represents how many people can pass through it per step
      * (i.e. The number of person agents that can be removed from the simulation by an
@@ -194,39 +238,38 @@ public class Station extends SimState{
         for (int i = 0; i < numExits; i++) {
             y += intervalSpacer;
             position = new Double2D(areaWidth, y);
-            Exit exit =  new Exit(exitSize, position, "Exit: " + (i + 1), exitInterval);
+            //Exit exit =  new Exit(exitSize, position, "Exit: " + (i + 1), exitInterval);
+            Exit exit =  new Exit(exitSize, position, "Exit: " + (i + 1), exitInterval, (i+1));
             doorways.setObjectLocation(exit, position);
             schedule.scheduleRepeating(exit, 0, 1.0);
             exits.add(exit);
         }
     }
 
-    /** Setup walls on the right side of the simulation. These the position and size of these are
-     * change based on the number of exits and size of the exits.
+
+    /** Creates inactive agents at the start of the simulation run. This is to ensure the
+     * state vector does not change length throughout the data assimilation windows in DataAssimilation.java
      */
-    public void createWalls() {
-        Double2D pos;
-        Wall wall;
+    private void createInactivePeople() {
+        // Create all of the people (unless another entrance has done this already
 
-        for (int i = 0; i < numExits + 1; i++) {
-            pos = new Double2D(areaWidth - (wallWidth), areaHeight / (numExits * 2 + 2) * (i * 2 + 1));
-            wall = new Wall(pos, wallWidth / 2, wallHeight /2);
-            walls.setObjectLocation(wall, wall.getLocation());
-
+        System.out.print("Populating inactive set: ");
+        this.inactivePeople = new ArrayList<>();
+        for (int i=0; i<(this.getNumPeople()); i++) {
+            Double2D spawnLocation = new Double2D(0.0, 0.0);
+            Exit exit = this.getExits().get(0); // Assign all inactive agents to first exit (Will change when activated)
+            int id = ID_Counter++;
+            Person person = new Person(personSize, spawnLocation, "Inactive Person", exit, id);
+            this.area.setObjectLocation(person, spawnLocation);
+            this.inactivePeople.add(person);
         }
-
-        // back corners - These cover gaps in the top an bottom corners
-        pos = new Double2D(areaWidth - (wallWidth), exitSize / 1.5);
-        wall = new Wall(pos, wallWidth, exitSize + 1);
-        walls.setObjectLocation(wall, wall.getLocation());
-
-        pos = new Double2D(areaWidth - (wallWidth), areaHeight - (exitSize / 1.5));
-        wall = new Wall(pos, wallWidth, exitSize + 1); //exitSize  * personSize / 2
-        walls.setObjectLocation(wall, wall.getLocation());
+        System.out.println("... created "+this.inactivePeople.size()+" inactive agents. " +
+                "There are "+this.getNumPeople() + " agents in the model.");
     }
 
+
     // Lots of getters and setters use hideParameters variable to hide parameters from GUI
-    public int getNumPeople() {
+    public final int getNumPeople() {
         return numPeople;
     }
 
@@ -234,9 +277,9 @@ public class Station extends SimState{
         return "Total number of people to enter simulation split evenly between all entrances";
     }
 
-    public void setNumPeople(int people) {
+    /*public void setNumPeople(int people) {
         numPeople = people;
-    }
+    } */
 
     public Object domNumPeople() {
         return new Interval(1, 10000);
@@ -250,9 +293,9 @@ public class Station extends SimState{
         return numEntrances;
     }
 
-    public void setNumEntrances(int entrances) {
+    /*public void setNumEntrances(int entrances) {
         numEntrances = entrances;
-    }
+    }*/
 
     public boolean hideNumEntrances() {
         return hideParameters;
@@ -266,9 +309,9 @@ public class Station extends SimState{
         return numExits;
     }
 
-    public void setNumExits(int exits) {
+    /*public void setNumExits(int exits) {
         numExits = exits;
-    }
+    }*/
 
     public boolean hideNumExits() {
         return hideParameters;
@@ -438,7 +481,7 @@ public class Station extends SimState{
      * @param args
      */
     public static void main(String[] args) {
-        doLoop(Station.class, args);
+        doLoop(StationSim.Station.class, args);
         System.exit(0);
     }
 }

@@ -30,12 +30,22 @@ public class Exit extends Agent {
     private int exitInterval;
     public int totalRemoved;
 
+    // Added explicitly assigned exitNumber to help DataAssimilation
+    public int exitNumber;
+
+
     public Exit(int size, Double2D location, String name, int exitInterval) {
         super(size, location, name);
         this.exitInterval = exitInterval;
         this.totalRemoved = 0;
     }
 
+    public Exit(int size, Double2D location, String name, int exitInterval, int exitNumber) {
+        super(size, location, name);
+        this.exitInterval = exitInterval;
+        this.totalRemoved = 0;
+        this.exitNumber = exitNumber;
+    }
 
 
     /** Removes person agents from the simulation that are touching the exit. The number
@@ -56,9 +66,14 @@ public class Exit extends Agent {
                 // If a person is in front of exit then remove
                 if (personLocation.getX() >= location.getX() - (station.wallWidth * 2.0) - (p.getRadius() * 2)  &&
                         personLocation.getY() < (location.getY() + (size / 2.0)) && // check this (size / 2.0)
-                                personLocation.getY() > (location.getY() - (size / 2.0))) {
-                    station.finishedPeople.add(p); // Put into bag of finished people
-                    station.area.remove(p); //remove from sim
+                                personLocation.getY() > (location.getY() - (size / 2.0)) &&
+                                    p.isActive()) {
+                    assert (p.isActive()) : "Person to be removed is inactive! This is very wrong";
+                    station.finishedPeople.add(p); // Put into bag of finished people. This is used in the analysis
+                    //station.inactivePeople.add(p); // Make them inactive
+                    station.activeNum--; // reduce activeNum for housekeeping
+                    p.makeInactive(station, "Previously Active");
+                    //station.area.remove(p); //remove from sim
                     totalRemoved++;
                 }
             }

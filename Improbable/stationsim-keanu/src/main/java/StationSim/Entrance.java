@@ -1,4 +1,4 @@
-/* Created by Micahel Adcock on 17/04/2018.
+/* Created by Michael Adcock on 17/04/2018.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,10 @@
 package StationSim;
 
 import sim.engine.SimState;
+import sim.util.Bag;
 import sim.util.Double2D;
+
+import java.util.*;
 
 /**
  * An entrance that spawns n people per time step based on the size of the Entrance.
@@ -29,21 +32,25 @@ public class Entrance extends Agent {
     public int numPeople;
     //private double buffer = 0.2;
     private int entranceInterval; // How often are Person objects produced
+    protected Station station;
 
     // Exit for people agents to aim for
     public Exit exit;
     public double[] exitProbs;
     public int totalAdded;
 
-    public Entrance(int size, Double2D location, String name, int numPeople, double[] exitProbs, SimState state) {
+
+
+    public Entrance(int size, Double2D location, String name, int numPeople, double[] exitProbs, Station state) {
         super(size, location, name);
-        Station station = (Station) state;
+        this.station = state;
         this.entranceInterval = station.getEntranceInterval();
         this.personSize = station.getPersonSize();
         this.size *= personSize;
         this.numPeople = numPeople;
         this.exitProbs = exitProbs;
         this.totalAdded = 0;
+
     }
 
     public Exit getExit() {
@@ -67,22 +74,67 @@ public class Entrance extends Agent {
                 toEnter = size;
             }
             int addedCount = 0;
+
+            // Get all remaining inactive agents
+            List<Person> inacPeople = station.inactivePeople;
+
             // Generate people agents to pass through entrance and set as stoppables.
             for (int i = 0; i < toEnter; i++) {
                 double x = location.getX();
                 double y = location.getY();
                 Double2D spawnLocation = new Double2D(x + 1,
                         (y + i) - ((size / 2.0) - personSize / 2.0)); // need to add a buffer
-                Person person = new Person(personSize, spawnLocation, "Person: " + (station.addedCount + 1), station, exitProbs, this);
-                if (!person.collision(spawnLocation)) {
-                    station.area.setObjectLocation(person, spawnLocation);
-                    addedCount++;
+
+
+                // Assign exit from exit probs
+                double randDouble = station.random.nextDoubleNonZero();
+                station.numRandoms++;
+                double cumulativeProb = 0.0;
+                for (int j = 0; j < exitProbs.length; j++) {
+                    if (randDouble < exitProbs[j] + cumulativeProb) {
+                        exit = station.exits.get(j);
+                    } else {
+                        cumulativeProb += exitProbs[j];
+                    }
+                }
+
+
+                // Sort inactive people by ID (lowest first) (this logic specified by compareTo() in Person.class)
+                Collections.sort(inacPeople); // Allows agents to be added in ID order (important for comparing model runs)
+
+                // Iterator for iterating through all inactive people
+                Iterator<Person> persIter = inacPeople.iterator();
+
+                // Get next inactivePerson agent from inactivePerson agents set
+                Person inactivePerson = persIter.next();
+
+                // Check agent is inactivePerson
+                assert (!inactivePerson.isActive()) : "New agent is not inactive, this is a problem.";
+
+                /* Make the agent active */
+                inactivePerson.makeActive(spawnLocation, station, exit, this);
+
+                /* Check if agent will collide when spawning, if not move new active agent through entrance */
+                if (!inactivePerson.collision(spawnLocation)) {
+                    station.area.setObjectLocation(inactivePerson, spawnLocation); // add the person to the model
+                    addedCount++; // save for later
                     station.addedCount++;
+                    station.activeNum++; // increase activeNum, used for observations
+                    persIter.remove(); // remove newly active agent from inactivePeople list
+                    //station.inactivePeople.remove(inactivePerson);
+                } else {
+                    /* If the agent does not make it into the model (because collision stopped it), then make inactive again */
+                    inactivePerson.makeInactive(station, "Inactive Person");
                 }
             }
             // Number of people left for further steps
             totalAdded += addedCount;
             numPeople -= addedCount;
         }
+
+
+        assert(station.area.getAllObjects().size() == station.getNumPeople()) : "Wrong number of people: ("
+                                                                                + station.area.getAllObjects().size()
+                                                                                + ") in the model after Entrance.step()";
     }
 }

@@ -4,7 +4,7 @@ import io.improbable.keanu.algorithms.NetworkSamples;
 import io.improbable.keanu.algorithms.graphtraversal.VertexValuePropagation;
 import io.improbable.keanu.algorithms.mcmc.MetropolisHastings;
 import io.improbable.keanu.network.BayesianNetwork;
-import io.improbable.keanu.research.vertices.DoubleArrayIndexingVertex;
+//import io.improbable.keanu.research.vertices.DoubleArrayIndexingVertex;
 import io.improbable.keanu.tensor.dbl.DoubleTensor;
 import io.improbable.keanu.vertices.dbl.DoubleVertex;
 import io.improbable.keanu.vertices.dbl.probabilistic.GaussianVertex;
@@ -27,7 +27,7 @@ public class MHTest {
         return numPeople;
     }
 
-
+/*
     public static void main(String[] args) {
         DoubleVertex input = new GaussianVertex(0.0,1.0);
         UnaryOpLambda<DoubleTensor,Double []> box = new UnaryOpLambda<>( input, MHTest::run);
@@ -42,7 +42,7 @@ public class MHTest {
         BayesianNetwork testNet = new BayesianNetwork(box.getConnectedGraph());
         NetworkSamples samples = MetropolisHastings.getPosteriorSamples( testNet, Arrays.asList(box), 40 );
 
-    }
+    } */
 
 
 

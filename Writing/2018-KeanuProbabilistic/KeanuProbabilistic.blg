@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99d (TeX Live 2018)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: KeanuProbabilistic.aux
+The style file: chicago.bst
+Database file #1: 2019-KeanuProbabilistic.bib
+You've used 1 entry,
+            2861 wiz_defined-function locations,
+            617 strings with 5050 characters,
+and the built_in function-call counts, 647 in all, are:
+= -- 48
+> -- 52
+< -- 0
++ -- 16
+- -- 20
+* -- 50
+:= -- 130
+add.period$ -- 3
+call.type$ -- 1
+change.case$ -- 6
+chr.to.int$ -- 1
+cite$ -- 1
+duplicate$ -- 18
+empty$ -- 37
+format.name$ -- 24
+if$ -- 113
+int.to.chr$ -- 1
+int.to.str$ -- 0
+missing$ -- 2
+newline$ -- 8
+num.names$ -- 10
+pop$ -- 8
+preamble$ -- 1
+purify$ -- 13
+quote$ -- 0
+skip$ -- 24
+stack$ -- 0
+substring$ -- 20
+swap$ -- 5
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 10
+warning$ -- 0
+while$ -- 10
+width$ -- 0
+write$ -- 15

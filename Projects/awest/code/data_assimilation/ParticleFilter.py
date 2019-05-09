@@ -1,50 +1,38 @@
-# Particle Filter for Agent-Based Modelling
-#
-# Requirement:
-# 	model0                         is your agent-based model
-# 	model.step()                   advance the model
-# 	state = model.get_state()   get a state vector of the abm equivalent to the observation vector
-# 	model.set_state(state)      give a state vector to the particle-model maybe with added noise
-# 	mask, activity = model.mask()  often agents are inactive in abms, because state vector shouldn't change size a boolean mask is required for statistics generation
-# Requests:
-# 	model.params                   for reinitialising models (if there is initial randomness) the parameters will need reloading
-# 	model.unique_id                is applied with this filter, maybe this
-# 	model.ani()                    is used for animation
-#
-# TODO:
-# 	mask ani
-# 	async
-# 	await
-# 	wait
-
-
+# Particle Filter
+'''
+A Particle Filter design for Agent-Based Modelling
+v7.3 (lit)
+'''
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from copy import deepcopy
 from multiprocessing.dummy import Pool
+np.random.seed(39)
+
 
 class ParticleFilter:
 
-	def __init__(self, model0, particles=10, window=1, do_copies=True, do_save=False):
+	def __init__(self, model0, particles=10, window=1, do_copies=True, do_save=False, do_noise=False):
 		self.time = 0
 		# Params
 		self.window = window
 		self.particles = particles
 		# Model
 		self.models = [deepcopy(model0) for _ in range(self.particles)]
-		if not do_copies:
-			[model.__init__() for model in self.models]
+		if not do_copies: [model.__init__(model0.params) for model in self.models]
 		for unique_id in range(self.particles):
 			self.models[unique_id].unique_id = unique_id
 		# Save
-		self.do_save = do_save  # save stats
+		self.do_save = do_save
+		self.do_noise = do_noise
 		if self.do_save:
 			self.active = []
 			self.mask = []
 			self.mean = []
 			self.var = []
 			self.err = []
+			self.resampled = []
 		return
 
 	def step(self, state_obs):
@@ -57,14 +45,14 @@ class ParticleFilter:
 		return
 
 	def predict(self, states):
-		[self.models[i].set_state(states[i]) for i in range(self.particles)]
+		# [self.models[i].set_state(states[i]) for i in range(self.particles)]
 		Pool().map(lambda model: [model.step() for _ in range(self.window)], self.models)
 		states = np.array([model.get_state() for model in self.models])
 		return states
 
 	def reweight(self, states, state_obs):
 		if states.shape[1] != state_obs.shape[0]:
-			print('Warning - Not equal states and state_obs lengths.\nSee documentation.\n\nShortening quick fix applied.')
+			print('Warning - Not equal states {} and state_obs {} lengths.\nShortening quick fix applied.'.format(states.shape,state_obs.shape))
 			states = states[:, :len(state_obs)]
 		distance = np.linalg.norm(states - state_obs, axis=1)
 		weights = 1 / np.fmax(1e-99, distance)
@@ -72,6 +60,23 @@ class ParticleFilter:
 		return weights
 
 	def resample(self, states, weights):
+		states, weights, indexes = self.resample_stratified(states, weights)
+		# Add resample noise
+		if self.do_noise:
+			std = np.std(states, 0)
+			conditions = indexes-np.arange(len(indexes))
+			conditions = abs(conditions[1:] - conditions[:-1])
+			noise = np.zeros(states.shape)
+			for i, condition in enumerate(conditions):
+				if condition:
+					noise[i] = np.random.normal(0, std)
+			states = states + noise  # += does not work with numpy arrays
+		if True:
+			resampled = len(indexes) - len(set(indexes))
+			self.resampled.append(resampled)
+		return states, weights
+
+	def resample_systematic(self, states, weights):
 		offset = (np.arange(self.particles) + np.random.uniform()) / self.particles
 		cumsum = np.cumsum(weights)
 		i, j = 0, 0
@@ -84,7 +89,23 @@ class ParticleFilter:
 				j += 1
 		states = states[indexes]
 		weights = weights[indexes]
-		return states, weights
+		return states, weights, indexes
+
+	def resample_stratified(self, states, weights):
+		N = len(weights)
+		offset = (np.random.rand(N) + range(N)) /N
+		cumsum = np.cumsum(weights)
+		i, j = 0, 0
+		indexes = np.empty(self.particles, 'i')
+		while i < self.particles and j < self.particles:
+			if offset[i] < cumsum[j]:
+				indexes[i] = j
+				i += 1
+			else:
+				j += 1
+		states = states[indexes]
+		weights = weights[indexes]
+		return states, weights, indexes
 
 	def save(self, states, weights, state_obs):
 		active = np.array([model.mask()[1] for model in self.models], 'i')
@@ -152,28 +173,34 @@ class ParticleFilter:
 	def batch(self, model0, iterations=None, do_ani=False, agents=None):
 		if iterations is None:
 			iterations = model0.batch_iterations
-		for i in range(iterations):
-			model0.step()
-			self.step(model0.get_state())
-			if do_ani:
-				self.ani(model0, agents)
-		self.plot()
+		for _ in range(iterations):
+			[model0.step() for _ in range(self.window)]
+			state_obs = model0.get_state()
+			# state_obs += np.random.normal(0, 10, state_obs.shape)
+			self.step(state_obs)
+			# if do_ani:
+			# 	self.ani(model0, agents)
+		# self.plot()
 		# self.file()  # not needed example batching
+		print(self.resampled)
+		plt.plot(self.resampled)
+		plt.show()
 		return
 
 	def ani(self, model0, agents=None):
-		plt.clf()
-		fig = plt.figure(1)
-		[model.ani(agents=agents, colour='r', alpha=.3) for model in self.models]
-		model0.ani()
-		plt.pause(1/30)
+		if self.time%10 is 0:
+			plt.clf()
+			fig = plt.figure(1)
+			[model.ani(agents=agents, colour='r', alpha=.3) for model in self.models]
+			model0.ani(agents=None,   colour='b', alpha=.3)
+			model0.ani(agents=agents)
+			# plt.pause(1/4)
+			# plt.savefig('./data/run2/sspmm_pf_{}.png'.format(self.time))
 		return
 
 
 if __name__ == '__main__':
-	import sys
-	sys.path.append("..")
-	from models.screensaver import Model
+	from sspmm import Model
 	model = Model()
-	pf = ParticleFilter(model, particles=10, window=2, do_copies=False, do_save=True)
-	pf.batch(model, iterations=50, do_ani=True, agents=None)
+	pf = ParticleFilter(model, particles=200, window=10, do_copies=True, do_save=True, do_noise=False)
+	pf.batch(model, iterations=400, do_ani=True, agents=1)

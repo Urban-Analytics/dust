@@ -1,29 +1,12 @@
-# StationSim (pronounced Mike's Model)
+# sspmm
 '''
-A genuinely interacting agent based model.
-
-TODO:
-	ani gates
-	ani markersize
-	ani save
-	difference between pf and pf_km
-	removal of stationsim_km
-	update sspmm.md?
-
-speed_desire -> speed_max (to fit speed_min)
-classmethods out - statics and internal are in
-default params are defined using dictionaries as to keiran's plan
-gates construtor methods from keiran are used
-lerp deleted and lerp_vector increases speed dramatically
-norm edited to kerian's improved euclidean distance
-
-TLDR: Speed updates and back to functioning with PF
+A genuine Agent-Based Model designed to contain many ABM features.
+v7.3 (lit)
 '''
 # Imports
 import numpy as np
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
-import names
 
 
 # Agent
@@ -31,17 +14,17 @@ class Agent:
 
 	def __init__(self, model, unique_id):
 		self.unique_id = unique_id
-		self.name = names.get_full_name()
 		# Required
 		self.status = 0  # 0 Not Started, 1 Active, 2 Finished
 		# Location
-		self.location = model.loc_entrances[np.random.randint(model.entrances)]
-		self.location[1] += model.entrance_space * (np.random.uniform() - .5)
+		self.loc_start = model.loc_entrances[np.random.randint(model.entrances)]
+		self.loc_start[1] += model.entrance_space * np.random.uniform(-1,+1)
 		self.loc_desire = model.loc_exits[np.random.randint(model.exits)]
+		self.location = self.loc_start
 		# Parameters
 		self.speed_max = 0
 		while self.speed_max <= model.speed_min:
-			self.speed_max = np.random.normal(model.speed_desire_mean, model.speed_desire_std)
+			self.speed_max = np.random.normal(model.speed_mean, model.speed_std)
 		self.wiggle = min(model.max_wiggle, self.speed_max)
 		self.speeds = np.arange(self.speed_max, model.speed_min, -model.speed_step)
 		self.time_activate = int(np.random.exponential(model.entrance_speed * self.speed_max))
@@ -75,26 +58,25 @@ class Agent:
 		# Euclidean distance between two 2D points.
 		x = loc1[0] - loc2[0]
 		y = loc1[1] - loc2[1]
-		norm =  (x*x + y*y)**.5
+		norm = (x*x + y*y)**.5
 		# The default np.linalg.norm(loc1-loc2) was not use because it took 2.45s while this method took 1.71s.
 		return norm
 
 	def move(self, model):
-		lerp_vector = (self.loc_desire - self.location) / self.distance(self.loc_desire, self.location)
+		direction = (self.loc_desire - self.location) / self.distance(self.loc_desire, self.location)
 		for speed in self.speeds:
 			# Direct
-			new_location = self.location + speed * lerp_vector
+			new_location = self.location + speed * direction
 			if not self.collision(model, new_location):
 				break
 			else:
 				if model.do_save:
 					self.collisions += 1
+			# Wiggle
 			if speed == self.speeds[-1]:
 				if model.do_save:
 					self.wiggles += 1
-				# Wiggle
-				new_location = self.location + self.wiggle*np.random.randint(-1, 1 +1, 2)
-				# Rebound
+				new_location = self.location + self.wiggle*np.random.randint(-1, 1+1, 2)
 				if not model.is_within_bounds(new_location):
 					new_location = np.clip(new_location, model.boundaries[0], model.boundaries[1])
 		# Move
@@ -121,6 +103,7 @@ class Agent:
 		return neighbours
 
 	def exit_query(self, model):
+		# if model.width-self.location[0] < model.exit_space:  # saves a small amount of time
 		if self.distance(self.location, self.loc_desire) < model.exit_space:
 			self.status = 2
 			model.pop_active -= 1
@@ -128,7 +111,7 @@ class Agent:
 			if model.do_save:
 				time_delta = model.time - self.time_start
 				model.time_taken.append(time_delta)
-				time_delta -= (self.distance(self.location, self.loc_desire) - model.exit_space) / self.speed_max
+				time_delta -= (self.distance(self.loc_start, self.loc_desire) - model.exit_space) / self.speed_max
 				model.time_delay.append(time_delta)
 		return
 
@@ -149,99 +132,77 @@ class Model:
 			'height': 100,
 			'pop_total': 100,
 			'entrances': 3,
-			'entrance_space': 2,
+			'entrance_space': 1,
 			'entrance_speed': 4,
 			'exits': 2,
 			'exit_space': 1,
 			'speed_min': .1,
-			'speed_desire_mean': 1,
-			'speed_desire_std': 1,
-			'separation': 4,
+			'speed_mean': 1,
+			'speed_std': 1,
+			'speed_steps': 3,
+			'separation': 5,
 			'max_wiggle': 1,
-			'batch_iterations': 2_000,
+			'iterations': 1_800,
 			'do_save': False,
 			'do_plot': False,
 			'do_print': True,
 			'do_ani': False
-		}
+			}
 		# Params Edit
+		self.params0 = dict()
 		for key in params.keys():
 			if key in self.params:
+				if self.params[key] is not params[key] and 'do_' not in key:
+					self.params0[key] = params[key]
 				self.params[key] = params[key]
 			else:
 				print('BadKeyWarning: {} is not a model parameter.'.format(key))
 		[setattr(self, key, value) for key, value in self.params.items()]
-		# Functional Params
-		self.speed_step = (self.speed_desire_mean - self.speed_min) / 3  # 3 - Average number of speeds to check
+		# Constants
+		self.speed_step = (self.speed_mean - self.speed_min) / self.speed_steps
 		self.boundaries = np.array([[0, 0], [self.width, self.height]])
-		# Model Variables
+		init_gates = lambda x,y,n: np.array([np.full(n,x), np.linspace(0,y,n+2)[1:-1]]).T
+		self.loc_entrances = init_gates(0, self.height, self.entrances)
+		self.loc_exits = init_gates(self.width, self.height, self.exits)
+		# Variables
 		self.time = 0
 		self.pop_active = 0
 		self.pop_finished = 0
-		self.loc_entrances = None
-		self.loc_exits = None
-		self.initialise_gates()
 		self.agents = list([Agent(self, unique_id) for unique_id in range(self.pop_total)])
 		self.tree = None
 		if self.do_save:
 			self.time_taken = []
 			self.time_delay = []
+		self.is_within_bounds = lambda loc: all(self.boundaries[0] <= loc) and all(loc <= self.boundaries[1])
 		return
-
-	def __repr__(self):
-		text = 'sspmm Model {}'.format(self.unique_id)
-		align_max = max([len(key) for key, _ in self.params.items()])
-		align = [align_max-len(key) for key, _ in self.params.items()]
-		text += ''.join('\n  {}{}: {}'.format(' '*align[i], key, val) for i, (key, val) in enumerate(self.params.items()))
-		text += '\nObject ID: {}'.format(hex(id(self)))
-		return text
 
 	def step(self):
 		if self.pop_finished < self.pop_total and self.time:
-			self.kdtree_build()
+			self.tree = cKDTree([agent.location for agent in self.agents])
 			[agent.step(self) for agent in self.agents]
 		self.time += 1
-		self.mask()
 		return
 
-	def initialise_gates(self):
-		# Initialise the locations of the entrances and exits.
-		self.loc_entrances = self.initialise_gates_generic(self.height, self.entrances, 0)
-		self.loc_exits = self.initialise_gates_generic(self.height, self.exits, self.width)
-		return
-
-	@staticmethod
-	def initialise_gates_generic(height, n_gates, x):
-		# General method for initialising gates.
-		gates = np.zeros((n_gates, 2))
-		gates[:, 0] = x
-		if n_gates == 1:
-			gates[0, 1] = height/2
-		else:
-			gates[:, 1] = np.linspace(height/4, 3*height/4, n_gates)
-		return gates
-
-	def is_within_bounds(self, new_location):
-		return all(self.boundaries[0] <= new_location) and all(new_location <= self.boundaries[1])
-
-	def kdtree_build(self):
-		state = self.get_state(do_ravel=False)
-		self.tree = cKDTree(state)
-		return
-
-	def get_state(self, do_ravel=True):
-		state = [agent.location for agent in self.agents]
-		if do_ravel:
+	def get_state(self, sensor='location'):
+		if sensor is None:
+			state = [(agent.status, *agent.location) for agent in self.agents]
+			state = np.append(self.time, np.ravel(state))
+		elif sensor is 'location':
+			state = [agent.location for agent in self.agents]
 			state = np.ravel(state)
-		else:
-			state = np.array(state)
 		return state
 
-	def set_state(self, state, noise=False):
-		for i, agent in enumerate(self.agents):
-			agent.location = state[2*i : 2*i+2]
-			if noise:
-				agent.location += np.random.normal(0, noise, size=2)
+	def set_state(self, state, sensor='location', noise=False):
+		if sensor is None:
+			self.time = int(state[0])
+			state = np.reshape(state[1:], (self.pop_total, 3))
+			for i, agent in enumerate(self.agents):
+				agent.status = int(state[i,0])
+				agent.location = state[i,1:]
+		elif sensor is 'location':
+			state = np.reshape(state, (self.pop_total, 2))
+			for i, agent in enumerate(self.agents):
+				agent.location = state[i,:]
 		return
 
 	def mask(self):
@@ -250,7 +211,7 @@ class Model:
 		mask = np.ravel(np.stack([mask, mask], axis=1))  # Two pieces of data per agent
 		return mask, active
 
-	def ani(self, agents=None, colour='k', alpha=1, show_separation=False):
+	def ani(self, agents=None, colour='k', alpha=1, show_separation=False, show_axis=True):
 		# Design for use in PF
 		wid = 8  # image size
 		hei = wid * self.height / self.width
@@ -269,12 +230,11 @@ class Model:
 				plt.plot(*agent.location, marker='.', markersize=2, color=colour, alpha=alpha)
 		plt.xlabel('Corridor Width')
 		plt.ylabel('Corridor Height')
+		if not show_axis:
+			plt.axis('off')
 		return
 
-	def ani_save(self):
-		pass
-
-	def save_plot(self):
+	def get_plot(self):
 		# Trails
 		plt.subplot(2, 1, 1)
 		for agent in self.agents:
@@ -302,19 +262,21 @@ class Model:
 		plt.show()
 		return
 
-	def save_stats(self):
-		print()
-		print('Stats:')
-		print('    Finish Time: ' + str(self.time))
-		print('    Active / Finished / Total agents: ' + str(self.pop_active) + '/' + str(self.pop_finished) + '/' + str(self.pop_total))
-		print('    Average time taken: {:.2f}s'.format(np.mean(self.time_taken)))
-		print('    Average time delay: {:.2f}s'.format(np.mean(self.time_delay)))
-		print('    Interactions/Agent: {:.2f}'.format(np.mean([agent.collisions for agent in self.agents])))
-		print('    Wiggles/Agent: {:.2f}'.format(np.mean([agent.wiggles for agent in self.agents])))
-		return
+	def get_stats(self):
+		statistics = {
+			'Finish Time': self.time,
+			'Total': self.pop_total,
+			'Active': self.pop_active,
+			'Finished': self.pop_finished,
+			'Time Taken': np.mean(self.time_taken),
+			'Time Delay': np.mean(self.time_delay),
+			'Interactions': np.mean([agent.collisions for agent in self.agents]),
+			'Wiggles': np.mean([agent.wiggles for agent in self.agents]),
+			}
+		return statistics
 
 	def batch(self):
-		for i in range(self.batch_iterations):
+		for i in range(self.iterations):
 			self.step()
 			if self.do_ani:
 				plt.clf()
@@ -326,19 +288,19 @@ class Model:
 				break
 		if self.do_save:
 			if self.do_print:
-				self.save_stats()
+				print(self.get_stats())
 			if self.do_plot:
-				self.save_plot()
+				self.get_plot()
 		return
 
 
 # Batches
 def animated_batch():
 	params = {
-		'batch_iterations': 200,
-		'do_ani': True,
+		'iterations': 400,
+		'do_ani': False,
 		'do_save': True,
-		'do_print': False,
+		'do_print': True,
 		'do_plot': True,
 		#'false_param': 'expect a warning'
 		}
@@ -348,21 +310,43 @@ def animated_batch():
 
 def parametric_study():
 	import time
-	print('Process Time (seconds), Time Taken (steps), Time Delay (steps), |, Interactions (per Agent), Wiggles (per Agent), |, None Default Params')
-	for pop, sep in [(100, 4), (300, 3), (700, 2)]:
-		t = time.time()
+	analytics = {}
+
+	for pop, sep in [(100, 5), (300, 3), (700, 2)]:
 		params = {
 			'pop_total': pop,
 			'separation': sep,
 			}
-		model = Model(dict(params, **{'do_save': True, 'do_print': False}))
+		t = time.time()
+		model = Model({**params, 'do_save':True,'do_print':False})
 		model.batch()
-		print('{:.2f}, {:.2f}, {:.2f}, |, {:.2f}, {:.2f}, |, '.format(time.time()-t, np.mean(model.time_taken), np.mean(model.time_delay), np.mean([agent.collisions for agent in model.agents]), np.mean([agent.wiggles for agent in model.agents]))+str(params))
+		analytics[str(model.params0)] = {
+			'Process Time': time.time()-t,
+			**model.get_stats()
+			}
+	for s in (9,5,2,1):
+		params = {'speed_steps': s}
+		t = time.time()
+		model = Model({**params, 'do_save':True,'do_print':False})
+		model.batch()
+		analytics[str(model.params0)] = {
+			'Process Time': time.time()-t,
+			**model.get_stats()
+			}
+
+	csv_str, lines = '', []
+	for i,row in enumerate(analytics):
+		if i==0:
+			header = ', '.join(k for k,_ in analytics[row].items()) + ',\n'
+		line = ', '.join(f'{v}' for _,v in analytics[row].items()) + f', {row}'
+		lines.append(line)
+	csv_str = header + '\n'.join(lines)
+	print(csv_str)
+	print(csv_str, file=open('test.csv', 'w'))
 	return
 
 
 if __name__ == '__main__':
 	# animated_batch()
-	# parametric_study()
-	# Model().batch()
+	parametric_study()
 	pass

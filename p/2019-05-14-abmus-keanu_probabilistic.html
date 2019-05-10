@@ -291,14 +291,14 @@
                 <section id="stationsim1">
                     <h2>Hypotehtical Train Station 'StationSim'</h2>
                     <img class="right" alt="A birds-eye view of the hypothetical train station"
-                         src="../figures/paper_figures/ABMUS2019/pedestrian_model_environment.png"/>
+                         data-src="../figures/paper_figures/ABMUS2019/pedestrian_model_environment.png"/>
                     <p>Crowding emerges from random choices of exit and maximum walking speed</p>
                     <p class="l2">Very simple, not designed to be a competitative crowd model</p>
                     <p>Markovian model</p>
                     <p class="l2">Produces output from a set of inputs (the ‘state vector’) without any other information.</p>
                     <p class="l2">
-                        <img style="width:300px;" src="../figures/paper_figures/ABMUS2019/eqn1.png" alt="The state vector is made up of all model variables" />
-                        <img style="width:300px;" src="../figures/paper_figures/ABMUS2019/eqn2.png" alt="Model variables are the positions of all agents" />
+                        <img style="width:300px;" data-src="../figures/paper_figures/ABMUS2019/eqn1.png" alt="The state vector is made up of all model variables" />
+                        <img style="width:300px;" data-src="../figures/paper_figures/ABMUS2019/eqn2.png" alt="Model variables are the positions of all agents" />
                     </p>
                     <aside class="notes">The state variable at a time t (St) is made up of all of the locations
                     of all agents (i.e. their x and y coordinates at time t).</aside>
@@ -308,8 +308,8 @@
                 <section id="stationsim2">
                     <h2>Hypotehtical Train Station 'StationSim'</h2>
                     <p>
-                        <img style="width:300px;" src="../figures/paper_figures/ABMUS2019/eqn1.png" alt="The state vector is made up of all model variables" />
-                        <img style="width:300px;" src="../figures/paper_figures/ABMUS2019/eqn2.png" alt="Model variables are the positions of all agents" />
+                        <img style="width:300px;" data-src="../figures/paper_figures/ABMUS2019/eqn1.png" alt="The state vector is made up of all model variables" />
+                        <img style="width:300px;" data-src="../figures/paper_figures/ABMUS2019/eqn2.png" alt="Model variables are the positions of all agents" />
                     </p>
                     <p>Parameters  are fixed</p>
                     <p class="l2">E.g. an agent's max speed and it's chosen destination</p>
@@ -335,8 +335,36 @@
                 
                 
                 
+                <section id="ProbabilisticFramework1">
+                    
+                    <img src="../figures/paper_figures/ABMUS2019/da_framework.png" alt="The modelling framework"/>
                 
-
+                </section>
+                
+                <section id="ProbabilisticFramework2">
+                    <h2>Modelling Framework</h2>
+                    <img class="right" style="width:40%;" src="../figures/paper_figures/ABMUS2019/da_framework.png"  alt="The modelling framework"/>
+                    <p>1. Run StationSim to generate pseudo-truth data</p>
+                    <p>2. Data assimilation framework</p>
+                    <p class="l2">Run the model for <i>N</i> iterations up to time <i>t</i> (i.e. 'now')</p>
+                    <p class="l2">Construct a Bayesian network to represent the state vector</p>
+                    <p class="l3">This gives the a prior estimate of the current state</p>
+                    <p class="l2">Observe some 'current' pseudo-truth data and use the probabilistic
+                        model (with MCMC) to a produce posterior estimate of the state vector</p>
+                    <p class="l2">Forecasts from this point should be more accurate.</p>
+                </section>
+                
+                <section id="ChallengesAndOpportunities">
+                    <h2>Challenges</h2>
+                    <p>Technically difficult, probabilistic programming is still relatively new</p>
+                    <p>Difficult to test and debug</p>
+                    <h2>Opportunities</h2>
+                    <p>Positions of agents could be latent (unobserved) in the probabilistic model</p>
+                    <p>Can then include additional observed variables, such as crowd density, and use
+                        these to generate a posterior over the latent ones</p>
+                    <p>In other words: very elegant way to include diffent data (hopefully!)</p>
+                </section>
+                
                 
                 
                 
@@ -345,26 +373,19 @@
                 <section id="NextSteps">
                     
                     <h2>Immediate Next Steps</h2>
-                    <p>XXXX UPDATE THIS</p>
-                    
-                    <p>Explain the relationship between observations and sample spread</p>
+                    <p>Results!!</p>
+                    <p class="l2">Get it working with all agents</p>
                     <p>Experiment with different types of observations, e.g.</p>
                     <p class="l2">Cameras that count the passers-by in a single place</p>
                     <p class="l2">Full traces of all agents</p>
                     <p class="l2"><i>Basically: how much do we need to find solutions that fit the observations</i></p>
                     <p class="l2"></p>
-                    <p>Move towards <i>data assimilation</i> (actually adjust the state of the 
-                    model while it is running in response to external data).</p>
-                    <p></p>
-                    <p></p>
-                    <p></p>
                     
                 </section>
          
                 
                 <section id="conclusions2" data-background-image="../figures/shutterstock_615414464-small.jpg">
                     <div class="whitebackground2">
-                        <p>XXXX UPDATE THIS</p>
                         <h2>Conclusion</h2>
                         <p>Overall aim: data assimilation for agent-based models</p>
                         <p class="l2">We want to be able to simulate cities, assimilating real time

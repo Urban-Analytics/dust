@@ -1,0 +1,513 @@
+<!doctype html>
+
+<html>
+
+	<head>
+
+		<meta charset="utf-8">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+        <meta name="author" content="Minh Kieu">
+
+        <meta name="keywords" content="big data, urban dynamics">
+
+		<title>Big Data and Dynamic Simulation of Cities</title>
+
+
+		<link rel="stylesheet" href="reveal/css/reveal.css">
+
+		<link rel="stylesheet" href="reveal/css/theme/white.css">
+
+        
+        <!-- Some extra bits added by Nick -->
+
+        <link rel="stylesheet" href="reveal/css/nick.css">
+
+
+
+		<!-- Theme used for syntax highlighting of code -->
+
+		<link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+
+
+
+		<!-- Printing and PDF exports -->
+
+		<script>
+
+			var link = document.createElement( 'link' );
+
+			link.rel = 'stylesheet';
+
+			link.type = 'text/css';
+
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
+
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+
+		</script>
+
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<div class="slides">
+
+                    <!-- *****************************************************************
+
+                     ************* Title **************************
+
+                     ***************************************************************** -->
+                                  
+                <section class="title" id="title" data-background-image="../figures/title-city.jpg">
+
+                    <div class="whitebackground2">
+
+
+                        <a href="http://www.leeds.ac.uk/">
+
+                            <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/uol_logo.gif"/>
+
+                        </a>
+
+                        <h5>ABMUS 2019<br/>14nd May, Concordia University, Montreal, Canada</h5>
+
+                        <hr/>
+
+                        <h2>Reducing the impacts of uncertainty in agent-based models for real-time applications</h2>
+
+                        <hr/>
+
+                        <h3> <strong>MINH KIEU, </strong>  Nicolas Malleson, Alison Heppenstall, Andrew West and Kevin Minors</h3>
+
+                        <!-- <h4>Research Fellow</h4> -->
+
+                        <h4>Leeds Institute of Data Analytics, University of Leeds</h4>
+
+                        <hr/>
+
+                        <h4 style="text-align:center">These slides:<br/><a href="https://leminhkieu.github.io/p/2019-ABMUS.html">https://leminhkieu.github.io/p/2019-ABMUS.html</a></h4>
+
+                    </div>
+
+                </section>
+   
+                 <!-- *****************************************************************
+
+                     ************* Bus trajectory **************************
+
+                     ***************************************************************** -->                
+               <section id="bus-trajectory" data-transition="fade">
+
+                    <h2>Bus GPS trajectories</h2>
+
+                    <img src="../figures/bus-trajectory.png"
+
+                         alt="bus trajectory" />
+
+                </section>    
+                
+               <!-- ***********************************************************
+
+                     ************* Bus bunching ****************************
+                     ******************************************************* -->                
+               <section id="bus-trajectory" data-transition="fade">
+
+                    <h2>Bus bunching</h2>
+
+                    <img src="../figures/bus-bunching.png"
+
+                         alt="bus bunching" />
+
+                </section>                 
+               
+         
+                
+                <!-- *****************************************************************
+
+                     ************* BusSim model video**************************
+
+                     ***************************************************************** -->
+   
+    
+                 <section id="pf-bussim-video">
+
+                    <h2>Bus Simulation</h2>
+
+                    <video controls autoplay>
+
+                        <source data-src="../videos/bussim-video.mp4" type="video/mp4"/>
+
+                         Your browser does not support the video tag.
+
+                    </video>
+
+                </section>
+ 
+                <!-- *****************************************************************
+
+                     ************* BusSim model flowchart **************************
+
+                     ***************************************************************** -->
+                
+               <section id="bussim-flowchart" data-transition="fade">
+
+                    <h2>BusSim Flowchart</h2>
+
+                    <img src="../figures/bussim-flowchart.png"
+
+                         alt="BusSim" />
+
+                </section>              
+                
+         <!-- *****************************************************************
+
+                     ************* problems with ABMs **************************
+
+                     ***************************************************************** -->
+                
+
+                <section id="prob-divergence" 
+
+                         data-background-video="../videos/skylines_bus_stop.mp4" 
+
+                         data-background-video-muted 
+
+                         data-background-video-loop="loop">
+
+                    
+                        <div class="whitebackground fragment">
+
+                            <h2>Uncertainty</h2>
+
+                            <p>The reality is dynamic.   </p>
+                            <p>The reality is stochastic   </p>
+                            <p>There are unobserved variables </p>
+
+                        </div>
+
+                        <div class="whitebackground fragment">
+
+                            <p>There is no systematic mechanism to incorporate new data into agent-based models</p>
+
+                        </div>
+
+                </section>
+                
+            
+                  <!-- *****************************************************************
+
+                     ************* Data Assimilation **************************
+
+                     ***************************************************************** -->                
+               <section id="how_DA_works" data-transition="fade">
+
+                    <h2>Solution: Data Assimilation </h2>
+
+                    <img src="../figures/data-assimilation.png"
+
+                         alt="DA" />
+
+                        <div class="whitebackground fragment">
+
+                            <p>Try to improve estimates of the true system state by combining:</p>
+
+                            <p class="l2">Noisy, real-world observations</p>
+
+                            <p class="l2">Model estimates of the system state</p>
+
+                        </div>
+
+                </section>   
+                
+                <!-- *****************************************************************
+
+                     ************* PF-1 **************************
+
+                     ***************************************************************** -->
+                
+               <section id="PF-1" data-transition="fade">
+                  <img src="../figures/PF-1.png"
+
+                         alt="PF-1" />
+
+                </section>      
+                
+                 <!-- *****************************************************************
+
+                     ************* PF-2 **************************
+
+                     ***************************************************************** -->
+                
+               <section id="PF-2" data-transition="fade">
+                  <img src="../figures/PF-2.png"
+
+                         alt="PF-2" />
+
+                </section>    
+                
+                <!-*****************************************************************
+
+                     ************* PF-3 **************************
+
+                     ***************************************************************** -->
+                
+               <section id="PF-3" data-transition="fade">
+                  <img src="../figures/PF-3.png"
+
+                         alt="PF-3" />
+
+                </section>    
+                
+               <!-- *****************************************************************
+
+                     ************* PF-4 **************************
+
+                     ***************************************************************** -->
+                
+               <section id="PF-4" data-transition="fade">
+                  <img src="../figures/PF-4.png"
+
+                         alt="PF-4" />
+
+                </section>    
+                
+                 <!-- *****************************************************************
+
+                     ************* PF-5 **************************
+
+                     ***************************************************************** -->
+                
+               <section id="PF-5" data-transition="fade">
+                  <img src="../figures/PF-5.png"
+
+                         alt="PF-5" />
+
+                </section>    
+                
+                    <!-- *****************************************************************
+
+                     ************* PF-6 **************************
+
+                     ***************************************************************** -->
+                
+               <section id="PF-6" data-transition="fade">
+                  <img src="../figures/PF-6.png"
+
+                         alt="PF-6" />
+
+                </section>    
+       
+               <!-- ***********************************************************
+
+                     ************* BusSim Framework **************************
+
+                     ***************************************************************** -->                
+               <section id="bussim-framework" data-transition="fade">
+
+                    <h2>Data Assimilation on Bus Simulation</h2>
+
+                    <img src="../figures/bussim-framework.png"
+
+                         alt="BusSim framework" />
+
+                </section>       
+                        
+               <!-- *****************************************************************
+
+                     ************* Basecase scenario **************************
+
+                     ***************************************************************** -->
+                
+               <section id="no-calibration" data-transition="fade">
+                   
+                    <h2>Basecase scenario: No calibration</h2>
+                  <img src="../figures/BusSim-no-calibration.png"
+
+                         alt="Basecase scenario" />
+
+                </section>    
+       
+             <!-- *****************************************************************
+
+                     ************* Calibration scenario **************************
+
+                     ***************************************************************** -->
+                
+               <section id="calibration" data-transition="fade">
+                   <h2>Calibration scenario</h2>
+                   <img src="../figures/BusSim-calibration.png"
+
+                         alt="Calibration scenario" />
+
+                </section>    
+                
+             <!-- *****************************************************************
+
+                     ************* PF scenario **************************
+
+                     ***************************************************************** -->
+                
+               <section id="BusSim-PF" data-transition="fade">
+                   <h2>Calibration + Data Assimilation scenario</h2>
+                  <img src="../figures/BusSim-PF.png"
+
+                         alt="BusSim-PF" />
+
+                </section>    
+                
+ 
+              
+                   <!-- *********************************************************
+
+                     ************* PF on bussim **************************
+
+                     ***************************************************************** -->
+  
+                
+                <section id="pf-bussim-pf-video">
+
+                    <h2>Bus Simulation with a Particle Filter</h2>
+
+                    <video controls autoplay>
+
+                        <source data-src="../videos/bussim-pf-video.mp4" type="video/mp4"/>
+
+                         Your browser does not support the video tag.
+
+                    </video>
+
+                </section>
+
+                
+                <section id="moreinformation1" data-transition="fade" data-background-image="https://erc.europa.eu/sites/default/files/content/pages/images/DUST_illustration_copyright-Shutterstock.jpg">
+
+                    <div class="whitebackground2">
+
+                        <h2>For more information about what we're doing</h2>
+
+                        <a href="https://erc.europa.eu/">
+
+                            <img class="right" style="width:100px;" data-src="../figures/LOGO_ERC.jpg" alt="ESRC Logo"/>
+
+                        </a>
+
+                        <p>Data Assimilation for Agent-Based Models (<a href="http://dust.leeds.ac.uk">dust</a>)</p>
+
+                        <p class="l2"><a href="http://dust.leeds.ac.uk/">http://dust.leeds.ac.uk/</a></p>
+
+                        <p class="l2">Main aim: create new methods for dynamically assimilating data into agent-based models.</p>
+
+                        <p>Uncertainty in agent-based models for smart city forecasts</p>
+
+                        <a href="https://www.turing.ac.uk/">
+
+                            <img class="right" style="width:100px;" data-src="../figures/LOGO_TURING.png" alt="Turing Logo"/>
+
+                        </a>
+
+                        <p class="l2"><a href="https://www.turing.ac.uk/research/research-projects/uncertainty-agent-based-models-smart-city-forecasts">turing.ac.uk</a></p>
+
+                        <p class="l2">Developing methods that can be used to better understand uncertainty in individual-level models of cities</p>
+
+                        <p>Bringing the Social City to the Smart City</p>
+
+                        <p class="l2"><a href="https://alisonheppenstall.co.uk/research/bringing-the-social-city-to-the-smart-city/">https://alisonheppenstall.co.uk/research/bringing-the-social-city-to-the-smart-city/</a></p>
+
+                    </div>
+
+                
+
+                </section>
+
+                
+                  <!-- *****************************************************************
+
+                     ************* Thanks **************************
+
+                     ***************************************************************** -->
+                                  
+                <section class="title" id="thanks" data-background-image="../figures/virtual_city.jpeg">
+
+                    <div class="whitebackground2">
+
+
+                        <a href="http://www.leeds.ac.uk/">
+
+                            <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/uol_logo.gif"/>
+
+                        </a>
+
+                        <h5>ABMUS 2019<br/>14nd May, Concordia University, Montreal, Canada</h5>
+
+
+
+                        <hr/>
+
+                        <h2>Reducing the impacts of uncertainty in agent-based models for real-time applications</h2>
+
+                        <hr/>
+
+                        <h3>Minh Kieu</h3>
+
+                        <!-- <h4>Research Fellow</h4> -->
+
+                        <h4>Leeds Institute of Data Analytics, University of Leeds</h4>
+
+                        <hr/>
+
+                        <h4 style="text-align:center">These slides:<br/><a href="https://leminhkieu.github.io/p/2019-ABMUS.html">https://leminhkieu.github.io/p/2019-ABMUS.html</a></h4>
+
+                    </div>
+
+                </section>
+                
+
+              
+
+			</div>
+
+		</div>
+
+
+
+		<script src="reveal/lib/js/head.min.js"></script>
+
+		<script src="reveal/js/reveal.js"></script>
+
+
+
+		<script>
+
+			// More info https://github.com/hakimel/reveal.js#configuration
+
+			Reveal.initialize({
+
+				history: true,
+
+
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+
+				dependencies: [
+
+					{ src: 'reveal/plugin/markdown/marked.js' },
+
+					{ src: 'reveal/plugin/markdown/markdown.js' },
+
+					{ src: 'reveal/plugin/notes/notes.js', async: true },
+
+					{ src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+
+				]
+
+			});
+
+		</script>
+
+	</body>
+
+</html>

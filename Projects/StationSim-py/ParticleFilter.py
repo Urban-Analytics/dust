@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 import time
 import warnings
 
-
-
 class ParticleFilter: 
     '''
     A particle filter to model the dynamics of the
@@ -423,7 +421,7 @@ def single_run_particle_numbers():
         'particle_std':1.5,
         'model_std': 1.0,
         'do_save': True,
-        'plot_save': False,
+        'plot_save': True,
         'do_ani': False,
     }
 
@@ -476,6 +474,7 @@ if __name__ == '__main__':
         'exits': 2,
         'exit_space': 1,
         'speed_min': .1,
+        'wiggle': 1,
         'speed_desire_mean': 1,
         'speed_desire_std': 1,
         'separation': 2,

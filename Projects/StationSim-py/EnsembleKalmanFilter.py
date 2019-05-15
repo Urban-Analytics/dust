@@ -7,6 +7,7 @@ A class to represent a general Ensemble Kalman Filter for use with StationSim.
 # Imports
 import warnings as warns
 import numpy as np
+import matplotlib.pyplot as plt
 from copy import deepcopy
 
 # Classes
@@ -34,6 +35,7 @@ class EnsembleKalmanFilter:
         # Filter attributes - outlines the expected params
         self.max_iterations = None
         self.ensemble_size = None
+        self.assimilation_period = None
         self.state_vector_length = None
         self.data_vector_length = None
         self.H = None
@@ -82,8 +84,12 @@ class EnsembleKalmanFilter:
         self.update_state_mean()
         self.results = list()
 #        self.results = [self.state_mean]
+        print('Running Ensemble Kalman Filter...')
+        print('max_iterations:\t{0}'.format(self.max_iterations))
+        print('ensemble_size:\t{0}'.format(self.ensemble_size))
+        print('assimilation_period:\t{0}'.format(self.assimilation_period))
 
-    def step(self, data=None):
+    def step(self):
         """
         Step the filter forward by one time-step.
 
@@ -96,9 +102,12 @@ class EnsembleKalmanFilter:
         self.predict()
         self.update_state_ensemble()
         self.update_state_mean()
-        if not data is None:
+        if self.time % self.assimilation_period == 0:
+            self.plot_model('before update {0}'.format(self.time))
+            data = self.base_model.state_history[-1]
             self.update(data)
             self.update_models()
+            self.plot_model('after update {0}'.format(self.time))
         self.time += 1
         self.update_state_mean()
         self.results.append(self.state_mean)
@@ -112,6 +121,7 @@ class EnsembleKalmanFilter:
         Returns:
             None
         """
+        self.base_model.step()
         for i in range(self.ensemble_size):
             self.models[i].step()
 
@@ -132,9 +142,8 @@ class EnsembleKalmanFilter:
         X = np.zeros(shape=(self.state_vector_length, self.ensemble_size))
         gain_matrix = self.make_gain_matrix()
         self.update_data_ensemble(data)
-        for i in range(self.ensemble_size):
-            diff = self.data_ensemble[:, i] - self.H @ self.state_ensemble[:, i]
-            X[:, i] = self.state_ensemble[:, i] + gain_matrix @ diff
+        diff = self.data_ensemble - self.H @ self.state_ensemble
+        X = self.state_ensemble + gain_matrix @ diff
         self.state_ensemble = X
 
     def update_state_ensemble(self):
@@ -206,7 +215,7 @@ class EnsembleKalmanFilter:
         """
         C = np.cov(self.state_ensemble)
         state_covariance = self.H @ C @ self.H_transpose
-        diff = state_covariance - self.data_covariance
+        diff = state_covariance + self.data_covariance
         return C @ self.H_transpose @ np.linalg.inv(diff)
 
     @classmethod
@@ -227,7 +236,7 @@ class EnsembleKalmanFilter:
         """
         methods = ['step', 'set_state', 'get_state']
         attribute = 'state'
-        has_methods = [EnsembleKalmanFilter.has_method(model, m) for m in methods]
+        has_methods = [cls.has_method(model, m) for m in methods]
 #        b = all(has_methods) and hasattr(model, attribute)
         b = all(has_methods)
         return b
@@ -249,3 +258,81 @@ class EnsembleKalmanFilter:
             warns.warn(w, RuntimeWarning)
             b = False
         return b
+
+    @staticmethod
+    def separate_coords(arr):
+        """
+        Function to split a flat array into xs and ys.
+        Assumes that xs and ys alternate.
+        """
+        return arr[::2], arr[1::2]
+
+    def plot_model(self, title_str):
+        """
+        Plot base_model and ensemble members.
+        """
+        # Get coords
+        base_x, base_y = self.separate_coords(self.base_model.state)
+
+        # Plot agents
+        plt.figure()
+        plt.xlim(0, self.base_model.width)
+        plt.ylim(0, self.base_model.height)
+        plt.title(title_str)
+        plt.scatter(base_x, base_y)
+
+        # Plot ensemble members
+        for model in self.models:
+            xs, ys = self.separate_coords(model.state)
+            plt.scatter(xs, ys, s=1, color='red')
+
+        # Finish fig
+        plt.show()
+
+    def process_results(self):
+        """
+        Method to process ensemble results, comparing against truth.
+        Calculate x-error and y-error for each agent at each timestep,
+        average over all agents, and plot how average errors vary over time.
+        """
+        x_mean_errors = list()
+        y_mean_errors = list()
+        distance_mean_errors = list()
+        truth = self.base_model.state_history
+
+        for i, result in enumerate(self.results):
+            distance_error, x_error, y_error = self.make_errors(result, truth[i])
+            x_mean_errors.append(np.mean(x_error))
+            y_mean_errors.append(np.mean(y_error))
+            distance_mean_errors.append(np.mean(distance_error))
+
+        self.plot_results(distance_mean_errors, x_mean_errors, y_mean_errors)
+
+    def make_errors(self, result, truth):
+        """
+        Method to calculate x-errors and y-errors
+        """
+        x_result, y_result = self.separate_coords(result)
+        x_truth, y_truth = self.separate_coords(truth)
+
+        x_error = np.abs(x_result - x_truth)
+        y_error = np.abs(y_result - y_truth)
+        distance_error = np.sqrt(np.square(x_error) + np.square(y_error))
+
+        return distance_error, x_error, y_error
+
+    @staticmethod
+    def plot_results(distance_errors, x_errors, y_errors):
+        """
+        Method to plot the evolution of errors in the filter.
+        """
+        plt.figure()
+        plt.scatter(range(len(distance_errors)), distance_errors,
+                    label='$\mu$', s=1)
+        plt.scatter(range(len(x_errors)), x_errors, label='$\mu_x$', s=1)
+        plt.scatter(range(len(y_errors)), y_errors, label='$\mu_y$', s=1)
+        plt.xlabel('Time')
+        plt.ylabel('Mean absolute error')
+        plt.legend()
+        plt.show()
+

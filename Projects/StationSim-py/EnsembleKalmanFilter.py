@@ -104,7 +104,9 @@ class EnsembleKalmanFilter:
         self.update_state_mean()
         if self.time % self.assimilation_period == 0:
             self.plot_model('before update {0}'.format(self.time))
-            data = self.base_model.state_history[-1]
+            truth = self.base_model.state_history[-1]
+            noise = np.random.normal(0, self.R_vector, truth.shape)
+            data = truth + noise
             self.update(data)
             self.update_models()
             self.plot_model('after update {0}'.format(self.time))

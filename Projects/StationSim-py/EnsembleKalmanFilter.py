@@ -315,12 +315,13 @@ class EnsembleKalmanFilter:
 
         self.plot_results(distance_mean_errors, x_mean_errors, y_mean_errors)
 
-    def make_errors(self, result, truth):
+    @classmethod
+    def make_errors(cls, result, truth):
         """
         Method to calculate x-errors and y-errors
         """
-        x_result, y_result = self.separate_coords(result)
-        x_truth, y_truth = self.separate_coords(truth)
+        x_result, y_result = cls.separate_coords(result)
+        x_truth, y_truth = cls.separate_coords(truth)
 
         x_error = np.abs(x_result - x_truth)
         y_error = np.abs(y_result - y_truth)

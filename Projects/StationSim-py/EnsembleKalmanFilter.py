@@ -109,9 +109,11 @@ class EnsembleKalmanFilter:
             data = truth + noise
             self.update(data)
             self.update_models()
+            self.update_state_mean()
             self.plot_model('after update {0}'.format(self.time))
+        else:
+            self.update_state_mean()
         self.time += 1
-        self.update_state_mean()
         self.results.append(self.state_mean)
 
     def predict(self):
@@ -275,13 +277,15 @@ class EnsembleKalmanFilter:
         """
         # Get coords
         base_x, base_y = self.separate_coords(self.base_model.state)
+        mean_x, mean_y = self.separate_coords(self.state_mean)
 
         # Plot agents
         plt.figure()
         plt.xlim(0, self.base_model.width)
         plt.ylim(0, self.base_model.height)
         plt.title(title_str)
-        plt.scatter(base_x, base_y)
+        plt.scatter(base_x, base_y, label='truth')
+        plt.scatter(mean_x, mean_y, alpha=0.5, label='ensemble mean')
 
         # Plot ensemble members
         for model in self.models:
@@ -289,6 +293,7 @@ class EnsembleKalmanFilter:
             plt.scatter(xs, ys, s=1, color='red')
 
         # Finish fig
+        plt.legend()
         plt.show()
 
     def process_results(self):

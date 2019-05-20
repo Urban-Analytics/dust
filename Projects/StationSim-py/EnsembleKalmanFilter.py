@@ -5,10 +5,10 @@ date_created: 19/04/10
 A class to represent a general Ensemble Kalman Filter for use with StationSim.
 """
 # Imports
+from copy import deepcopy
 import warnings as warns
 import numpy as np
 import matplotlib.pyplot as plt
-from copy import deepcopy
 
 # Classes
 class EnsembleKalmanFilter:
@@ -239,9 +239,9 @@ class EnsembleKalmanFilter:
             boolean
         """
         methods = ['step', 'set_state', 'get_state']
-        attribute = 'state'
+        # attribute = 'state'
         has_methods = [cls.has_method(model, m) for m in methods]
-#        b = all(has_methods) and hasattr(model, attribute)
+        # b = all(has_methods) and hasattr(model, attribute)
         b = all(has_methods)
         return b
 
@@ -343,4 +343,3 @@ class EnsembleKalmanFilter:
         plt.ylabel('Mean absolute error')
         plt.legend()
         plt.show()
-

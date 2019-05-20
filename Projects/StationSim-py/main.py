@@ -7,8 +7,6 @@ Main python script for running model experiments.
 
 # Imports
 import numpy as np
-from numpy.random import normal
-import matplotlib.pyplot as plt
 from EnsembleKalmanFilter import EnsembleKalmanFilter
 from Model import Model
 
@@ -65,14 +63,8 @@ def run_all(pop_size=20, its=300, assimilation_period=50, ensemble_size=10):
                     'wiggle': 1, 'batch_iterations': its, 'do_save': True,
                     'do_plot': False, 'do_ani': False}
 
-    OBS_NOISE_MEAN = 0
     OBS_NOISE_STD = 1
-
     vec_length = 2 * model_params['pop_total']
-
-    # truth_data = make_truth_data(model_params)
-    # observation_data = make_observation_data(truth_data, OBS_NOISE_MEAN,
-                                             # OBS_NOISE_STD)
 
     filter_params = {'max_iterations': model_params['batch_iterations'],
                      'assimilation_period': assimilation_period,
@@ -82,11 +74,8 @@ def run_all(pop_size=20, its=300, assimilation_period=50, ensemble_size=10):
                      'H': np.identity(vec_length),
                      'R_vector': OBS_NOISE_STD * np.ones(vec_length)}
 
-    # results = run_enkf(observation_data, model_params, filter_params)
-    # process_results(results, truth_data)
+    # Run enkf and process results
     enkf = run_enkf(model_params, filter_params)
     enkf.process_results()
-    # results, truth_data = run_enkf(model_params, filter_params)
-    # process_results(results, truth_data)
 
 run_all()

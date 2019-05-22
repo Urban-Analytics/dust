@@ -712,6 +712,7 @@ if __name__ == '__main__':
     param_list = [(x,y) for x in num_par for y in num_age]
     
     # Use below to update param_list if some runs abort
+    # If used, need to update ARC task array variable
     # 
     # aborted = [2294, 2325, 2356, 2387, 2386, 2417, 2418, 2448, 2449, 2479, 2480, 2478, 2509, 2510, 2511, 2540, 2541, 2542]
     # param_list = [param_list[x-1] for x in aborted]

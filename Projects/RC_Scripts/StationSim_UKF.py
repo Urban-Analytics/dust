@@ -8,9 +8,10 @@ Created on Thu May  9 10:48:07 2019
 """
 KM's StationSim slightly modified for UKF.
 
-added agents initial position (might delete?)
-and ideal_location for the transition step (definitely need this)
 
+Rob's Additions:
+    -ideal_location for the transition step (definitely need this)
+    -wiggle counters (at nick's request)
 """
 import numpy as np
 from scipy.spatial import cKDTree
@@ -36,21 +37,18 @@ class Agent:
         model.pop_active += 1
 
         # Choose at random at which of the entrances the agent starts
-        self.location = model.loc_entrances[np.random.randint(model.entrances)]
-        self.location[1] += model.entrance_space * (np.random.uniform() - .5)
-        self.loc_desire = model.loc_exits[np.random.randint(model.exits)]
-        self.ideal_location = self.location
-        # Parameters
-        # model.entrance_speed -> the rate at which agents enter
-        # self.time_activate -> the time at which the agent should become active
-        # time_activate is exponentially distributed based on entrance_speed
-        self.time_activate = np.random.exponential(model.entrance_speed)
+        self.location = model.loc_entrances[np.random.randint(model.entrances)] #pick an entrance
+        self.location[1] += model.entrance_space * (np.random.uniform() - .5) #wiggle between +-1 a bit about the entrance
+        self.loc_desire = model.loc_exits[np.random.randint(model.exits)] #pick an exit
+        self.ideal_location = self.location #Rob's addition. Where it would be without collisions. Useful prior prediction for each agent
+        self.time_activate = np.random.exponential(model.entrance_speed) #when do agents enter model
         # The maximum speed that this agent can travel at:
         # self.speed_desire = max(np.random.normal(model.speed_desire_mean, model.speed_desire_std), 2*model.speed_min)  # this is not a truncated normal distribution
         self.speed_desire = model.speed_min - 1
         while self.speed_desire <= model.speed_min:
             self.speed_desire = np.random.normal(model.speed_desire_mean, model.speed_desire_std)
         self.wiggle = min(self.speed_desire, model.wiggle)  # if they can wiggle faster than they can move they may beat the expected time
+        self.wiggle_count = 0 #how many wiggles per agent per run
         # A few speeds to check; used if a step at the max speed would cause a collision
         self.speeds = np.arange(self.speed_desire, model.speed_min, -model.speed_step)
         if model.do_save:
@@ -110,8 +108,8 @@ class Agent:
                 break
             elif speed == self.speeds[-1]:
                 # Wiggle
-                # Why 1+1? Answer: randint(1)=0, randint(2)=0 or 1 - i think it is the standard pythonic idea of up to that number like array[0:2] is elements (array[0],array[1])
                 new_location = self.location + self.wiggle*np.random.randint(-1, 1+1, 2)
+                self.wiggle_count+=1 #rob's addition adds 1 to the wiggle counter
         # Rebound
         if not self.is_within_bounds(model.boundaries, new_location):
             new_location = np.clip(new_location, model.boundaries[0], model.boundaries[1])

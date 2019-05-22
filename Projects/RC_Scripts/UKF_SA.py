@@ -5,12 +5,12 @@ Created on Tue May 14 09:28:35 2019
 
 @author: rob
 
-UKF with one state
+UKF with one state and sampling rate addition
 """
 
 
 import os
-os.chdir("/home/rob/DUST-RC/Python Scripts")
+os.chdir("/home/rob/dust/Projects/RC_Scripts/")
 import numpy as np
 from StationSim_UKF import Model, Agent
 from filterpy.kalman import MerweScaledSigmaPoints as MSSP
@@ -119,7 +119,7 @@ class UKF:
                 
                 if np.sum(g==2) == self.pop_total:
                     break
-            
+        self.wiggle_counts = [agent.wiggle_count for agent in U.base_model.agents]
             
         time2 = datetime.datetime.now()
         print(time2-time1)
@@ -246,7 +246,7 @@ if __name__ == "__main__":
     model_params = {
                     'width': 400,
                     'height': 100,
-                    'pop_total': 100,
+                    'pop_total': 10,
                     'entrances': 3,
                     'entrance_space': 2,
                     'entrance_speed': 1,
@@ -284,3 +284,7 @@ if __name__ == "__main__":
         pop = model_params["pop_total"]
         np.save(f"UKF_TRACKS_{pop}_{i}",a)
         np.save(f"ACTUAL_TRACKS_{pop}_{i}",b)
+
+
+
+

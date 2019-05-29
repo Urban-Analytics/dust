@@ -12,6 +12,7 @@ UKF with one state and sampling rate addition
 import os
 os.chdir("/home/rob/dust/Projects/RC_Scripts/")
 import numpy as np
+from math import floor
 from StationSim_UKF import Model, Agent
 from filterpy.kalman import MerweScaledSigmaPoints as MSSP
 from filterpy.kalman import UnscentedKalmanFilter as UNKF
@@ -36,17 +37,26 @@ class UKF:
     """
     
     def __init__(self,Model,model_params,filter_params):
-        self.model_params = model_params
-        self.filter_params = filter_params
-        self.pop_total = self.model_params["pop_total"]
-        self.number_of_iterations = model_params['batch_iterations']
-        self.base_model = Model(model_params)
+        self.model_params = model_params #stationsim parameters
+        self.filter_params = filter_params # ukf parameters
+        self.pop_total = self.model_params["pop_total"] #number of agents
+        self.number_of_iterations = model_params['batch_iterations'] #number of batch iterations
+        self.base_model = Model(model_params) #station sim
         self.UKF = None #dictionary of KFs for each agent
         self.UKF_histories = []
         self.finished = 0 #number of finished agents
         self.sample_rate = self.filter_params["sample_rate"]
-              
-  
+        if self.filter_params["do_restrict"]==True: 
+            self.sample_size= floor(self.pop_total*self.filter_params["prop"])
+        else:
+            self.sample_size = self.pop_total
+        self.index = np.sort(np.random.choice(self.model_params["pop_total"],
+                                                     self.sample_size,replace=False))
+        self.index2 = np.empty((2*self.index.shape[0]),dtype=int)
+        self.index2[0::2] = 2*self.index
+        self.index2[1::2] = (2*self.index)+1
+        
+
 
     def F_x(x,dt,self):
         """
@@ -54,10 +64,11 @@ class UKF:
         For station sim this is essentially gradient * v *dt assuming no collisions
         with some algebra to get it into cartesian plane.
         
-        !to generalise this to every agent need to find the "ideal move" for each I.E  assume no collisions
+        to generalise this to every agent need to find the "ideal move" for each I.E  assume no collisions
         will make class agent_ideal which essential is the same as station sim class agent but no collisions in move phase
         """
-        loc = [agent.ideal_location for agent in self.base_model.agents]
+        sample_agents = [self.base_model.agents[j] for j in self.index]
+        loc = [agent.ideal_location for agent in sample_agents ]
         loc = np.array(loc)
         loc = loc.flatten()
         return loc
@@ -80,21 +91,24 @@ class UKF:
         
         "init UKF"
         
+        
         state = self.base_model.agents2state(self)
-        sigmas = MSSP(n=len(state),alpha=.00001,beta=.2,kappa=1) #sigmapoints
+        state = state[self.index2]
+        sigmas = MSSP(n=len(state),alpha=.01,beta=.2,kappa=1) #sigmapoints
         self.ukf =  UNKF(dim_x=len(state),dim_z=len(state),fx = self.F_x, hx=self.H_x, dt=1, points=sigmas)#init UKF
         self.ukf.x = state #initial state
         self.ukf.R = np.eye(len(state))*self.filter_params["Sensor_Noise"] #sensor noise. larger noise implies less trust in sensor and to favour prediction
-        self.ukf.Q = np.zeros((len(state),len(state)))
-        self.ukf.P = np.eye(len(state))
+        self.ukf.P = np.eye(len(state))*self.filter_params["Process_Noise"]
         
         for i in range(int(len(state)/2)):  #! initialise process noise as blocked structure of discrete white noise. cant think of any better way to do this
             i1 = 2*i
             i2 = (2*(i+1))
-            self.ukf.Q[i1:i2,i1:i2] =  QDWN(2,dt=1,var=self.filter_params["Process_Noise"])
-             
-        self.ukf.Q = np.eye(len(state))
+            #self.ukf.Q[i1:i2,i1:i2] =  QDWN(2,dt=1,var=self.filter_params["Process_Noise"])  
+            self.ukf.Q[i1:i2,i1:i2] = np.array([[2,1],[1,2]])*self.filter_params["Process_Noise"]
+
+        #self.ukf.Q = np.eye(len(state))*self.filter_params["Process_Noise"]*self.filter_params["sample_rate"]
         self.UKF_histories.append(self.ukf.x)
+
 
     
     def batch(self):
@@ -102,13 +116,15 @@ class UKF:
         self.init_ukf() #init UKF
         #self.F_x(dt=1,agents = self.base_model.agents)
 
-        for _ in tqdm(range(self.number_of_iterations-1)): #cycle over batch iterations. tqdm gives progress bar on for loop.
+        for _ in range(self.number_of_iterations-1): #cycle over batch iterations. tqdm gives progress bar on for loop.
+            if _%100 ==0:
+                print(f"iterations: {_}")
             self.base_model.step() #jump agents forward using actual position
             self.ukf.predict(self) 
 
             if self.base_model.time_id%self.sample_rate == 0:
                 
-                state = self.base_model.agents2state()
+                state = self.base_model.agents2state()[self.index2]
                 self.ukf.update(z=state)
                 self.UKF_histories.append(self.ukf.x)
                     
@@ -125,18 +141,17 @@ class UKF:
         print(time2-time1)
         return
     
-
-    def plots(self):
+    def data_parser(self):
         sample_rate = self.sample_rate
         a = {}
         b = np.vstack(self.UKF_histories)
-        for k in range(model_params["pop_total"]):
-            a[k] =  self.base_model.agents[k].history_loc
+        for k,index in enumerate(self.index):
+            a[k] =  self.base_model.agents[index].history_loc
             
         max_iter = max([len(value) for value in a.values()])
         
-        a2= np.zeros((max_iter,self.pop_total*2))*np.nan
-        b2= np.zeros((max_iter,self.pop_total*2))*np.nan
+        a2= np.zeros((max_iter,self.sample_size*2))*np.nan
+        b2= np.zeros((max_iter,self.sample_size*2))*np.nan
 
 
         for i in range(int(a2.shape[1]/2)):
@@ -147,18 +162,20 @@ class UKF:
         for j in range(int(b2.shape[0]//sample_rate)):
             b2[j*sample_rate,:] = b[j,:]
 
-
-        a = a2
-        b = b2
-
+        return a2,b2
+    
+    def plots(self):
+        a ,b = self.data_parser()
+        
+  
         plt.figure()
-        for j in range(model_params["pop_total"]):
+        for j in range(int(model_params["pop_total"]*self.filter_params["prop"])):
             plt.plot(a[:,2*j],a[:,(2*j)+1])    
             plt.title("True Positions")
 
         plt.figure()
-        for j in range(model_params["pop_total"]):
-            plt.plot(b[::sample_rate,2*j],b[::sample_rate,(2*j)+1])    
+        for j in range(int(model_params["pop_total"]*self.filter_params["prop"])):
+            plt.plot(b[::self.sample_rate,2*j],b[::self.sample_rate,(2*j)+1])    
             plt.title("KF predictions")
 
             
@@ -169,10 +186,11 @@ class UKF:
             c = {}
             c_means = []
             
+           
             
             for i in range(int(b.shape[1]/2)):
-                a_2 =   a[::sample_rate,(2*i):(2*i)+2] 
-                b_2 =   b[::sample_rate,(2*i):(2*i)+2] 
+                a_2 =   a[:,(2*i):(2*i)+2] 
+                b_2 =   b[:,(2*i):(2*i)+2] 
         
     
                 c[i] = []
@@ -187,7 +205,7 @@ class UKF:
             c = np.vstack(c.values())
             time_means = np.nanmean(c,axis=0)
             plt.figure()
-            plt.plot(time_means)
+            plt.plot(time_means[::self.sample_rate])
             plt.axhline(y=0,color="r")
             plt.title("MAE over time")
         
@@ -197,56 +215,36 @@ class UKF:
             print(index)
             a1 = a[:,(2*index):(2*index)+2]
             b1 = b[:,(2*index):(2*index)+2]
+            
             plt.figure()
-            plt.plot(b1[:,0],b1[:,1],label= "True Path")
+            plt.plot(b1[::self.sample_rate,0],b1[::self.sample_rate,1],label= "True Path")
             plt.plot(a1[:,0],a1[:,1],label = "KF Prediction")
             plt.legend()
             plt.title("Worst agent")
             
+            worst= []
+            for k in range(a1.shape[0]):
+                    if np.any(np.isnan(a1[k,:])) or np.any(np.isnan(b1[k,:])):
+                        worst.append(np.nan)
+                    else:                       
+                        worst.append(dist.euclidean(a1[k,:],b1[k,:]))
+                        
+            plt.figure()
+            plt.plot(worst)
+            plt.title("Worst agent mae")            
+                        
         return c_means,time_means
 
     def save_histories(self):
-        sample_rate = self.sample_rate
-        a = {}
-        b = np.vstack(self.UKF_histories)
-        for k in range(model_params["pop_total"]):
-            a[k] =  self.base_model.agents[k].history_loc
-            
-        max_iter = max([len(value) for value in a.values()])
-        
-        a2= np.zeros((max_iter,self.pop_total*2))*np.nan
-        b2= np.zeros((max_iter,self.pop_total*2))*np.nan
-
-
-        for i in range(int(a2.shape[1]/2)):
-            
-            a3 = np.vstack(list(a.values())[i])
-            a2[:a3.shape[0],(2*i):(2*i)+2] = a3
-
-        for j in range(int(b2.shape[0]//sample_rate)):
-            b2[j*sample_rate,:] = b[j,:]
-
-
-        a = a2
-        b = b2
-
-        
-         
-         
-        
-
-                
+        a,b = self.data_parser()
         return a,b
     
-    
-    
 if __name__ == "__main__":
-    runs = 1
-    
+    np.random.seed(seed = 8)#seeding if  wanted else hash it
     model_params = {
-                    'width': 400,
+                    'width': 200,
                     'height': 100,
-                    'pop_total': 10,
+                    'pop_total': 500,
                     'entrances': 3,
                     'entrance_space': 2,
                     'entrance_speed': 1,
@@ -264,15 +262,17 @@ if __name__ == "__main__":
                     }
         
     filter_params = {         
-                    "Sensor_Noise": 2,
-                    "Process_Noise": 10,
-                    'sample_rate': 50,
+                    "Sensor_Noise": 5,
+                    "Process_Noise": 2,
+                    'sample_rate': 5,
+                    "do_restrict": True,
+                    "prop": 0.05
                     }
         
     
 
 
-    
+    runs = 1
     for i in range(runs):
        
         U = UKF(Model, model_params,filter_params)
@@ -284,6 +284,8 @@ if __name__ == "__main__":
         pop = model_params["pop_total"]
         np.save(f"UKF_TRACKS_{pop}_{i}",a)
         np.save(f"ACTUAL_TRACKS_{pop}_{i}",b)
+
+
 
 
 

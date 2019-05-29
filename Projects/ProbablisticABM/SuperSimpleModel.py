@@ -17,35 +17,38 @@ except ValueError:
 
 truth_observation = tfd.Normal(loc=1, scale=1.)
 
-EXIT = 20.
+SIZE = 1000
+EXIT = 100.
 
 
 def custom_stepper():
+    # Position
     x = tfd.Normal(loc=1, scale=1.)
-    states = []
-    v = tfd.Exponential(rate=1)
-
-    affine = tfp.bijectors.Affine(shift=v.sample(1))
+    x_sample = x.sample(SIZE)
+    # Speed
+    v = tfd.Exponential(rate=5)
+    v_sample = v.sample(SIZE)
+    # Noise
+    u = tfd.Normal(loc=0, scale=1)
 
     clear_output_folder()
 
+    t = [[2.0]]
     while True:
-        x = tfd.TransformedDistribution(
-            distribution=x,
-            bijector=affine,
-            name="Shift")
+        x_sample = tf.math.add(x_sample, tf.math.multiply(v_sample, tf.Variable(t)))
+        x_sample = tf.math.add(x_sample, u.sample(SIZE))
 
-        states.append(x)
+        ax = sb.distplot(x_sample)
 
-        ax = sb.distplot(x.sample(1000, name='x'))
-        ax.set(xlim=(-1, EXIT + 1))
-        ax.set(ylim=(0, 1.5))
+        ax.set(xlim=(EXIT * -.5, EXIT * .5))
+        # ax.set(ylim=(0, .25))
+        plt.axvline(EXIT, 0, tf.reduce_max(x_sample))
+        plt.axvline(tf.reduce_mean(x_sample)[0], 0, tf.reduce_max(x_sample))
+
         plt.savefig('output/{}.png'.format(time.time()))
         plt.clf()
 
-        print(x.sample(100))
-
-        if tf.cond(pred=tf.greater(x.sample(1), tf.constant(EXIT)),
+        if tf.cond(pred=tf.greater(tf.reduce_mean(x_sample), tf.constant(EXIT)),
                    true_fn=lambda: True,
                    false_fn=lambda: False):
             break
@@ -55,7 +58,7 @@ def custom_stepper():
 
 def render_agent():
     files = os.listdir('output')
-    print(files)
+    print('{} frames generated.'.format(len(files)))
     images = []
     for filename in files:
         images.append(imageio.imread('output/{}'.format(filename)))

@@ -72,7 +72,8 @@ def run_all(pop_size=20, its=300, assimilation_period=50, ensemble_size=10):
                      'state_vector_length': vec_length,
                      'data_vector_length': vec_length,
                      'H': np.identity(vec_length),
-                     'R_vector': OBS_NOISE_STD * np.ones(vec_length)}
+                     'R_vector': OBS_NOISE_STD * np.ones(vec_length),
+                     'keep_results': True}
 
     # Run enkf and process results
     enkf = run_enkf(model_params, filter_params)

@@ -9,6 +9,7 @@ from copy import deepcopy
 import warnings as warns
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from Filter import Filter
 
 # Classes
@@ -41,6 +42,7 @@ class EnsembleKalmanFilter(Filter):
         self.H = None
         self.R_vector = None
         self.data_covariance = None
+        self.keep_results = False
 
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():
@@ -272,6 +274,25 @@ class EnsembleKalmanFilter(Filter):
             distance_mean_errors.append(np.mean(distance_error))
 
         self.plot_results(distance_mean_errors, x_mean_errors, y_mean_errors)
+
+        # Save results to csv if required
+        if self.keep_results:
+            df = pd.DataFrame({'distance_errors': distance_mean_errors,
+                               'x_errors': x_mean_errors,
+                               'y_errors': y_mean_errors,})
+            self.save_results(df)
+
+    def save_results(self, data):
+        """
+        Utility method to save the results of a filter run.
+        """
+        population_size = self.base_model.params['pop_total']
+        general_path = './results/enkf_{0}.csv'
+        params_string = '{0}_{1}_{2}_{3}'.format(self.max_iterations,
+                                                 self.assimilation_period,
+                                                 self.ensemble_size, 
+                                                 population_size)
+        data.to_csv(general_path.format(params_string), index=False)
 
     @classmethod
     def make_errors(cls, result, truth):

@@ -12,22 +12,22 @@ class Filter:
     """
     An abstract class to represent a general filter.
     """
-    def __init__(self, model):
+    def __init__(self, model, model_params):
         """
         Initialise the filter.
 
         Params:
             model
-            filter_params
-            model_params
 
         Returns:
             None
         """
+        # Instantiate the base model
+        self.base_model = model(model_params)
         self.time = 0
 
         # Ensure that the model has the correct attributes
-        assert self.is_good_model(model), 'Model missing attributes.'
+        assert self.is_good_model(self.base_model), 'Model missing attributes.'
 
     def step(self):
         """
@@ -54,7 +54,8 @@ class Filter:
         methods = ['step', 'set_state', 'get_state']
         attributes = ['state']
         has_methods = [cls.has_method(model, m) for m in methods]
-        b = all(has_methods)
+        has_attributes = [hasattr(model, a) for a in attributes]
+        b = all(has_methods) and all(has_attributes)
         return b
 
     @staticmethod

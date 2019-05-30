@@ -29,7 +29,8 @@ class EnsembleKalmanFilter(Filter):
             None
         """
         # Call parent constructor
-        super().__init__(model)
+        # Instantiates the base model and starts time at 0
+        super().__init__(model, model_params)
 
         # Filter attributes - outlines the expected params
         self.max_iterations = None
@@ -40,7 +41,6 @@ class EnsembleKalmanFilter(Filter):
         self.H = None
         self.R_vector = None
         self.data_covariance = None
-        self.base_model = model(model_params)
 
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():

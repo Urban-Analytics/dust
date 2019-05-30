@@ -7,11 +7,12 @@ A class to represent a general Ensemble Kalman Filter for use with StationSim.
 # Imports
 from copy import deepcopy
 import warnings as warns
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from Filter import Filter
 
 # Classes
-class EnsembleKalmanFilter:
+class EnsembleKalmanFilter(Filter):
     """
     A class to represent a general EnKF.
     """
@@ -27,10 +28,8 @@ class EnsembleKalmanFilter:
         Returns:
             None
         """
-        self.time = 0
-
-        # Ensure that model has correct attributes
-        assert self.is_good_model(model), 'Model missing attributes.'
+        # Call parent constructor
+        super().__init__(model)
 
         # Filter attributes - outlines the expected params
         self.max_iterations = None
@@ -221,47 +220,6 @@ class EnsembleKalmanFilter:
         state_covariance = self.H @ C @ self.H_transpose
         diff = state_covariance + self.data_covariance
         return C @ self.H_transpose @ np.linalg.inv(diff)
-
-    @classmethod
-    def is_good_model(cls, model):
-        """
-        A utility function to ensure that we've been provided with a good model.
-        This means that the model should have the following:
-        - step (method)
-        - state (attribute)
-        - set_state (method)
-        - set_state (method)
-
-        Params:
-            model
-
-        Returns:
-            boolean
-        """
-        methods = ['step', 'set_state', 'get_state']
-        # attribute = 'state'
-        has_methods = [cls.has_method(model, m) for m in methods]
-        # b = all(has_methods) and hasattr(model, attribute)
-        b = all(has_methods)
-        return b
-
-    @staticmethod
-    def has_method(model, method):
-        """
-        Check that a model has a given method.
-        """
-        b = True
-        try:
-            m = getattr(model, method)
-            if not callable(m):
-                w = "Model {} not callable".format(method)
-                warns.warn(w, RuntimeWarning)
-                b = False
-        except:
-            w = "Model doesn't have {}".format(method)
-            warns.warn(w, RuntimeWarning)
-            b = False
-        return b
 
     @staticmethod
     def separate_coords(arr):

@@ -104,14 +104,16 @@ class EnsembleKalmanFilter(Filter):
         self.update_state_ensemble()
         self.update_state_mean()
         if self.time % self.assimilation_period == 0:
-            self.plot_model('before update {0}'.format(self.time))
+            if self.vis:
+                self.plot_model('before update {0}'.format(self.time))
             truth = self.base_model.state_history[-1]
             noise = np.random.normal(0, self.R_vector, truth.shape)
             data = truth + noise
             self.update(data)
             self.update_models()
             self.update_state_mean()
-            self.plot_model('after update {0}'.format(self.time))
+            if self.vis:
+                self.plot_model('after update {0}'.format(self.time))
         else:
             self.update_state_mean()
         self.time += 1
@@ -273,7 +275,8 @@ class EnsembleKalmanFilter(Filter):
             y_mean_errors.append(np.mean(y_error))
             distance_mean_errors.append(np.mean(distance_error))
 
-        self.plot_results(distance_mean_errors, x_mean_errors, y_mean_errors)
+        if self.vis:
+            self.plot_results(distance_mean_errors, x_mean_errors, y_mean_errors)
 
         # Save results to csv if required
         if self.keep_results:
@@ -292,7 +295,9 @@ class EnsembleKalmanFilter(Filter):
                                                  self.assimilation_period,
                                                  self.ensemble_size, 
                                                  population_size)
-        data.to_csv(general_path.format(params_string), index=False)
+        data_path = general_path.format(params_string)
+        print('Writing filter results to {0}.'.format(data_path))
+        data.to_csv(data_path, index=False)
 
     @classmethod
     def make_errors(cls, result, truth):

@@ -73,10 +73,23 @@ def run_all(pop_size=20, its=300, assimilation_period=50, ensemble_size=10):
                      'data_vector_length': vec_length,
                      'H': np.identity(vec_length),
                      'R_vector': OBS_NOISE_STD * np.ones(vec_length),
-                     'keep_results': True}
+                     'keep_results': True,
+                     'vis': False}
 
     # Run enkf and process results
     enkf = run_enkf(model_params, filter_params)
     enkf.process_results()
 
-run_all()
+# run_all(20,300,50,10)
+
+def run_combos():
+    # Parameter combos
+    assimilation_periods = [2, 5, 10, 20, 50, 100]
+    ensemble_sizes = [2, 5, 10, 20]
+
+    for a in assimilation_periods:
+        for e in ensemble_sizes:
+            combo = (20, 300, a, e)
+            run_all(*combo)
+
+run_combos()

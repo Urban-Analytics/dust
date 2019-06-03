@@ -461,9 +461,9 @@ class ParticleFilter:
             
             # Return two tuples, one with the about the error before reweighting, one after
 
-            # Work out which array indices point to results *before* reweighting
-            before_indices = [i for i, x in enumerate(self.before_resample) if x]
-            after_indices = [i for i, x in enumerate(self.before_resample) if not x]
+            # Work out which array indices point to results before and after reweighting
+            before_indices = [i for i, x in enumerate(self.before_resample) if x ]
+            after_indices  = [i for i, x in enumerate(self.before_resample) if not x ]
 
             result = []
             
@@ -479,7 +479,6 @@ class ParticleFilter:
                     max(np.array(self.variances)[before]),
                     np.average(np.array(self.variances)[before])
                 ])
-            abc=1
             return result
         else:
             return 
@@ -718,6 +717,8 @@ def single_run_particle_numbers():
     
         # Write the results of this run
         with open(outfile, 'a') as f:
+            # Two sets of errors are created, those before resampling, and those after. Results is a list with two tuples.
+            # First tuple has eerrors before resampling, second has errors afterwards.
             for before in [0,1]:
                 f.write(str(result[before])[1:-1].replace(" ","")+","+str(before)+"\n") # (slice to get rid of the brackets aruond the tuple)
 

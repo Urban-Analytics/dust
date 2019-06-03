@@ -2,10 +2,9 @@
 
 This folder contains the codes used to run Kevin's experimentss on the StationSim particle filter.
 
-## pf.py
+## StationSim-ARCExperiments.py
 
-The code for the particle filter to run on ARC is pf.py. It's all the standard stuff. The main difference is that the number of
-particles and agents is fed into the code from the ARC task array variable. This variable increments through 'param_list' and then
+The code for the particle filter to run on ARC is StationSim-Experiments.py. It's all the standard stuff. The main difference is that the number of particles and agents is fed into the code from the ARC task array variable. This variable increments through 'param_list' and then
 the particle and agent numbers are selected from there.
 
 ## pf_script.sh

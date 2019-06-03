@@ -17,4 +17,4 @@
 # This number is determined by the length of the param_list list. 
 #$ -t 1-3131
 #Run the executable pf.py from the current working directory
-python3 pf.py $SGE_TASK_ID
+python3 StationSim-ARCExperiments.py $SGE_TASK_ID

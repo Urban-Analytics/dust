@@ -405,7 +405,7 @@ class Model:
             'batch_iterations': 10_000,
             'do_save': True,
             'do_plot': True,
-            'do_ani': False
+            'do_ani': True
         }
         # Run the model
         Model(model_params).batch()

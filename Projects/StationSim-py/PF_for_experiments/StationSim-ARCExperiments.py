@@ -414,17 +414,18 @@ class ParticleFilter:
             # See if some particles still have active agents
             if any([agent.active != 2 for agent in self.base_model.agents]):
                 #print(self.time/self.number_of_iterations)
-                self.predict(numiter=numiter)
 
+                self.predict(numiter=numiter)
 
 
                 if self.time % self.resample_window == 0:
                     self.window_counter += 1
-                    self.reweight()
 
                     # Store the model states before and after resampling
                     if self.do_save:
                         self.save(before=True)
+
+                    self.reweight()
 
                     self.resample()
 
@@ -436,6 +437,7 @@ class ParticleFilter:
                     print("\tFinished window {}, step {} (took {}s)".format(
                         self.window_counter, self.time, round(float(time.time() - window_start_time),2)))
                     window_start_time = time.time()
+
                 elif self.multi_step:
                     assert (False), "Should not get here, if multi_step is true then the condition above should always run"
 

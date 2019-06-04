@@ -24,21 +24,22 @@ try:
 except ValueError:
     pass
 
+# For updating belief.
 truth_observation = tfd.Normal(loc=1, scale=1.)
 
 SIZE = 1000
 EXIT = 100.
 
-# Declare plot outside of loop.
+# Declare plot outside of loop, no need to keep building.
 fig, ax = plt.subplots()
 
 
 def custom_stepper():
     truthy = True
 
-    # Position
+    # Position transformable
     x = tfd.Normal(loc=1, scale=1.)
-    x_sample = x.sample(SIZE)
+
     # Speed
     v = tfd.Exponential(rate=1)
     v_sample = v.sample(SIZE)
@@ -47,47 +48,44 @@ def custom_stepper():
 
     clear_output_folder()
 
-    t = [[1.0]]
+    t = 1.0
+
     while True:
-        os.system('cls' if os.name == 'nt' else 'clear')
-        # Move the agent.
-        x_sample = tf.math.add(x_sample, tf.math.multiply(v_sample, tf.Variable(t)))
-        # Add random noise.
-        x_sample = tf.math.add(x_sample, u.sample(SIZE))
+        shift = tf.math.multiply(v_sample, tf.Variable(t))
+        shift = tf.math.add(shift, u.sample(SIZE))
+        affine = tfp.bijectors.Affine(shift)
 
-        plot_agent(x_sample)
+        x = tfd.TransformedDistribution(distribution=x,
+                                        bijector=affine)
 
-        if tf.cond(pred=tf.greater(tf.math.reduce_mean(x_sample), tf.constant(EXIT)),
+        plot_agent(x)
+
+        if tf.cond(pred=tf.greater(tf.math.reduce_mean(x.sample(SIZE)), tf.constant(EXIT)),
                    true_fn=lambda: True,
                    false_fn=lambda: False):
             break
 
-        if truthy:
-            print('\\Working/')
-            truthy = False
-        else:
-            print('/Working\\')
-            truthy = True
-        print(tf.math.reduce_mean(x_sample).numpy())
-
+        print('{}/{}'.format(format(tf.math.reduce_mean(x.sample(SIZE)), '9.5'), EXIT))
 
     render_agent()
 
 
-def plot_agent(x_sample):
-    n, bins, patches = ax.hist(x_sample, bins=100, density=1)
+def plot_agent(x):
+    sample = x.sample(SIZE)
+    n, bins, patches = ax.hist(sample, bins=100, density=1)
     fracs = n / n.max()
     norm = colors.Normalize(fracs.min(), fracs.max())
     for thisfrac, thispatch in zip(fracs, patches):
         color = plt.cm.inferno(norm(thisfrac))
         thispatch.set_facecolor(color)
+
     ax.set_ylim(0, .3)
     ax.set_xlim(EXIT * -.25, EXIT * 1.5)
     ax.set_xlabel('x')
     ax.set_ylabel('Density in Location')
-    ax.set_title(r'Single Agent:  $\mu={}$, $\sigma={}$'.format(format(tf.math.reduce_mean(x_sample).numpy(),
+    ax.set_title(r'Single Agent:  $\mu={}$, $\sigma={}$'.format(format(tf.math.reduce_mean(sample),
                                                                        '9.5'),
-                                                                format(tf.math.reduce_std(x_sample).numpy(),
+                                                                format(tf.math.reduce_std(sample),
                                                                        '9.5')))
     # Save the plot to disk.
     plt.savefig('output/{}.png'.format(time.time()))

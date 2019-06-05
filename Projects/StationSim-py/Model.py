@@ -40,7 +40,7 @@ class Model:
         self.pop_finished = 0
         # Initialise
         self.initialise_gates()
-        self.agents = [Agent(self, unique_id) for unique_id in range(self.pop_total)]
+        self.agents = [Agent(self, u_id) for u_id in range(self.pop_total)]
         self.state_history = list()
         self.state = None
 

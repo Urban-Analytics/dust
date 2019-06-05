@@ -5,12 +5,13 @@ date_created: 19/04/10
 A class to represent a general Ensemble Kalman Filter for use with StationSim.
 """
 # Imports
-from copy import deepcopy
+from copy import deepcopy as dcopy
 import warnings as warns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from Filter import Filter
+
 
 # Classes
 class EnsembleKalmanFilter(Filter):
@@ -43,6 +44,7 @@ class EnsembleKalmanFilter(Filter):
         self.R_vector = None
         self.data_covariance = None
         self.keep_results = False
+        self.vis = False
 
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():
@@ -52,7 +54,7 @@ class EnsembleKalmanFilter(Filter):
             setattr(self, k, v)
 
         # Set up ensemble of models
-        self.models = [deepcopy(self.base_model) for _ in range(self.ensemble_size)]
+        self.models = [dcopy(self.base_model) for _ in range(self.ensemble_size)]
 
         # Make sure that models have state
         for m in self.models:
@@ -65,9 +67,9 @@ class EnsembleKalmanFilter(Filter):
         # Make sure that we have a data covariance matrix
         """
         https://arxiv.org/pdf/0901.3725.pdf -
-        The covariance matrix R describes the estimate of the error of the data; if
-        the random errors in the entries of the data vector d are independent,R is
-        diagonal and its diagonal entries are the squares of the standard
+        Covariance matrix R describes the estimate of the error of the data;
+        if the random errors in the entries of the data vector d are independent,
+        R is diagonal and its diagonal entries are the squares of the standard
         deviation (“error size”) of the error of the corresponding entries of the
         data vector d.
         """

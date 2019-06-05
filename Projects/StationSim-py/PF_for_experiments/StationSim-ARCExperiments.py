@@ -2,12 +2,10 @@ import numpy as np
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 from copy import deepcopy
-from multiprocessing import Pool
 import multiprocessing
 import time
 import warnings
 import sys
-import os
 
 def error(text='Self created error.'):
     from sys import exit
@@ -132,7 +130,7 @@ class Model:
         return
 
     def step(self):
-        if self.pop_finished < self.pop_total and self.step:
+        if self.pop_finished < self.pop_total:
             self.kdtree_build()
             [agent.step(self) for agent in self.agents]
         self.time_id += 1
@@ -349,7 +347,7 @@ class ParticleFilter:
         return self.models[particle_num], self.states[particle_num]
 
     @classmethod
-    def step_particle(cls, particle_num, model, num_iter, particle_std, particle_shape):
+    def step_particle(cls, particle_num:int, model:Model, num_iter:int, particle_std:float, particle_shape:tuple):
         """
         Step a particle, assign the locations of the
         agents to the particle state with some noise, and
@@ -508,11 +506,11 @@ class ParticleFilter:
         #                                 list(zip(range(self.number_of_particles), [self]*self.number_of_particles)))
 
         stepped_particles = pool.starmap(ParticleFilter.step_particle, list(zip(
-            range(self.number_of_particles), # Particle numbers
-            [ m for m in self.models],  # Associated Models
-            [numiter]*self.number_of_particles, # Number of iterations to step each particle
-            [self.particle_std]*self.number_of_particles, # Particle std (for adding noise
-            [ s.shape for s in self.states], #Shape (for adding noise)
+            range(self.number_of_particles), # Particle numbers (in integer)
+            [ m for m in self.models],  # Associated Models (a Model object)
+            [numiter]*self.number_of_particles, # Number of iterations to step each particle (an integer)
+            [self.particle_std]*self.number_of_particles, # Particle std (for adding noise) (a float)
+            [ s.shape for s in self.states], #Shape (for adding noise) (a tuple)
         )))
 
         self.models = [stepped_particles[i][0] for i in range(len(stepped_particles))]
@@ -683,20 +681,25 @@ def single_run_particle_numbers():
 
     filter_params = {
         'number_of_particles': param_list[int(sys.argv[1])-1][0], # particles read from ARC task array variable
-        'number_of_runs': 1, # Number of times to run each particle filter configuration
+        'number_of_runs': 5, # Number of times to run each particle filter configuration
         'resample_window': 100,
         'multi_step' : True, # Whether to predict() repeatedly until the sampling window is reached
         'particle_std': 2.0, # was 2 or 10
         'model_std': 2.0, # was 2 or 10
         'agents_to_visualise': 10,
         'do_save': True,
-        'plot_save': True,
-        'do_ani': True,
+        'plot_save': False,
+        'do_ani': False,
         
     }
     
     # Open a file to write the results to
-    outfile = "results/pf_particles_"+str(int(filter_params['number_of_particles']))+"_agents_"+str(int(model_params['pop_total']))+"_noise_"+str(filter_params['particle_std'])+".csv"
+    outfile = "results/pf_particles_{}_agents_{}_noise_{}-{}.csv".format(
+        str(int(filter_params['number_of_particles'])),
+        str(int(model_params['pop_total'])),
+        str(filter_params['particle_std']),
+        str(int(time.time()))
+    )
     with open(outfile, 'w') as f:
         # Write the parameters first
         f.write("PF params: "+str(filter_params)+"\n")
@@ -734,6 +737,7 @@ if __name__ == '__main__':
 
     # Pool object needed for multiprocessing
     numcores = multiprocessing.cpu_count()
+    #numcores = 5
     pool = multiprocessing.Pool(processes=numcores)
     
     # Lists of particle and agent values to run

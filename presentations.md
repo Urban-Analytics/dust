@@ -7,7 +7,6 @@ tagline: Presentations about, or relating to, the surf project
 ### Presentations about, or relating to, the dust project (most recent first)
 
 
-
  - 2019
 
    - [State Estimation and Data Assimilation for an Agent-Based Model using a Probabilistic Framework]({{site.baseurl}}/p/2019-05-14-abmus-keanu_probabilistic.html). Presentation to the 4th International Workshop on Agent-Based Modelling of Urban Systems ([ABMUS](http://modelling-urban-systems.com/abmus2019)), part of the International Conference on Autonomous Agents and Multiagent Systems ([AAMAS 2019](http://aamas2019.encs.concordia.ca/)). 13-17 May, Montreal.

@@ -10,9 +10,14 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import sys
 
 # Needs to be set to location of results
-path = 'M:\Particle Filter\Model Results\HPC results\With noise = 10'
+#path = 'M:\Particle Filter\Model Results\HPC results\With noise = 10'
+path = "/Users/nick/gp/dust/Projects/StationSim-py/PF_for_experiments/results/noise-02"
+
+if not os.path.isdir(path):
+    sys.exit("Directory '{}' does not exist".format(path))
 
 files = []
 # r=root, d=directories, f = files
@@ -20,6 +25,9 @@ for r, d, f in os.walk(path):
     for file in f:
         if '.csv' in file:
             files.append(os.path.join(r, file))
+            
+if len(files) == 0:
+    sys.exit("Found no files in {}, can't continue".format(path) )
     
 particles = [1] + list(range(10,1010,10))
 agents = [1] + list(range(10,310,10))

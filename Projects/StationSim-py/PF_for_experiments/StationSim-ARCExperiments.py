@@ -14,6 +14,7 @@ def error(text='Self created error.'):
     exit(text)
     return
 
+
 class Agent:
 
     def __init__(self, model, unique_id):

@@ -361,6 +361,10 @@ class ParticleFilter:
         :param particle_shape: the shape of the particle array
         """
         #self.models[particle_num].step()
+        #warnings.warn(
+        #    "ParticleFilter.step_particle has been replaced with a global step_particle method. This one should no longer be used",
+        #    DeprecationWarning
+        #)
         for i in range(num_iter):
             model.step()
 
@@ -502,10 +506,7 @@ class ParticleFilter:
         for i in range(numiter):
             self.base_model.step()
 
-        #stepped_particles = pool.starmap(ParticleFilter.step_particles, \
-        #                                 list(zip(range(self.number_of_particles), [self]*self.number_of_particles)))
-
-        stepped_particles = pool.starmap(ParticleFilter.step_particle, list(zip(
+        stepped_particles = pool.starmap(ParticleFilter.step_particle, list(zip( \
             range(self.number_of_particles), # Particle numbers (in integer)
             [ m for m in self.models],  # Associated Models (a Model object)
             [numiter]*self.number_of_particles, # Number of iterations to step each particle (an integer)
@@ -731,6 +732,7 @@ def single_run_particle_numbers():
             i, filter_params['number_of_particles'], model_params['pop_total'], round(time.time()-start_time), result), flush=True) 
     
     print("Finished single run")
+
 
 if __name__ == '__main__':
     __spec__ = None

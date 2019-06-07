@@ -6,6 +6,7 @@ import multiprocessing
 import time
 import warnings
 import sys
+import itertools
 
 def error(text='Self created error.'):
     from sys import exit
@@ -316,13 +317,17 @@ class ParticleFilter:
         return self.states[particle]
 
     @classmethod
-    def assign_agents(cls, particle,self):
+    def assign_agents(cls, particle_num:int, state:np.array, model:Model):
         """
         Assign the state of the particles to the
         locations of the agents.
+        :param particle_num
+        :param state: The state of the particle to be assigned
+        :param model: The model to assign the state to
+        :type model: Return the model after having the agents assigned according to the state.
         """
-        self.models[particle].state2agents(self.states[particle])
-        return self.models[particle]
+        model.state2agents(state)
+        return model
 
     @classmethod
     def step_particles(cls, particle_num, self):
@@ -565,9 +570,14 @@ class ParticleFilter:
         
         #self.unique_particles.append(len(np.unique(self.states,axis=0)))
 
-        self.models = pool.starmap(ParticleFilter.assign_agents,list(zip(range(self.number_of_particles),[self]*self.number_of_particles)))
-
+        # Could use pool.starmap here, but it's quicker to do it in a single process
+        self.models = list(itertools.starmap(ParticleFilter.assign_agents,list(zip(
+            range(self.number_of_particles),  # Particle numbers (in integer)
+            [s for s in self.states],  # States
+            [m for m in self.models]   # Associated Models (a Model object)
+        ))))
         return
+
 
     def save(self, before:bool):
         '''

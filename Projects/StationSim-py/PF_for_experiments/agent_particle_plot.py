@@ -91,7 +91,7 @@ print("...finished reading")
 # Can restrict the number of agents and/or particles to look at in the plots
 # (note this is an index into the actual number of agents/particles)
 min_particles = particles.index(10)
-max_agents = agents.index(100)
+max_agents = agents.index(50)
 
 
 # Define the plots so that they can be plotted in a loop

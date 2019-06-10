@@ -42,7 +42,6 @@ class Agent:
         self.location = model.loc_entrances[np.random.randint(model.entrances)] #pick an entrance
         self.location[1] += model.entrance_space * (np.random.uniform() - .5) #wiggle between +-1 a bit about the entrance
         self.loc_desire = model.loc_exits[np.random.randint(model.exits)] #pick an exit
-        self.ideal_location = self.location #Rob's addition. Where it would be without collisions. Useful prior prediction for each agent
         self.time_activate = np.random.exponential(model.entrance_speed) #when do agents enter model
         # The maximum speed that this agent can travel at:
         # self.speed_desire = max(np.random.normal(model.speed_desire_mean, model.speed_desire_std), 2*model.speed_min)  # this is not a truncated normal distribution
@@ -103,8 +102,6 @@ class Agent:
         for speed in self.speeds:
             # Direct
             new_location = Agent.lerp(self.loc_desire, self.location, speed)
-            if speed == self.speed_desire:
-                self.ideal_location = new_location
 
             if not Agent.collision(model, new_location):
                 break

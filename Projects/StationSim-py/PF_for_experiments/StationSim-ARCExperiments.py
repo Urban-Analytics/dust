@@ -697,7 +697,7 @@ def single_run_particle_numbers():
         'resample_window': 100,
         'multi_step' : True, # Whether to predict() repeatedly until the sampling window is reached
         'particle_std': 2.0, # was 2 or 10
-        'model_std': 2.0, # was 2 or 10
+        'model_std': 1.0, # was 2 or 10
         'agents_to_visualise': 10,
         'do_save': True,
         'plot_save': False,
@@ -757,7 +757,7 @@ if __name__ == '__main__':
     #num_par = [1]+list(range(10,1010,10))
     #num_age = [1]+list(range(10,310,10))
 
-    # New ones by nick: 1 -> 20 agents, 1 -> 1000 particles (more experiments with fewer particles)
+    # New ones by nick: (requires 1540 experiments)
     num_par = list(range(1,49,1))  + list(range(50,501,50)) + list(range(600,2001,100)) + list(range(2500,4001,500))
     num_age = list(range(1,21,1))
 

@@ -693,7 +693,7 @@ def single_run_particle_numbers():
 
     filter_params = {
         'number_of_particles': param_list[int(sys.argv[1])-1][0], # particles read from ARC task array variable
-        'number_of_runs': 1, # Number of times to run each particle filter configuration
+        'number_of_runs': 5, # Number of times to run each particle filter configuration
         'resample_window': 100,
         'multi_step' : True, # Whether to predict() repeatedly until the sampling window is reached
         'particle_std': 2.0, # was 2 or 10
@@ -783,7 +783,7 @@ if __name__ == '__main__':
         'separation': 2,
         'batch_iterations': 4000, # Only relevant in batch() mode
         'do_save': True, # Saves output data (only relevant in batch() mode)
-        'do_ani': True, # Animates the model (only relevant in batch() mode)
+        'do_ani': False, # Animates the model (only relevant in batch() mode)
         }
     #Model(model_params).batch() # Runs the model as normal (one run)
 

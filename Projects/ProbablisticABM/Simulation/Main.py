@@ -54,9 +54,6 @@ def custom_stepper(agent):
                    true_fn=lambda: True,
                    false_fn=lambda: False):
             agent.deactivate()
-
-
-
     return agent
 
 

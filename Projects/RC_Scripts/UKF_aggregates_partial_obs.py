@@ -11,7 +11,7 @@ import os
 os.chdir("/home/rob/dust/Projects/RC_Scripts/")
 import numpy as np
 from math import floor
-from StationSim_BATCH import Model, Agent
+from StationSim_Wiggle import Model, Agent
 from filterpy.kalman import MerweScaledSigmaPoints as MSSP
 from filterpy.kalman import UnscentedKalmanFilter as UNKF
 from filterpy.common import Q_discrete_white_noise as QDWN
@@ -35,25 +35,33 @@ class UKF:
     """
     
     def __init__(self,Model,model_params,filter_params):
+        #call params
         self.model_params = model_params #stationsim parameters
         self.filter_params = filter_params # ukf parameters
+        
+        #these are used alot i figure its cleaner to call them here
         self.pop_total = self.model_params["pop_total"] #number of agents
         self.number_of_iterations = model_params['batch_iterations'] #number of batch iterations
         self.base_model = Model(model_params) #station sim
-        self.UKF = None #dictionary of KFs for each agent
         self.UKF_histories = []
-        self.finished = 0 #number of finished agents
         self.sample_rate = self.filter_params["sample_rate"]
+        
+        #how many agents being observed
         if self.filter_params["do_restrict"]==True: 
             self.sample_size= floor(self.pop_total*self.filter_params["prop"])
         else:
             self.sample_size = self.pop_total
+            
+        #random sample of agents to be observed
         self.index = np.sort(np.random.choice(self.model_params["pop_total"],
                                                      self.sample_size,replace=False))
         self.index2 = np.empty((2*self.index.shape[0]),dtype=int)
         self.index2[0::2] = 2*self.index
         self.index2[1::2] = (2*self.index)+1
+        #frame counts for animations
         self.frame_number = 1
+        self.wiggle_frame_number = 1
+        self.wiggle_densities= {}
 
 
     def F_x(self,x,dt):
@@ -84,19 +92,22 @@ class UKF:
     def H_x(location,z):
         """
         Measurement function for agent.
-        !im guessing this is just the output from base_model.step
+        !!im guessing this is just the output from base_model.step
         """
         return z
     
-    
+    """
+    initialises UKFs various parameter
+    sigmas(points) - sigmas points to be used. numerous types to be found
+    heremost common VDM sigmas are used.
+    Q,R -noise structures for transition and measurement functions respectively
+    x - current states
+    """   
     
     def init_ukf(self):
         
-        """
-        either updates or initialises UKF else ignores agent depending on activity status
-        """
+
         
-        "init UKF"
         
         
         state = self.base_model.agents2state(self)
@@ -107,15 +118,16 @@ class UKF:
         self.ukf.R = np.eye(len(state))*self.filter_params["Sensor_Noise"] #sensor noise. larger noise implies less trust in sensor and to favour prediction
         self.ukf.P = np.eye(len(state))*self.filter_params["Process_Noise"]
         
-        #for i in range(int(len(state)/2)):  #! initialise process noise as blocked structure of discrete white noise. cant think of any better way to do this
-        #    i1 = 2*i
-        #    i2 = (2*(i+1))
+        for i in range(int(len(state)/2)):  #! initialise process noise as blocked structure of discrete white noise. cant think of any better way to do this
+            i1 = 2*i
+            i2 = (2*(i+1))
         #    self.ukf.Q[i1:i2,i1:i2] =  QDWN(2,dt=1,var=self.filter_params["Process_Noise"])  
-        #    self.ukf.Q[i1:i2,i1:i2] = np.array([[2,1],[1,2]])*self.filter_params["Process_Noise"]
+            self.ukf.Q[i1:i2,i1:i2] = np.array([[2,1],[1,2]])*self.filter_params["Process_Noise"]
 
-        self.ukf.Q = np.eye(len(state))*self.filter_params["Process_Noise"]*self.filter_params["sample_rate"]
+        #self.ukf.Q = np.eye(len(state))*self.filter_params["Process_Noise"]*self.filter_params["sample_rate"]
         self.UKF_histories.append(self.ukf.x)
-
+    
+    """extract data from lists of agents into more suitable frames"""
     
     def data_parser(self,do_fill):
         #!! with nans and 
@@ -222,6 +234,10 @@ class UKF:
 
         return c_means,time_means
 
+
+    """
+    4 functions for animations of agents/wiggle counts above
+    """
     def heatmap(self):
         os.chdir("/home/rob/dust/Projects/RC_Scripts/output")
         locs = [agent.location for agent in self.base_model.agents]
@@ -229,9 +245,9 @@ class UKF:
         
         #os.chdir("/home/rob/dust/Projects/RC_Scripts/output")
         f = plt.figure()
-        plt.hist2d(locs[:,0],locs[:,1],density = False,bins = 10,
+        plt.hist2d(locs[:,0],locs[:,1],bins = 10,
                    range = np.array([[0,self.model_params["width"]],[0,self.model_params["height"]]])
-                   ,animated= True,cmap=cm.Spectral,cmin =1e-10 )      
+                   ,density=True,animated= True,cmap=cm.Spectral)      
         plt.xlabel("Corridor width")
         plt.ylabel("Corridor height")
         plt.colorbar()
@@ -241,13 +257,9 @@ class UKF:
         os.chdir("/home/rob/dust/Projects/RC_Scripts")
         plt.close()
         self.frame_number+=1
-    
-    
     """
     getting files to sort numerically. can probably resolve this by naming png files better.
     """
-    
-    
     def animate(self):
         def tryint(s):
             try:
@@ -271,52 +283,97 @@ class UKF:
             images.append(imageio.imread('output/{}'.format(filename)))
         imageio.mimsave('outputGIF.mp4', images,fps=10)
         
-        self.clear_output_folder()
+        self.clear_output_folder("output")
 
+    def wiggle_heatmap(self):
+            
+            sample_agents = [self.base_model.agents[j] for j in self.index]
+            wiggles = np.array([agent.wiggle for agent in sample_agents])
+            
+            index = np.where(wiggles==1)
+            non_index = np.where(wiggles==0)
+            
+            locs = [agent.location for agent in sample_agents]
+            locs = np.vstack(locs)
+            non_locs = locs[non_index,:][0,:,:]
+            locs = locs[index,:][0,:,:]
+            
+            #os.chdir("/home/rob/dust/Projects/RC_Scripts/output")
+            f = plt.figure(figsize = (12,8))
+            ax = f.add_subplot(111)
+            bins = self.filter_params["bin_size"]
+            width = self.model_params["width"]
+            height = self.model_params["height"]
+
+            plt.scatter(non_locs[:,0],non_locs[:,1],color="cyan")
+            ax.set_ylim(0,height)
+            ax.set_xlim(0,width)
+            
+            if np.sum(wiggles)!=0:
+                plt.scatter(locs[:,0],locs[:,1],color="magenta")
+                hist,xb,yb = np.histogram2d(locs[:,0],locs[:,1],
+                                            range = [[0,width],[0,height]],
+                                            bins = [2*bins,bins],density=True)  #!! some formula for bins to make even binxbin squares??  
+                hist *= bins**2
+                hist= hist.T
+                hist = np.flip(hist,axis=0)
+                self.wiggle_densities[self.wiggle_frame_number] = hist
+                extent = [0,width,0,height]
+                im=plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
+                           ,cmap = cm.Spectral,extent=extent)
+            else:
+                hist,xb,yb = np.histogram2d(np.array([1]),np.array([1]),
+                                            range = [[0,width],[0,height]],
+                                            bins = [bins,bins],density=True)   
+               
+                extent = [0,width,0,height]
+                im=plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
+                           ,cmap = cm.Spectral,extent=extent,alpha=0)
+                
+               
+            cbar = plt.colorbar(im,fraction=0.046,pad=0.04)
+            cbar.set_alpha(1)
+            cbar.draw_all()
+            
+            plt.xlabel("Corridor width")
+            plt.ylabel("Corridor height")
+            #plt.show()
+            file = f"output_wiggle/{self.wiggle_frame_number}"
+            #os.chdir("/home/rob/dust/Projects/RC_Scripts/output_wiggle")
+            f.savefig(file)
+            os.chdir("/home/rob/dust/Projects/RC_Scripts")
+            plt.close()
+            self.wiggle_frame_number+=1
+            
+    def wiggle_animate(self):
+        def tryint(s):
+            try:
+                return int(s)
+            except:
+                return s
         
+        def alphanum_key(s):
+            """ Turn a string into a list of string and number chunks.
+                "z23a" -> ["z", 23, "a"]
+            """
+            return [tryint(c) for c in re.split('([0-9]+)', s) ]        
+            
     
-    
-    def main(self):
-        time1 = datetime.datetime.now()
-        self.init_ukf() #init UKF
-        #self.F_x(dt=1,agents = self.base_model.agents)
+        
+        files = os.listdir('output_wiggle')
+        files.sort(key=alphanum_key) #sorting files numerically
+        print('{} frames generated.'.format(len(files)))
+        images = []
+        for filename in files:
+            images.append(imageio.imread('output_wiggle/{}'.format(filename)))
+        imageio.mimsave('wiggleGIF.mp4', images,fps=10)
+        
+        self.clear_output_folder("output_wiggle")
         
 
-        for _ in range(self.number_of_iterations-1): #cycle over batch iterations. tqdm gives progress bar on for loop.
-            if _%100 ==0:
-                print(f"iterations: {_}")
-                
-            if _%self.filter_params["heatmap_rate"] == 0 :  
-                if self.filter_params["do_animate"]:
-                    self.heatmap()
-                
-            self.base_model.step() #jump agents forward using actual position
-            self.ukf.predict(self) 
 
-            if self.base_model.time_id%self.sample_rate == 0:
-                
-                state = self.base_model.agents2state()[self.index2]
-                self.ukf.update(z=state)
-                self.UKF_histories.append(self.ukf.x)
-                    
-                f = []
-                for j in range(self.pop_total):
-                    f.append(self.base_model.agents[j].active)
-                g=np.array(f)
-                
-                if np.sum(g==2) == self.pop_total:
-                    if self.filter_params["do_animate"]:
-                        self.animate()
-                    break
-        self.wiggle_counts = [agent.wiggle_count for agent in U.base_model.agents]
-        
-        time2 = datetime.datetime.now()
-        print(time2-time1)
-        return
-    
-       
-    def clear_output_folder(self):
-       folder = 'output'
+    def clear_output_folder(self,file_name):
+       folder = file_name
        for the_file in os.listdir(folder):
            file_path = os.path.join(folder, the_file)
            try:
@@ -324,7 +381,54 @@ class UKF:
                    os.unlink(file_path)
            except Exception as e:
                print(e)
+            
+    """
+    main function runs UKF over stationsim
+    """
+    def main(self):
+        time1 = datetime.datetime.now()
+        self.init_ukf() #init UKF        
+
+        for _ in range(self.number_of_iterations-1): #cycle over batch iterations. tqdm gives progress bar on for loop.
+            if _%100 ==0: #progress bar
+                print(f"iterations: {_}")
+                
+            if _%self.filter_params["heatmap_rate"] == 0 :  #take frames for animations every heatmap_rate loops
+                if self.filter_params["do_animate"]:
+                    self.heatmap()
+              
+                
+            self.ukf.predict(self) #predict where agents will jump
+            self.base_model.step() #jump stationsim agents forwards
+            
+            if _%self.filter_params["heatmap_rate"] == 0 :  #take frames for wiggles instead similar to heatmap above
+                if self.filter_params["do_wiggle_animate"]:
+                    self.wiggle_heatmap()
+                    
+            if self.base_model.time_id%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
+                
+                state = self.base_model.agents2state()[self.index2] #observed agents states
+                self.ukf.update(z=state) #update UKF
+                self.UKF_histories.append(self.ukf.x) #append histories
+
+                
+               
+                
+                if self.base_model.pop_finished == self.pop_total: #break condition
+                    if self.filter_params["do_animate"]:
+                        self.animate()           
+                    if self.filter_params["do_wiggle_animate"]:
+                        self.wiggle_animate()
+                    break
+        
+        time2 = datetime.datetime.now()
+        print(time2-time1)
+        return
     
+    
+
+       
+
     
     
 if __name__ == "__main__":
@@ -350,14 +454,15 @@ if __name__ == "__main__":
                     }
         
     filter_params = {         
-                    "Sensor_Noise": 1,
-                    "Process_Noise": 1,
-                    'sample_rate': 1,
-                    "do_restrict": True,
-                    "do_animate": False,
-                    "prop": 0.01,
-                    "heatmap_rate": 5
-                    
+                    "Sensor_Noise": 1, # how reliable are measurements H_x. lower value implies more reliable
+                    "Process_Noise": 1, #how reliable is prediction F_x lower value implies more reliable
+                    'sample_rate': 1,   #how often to update kalman filter. higher number gives smoother (maybe oversmoothed) predictions
+                    "do_restrict": True, #"restrict to a proportion prop of the agents being observed"
+                    "do_animate": False,#"do animations of agent/wiggle aggregates"
+                    "do_wiggle_animate":True,
+                    "prop": 0.1,#proportion of agents observed. 1 is all <1/pop_total is none
+                    "heatmap_rate": 2,# "after how many updates to record a frame"
+                    "bin_size":10
                     }
         
     
@@ -369,13 +474,17 @@ if __name__ == "__main__":
         U = UKF(Model, model_params,filter_params)
         U.main()
         
-        if runs==1 and model_params["do_save"] == True:   
+        if runs==1 and model_params["do_save"] == True:   #plat results of single run
             c_mean,t_mean = U.plots()
-        a,b,a_full = U.data_parser(True)
-        pop = model_params["pop_total"]
-        np.save(f"ACTUAL_TRACKS_{pop}_{i}",a_full)
-        np.save(f"PARTIAL_TRACKS_{pop}_{i}",a)
-        np.save(f"UKF_TRACKS_{pop}_{i}",b)
+        
+        
+        save=True
+        if save:
+            a,b,a_full = U.data_parser(True)
+            pop = model_params["pop_total"]
+            np.save(f"ACTUAL_TRACKS_{pop}_{i}",a_full)
+            np.save(f"PARTIAL_TRACKS_{pop}_{i}",a)
+            np.save(f"UKF_TRACKS_{pop}_{i}",b)
 
 
 

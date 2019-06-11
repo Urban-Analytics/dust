@@ -287,7 +287,9 @@ class UKF:
 
     def wiggle_heatmap(self):
             
-            sample_agents = [self.base_model.agents[j] for j in self.index]
+            
+            #sample_agents = [self.base_model.agents[j] for j in self.index]
+            sample_agents = self.base_model.agents
             wiggles = np.array([agent.wiggle for agent in sample_agents])
             
             index = np.where(wiggles==1)

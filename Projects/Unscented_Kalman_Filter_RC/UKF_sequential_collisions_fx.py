@@ -22,6 +22,7 @@ import imageio
 import matplotlib.cm as cm
 import matplotlib.colors as col
 import re
+from copy import deepcopy
 sqrt2 = np.sqrt(2)
 plt.style.use("dark_background")
 
@@ -285,8 +286,9 @@ class UKF:
             
         plt.xlabel("Corridor width")
         plt.ylabel("Corridor height")
-        cbar.set_label("Agent Density (x100%)")        
-        file = f"output/{self.frame_number}"
+        cbar.set_label("Agent Density (x100%)") 
+        number = str(self.frame_number).zfill(5)
+        file = f"output/heatmap{number}"
         f.savefig(file)
         plt.close()
         self.frame_number+=1
@@ -333,7 +335,7 @@ class UKF:
                 extent = [0,width,0,height]
                 im=plt.imshow(np.ma.masked_where(hist==0,hist)
                            ,cmap = cmap,extent=extent,
-                           norm=DivergingNorm(vmin=1e-10,vcenter=0.2,vmax=1))
+                           norm=DivergingNorm(vmin=1e-10,vcenter=0.5,vmax=1))
                 
                 
             else:
@@ -356,36 +358,22 @@ class UKF:
             plt.xlabel("Corridor width")
             plt.ylabel("Corridor height")
             cbar.set_label("Wiggle Density (x100%)")
-            #plt.show()
-            file = f"output_wiggle/{self.wiggle_frame_number}"
+            
+            number = str(self.wiggle_frame_number).zfill(5)
+            file = f"output_wiggle/wiggle{number}"
             f.savefig(file)
             plt.close()
             self.wiggle_frame_number+=1
             
     def animate(self,file,name):
-        def tryint(s):
-            try:
-                return int(s)
-            except:
-                return s
-        
-        def alphanum_key(s):
-            """ Turn a string into a list of string and number chunks.
-                "z23a" -> ["z", 23, "a"]
-            """
-            return [tryint(c) for c in re.split('([0-9]+)', s) ]        
-            
-    
-        
-        files = os.listdir(file)
-        files.sort(key=alphanum_key) #sorting files numerically
+        files = sorted(os.listdir(file))
         print('{} frames generated.'.format(len(files)))
         images = []
         for filename in files:
-            images.append(imageio.imread('output_wiggle/{}'.format(filename)))
+            images.append(imageio.imread(f'{file}/{filename}'))
         imageio.mimsave(f'{name}GIF.mp4', images,fps=10)
         
-        self.clear_output_folder("output_wiggle")
+        self.clear_output_folder(file)
         
 
 
@@ -574,9 +562,9 @@ if __name__ == "__main__":
                     "Process_Noise": 1, #how reliable is prediction F_x lower value implies more reliable
                     'sample_rate': 1,   #how often to update kalman filter. higher number gives smoother (maybe oversmoothed) predictions
                     "do_restrict": True, #"restrict to a proportion prop of the agents being observed"
-                    "do_animate": False,#"do animations of agent/wiggle aggregates"
-                    "do_wiggle_animate":True,
-                    "prop": 0.1,#proportion of agents observed. 1 is all <1/pop_total is none
+                    "do_animate": True,#"do animations of agent/wiggle aggregates"
+                    "do_wiggle_animate":False,
+                    "prop": 0.01,#proportion of agents observed. 1 is all <1/pop_total is none
                     "heatmap_rate": 2,# "after how many updates to record a frame"
                     "bin_size":10
                     }

@@ -18,6 +18,19 @@ from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 sqrt2 = np.sqrt(2)  # required for Agent.lerp()
 
+def two_element_norm(arr):
+    """
+    A helpful function to calculate the norm for an array of two elements.
+    This simply takes the square root of the sum of the square of the elements.
+    This appears to be faster than np.linalg.norm.
+    No doubt the numpy implementation would be faster for large arrays.
+    Fortunately, all of our norms are of two-element arrays.
+
+    :param arr:     A numpy array (or array-like DS) with length two.
+    :return norm:   The norm of the array.
+    """
+    return np.sqrt(arr[0] * arr[0] + arr[1] * arr[1])
+
 #%% MODEL
 class Agent:
     """
@@ -85,9 +98,13 @@ class Agent:
             self.time_start = model.time_id
             self.time_expected = (np.linalg.norm(self.location - self.loc_desire) - model.exit_space) / self.speed_desire
 
-    def is_within_bounds(self, boundaries, new_location):
+    @staticmethod
+    def is_within_bounds(boundaries, new_location):
         """
         Check if new location is within the bounds of the model.
+        :param boundaries      The boundaries of the model
+        :param new_location    The proposed location for the agent
+        :return                Is new location within boundaries, boolean
         """
         within0 = all(boundaries[0] <= new_location)
         within1 = all(boundaries[1] <= new_location)
@@ -99,7 +116,7 @@ class Agent:
         agent moves the maximum distance they can given their maximum possible
         speed (self.speed_desire). If not, then they iteratively test smaller
         and smaller distances until they find one that they can travel to
-        without causing a colision with another agent.
+        without causing a collision with another agent.
         """
         for speed in self.speeds:
             # Direct
@@ -109,6 +126,7 @@ class Agent:
             elif speed == self.speeds[-1]:
                 # Wiggle
                 # Why 1+1? Answer: randint(1)=0, randint(2)=0 or 1 - i think it is the standard pythonic idea of up to that number like array[0:2] is elements (array[0],array[1])
+                # randint is upper-bound exclusive, so 2 instead of 1
                 new_location = self.location + self.wiggle*np.random.randint(-1, 1+1, 2)
         # Rebound
         if not self.is_within_bounds(model.boundaries, new_location):
@@ -174,6 +192,7 @@ class Agent:
         remove them. Otherwise do nothing.
         """
         if sum(abs(self.location - self.loc_desire)) / sqrt2 < model.exit_space:
+#        if two_element_norm(self.location - self.loc_desire) < model.exit_space:
             self.active = 2
             model.pop_active -= 1
             model.pop_finished += 1
@@ -284,7 +303,7 @@ class Model:
         print('\tParameter\tValue')
         for k, v in self.params.items():
             print('\t{0}:\t{1}'.format(k, v))
-        print('\n')
+        print('')
         for i in range(self.batch_iterations):
             self.step()
             if i % 100 == 0:

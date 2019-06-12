@@ -5,13 +5,16 @@ date_created: 19/04/10
 A class to represent a general Ensemble Kalman Filter for use with StationSim.
 """
 # Imports
+from copy import deepcopy as dcopy
 import warnings as warns
-import numpy as np
 import matplotlib.pyplot as plt
-from copy import deepcopy
+import numpy as np
+import pandas as pd
+from Filter import Filter
+
 
 # Classes
-class EnsembleKalmanFilter:
+class EnsembleKalmanFilter(Filter):
     """
     A class to represent a general EnKF.
     """
@@ -27,10 +30,9 @@ class EnsembleKalmanFilter:
         Returns:
             None
         """
-        self.time = 0
-
-        # Ensure that model has correct attributes
-        assert self.is_good_model(model), 'Model missing attributes.'
+        # Call parent constructor
+        # Instantiates the base model and starts time at 0
+        super().__init__(model, model_params)
 
         # Filter attributes - outlines the expected params
         self.max_iterations = None
@@ -41,7 +43,8 @@ class EnsembleKalmanFilter:
         self.H = None
         self.R_vector = None
         self.data_covariance = None
-        self.base_model = model(model_params)
+        self.keep_results = False
+        self.vis = False
 
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():
@@ -51,7 +54,7 @@ class EnsembleKalmanFilter:
             setattr(self, k, v)
 
         # Set up ensemble of models
-        self.models = [deepcopy(self.base_model) for _ in range(self.ensemble_size)]
+        self.models = [dcopy(self.base_model) for _ in range(self.ensemble_size)]
 
         # Make sure that models have state
         for m in self.models:
@@ -64,9 +67,9 @@ class EnsembleKalmanFilter:
         # Make sure that we have a data covariance matrix
         """
         https://arxiv.org/pdf/0901.3725.pdf -
-        The covariance matrix R describes the estimate of the error of the data; if
-        the random errors in the entries of the data vector d are independent,R is
-        diagonal and its diagonal entries are the squares of the standard
+        Covariance matrix R describes the estimate of the error of the data;
+        if the random errors in the entries of the data vector d are independent,
+        R is diagonal and its diagonal entries are the squares of the standard
         deviation (“error size”) of the error of the corresponding entries of the
         data vector d.
         """
@@ -103,13 +106,19 @@ class EnsembleKalmanFilter:
         self.update_state_ensemble()
         self.update_state_mean()
         if self.time % self.assimilation_period == 0:
-            self.plot_model('before update {0}'.format(self.time))
-            data = self.base_model.state_history[-1]
+            if self.vis:
+                self.plot_model('before_update_{0}'.format(self.time))
+            truth = self.base_model.state_history[-1]
+            noise = np.random.normal(0, self.R_vector, truth.shape)
+            data = truth + noise
             self.update(data)
             self.update_models()
-            self.plot_model('after update {0}'.format(self.time))
+            self.update_state_mean()
+            if self.vis:
+                self.plot_model('after_update_{0}'.format(self.time))
+        else:
+            self.update_state_mean()
         self.time += 1
-        self.update_state_mean()
         self.results.append(self.state_mean)
 
     def predict(self):
@@ -218,47 +227,6 @@ class EnsembleKalmanFilter:
         diff = state_covariance + self.data_covariance
         return C @ self.H_transpose @ np.linalg.inv(diff)
 
-    @classmethod
-    def is_good_model(cls, model):
-        """
-        A utility function to ensure that we've been provided with a good model.
-        This means that the model should have the following:
-        - step (method)
-        - state (attribute)
-        - set_state (method)
-        - set_state (method)
-
-        Params:
-            model
-
-        Returns:
-            boolean
-        """
-        methods = ['step', 'set_state', 'get_state']
-        attribute = 'state'
-        has_methods = [cls.has_method(model, m) for m in methods]
-#        b = all(has_methods) and hasattr(model, attribute)
-        b = all(has_methods)
-        return b
-
-    @staticmethod
-    def has_method(model, method):
-        """
-        Check that a model has a given method.
-        """
-        b = True
-        try:
-            m = getattr(model, method)
-            if not callable(m):
-                w = "Model {} not callable".format(method)
-                warns.warn(w, RuntimeWarning)
-                b = False
-        except:
-            w = "Model doesn't have {}".format(method)
-            warns.warn(w, RuntimeWarning)
-            b = False
-        return b
-
     @staticmethod
     def separate_coords(arr):
         """
@@ -273,13 +241,15 @@ class EnsembleKalmanFilter:
         """
         # Get coords
         base_x, base_y = self.separate_coords(self.base_model.state)
+        mean_x, mean_y = self.separate_coords(self.state_mean)
 
         # Plot agents
-        plt.figure()
+        plt.figure(figsize=(8, 8))
         plt.xlim(0, self.base_model.width)
         plt.ylim(0, self.base_model.height)
         plt.title(title_str)
-        plt.scatter(base_x, base_y)
+        plt.scatter(base_x, base_y, label='truth')
+        plt.scatter(mean_x, mean_y, alpha=0.5, label='ensemble mean')
 
         # Plot ensemble members
         for model in self.models:
@@ -287,6 +257,8 @@ class EnsembleKalmanFilter:
             plt.scatter(xs, ys, s=1, color='red')
 
         # Finish fig
+        plt.legend()
+        plt.savefig('./results/{0}.png'.format(title_str))
         plt.show()
 
     def process_results(self):
@@ -306,14 +278,37 @@ class EnsembleKalmanFilter:
             y_mean_errors.append(np.mean(y_error))
             distance_mean_errors.append(np.mean(distance_error))
 
-        self.plot_results(distance_mean_errors, x_mean_errors, y_mean_errors)
+        if self.vis:
+            self.plot_results(distance_mean_errors, x_mean_errors, y_mean_errors)
 
-    def make_errors(self, result, truth):
+        # Save results to csv if required
+        if self.keep_results:
+            df = pd.DataFrame({'distance_errors': distance_mean_errors,
+                               'x_errors': x_mean_errors,
+                               'y_errors': y_mean_errors,})
+            self.save_results(df)
+
+    def save_results(self, data):
+        """
+        Utility method to save the results of a filter run.
+        """
+        population_size = self.base_model.params['pop_total']
+        general_path = './results/enkf_{0}.csv'
+        params_string = '{0}_{1}_{2}_{3}'.format(self.max_iterations,
+                                                 self.assimilation_period,
+                                                 self.ensemble_size, 
+                                                 population_size)
+        data_path = general_path.format(params_string)
+        print('Writing filter results to {0}.'.format(data_path))
+        data.to_csv(data_path, index=False)
+
+    @classmethod
+    def make_errors(cls, result, truth):
         """
         Method to calculate x-errors and y-errors
         """
-        x_result, y_result = self.separate_coords(result)
-        x_truth, y_truth = self.separate_coords(truth)
+        x_result, y_result = cls.separate_coords(result)
+        x_truth, y_truth = cls.separate_coords(truth)
 
         x_error = np.abs(x_result - x_truth)
         y_error = np.abs(y_result - y_truth)
@@ -334,5 +329,5 @@ class EnsembleKalmanFilter:
         plt.xlabel('Time')
         plt.ylabel('Mean absolute error')
         plt.legend()
+        plt.savefig('./results/errors.png')
         plt.show()
-

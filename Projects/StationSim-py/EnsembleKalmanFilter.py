@@ -107,7 +107,7 @@ class EnsembleKalmanFilter(Filter):
         self.update_state_mean()
         if self.time % self.assimilation_period == 0:
             if self.vis:
-                self.plot_model('before update {0}'.format(self.time))
+                self.plot_model('before_update_{0}'.format(self.time))
             truth = self.base_model.state_history[-1]
             noise = np.random.normal(0, self.R_vector, truth.shape)
             data = truth + noise
@@ -115,7 +115,7 @@ class EnsembleKalmanFilter(Filter):
             self.update_models()
             self.update_state_mean()
             if self.vis:
-                self.plot_model('after update {0}'.format(self.time))
+                self.plot_model('after_update_{0}'.format(self.time))
         else:
             self.update_state_mean()
         self.time += 1
@@ -244,7 +244,7 @@ class EnsembleKalmanFilter(Filter):
         mean_x, mean_y = self.separate_coords(self.state_mean)
 
         # Plot agents
-        plt.figure()
+        plt.figure(figsize=(8, 8))
         plt.xlim(0, self.base_model.width)
         plt.ylim(0, self.base_model.height)
         plt.title(title_str)
@@ -258,6 +258,7 @@ class EnsembleKalmanFilter(Filter):
 
         # Finish fig
         plt.legend()
+        plt.savefig('./results/{0}.png'.format(title_str))
         plt.show()
 
     def process_results(self):
@@ -328,4 +329,5 @@ class EnsembleKalmanFilter(Filter):
         plt.xlabel('Time')
         plt.ylabel('Mean absolute error')
         plt.legend()
+        plt.savefig('./results/errors.png')
         plt.show()

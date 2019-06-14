@@ -87,25 +87,9 @@ print("...finished reading")
     
 #%% Plot full data
 
-#plt.figure(1)
-#plt.imshow(min_mean_err, aspect = 'auto', origin = 'lower', extent = [1,300,1,1000])
-#plt.xlabel('Agents')
-#plt.ylabel('Particles')
-#plt.title('Min Mean Error')
-#plt.colorbar()
-
-#plt.figure(2)
-#plt.imshow(max_mean_err, aspect = 'auto', origin = 'lower', extent = [1,300,1,1000])
-#plt.xlabel('Agents')
-#plt.ylabel('Particles')
-#plt.title('Max Mean Error')
-#plt.colorbar()
-
-#ave_mean_err = ave_mean_err[1:10,:]
-
 # Can restrict the number of agents and/or particles to look at in the plots
 # (note this is an index into the actual number of agents/particles)
-min_particles = particles.index(1) # 1 is all particles
+min_particles = particles.index(10)
 max_agents = agents.index(agents[len(agents)-1]) # agents[len(agents)-1] gives all agents
 
 
@@ -119,7 +103,7 @@ plot_def = {
     "Avg abs error"  : ave_abs_err,
     "Min variance"   : min_var,
     "Max variance"   : max_var,
-    "Avg variance:"  : ave_var
+    "Avg variance"  : ave_var
     }
 
 for i, (title, data) in enumerate(plot_def.items()):
@@ -128,37 +112,7 @@ for i, (title, data) in enumerate(plot_def.items()):
            extent = [min(agents),agents[max_agents], particles[min_particles], max(particles)])
     plt.xlabel('Agents')
     plt.ylabel('Particles')
-    plt.title(title)
+    plt.title(title+" ({} resampling)".format('before' if before==0 else 'after') )
     plt.colorbar()
 
 
-
-  
-#%% Plot with few agents
-
-p = 0.2 # Proportion agents to include (only the first x %)
-
-fig, ax = plt.subplots()
-plt.imshow(ave_mean_err[ : , 0:int(p*len(agents))], aspect = 'auto', origin = 'lower')
-plt.xlabel('Agents')
-ax.set_xticklabels(range(0,300,10))
-plt.ylabel('Particles')
-plt.title('Average Mean Error')
-plt.colorbar()
-
-
-
-plt.figure(3)
-#plt.imshow(ave_mean_err, aspect = 'auto', origin = 'lower', extent = [1,300,10,100])
-plt.imshow(ave_mean_err[ : , 0:int(p*len(agents))], aspect = 'auto', origin = 'lower', extent = [1,int(p*300),10,100])
-plt.xlabel('Agents')
-plt.ylabel('Particles')
-plt.title('Average Mean Error')
-plt.colorbar()
-        
-plt.figure(6)
-plt.imshow(ave_abs_err[ : , 0:int(p*len(agents))], aspect = 'auto', origin = 'lower', extent = [1,int(p*300),10,100])
-plt.xlabel('Agents')
-plt.ylabel('Particles')
-plt.title('Average Absolute Error')        
-plt.colorbar()

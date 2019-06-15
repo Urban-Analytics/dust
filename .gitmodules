@@ -2,6 +2,3 @@
 	path = Projects/DataAssimilation/Kalman-and-Bayesian-Filters-in-Python
 	url = https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python.git
 	branch = master
-[submodule "Projects/ProbabilisticProgramming"]
-	path = Projects/ProbabilisticProgramming
-	url = https://github.com/nickmalleson/ProbabilisticProgramming.git

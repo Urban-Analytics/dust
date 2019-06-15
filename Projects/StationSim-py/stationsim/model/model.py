@@ -9,7 +9,7 @@ A file for a class to represent the StationSim model.
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial import cKDTree
-from Agent import Agent
+from agent import Agent
 
 # Class
 class Model:

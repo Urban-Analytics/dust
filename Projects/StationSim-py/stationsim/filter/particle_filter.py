@@ -1,4 +1,5 @@
-from StationSim_KM import Model
+from filter import Filter
+from stationsim.model.model import Model
 
 import multiprocessing
 import numpy as np
@@ -7,7 +8,10 @@ import matplotlib.pyplot as plt
 import time
 import warnings
 
-class ParticleFilter: 
+
+
+
+class ParticleFilter(Filter): 
     '''
     A particle filter to model the dynamics of the
     state of the model as it develops in time.
@@ -427,7 +431,7 @@ def single_run_particle_numbers():
         'do_ani': False,
     }
 
-    # Open a file to write the results to
+    # Open a file to write the $ to
     outfile = "results/pf"+str(int(time.time()*1000))+".csv"
     with open(outfile, 'w') as f:
         # Write the parameters first

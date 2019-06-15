@@ -1,6 +1,6 @@
 # README
 
-This folder contains the codes used to run Kevin's experimentss on the StationSim particle filter.
+This folder contains the codes used to run Kevin's experimentss on the StationSim particle filter. It has its own version of StationSim so doesn't depend on other libraries.
 
 ## StationSim-ARCExperiments.py
 

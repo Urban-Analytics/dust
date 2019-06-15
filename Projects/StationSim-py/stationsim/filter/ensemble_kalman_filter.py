@@ -10,7 +10,7 @@ import warnings as warns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from Filter import Filter
+from filter import Filter
 
 
 # Classes

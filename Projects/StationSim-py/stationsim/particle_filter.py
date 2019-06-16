@@ -1,5 +1,5 @@
 from filter import Filter
-from stationsim.model.model import Model
+from model import Model
 
 import multiprocessing
 import numpy as np

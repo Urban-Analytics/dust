@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Reads the out files that are created by StationSim-ARCExperiments.py
-This version accounts for two types of results being written for each experiment: before and after reweighting.
+
+This version accounts for two types of results being written for each 
+experiment (before and after reweighting) and also doesn't assume that the 
+agents v.s. particles heat map is evenly spaced.
 
 Created on Thu Apr  4 14:09:12 2019
 
@@ -16,13 +19,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import sys
+from scipy.interpolate import griddata # For interpolating across irregularly spaced grid
 
 # Needs to be set to location of results
 #path = 'M:\Particle Filter\Model Results\HPC results\With noise = 10'
 path = "/Users/nick/gp/dust/Projects/StationSim-py/Particle_Filter_Experiments/results/FewAgentExperiments/"
 
 # Model the errors before or after resampling? 0 = before, 1= after
-before = 0
+before = 1
 print("Calculating errors {} resampling:".format('before' if before==0 else 'after'))
 
 # Need to set the number of particles and agents used in the experiments 
@@ -87,10 +91,38 @@ print("...finished reading")
     
 #%% Plot full data
 
+# First plot all of the locations in the grids for which we have data (these are
+# not necessarily evenly spaced).
+# See here for instructions on how to do heatmap with irregularly spaced data:
+# https://scipy-cookbook.readthedocs.io/items/Matplotlib_Gridding_irregularly_spaced_data.html 
+
+# Define the grid.
+# First need the points that the observations are taken at
+x, y = [], [] 
+for i in range(len(agents)):
+    for j in range(len(particles)):
+        x.append(agents[i])
+        y.append(particles[j])
+x = np.array(x)
+y = np.array(y)
+
+# Now the grid to interpolate over (used later)
+xi = np.linspace(0,max(agents)   ,100)
+yi = np.linspace(0,max(particles),100)
+
+# Plot the point locations
+plt.figure(0)
+plt.scatter(x=x, y=y, marker='o',c='black',s=2)
+plt.xlabel('Agents')
+plt.ylabel('Particles')
+plt.title("Sampling locations of experiments")
+
+
 # Can restrict the number of agents and/or particles to look at in the plots
 # (note this is an index into the actual number of agents/particles)
-min_particles = particles.index(10)
-max_agents = agents.index(agents[len(agents)-1]) # agents[len(agents)-1] gives all agents
+#min_particles = particles.index(10)
+#min_particles = particles.index(10) # 1 means include all particles
+#max_agents = agents.index(agents[len(agents)-1]) # agents[len(agents)-1] gives all agents
 
 
 # Define the plots so that they can be plotted in a loop
@@ -107,12 +139,25 @@ plot_def = {
     }
 
 for i, (title, data) in enumerate(plot_def.items()):
-    plt.figure(i)
-    plt.imshow( data[min_particles: , :max_agents ], aspect = 'auto', origin = 'lower', 
-           extent = [min(agents),agents[max_agents], particles[min_particles], max(particles)])
+    # The value of the statistic being visualised (e.g. mean_error) as a long list
+    z = [] 
+    for i in range(len(agents)):
+        for j in range(len(particles)):
+            z.append(data[j,i])
+    assert len(x) == len(y) and len(x) == len(z)
+    z = np.array(z)
+    # Grid the data
+    zi = griddata(points=(x, y), 
+                  values=z, 
+                  xi=(xi[None,:], yi[:,None]), 
+                  method='linear')
+    
+    plt.figure(i+1) # (+1 because there was a figure before)
+    CS = plt.contour( xi,yi,zi,10,linewidths=0.5,colors='k')
+    CS = plt.contourf(xi,yi,zi,10,cmap=plt.cm.jet)
+    plt.colorbar() # draw colorbar
+    plt.scatter(x,y,marker='o',c='black',s=1)
     plt.xlabel('Agents')
     plt.ylabel('Particles')
     plt.title(title+" ({} resampling)".format('before' if before==0 else 'after') )
-    plt.colorbar()
-
-
+    plt.show()

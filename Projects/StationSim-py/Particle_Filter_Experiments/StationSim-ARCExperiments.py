@@ -693,7 +693,7 @@ def single_run_particle_numbers():
 
     filter_params = {
         'number_of_particles': param_list[int(sys.argv[1])-1][0], # particles read from ARC task array variable
-        'number_of_runs': 5, # Number of times to run each particle filter configuration
+        'number_of_runs': 10, # Number of times to run each particle filter configuration
         'resample_window': 100,
         'multi_step' : True, # Whether to predict() repeatedly until the sampling window is reached
         'particle_std': 2.0, # was 2 or 10
@@ -758,8 +758,11 @@ if __name__ == '__main__':
     #num_age = [1]+list(range(10,310,10))
 
     # New ones by nick: (requires 1540 experiments)
-    num_par = list(range(1,49,1))  + list(range(50,501,50)) + list(range(600,2001,100)) + list(range(2500,4001,500))
-    num_age = list(range(1,21,1))
+    #num_par = list(range(1,49,1))  + list(range(50,501,50)) + list(range(600,2001,100)) + list(range(2500,4001,500))
+    #num_age = list(range(1,21,1))
+    # New ones by nick: (requires 133 experiments)
+    num_par = list([1] + list(range(10,50,10))  + list(range(100,501,100)) + list(range(1000,2001,500)) + list(range(3000,10001,1500)) + [10000] )
+    num_age = list(range(1,21,3))
 
     # List of all particle-agent combinations. ARC task
     # array variable loops through this list

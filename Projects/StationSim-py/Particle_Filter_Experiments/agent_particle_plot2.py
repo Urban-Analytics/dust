@@ -23,7 +23,7 @@ from scipy.interpolate import griddata # For interpolating across irregularly sp
 
 # Needs to be set to location of results
 #path = 'M:\Particle Filter\Model Results\HPC results\With noise = 10'
-path = "/Users/nick/gp/dust/Projects/StationSim-py/Particle_Filter_Experiments/results/FewAgentExperiments/"
+path = "/Users/nick/gp/dust/Projects/StationSim-py/Particle_Filter_Experiments/results/"
 
 # Model the errors before or after resampling? 0 = before, 1= after
 before = 1
@@ -31,8 +31,10 @@ print("Calculating errors {} resampling:".format('before' if before==0 else 'aft
 
 # Need to set the number of particles and agents used in the experiments 
 # (these are set in StationSim-ARCExperiments.py)
-particles  = list(range(1,49,1))  + list(range(50,501,50)) + list(range(600,2001,100)) + list(range(2500,4001,500))
-agents = list(range(1,21,1))
+#particles  = list(range(1,49,1))  + list(range(50,501,50)) + list(range(600,2001,100)) + list(range(2500,4001,500))
+#agents = list(range(1,21,1))
+particles = list([1] + list(range(10,50,10))  + list(range(100,501,100)) + list(range(1000,2001,500)) + list(range(3000,10001,1500)) + [10000] )
+agents = list(range(1,21,3))
 
 if not os.path.isdir(path):
     sys.exit("Directory '{}' does not exist".format(path))

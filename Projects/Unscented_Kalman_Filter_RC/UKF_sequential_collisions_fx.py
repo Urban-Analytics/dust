@@ -3,15 +3,16 @@
 """
 Created on Tue May 14 09:28:35 2019
 @author: rob
-Sequential UKF with 
+Sequential/Batch UKF for station sim
+!! used for 
 """
 
 
 import os
-os.chdir("/home/rob/Unscented_Kalman_Filter_RC")
+os.chdir("/home/rob/dust/Projects/Unscented_Kalman_Filter_RC")
 import numpy as np
 from math import floor
-from StationSim_Wiggle import Model, Agent
+from StationSim_Wiggle import Model,Agent
 from filterpy.kalman import MerweScaledSigmaPoints as MSSP
 from filterpy.kalman import UnscentedKalmanFilter as UNKF
 from filterpy.common import Q_discrete_white_noise as QDWN
@@ -20,9 +21,10 @@ import matplotlib.pyplot as plt
 import datetime
 import imageio
 import matplotlib.cm as cm
-import matplotlib.colors as col
-import re
 from copy import deepcopy
+import pickle
+import matplotlib.colors as col
+from custom_norm import DivergingNorm, DoubleDivergingNorm
 sqrt2 = np.sqrt(2)
 plt.style.use("dark_background")
 
@@ -46,8 +48,7 @@ class UKF:
         self.pop_total = self.model_params["pop_total"] #number of agents
         #number of batch iterations
         self.number_of_iterations = model_params['batch_iterations']
-        self.base_model = Model(model_params) #station sim
-        self.UKF_histories = []
+
         self.sample_rate = self.filter_params["sample_rate"]
         
         #how many agents being observed
@@ -67,10 +68,16 @@ class UKF:
         self.frame_number = 1
         self.wiggle_frame_number = 1
         #recording 2dhistograms for wiggle densities
+        
+        self.UKF_histories = []
+        self.Ps = []
+        self.densities = []
+        self.kf_densities = []
         self.wiggle_densities= {}
+        self.diff_densities = []
 
-
-    def F_x(self,x,dt):
+    
+    def F_x(self,x,dt,model1,model2):
         """
         Transition function for each agent. where it is predicted to be.
         For station sim this is essentially gradient * v *dt assuming no collisions
@@ -83,15 +90,12 @@ class UKF:
         I.E predicts lerps from each sigma point rather than using
         sets of lerps at 1 point (the same thing 5 times)
         """
-        loc = np.empty((len(x),))
-        sample_agents = [self.base_model.agents[j] for j in self.index]
-        for i,agent in enumerate(sample_agents):
-            loc1 = agent.loc_desire
-            loc2 = x[2*i:(2*i)+2]
-            reciprocal_distance = sqrt2 / sum(abs(loc1 - loc2))  # lerp5: profiled at 6.41μs
-            loc[2*i:(2*i)+2] = loc2 + agent.speeds[-1] * (loc1 - loc2) * reciprocal_distance
-        
-        return loc
+        #maybe call this once before ukf.predict() rather than 5? times. seems slow
+        model2.step()
+        state = model2.agents2state()
+        state=state[self.index2]
+        model2 = model1
+        return state
    
     def H_x(location,z):
         """
@@ -114,7 +118,7 @@ class UKF:
     def init_ukf(self):
         state = self.base_model.agents2state(self)
         state = state[self.index2] #observed agents only
-        sigmas = MSSP(n=len(state),alpha=.01,beta=.2,kappa=1) #sigmapoints
+        sigmas = MSSP(n=len(state),alpha=1,beta=.2,kappa=1) #sigmapoints
         self.ukf =  UNKF(dim_x=len(state),dim_z=len(state)
                         ,fx = self.F_x, hx=self.H_x
                         , dt=1, points=sigmas)#init UKF
@@ -122,20 +126,20 @@ class UKF:
         #sensor noise. larger noise implies less trust in sensor and to favour prediction
         self.ukf.R = np.eye(len(state))*self.filter_params["Sensor_Noise"]
         #initial guess for state space uncertainty
-        self.ukf.P = np.eye(len(state))*self.filter_params["Process_Noise"]
+        self.ukf.P = np.eye(len(state))
         
         """
         various structures for Q. either block diagonal structure
         I.E assume agents independent but xy states within agents are not
         or standard diagonal and all state elements are independent
         """
-        for i in range(int(len(state)/2)):  #! initialise process noise as blocked structure of discrete white noise. cant think of any better way to do this
-            i1 = 2*i
-            i2 = (2*(i+1))
+        #for i in range(int(len(state)/2)):  #! initialise process noise as blocked structure of discrete white noise. cant think of any better way to do this
+        #    i1 = 2*i
+        #    i2 = (2*(i+1))
         #    self.ukf.Q[i1:i2,i1:i2] =  QDWN(2,dt=1,var=self.filter_params["Process_Noise"])  
-            self.ukf.Q[i1:i2,i1:i2] = np.array([[2,1],[1,2]])*self.filter_params["Process_Noise"]
+            #self.ukf.Q[i1:i2,i1:i2] = np.array([[2,1],[1,2]])*self.filter_params["Process_Noise"]
 
-        #self.ukf.Q = np.eye(len(state))*self.filter_params["Process_Noise"]*self.filter_params["sample_rate"]
+        self.ukf.Q = np.eye(len(state))*self.filter_params["Process_Noise"]
         self.UKF_histories.append(self.ukf.x)
         
     
@@ -187,12 +191,19 @@ class UKF:
 
         return a2,b2,a2_full
     
+    """diagnostic plots plotting truth paths, kf paths, MAE over time 
+    and worst performing agent"""
+    
     def plots(self):
         a ,b,a_full = self.data_parser(False)
+        if self.filter_params["do_batch"]:
+            pop = self.model_params["pop_total"]
+            a = np.load(f"ACTUAL_TRACKS_{pop}_0.npy")
+            a = a[:,self.index2]
   
         plt.figure()
         for j in range(int(model_params["pop_total"]*self.filter_params["prop"])):
-            plt.plot(a[:,2*j],a[:,(2*j)+1])    
+            plt.plot(a[:,(2*j)],a[:,(2*j)+1])    
             plt.title("True Positions")
 
         plt.figure()
@@ -210,13 +221,13 @@ class UKF:
         
        
         
-        for i in range(int(b.shape[1]/2)):
+        for i in range(int(a.shape[1]/2)):
             a_2 =   a[:,(2*i):(2*i)+2] 
             b_2 =   b[:,(2*i):(2*i)+2] 
     
 
             c[i] = []
-            for k in range(a_2.shape[0]):
+            for k in range(floor(np.min([a.shape[0],b.shape[0]]))):
                 if np.any(np.isnan(a_2[k,:])) or np.any(np.isnan(b_2[k,:])):
                     c[i].append(np.nan)
                 else:                       
@@ -224,7 +235,7 @@ class UKF:
                 
             c_means.append(np.nanmean(c[i]))
         
-        c = np.vstack(c.values())
+        c = np.vstack(list(c.values()))
         time_means = np.nanmean(c,axis=0)
         plt.figure()
         plt.plot(time_means[::self.sample_rate])
@@ -250,18 +261,22 @@ class UKF:
 
 
     """
-    4 functions for animations of agents/wiggle counts above
+    3 functions for animations of agents/wiggle locations/counts
     """
     def heatmap(self):
-        locs = [agent.location for agent in self.base_model.agents]
+        #sample_agents = [self.base_model.agents[j] for j in self.index]
+        #swap if restricting observed agents
+        sample_agents = self.base_model.agents
+        locs = [agent.location for agent in sample_agents]
         locs = np.vstack(locs)
-        
-        f = plt.figure()
-        ax = f.add_subplot(111)
         bins = self.filter_params["bin_size"]
         width = self.model_params["width"]
         height = self.model_params["height"]
 
+
+        f = plt.figure()
+        ax = f.add_subplot(111)
+        
         plt.scatter(locs[:,0],locs[:,1],color="cyan")
         ax.set_ylim(0,height)
         ax.set_xlim(0,width)        
@@ -275,11 +290,11 @@ class UKF:
         extent = [0,width,0,height]
         plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
                    ,cmap = cm.Spectral ,extent=extent
-                   ,norm=DivergingNorm(vmin=1e-10,vcenter=0.2,vmax=1))
+                   ,norm=DivergingNorm(vmin=1e-10,vcenter=0.1,vmax=1))
         
         ticks = np.array([0.001,0.1,0.2,0.5,1.0])
         cbar = plt.colorbar(fraction=0.046,pad=0.04,shrink=0.71,
-                            ticks = ticks)
+                            ticks = ticks,space="uniform")
         plt.clim(0,1)
         cbar.set_alpha(1)
         cbar.draw_all()
@@ -292,36 +307,35 @@ class UKF:
         f.savefig(file)
         plt.close()
         self.frame_number+=1
-    """
-    getting files to sort numerically. can probably resolve this by naming png files better.
-    """
+
 
     def wiggle_heatmap(self):
             #sample_agents = [self.base_model.agents[j] for j in self.index]
+            #swap if restricting observed wiggles
             sample_agents = self.base_model.agents
             wiggles = np.array([agent.wiggle for agent in sample_agents])
-            
+            #are you having a wiggle m8
             index = np.where(wiggles==1)
             non_index = np.where(wiggles==0)
-            
+            #sort locations
             locs = [agent.location for agent in sample_agents]
             locs = np.vstack(locs)
             non_locs = locs[non_index,:][0,:,:]
             locs = locs[index,:][0,:,:]
-            
+            #initiate figure /axes
             f = plt.figure(figsize=(12,8))
             ax = f.add_subplot(111)
             bins = self.filter_params["bin_size"]
             width = self.model_params["width"]
             height = self.model_params["height"]
 
+            #plot non-wigglers and set plot size
             plt.scatter(non_locs[:,0],non_locs[:,1],color="cyan")
             ax.set_ylim(0,height)
             ax.set_xlim(0,width)
-            
             cmap = cm.Spectral
 
-            
+            #check for any wigglers and plot the 2dhist 
             if np.sum(wiggles)!=0:
                 plt.scatter(locs[:,0],locs[:,1],color="magenta")
                 hist,xb,yb = np.histogram2d(locs[:,0],locs[:,1],
@@ -335,20 +349,25 @@ class UKF:
                 extent = [0,width,0,height]
                 im=plt.imshow(np.ma.masked_where(hist==0,hist)
                            ,cmap = cmap,extent=extent,
-                           norm=DivergingNorm(vmin=1e-10,vcenter=0.5,vmax=1))
+                           norm=DivergingNorm(vmin=1e-10,vcenter=0.11,vmax=1))
                 
-                
+            #if no wiggles plot a "ghost histogram" to maintain frame structure  
             else:
+                #ghost histogram with one entry and (1,1)
                 hist,xb,yb = np.histogram2d(np.array([1]),np.array([1]),
                                             range = [[0,width],[0,height]],
                                             bins = [bins,bins],density=True)   
                
                 extent = [0,width,0,height]
+                #plot ghost hist with no opacity (alpha=0) to make it invisible
                 im=plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
                            ,cmap = cmap ,extent=extent,alpha=0
-                           ,norm=DivergingNorm(vmin=1e-10,vcenter=0.2,vmax=1))
-                
+                           ,norm=DivergingNorm(vmin=1e-10,vcenter=0.1,vmax=1))
+            
+            #colourbar and various plot fluff
             ticks = np.array([0.001,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+            #!! numbers adjusted by trial and error for 200x100 field. 
+            #should probably generalise this and the bin structure at some point
             cbar = plt.colorbar(im,fraction=0.046,pad=0.04,shrink=0.71,
                                 ticks = ticks)
             plt.clim(0,1)
@@ -364,7 +383,9 @@ class UKF:
             f.savefig(file)
             plt.close()
             self.wiggle_frame_number+=1
-            
+    
+
+    """animates folder of frames"""
     def animate(self,file,name):
         files = sorted(os.listdir(file))
         print('{} frames generated.'.format(len(files)))
@@ -376,13 +397,13 @@ class UKF:
         self.clear_output_folder(file)
         
 
-
+    """clears animated frames after being animated"""
     def clear_output_folder(self,file_name):
        folder = file_name
        for the_file in os.listdir(folder):
            file_path = os.path.join(folder, the_file)
            try:
-               if os.path.isfile(file_path):
+               if os.path.itime_idsfile(file_path):
                    os.unlink(file_path)
            except Exception as e:
                print(e)
@@ -392,6 +413,12 @@ class UKF:
     """
     def main_sequential(self):
         time1 = datetime.datetime.now()
+        np.random.seed(seed = 8)#seeding if  wanted else hash it
+        self.base_model = Model(self.model_params) #station sim
+        f_name = f"base_model_{self.pop_total}"
+        f = open(f_name,"wb")
+        pickle.dump(self.base_model,f)
+        f.close()
         self.init_ukf() #init UKF        
 
         for _ in range(self.number_of_iterations-1): #cycle over batch iterations. tqdm gives progress bar on for loop.
@@ -401,9 +428,9 @@ class UKF:
             if _%self.filter_params["heatmap_rate"] == 0 :  #take frames for animations every heatmap_rate loops
                 if self.filter_params["do_animate"]:
                     self.heatmap()
-              
-                
-            self.ukf.predict(self) #predict where agents will jump
+            #!! redo this with pickles seems cleaner?
+            model1=model2=deepcopy(self.base_model)
+            self.ukf.predict(self, model1=model1,model2=model2) #predict where agents will jump
             self.base_model.step() #jump stationsim agents forwards
             
             if _%self.filter_params["heatmap_rate"] == 0 :  #take frames for wiggles instead similar to heatmap above
@@ -420,127 +447,150 @@ class UKF:
                
                 
                 if self.base_model.pop_finished == self.pop_total: #break condition
-                    if self.filter_params["do_animate"]:
-                        self.animate("output","heatmap")           
-                    if self.filter_params["do_wiggle_animate"]:
-                        self.animate("output_wiggle","wiggle")
+                    #if self.filter_params["do_animate"]:
+                    #    self.animate("output","heatmap")           
+                    #if self.filter_params["do_wiggle_animate"]:
+                    #    self.animate("output_wiggle","wiggle")
+                    self.density_frames()
                     break
         
         time2 = datetime.datetime.now()
         print(time2-time1)
-        return
+        return        
     
     def main_batch(self):
-        time1 = datetime.datetime.now()
+        """
+        main ukf function for batch comparing some truth data against new predictions
+        
+        """
+        time1 = datetime.datetime.now()#timer
        
         
-        truth = np.load(self.filter_params["batch_file"])
-        truth = truth[:,self.index2]
+        truth = np.load(f"ACTUAL_TRACKS_{self.pop_total}_0.npy")
+        f_name = f"base_model_{self.pop_total}"
+        f = open(f_name,"rb")
+        self.base_model = pickle.load(f)
+        f.close()
+        
+        
+        truth = truth[1:,:]#cut start
+        truth = truth[::self.filter_params["sample_rate"],self.index2]
         truth_list = [truth[j,:] for j in range(truth.shape[0])]#pull rows into lists
-        #!! add sample rate reduction later
-        
+        np.random.seed(seed = 8)#seeding if  wanted else hash it
         self.init_ukf()#init UK
-        "this function is atrocious dont use it"
-        #self.UKF_histories,self.UKF_Ps = self.ukf.batch_filter(truth_list)
-        
-        "instead"
 
         for _,z in enumerate(truth_list):
             if _%100==0:
                 print(f"iterations: {_}")
-            self.ukf.predict()
-            self.time_id+=1
-            if  self.time_id%self.filter_params["sample_rate"]==0:
+            model1=deepcopy(self.base_model)
+            model2=deepcopy(self.base_model)
+            self.ukf.predict(model1=model1,model2=model2)
+            self.base_model.step()
+            if  _%self.filter_params["sample_rate"]==0:
                 self.ukf.update(z)
-                self.base_model.step()
                 self.UKF_histories.append(self.ukf.x)
-                self.UKF_Ps.append(self.ukf.P)
+                self.Ps.append(self.ukf.P)
             
-        time2 = datetime.datetime.now()
-        print(time2-time1)    
+        time2 = datetime.datetime.now()#end timer
+        print(f"time taken: {time2-time1}")    #print elapsed time
         
         
+    def density_frames(self):
+        "snapshots of densities"
+        a,b,a_full = U.data_parser(False)
+        bins = self.filter_params["bin_size"]
+        width = self.model_params["width"]
+        height = self.model_params["height"]
+        #generate full from observed
+        first_time =True
+        if first_time:
+            for _ in range(a.shape[0]):
+                hista,xb,yb = np.histogram2d(a[_,::2],a[_,1::2],
+                                        range = [[0,width],[0,height]],
+                                        bins = [2*bins,bins],density=True)
+                hista *= bins**2
+                hista= hista.T
+                hista = np.flip(hista,axis=0)
+                self.densities.append(hista)
         
+        for _ in range(b.shape[0]):
+            histb,xb,yb = np.histogram2d(b[_,0::2],b[_,1::2],
+                                    range = [[0,width],[0,height]],
+                                    bins = [2*bins,bins],density=True)
+            histb *= bins**2
+            histb= histb.T
+            histb = np.flip(histb,axis=0)
+            self.kf_densities.append(histb)
     
-class DivergingNorm(col.Normalize):
-    def __init__(self, vcenter, vmin=None, vmax=None):
-        """
-        Normalize data with a set center.
+        for _ in range(len(self.densities)):
+           self.diff_densities.append(np.abs(self.densities[_]-self.kf_densities[_]))
+           
+        c = np.dstack(self.diff_densities)
+        
+        for _ in range(1,c.shape[2]):
+            f = plt.figure(figsize=(12,8))
+            ax = f.add_subplot(111)
+            bins = self.filter_params["bin_size"]
+            width = self.model_params["width"]
+            height = self.model_params["height"]
+            #plot non-wigglers and set plot size
+            ax.set_ylim(0,height)
+            ax.set_xlim(0,width)
 
-        Useful when mapping data with an unequal rates of change around a
-        conceptual center, e.g., data that range from -2 to 4, with 0 as
-        the midpoint.
-
-        Parameters
-        ----------
-        vcenter : float
-            The data value that defines ``0.5`` in the normalization.
-        vmin : float, optional
-            The data value that defines ``0.0`` in the normalization.
-            Defaults to the min value of the dataset.
-        vmax : float, optional
-            The data value that defines ``1.0`` in the normalization.
-            Defaults to the the max value of the dataset.
-
-        Examples
-        --------
-        This maps data value -4000 to 0., 0 to 0.5, and +10000 to 1.0; data
-        between is linearly interpolated::
-
-            >>> import matplotlib.colors as mcolors
-            >>> offset = mcolors.DivergingNorm(vmin=-4000.,
-                                               vcenter=0., vmax=10000)
-            >>> data = [-4000., -2000., 0., 2500., 5000., 7500., 10000.]
-            >>> offset(data)
-            array([0., 0.25, 0.5, 0.625, 0.75, 0.875, 1.0])
-        """
-
-        self.vcenter = vcenter
-        self.vmin = vmin
-        self.vmax = vmax
-        if vcenter is not None and vmax is not None and vcenter >= vmax:
-            raise ValueError('vmin, vcenter, and vmax must be in '
-                             'ascending order')
-        if vcenter is not None and vmin is not None and vcenter <= vmin:
-            raise ValueError('vmin, vcenter, and vmax must be in '
-                             'ascending order')
-
-    def autoscale_None(self, A):
-        """
-        Get vmin and vmax, and then clip at vcenter
-        """
-        super().autoscale_None(A)
-        if self.vmin > self.vcenter:
-            self.vmin = self.vcenter
-        if self.vmax < self.vcenter:
-            self.vmax = self.vcenter
-
-
-    def __call__(self, value, clip=None):
-        """
-        Map value to the interval [0, 1]. The clip argument is unused.
-        """
-        result, is_scalar = self.process_value(value)
-        self.autoscale_None(result)  # sets self.vmin, self.vmax if None
-
-        if not self.vmin <= self.vcenter <= self.vmax:
-            raise ValueError("vmin, vcenter, vmax must increase monotonically")
-        result = np.ma.masked_array(
-            np.interp(result, [self.vmin, self.vcenter, self.vmax],
-                      [0, 0.9, 1.]), mask=np.ma.getmask(result))
-        if is_scalar:
-            result = np.atleast_1d(result)[0]
-        return result
-
+            #check for any wigglers and plot the 2dhist 
+            if np.sum(c[:,:,_])!=0:
+                hista = c[:,:,_]
+                extent = [0,width,0,height]
+                im=plt.imshow(hista
+                           ,cmap = cm.Spectral,extent=extent,norm=DoubleDivergingNorm(vcenter=0.05))
+                
+            #if no wiggles plot a "ghost histogram" to maintain frame structure  
+            else:
+                #ghost histogram with one entry and (1,1)
+                hist,xb,yb = np.histogram2d(np.array([-1]),np.array([-1]),
+                                            range = [[0,width],[0,height]],
+                                            bins = [bins,bins],density=True)   
+               
+                extent = [0,width,0,height]
+                #plot ghost hist with no opacity (alpha=0) to make it invisible
+                im=plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
+                              ,cmap = cm.PuOr ,extent=extent,alpha=0
+                              ,norm =  DoubleDivergingNorm(vcenter =0.05))
+            
+            #colourbar and various plot fluff
+            ticks = np.array([-0.5,-0.2,-0.1,-0.05,0,0.05,0.1,0.2,0.5])
+            #!! numbers adjusted by trial and error for 200x100 field. 
+            #should probably generalise this and the bin structure at some point
+            cbar = plt.colorbar(im,fraction=0.046,pad=0.04,shrink=0.71,
+                                ticks = ticks,spacing="proportional")
+            plt.clim(-0.5,0.5)
+            cbar.set_alpha(1)
+            cbar.draw_all()
+            
+            plt.xlabel("Corridor width")
+            plt.ylabel("Corridor height")
+            cbar.set_label("Wiggle Density (x100%)")
+            
+            number =  str(_).zfill(5)
+            file = f"output_diff/wiggle{number}"
+            f.savefig(file)
+            plt.close()
+            
+        self.animate("output_diff","diff") 
+        self.clear_output_folder("output_diff")
+            
+            
+            
+            
 
     
     
 if __name__ == "__main__":
-    np.random.seed(seed = 8)#seeding if  wanted else hash it
+    #np.random.seed(seed = 8)#seeding if  wanted else hash it
     model_params = {
                     'width': 200,
                     'height': 100,
-                    'pop_total': 100,
+                    'pop_total': 300,
                     'entrances': 3,
                     'entrance_space': 2,
                     'entrance_speed': 1,
@@ -558,38 +608,48 @@ if __name__ == "__main__":
                     }
         
     filter_params = {         
-                    "Sensor_Noise": 1, # how reliable are measurements H_x. lower value implies more reliable
+                    "Sensor_Noise":  1, # how reliable are measurements H_x. lower value implies more reliable
                     "Process_Noise": 1, #how reliable is prediction F_x lower value implies more reliable
                     'sample_rate': 1,   #how often to update kalman filter. higher number gives smoother (maybe oversmoothed) predictions
                     "do_restrict": True, #"restrict to a proportion prop of the agents being observed"
-                    "do_animate": True,#"do animations of agent/wiggle aggregates"
+                    "do_animate": False,#"do animations of agent/wiggle aggregates"
                     "do_wiggle_animate":False,
-                    "prop": 0.01,#proportion of agents observed. 1 is all <1/pop_total is none
+                    "prop": 0.05,#proportion of agents observed. 1 is all <1/pop_total is none
                     "heatmap_rate": 2,# "after how many updates to record a frame"
-                    "bin_size":10
+                    "bin_size":10,
+                    "do_batch":False
                     }
         
     
 
-
+    
     runs = 1
     for i in range(runs):
-       
-        U = UKF(Model, model_params,filter_params)
-        U.main_sequential()
-        
-        if runs==1 and model_params["do_save"] == True:   #plat results of single run
-            c_mean,t_mean = U.plots()
-        
-        
-        save=True
-        if save:
-            a,b,a_full = U.data_parser(True)
-            pop = model_params["pop_total"]
-            np.save(f"ACTUAL_TRACKS_{pop}_{i}",a_full)
-            np.save(f"PARTIAL_TRACKS_{pop}_{i}",a)
-            np.save(f"UKF_TRACKS_{pop}_{i}",b)
+        if not filter_params["do_batch"]:
+            U = UKF(Model, model_params,filter_params)
+            U.main_sequential()
+            
+            if runs==1 and model_params["do_save"] == True:   #plat results of single run
+                c_mean,t_mean = U.plots()
+            
+            
+            save=True
+            if save:
+                a,b,a_full = U.data_parser(True)
+                pop = model_params["pop_total"]
+                np.save(f"ACTUAL_TRACKS_{pop}_{i}",a_full)
+                np.save(f"PARTIAL_TRACKS_{pop}_{i}",a)
+                np.save(f"UKF_TRACKS_{pop}_{i}",b)
+                entrance_times = np.array([agent.time_start for agent in U.base_model.agents])
+                np.save(f"{pop}_entrance_times",entrance_times)
 
+        else:
+            U = UKF(Model, model_params,filter_params)
+            U.main_batch()
+            a,b,a_full = U.data_parser(False)
+
+            if runs==1 and model_params["do_save"] == True:   #plat results of single run
+                c_mean,t_mean = U.plots()
 
 
 

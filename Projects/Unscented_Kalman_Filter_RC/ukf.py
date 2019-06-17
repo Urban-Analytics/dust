@@ -361,7 +361,7 @@ class UKF:
                 extent = [0,width,0,height]
                 #plot ghost hist with no opacity (alpha=0) to make it invisible
                 im=plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                           ,cmap = cmap ,extent=extent,alpha=0
+                           ,cmap = cm.Spectral ,extent=extent,alpha=0
                            ,norm=DivergingNorm(vmin=1e-10,vcenter=0.1,vmax=1))
             
             #colourbar and various plot fluff
@@ -537,12 +537,14 @@ class UKF:
             ax.set_ylim(0,height)
             ax.set_xlim(0,width)
 
+            cmap = cm.Spectral
+            cmap.set_bad(color="black")
             #check for any wigglers and plot the 2dhist 
             if np.sum(c[:,:,_])!=0:
                 hista = c[:,:,_]
                 extent = [0,width,0,height]
-                im=plt.imshow(hista
-                           ,cmap = cm.Spectral,extent=extent,norm=DoubleDivergingNorm(vcenter=0.05))
+                im=plt.imshow(np.ma.masked_where(hista==0,hista)
+                           ,cmap = cmap,extent=extent,norm=DoubleDivergingNorm(vcenter=0.05))
                 
             #if no wiggles plot a "ghost histogram" to maintain frame structure  
             else:
@@ -554,9 +556,8 @@ class UKF:
                 extent = [0,width,0,height]
                 #plot ghost hist with no opacity (alpha=0) to make it invisible
                 im=plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                              ,cmap = cm.PuOr ,extent=extent,alpha=0
-                              ,norm =  DoubleDivergingNorm(vcenter =0.05))
-            
+                              ,cmap = cmap ,extent=extent,alpha=1
+                              ,norm=DoubleDivergingNorm(vmin=-0.5,vcenter=0.05,vmax=0.5))
             #colourbar and various plot fluff
             ticks = np.array([-0.5,-0.2,-0.1,-0.05,0,0.05,0.1,0.2,0.5])
             #!! numbers adjusted by trial and error for 200x100 field. 
@@ -590,7 +591,7 @@ if __name__ == "__main__":
     model_params = {
                     'width': 200,
                     'height': 100,
-                    'pop_total': 300,
+                    'pop_total': 100,
                     'entrances': 3,
                     'entrance_space': 2,
                     'entrance_speed': 1,
@@ -614,7 +615,7 @@ if __name__ == "__main__":
                     "do_restrict": True, #"restrict to a proportion prop of the agents being observed"
                     "do_animate": False,#"do animations of agent/wiggle aggregates"
                     "do_wiggle_animate":False,
-                    "prop": 0.05,#proportion of agents observed. 1 is all <1/pop_total is none
+                    "prop": 0.333,#proportion of agents observed. 1 is all <1/pop_total is none
                     "heatmap_rate": 2,# "after how many updates to record a frame"
                     "bin_size":10,
                     "do_batch":False

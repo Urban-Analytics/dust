@@ -3,9 +3,6 @@
 import numpy as np
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
-from copy import deepcopy
-from multiprocessing import Pool
-import multiprocessing
 
 def error(text='Self created error.'):
     from sys import exit
@@ -45,6 +42,7 @@ class Agent:
         self.wiggle = 0
         if model.do_save:
             self.history_loc = []
+            self.history_loc.append(self.location)
         return
 
     def step(self, model):

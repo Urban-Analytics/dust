@@ -3,12 +3,12 @@
 """
 Created on Tue May 14 09:28:35 2019
 @author: rob
-UKF with one state and sampling rate addition
+Sequential UKF with 
 """
 
 
 import os
-os.chdir("/home/rob/dust/Projects/RC_Scripts/")
+os.chdir("/home/rob/Unscented_Kalman_Filter_RC")
 import numpy as np
 from math import floor
 from StationSim_Wiggle import Model, Agent
@@ -20,7 +20,9 @@ import matplotlib.pyplot as plt
 import datetime
 import imageio
 import matplotlib.cm as cm
+import matplotlib.colors as col
 import re
+from copy import deepcopy
 sqrt2 = np.sqrt(2)
 plt.style.use("dark_background")
 
@@ -35,13 +37,15 @@ class UKF:
     """
     
     def __init__(self,Model,model_params,filter_params):
+        """various inits for parameters,storage, indexing and more"""
         #call params
         self.model_params = model_params #stationsim parameters
         self.filter_params = filter_params # ukf parameters
         
         #these are used alot i figure its cleaner to call them here
         self.pop_total = self.model_params["pop_total"] #number of agents
-        self.number_of_iterations = model_params['batch_iterations'] #number of batch iterations
+        #number of batch iterations
+        self.number_of_iterations = model_params['batch_iterations']
         self.base_model = Model(model_params) #station sim
         self.UKF_histories = []
         self.sample_rate = self.filter_params["sample_rate"]
@@ -58,9 +62,11 @@ class UKF:
         self.index2 = np.empty((2*self.index.shape[0]),dtype=int)
         self.index2[0::2] = 2*self.index
         self.index2[1::2] = (2*self.index)+1
+        
         #frame counts for animations
         self.frame_number = 1
         self.wiggle_frame_number = 1
+        #recording 2dhistograms for wiggle densities
         self.wiggle_densities= {}
 
 
@@ -86,9 +92,7 @@ class UKF:
             loc[2*i:(2*i)+2] = loc2 + agent.speeds[-1] * (loc1 - loc2) * reciprocal_distance
         
         return loc
-        
-        
-        
+   
     def H_x(location,z):
         """
         Measurement function for agent.
@@ -101,23 +105,30 @@ class UKF:
     sigmas(points) - sigmas points to be used. numerous types to be found
     heremost common VDM sigmas are used.
     Q,R -noise structures for transition and measurement functions respectively
+    P- Initial guess/estimate for covariance structure of state space.
     x - current states
+    
+    !!search for better structures for P and Q or use adaptive filtering 
     """   
     
     def init_ukf(self):
-        
-
-        
-        
-        
         state = self.base_model.agents2state(self)
-        state = state[self.index2]
+        state = state[self.index2] #observed agents only
         sigmas = MSSP(n=len(state),alpha=.01,beta=.2,kappa=1) #sigmapoints
-        self.ukf =  UNKF(dim_x=len(state),dim_z=len(state),fx = self.F_x, hx=self.H_x, dt=1, points=sigmas)#init UKF
+        self.ukf =  UNKF(dim_x=len(state),dim_z=len(state)
+                        ,fx = self.F_x, hx=self.H_x
+                        , dt=1, points=sigmas)#init UKF
         self.ukf.x = state #initial state
-        self.ukf.R = np.eye(len(state))*self.filter_params["Sensor_Noise"] #sensor noise. larger noise implies less trust in sensor and to favour prediction
+        #sensor noise. larger noise implies less trust in sensor and to favour prediction
+        self.ukf.R = np.eye(len(state))*self.filter_params["Sensor_Noise"]
+        #initial guess for state space uncertainty
         self.ukf.P = np.eye(len(state))*self.filter_params["Process_Noise"]
         
+        """
+        various structures for Q. either block diagonal structure
+        I.E assume agents independent but xy states within agents are not
+        or standard diagonal and all state elements are independent
+        """
         for i in range(int(len(state)/2)):  #! initialise process noise as blocked structure of discrete white noise. cant think of any better way to do this
             i1 = 2*i
             i2 = (2*(i+1))
@@ -126,6 +137,7 @@ class UKF:
 
         #self.ukf.Q = np.eye(len(state))*self.filter_params["Process_Noise"]*self.filter_params["sample_rate"]
         self.UKF_histories.append(self.ukf.x)
+        
     
     """extract data from lists of agents into more suitable frames"""
     
@@ -191,7 +203,8 @@ class UKF:
             
         
             
-        "find mean error between agent and prediction"
+        """MAE metric. 
+        finds mean average euclidean error at each time step and per each agent"""
         c = {}
         c_means = []
         
@@ -219,7 +232,8 @@ class UKF:
         plt.title("MAE over time")
     
             
-            
+        """find agent with highest MAE and plot it.
+        mainly done to check something odd isnt happening"""
         index = np.where(c_means == np.nanmax(c_means))[0][0]
         print(index)
         a1 = a[:,(2*index):(2*index)+2]
@@ -239,55 +253,50 @@ class UKF:
     4 functions for animations of agents/wiggle counts above
     """
     def heatmap(self):
-        os.chdir("/home/rob/dust/Projects/RC_Scripts/output")
         locs = [agent.location for agent in self.base_model.agents]
         locs = np.vstack(locs)
         
-        #os.chdir("/home/rob/dust/Projects/RC_Scripts/output")
         f = plt.figure()
-        plt.hist2d(locs[:,0],locs[:,1],bins = 10,
-                   range = np.array([[0,self.model_params["width"]],[0,self.model_params["height"]]])
-                   ,density=True,animated= True,cmap=cm.Spectral)      
+        ax = f.add_subplot(111)
+        bins = self.filter_params["bin_size"]
+        width = self.model_params["width"]
+        height = self.model_params["height"]
+
+        plt.scatter(locs[:,0],locs[:,1],color="cyan")
+        ax.set_ylim(0,height)
+        ax.set_xlim(0,width)        
+        hist,xb,yb = np.histogram2d(locs[:,0],locs[:,1],
+                                    range = [[0,width],[0,height]],
+                                    bins = [2*bins,bins],density=True)
+        hist *= bins**2
+        hist= hist.T
+        hist = np.flip(hist,axis=0)
+
+        extent = [0,width,0,height]
+        plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
+                   ,cmap = cm.Spectral ,extent=extent
+                   ,norm=DivergingNorm(vmin=1e-10,vcenter=0.2,vmax=1))
+        
+        ticks = np.array([0.001,0.1,0.2,0.5,1.0])
+        cbar = plt.colorbar(fraction=0.046,pad=0.04,shrink=0.71,
+                            ticks = ticks)
+        plt.clim(0,1)
+        cbar.set_alpha(1)
+        cbar.draw_all()
+            
         plt.xlabel("Corridor width")
         plt.ylabel("Corridor height")
-        plt.colorbar()
-        #plt.show()
-        file = f"{self.frame_number}"
+        cbar.set_label("Agent Density (x100%)") 
+        number = str(self.frame_number).zfill(5)
+        file = f"output/heatmap{number}"
         f.savefig(file)
-        os.chdir("/home/rob/dust/Projects/RC_Scripts")
         plt.close()
         self.frame_number+=1
     """
     getting files to sort numerically. can probably resolve this by naming png files better.
     """
-    def animate(self):
-        def tryint(s):
-            try:
-                return int(s)
-            except:
-                return s
-        
-        def alphanum_key(s):
-            """ Turn a string into a list of string and number chunks.
-                "z23a" -> ["z", 23, "a"]
-            """
-            return [tryint(c) for c in re.split('([0-9]+)', s) ]        
-            
-    
-        
-        files = os.listdir('output')
-        files.sort(key=alphanum_key) #sorting files numerically
-        print('{} frames generated.'.format(len(files)))
-        images = []
-        for filename in files:
-            images.append(imageio.imread('output/{}'.format(filename)))
-        imageio.mimsave('outputGIF.mp4', images,fps=10)
-        
-        self.clear_output_folder("output")
 
     def wiggle_heatmap(self):
-            
-            
             #sample_agents = [self.base_model.agents[j] for j in self.index]
             sample_agents = self.base_model.agents
             wiggles = np.array([agent.wiggle for agent in sample_agents])
@@ -300,8 +309,7 @@ class UKF:
             non_locs = locs[non_index,:][0,:,:]
             locs = locs[index,:][0,:,:]
             
-            #os.chdir("/home/rob/dust/Projects/RC_Scripts/output")
-            f = plt.figure(figsize = (12,8))
+            f = plt.figure(figsize=(12,8))
             ax = f.add_subplot(111)
             bins = self.filter_params["bin_size"]
             width = self.model_params["width"]
@@ -310,6 +318,9 @@ class UKF:
             plt.scatter(non_locs[:,0],non_locs[:,1],color="cyan")
             ax.set_ylim(0,height)
             ax.set_xlim(0,width)
+            
+            cmap = cm.Spectral
+
             
             if np.sum(wiggles)!=0:
                 plt.scatter(locs[:,0],locs[:,1],color="magenta")
@@ -320,9 +331,13 @@ class UKF:
                 hist= hist.T
                 hist = np.flip(hist,axis=0)
                 self.wiggle_densities[self.wiggle_frame_number] = hist
+                
                 extent = [0,width,0,height]
-                im=plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                           ,cmap = cm.Spectral,extent=extent)
+                im=plt.imshow(np.ma.masked_where(hist==0,hist)
+                           ,cmap = cmap,extent=extent,
+                           norm=DivergingNorm(vmin=1e-10,vcenter=0.5,vmax=1))
+                
+                
             else:
                 hist,xb,yb = np.histogram2d(np.array([1]),np.array([1]),
                                             range = [[0,width],[0,height]],
@@ -330,47 +345,35 @@ class UKF:
                
                 extent = [0,width,0,height]
                 im=plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                           ,cmap = cm.Spectral,extent=extent,alpha=0)
+                           ,cmap = cmap ,extent=extent,alpha=0
+                           ,norm=DivergingNorm(vmin=1e-10,vcenter=0.2,vmax=1))
                 
-               
-            cbar = plt.colorbar(im,fraction=0.046,pad=0.04)
+            ticks = np.array([0.001,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+            cbar = plt.colorbar(im,fraction=0.046,pad=0.04,shrink=0.71,
+                                ticks = ticks)
+            plt.clim(0,1)
             cbar.set_alpha(1)
             cbar.draw_all()
             
             plt.xlabel("Corridor width")
             plt.ylabel("Corridor height")
-            #plt.show()
-            file = f"output_wiggle/{self.wiggle_frame_number}"
-            #os.chdir("/home/rob/dust/Projects/RC_Scripts/output_wiggle")
+            cbar.set_label("Wiggle Density (x100%)")
+            
+            number = str(self.wiggle_frame_number).zfill(5)
+            file = f"output_wiggle/wiggle{number}"
             f.savefig(file)
-            os.chdir("/home/rob/dust/Projects/RC_Scripts")
             plt.close()
             self.wiggle_frame_number+=1
             
-    def wiggle_animate(self):
-        def tryint(s):
-            try:
-                return int(s)
-            except:
-                return s
-        
-        def alphanum_key(s):
-            """ Turn a string into a list of string and number chunks.
-                "z23a" -> ["z", 23, "a"]
-            """
-            return [tryint(c) for c in re.split('([0-9]+)', s) ]        
-            
-    
-        
-        files = os.listdir('output_wiggle')
-        files.sort(key=alphanum_key) #sorting files numerically
+    def animate(self,file,name):
+        files = sorted(os.listdir(file))
         print('{} frames generated.'.format(len(files)))
         images = []
         for filename in files:
-            images.append(imageio.imread('output_wiggle/{}'.format(filename)))
-        imageio.mimsave('wiggleGIF.mp4', images,fps=10)
+            images.append(imageio.imread(f'{file}/{filename}'))
+        imageio.mimsave(f'{name}GIF.mp4', images,fps=10)
         
-        self.clear_output_folder("output_wiggle")
+        self.clear_output_folder(file)
         
 
 
@@ -387,7 +390,7 @@ class UKF:
     """
     main function runs UKF over stationsim
     """
-    def main(self):
+    def main_sequential(self):
         time1 = datetime.datetime.now()
         self.init_ukf() #init UKF        
 
@@ -418,18 +421,117 @@ class UKF:
                 
                 if self.base_model.pop_finished == self.pop_total: #break condition
                     if self.filter_params["do_animate"]:
-                        self.animate()           
+                        self.animate("output","heatmap")           
                     if self.filter_params["do_wiggle_animate"]:
-                        self.wiggle_animate()
+                        self.animate("output_wiggle","wiggle")
                     break
         
         time2 = datetime.datetime.now()
         print(time2-time1)
         return
     
-    
-
+    def main_batch(self):
+        time1 = datetime.datetime.now()
        
+        
+        truth = np.load(self.filter_params["batch_file"])
+        truth = truth[:,self.index2]
+        truth_list = [truth[j,:] for j in range(truth.shape[0])]#pull rows into lists
+        #!! add sample rate reduction later
+        
+        self.init_ukf()#init UK
+        "this function is atrocious dont use it"
+        #self.UKF_histories,self.UKF_Ps = self.ukf.batch_filter(truth_list)
+        
+        "instead"
+
+        for _,z in enumerate(truth_list):
+            if _%100==0:
+                print(f"iterations: {_}")
+            self.ukf.predict()
+            self.time_id+=1
+            if  self.time_id%self.filter_params["sample_rate"]==0:
+                self.ukf.update(z)
+                self.base_model.step()
+                self.UKF_histories.append(self.ukf.x)
+                self.UKF_Ps.append(self.ukf.P)
+            
+        time2 = datetime.datetime.now()
+        print(time2-time1)    
+        
+        
+        
+    
+class DivergingNorm(col.Normalize):
+    def __init__(self, vcenter, vmin=None, vmax=None):
+        """
+        Normalize data with a set center.
+
+        Useful when mapping data with an unequal rates of change around a
+        conceptual center, e.g., data that range from -2 to 4, with 0 as
+        the midpoint.
+
+        Parameters
+        ----------
+        vcenter : float
+            The data value that defines ``0.5`` in the normalization.
+        vmin : float, optional
+            The data value that defines ``0.0`` in the normalization.
+            Defaults to the min value of the dataset.
+        vmax : float, optional
+            The data value that defines ``1.0`` in the normalization.
+            Defaults to the the max value of the dataset.
+
+        Examples
+        --------
+        This maps data value -4000 to 0., 0 to 0.5, and +10000 to 1.0; data
+        between is linearly interpolated::
+
+            >>> import matplotlib.colors as mcolors
+            >>> offset = mcolors.DivergingNorm(vmin=-4000.,
+                                               vcenter=0., vmax=10000)
+            >>> data = [-4000., -2000., 0., 2500., 5000., 7500., 10000.]
+            >>> offset(data)
+            array([0., 0.25, 0.5, 0.625, 0.75, 0.875, 1.0])
+        """
+
+        self.vcenter = vcenter
+        self.vmin = vmin
+        self.vmax = vmax
+        if vcenter is not None and vmax is not None and vcenter >= vmax:
+            raise ValueError('vmin, vcenter, and vmax must be in '
+                             'ascending order')
+        if vcenter is not None and vmin is not None and vcenter <= vmin:
+            raise ValueError('vmin, vcenter, and vmax must be in '
+                             'ascending order')
+
+    def autoscale_None(self, A):
+        """
+        Get vmin and vmax, and then clip at vcenter
+        """
+        super().autoscale_None(A)
+        if self.vmin > self.vcenter:
+            self.vmin = self.vcenter
+        if self.vmax < self.vcenter:
+            self.vmax = self.vcenter
+
+
+    def __call__(self, value, clip=None):
+        """
+        Map value to the interval [0, 1]. The clip argument is unused.
+        """
+        result, is_scalar = self.process_value(value)
+        self.autoscale_None(result)  # sets self.vmin, self.vmax if None
+
+        if not self.vmin <= self.vcenter <= self.vmax:
+            raise ValueError("vmin, vcenter, vmax must increase monotonically")
+        result = np.ma.masked_array(
+            np.interp(result, [self.vmin, self.vcenter, self.vmax],
+                      [0, 0.9, 1.]), mask=np.ma.getmask(result))
+        if is_scalar:
+            result = np.atleast_1d(result)[0]
+        return result
+
 
     
     
@@ -438,7 +540,7 @@ if __name__ == "__main__":
     model_params = {
                     'width': 200,
                     'height': 100,
-                    'pop_total': 300,
+                    'pop_total': 100,
                     'entrances': 3,
                     'entrance_space': 2,
                     'entrance_speed': 1,
@@ -460,9 +562,9 @@ if __name__ == "__main__":
                     "Process_Noise": 1, #how reliable is prediction F_x lower value implies more reliable
                     'sample_rate': 1,   #how often to update kalman filter. higher number gives smoother (maybe oversmoothed) predictions
                     "do_restrict": True, #"restrict to a proportion prop of the agents being observed"
-                    "do_animate": False,#"do animations of agent/wiggle aggregates"
-                    "do_wiggle_animate":True,
-                    "prop": 0.1,#proportion of agents observed. 1 is all <1/pop_total is none
+                    "do_animate": True,#"do animations of agent/wiggle aggregates"
+                    "do_wiggle_animate":False,
+                    "prop": 0.01,#proportion of agents observed. 1 is all <1/pop_total is none
                     "heatmap_rate": 2,# "after how many updates to record a frame"
                     "bin_size":10
                     }
@@ -474,7 +576,7 @@ if __name__ == "__main__":
     for i in range(runs):
        
         U = UKF(Model, model_params,filter_params)
-        U.main()
+        U.main_sequential()
         
         if runs==1 and model_params["do_save"] == True:   #plat results of single run
             c_mean,t_mean = U.plots()

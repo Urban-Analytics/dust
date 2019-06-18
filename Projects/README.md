@@ -1,10 +1,11 @@
 # DUST Projects
-A master folder for dust-related sub-projects.  [DUST](https://dust.leeds.ac.uk/) ([repo](https://github.com/Urban-Analytics/dust/), [gist](https://urban-analytics.github.io/dust/), [onedrive](https://leeds365-my.sharepoint.com/personal/geonsm_leeds_ac_uk/_layouts/15/onedrive.aspx)),  Dynamic Urban Simulation Techniques is a research group exploring the uses of Data Assimilation (DA) for Agent-Based Modelling (ABM).
+A master folder for dust-related sub-projects.  [DUST](https://dust.leeds.ac.uk/) ([repo](https://github.com/Urban-Analytics/dust/), [gist](https://urban-analytics.github.io/dust/), [OneDrive](https://leeds365-my.sharepoint.com/personal/geonsm_leeds_ac_uk/_layouts/15/onedrive.aspx), [Slack](https://lida-uol.slack.com/), [Trello](https://trello.com/b/2WMzu1tt/)),  Dynamic Urban Simulation Techniques is a research group exploring the uses of Data Assimilation (DA) for Agent-Based Modelling (ABM).
 
 
 ## Models
 `model.py` - A minimalist framework for building ABMs suitable for the DA side of this projects.  Based on [mesa](https://github.com/projectmesa/mesa).
 - Andrew West, email: gyawe
+- Keiran Suchak, email: mm15ks
 
 #### BusSim
 Bus route simulation.
@@ -23,15 +24,10 @@ A minimalist implementation of the model framework.  For use as a testing tool.
 ## Filters
 `filter.py` - A framework for ensuring models and filters are compatible.
 - Keiran Suchak, email: mm15ks
+- Andrew West, email: gyawe
 
 #### Particle Filter
 - Kevin Minors, email: k.minors
-
-#### Kalman Filter
-- Undesignated
-
-#### Extended Kalman Filter
-- Undesignated
 
 #### Ensemble Kalman Filter
 - Keiran Suchak, email: mm15ks

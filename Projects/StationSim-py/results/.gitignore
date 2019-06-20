@@ -1,5 +1,0 @@
-# This makes git keep the folder, but ignore all files (we don't want results being added to the
-# repo)
-# https://stackoverflow.com/questions/5600621/gitignore-exclude-files-in-directory-but-not-certain-directories
-*
-!.gitignore

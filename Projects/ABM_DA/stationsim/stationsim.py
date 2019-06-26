@@ -2,11 +2,13 @@
 StationSim
 	author: aw-west
 	created: 19/06/18
-	version: 0.8.0
+	version: 0.8.1
 Changelog:
-	merged models
-	batch() moved to experiments
-	separated figures
+	.0 merged models
+	.0 batch() moved to experiments
+	.0 separated figures
+	.1 checked figures and created experiment notebooks
+	.1 fixed _heightmap
 Todo:
 	new entering
 	speeds[-1] separation drawn
@@ -368,12 +370,8 @@ class Model:
 			'Time Delay': np.mean(self.steps_delay),
 			'Collisions': np.mean([agent.history_collisions for agent in self.agents]),
 			'Wiggles': np.mean([agent.history_wiggles for agent in self.agents]),
-			# 'GateWiggles': sum(wig[0]<self.gates_space for wig in [agent.history_wiggle_locs for agent in self.agents])/self.pop_total,
+			# 'GateWiggles': sum(wig[0]<self.gates_space for wig in self.history_wiggle_locs)/self.pop_total
 			}
-		if sig_fig is not None:
-			roundp = lambda x,p: float(f'%.{p-1}e'%x)
-			for k,v in analytics.items():
-				analytics[k] = roundp(v,sig_fig)
 		return analytics
 
 	def get_trails(self):
@@ -419,19 +417,19 @@ class Model:
 		if kdeplot:
 			sns_kdeplot(*data, ax=ax, cmap=cmap, alpha=alpha, shade=True, shade_lowest=False)
 		else:
-			hdata, *bins = np.histogram2d(*data, (20, 10))
-			ax.contourf(hdata, cmap=cmap, alpha=alpha, extend='min', extent=(bins[0][0], bins[0][-1], bins[1][0], bins[1][-1]))
+			hdata, binx, biny = np.histogram2d(*data, (20, 10))
+			ax.contourf(hdata.T, cmap=cmap, alpha=alpha, extend='min', extent=(binx[0],binx[-1],biny[0],biny[-1]))
 		return ax
 
-	def get_wiggle_map(self):
+	def get_wiggle_map(self, do_kdeplot=True):
 		fig, ax = plt.subplots(1, figsize=self._figsize, dpi=self._dpi)
 		fig.tight_layout(pad=0)
-		self._heightmap(np.array(self.history_collision_locs).T, ax=ax)
+		self._heightmap(np.array(self.history_collision_locs).T, ax=ax, kdeplot=do_kdeplot)
 		self._heightmap(np.array(self.history_wiggle_locs).T, ax=ax)
 		ax.set(frame_on=False, aspect='equal', xlim=self.boundaries[:,0], xticks=[], ylim=self.boundaries[:,1], yticks=[])
 		return fig
 
-	def get_location_map(self):
+	def get_location_map(self, do_kdeplot=True):
 		history_locs = []
 		for agent in self.agents:
 			for loc in agent.history_locations:
@@ -440,7 +438,7 @@ class Model:
 		history_locs = np.array(history_locs).T
 		fig, ax = plt.subplots(1, figsize=self._figsize, dpi=self._dpi)
 		fig.tight_layout(pad=0)
-		self._heightmap(history_locs, ax=ax, cmap='gray_r')
+		self._heightmap(history_locs, ax=ax, kdeplot=do_kdeplot, cmap='gray_r')
 		ax.set(frame_on=False, aspect='equal', xlim=self.boundaries[:,0], xticks=[], ylim=self.boundaries[:,1], yticks=[])
 		return fig
 
@@ -466,4 +464,3 @@ class Model:
 		frames = self.step_id
 		ani = FuncAnimation(fig, func, frames, init, interval=100, blit=True)
 		return ani
-

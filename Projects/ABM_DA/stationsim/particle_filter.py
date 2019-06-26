@@ -1,20 +1,23 @@
 from filter import Filter
-from model import Model
+from stationsim import Model
 
-import multiprocessing
 import numpy as np
-from copy import deepcopy
+from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
+from copy import deepcopy
+import multiprocessing
 import time
 import warnings
-
-
+import sys
+import itertools
 
 
 class ParticleFilter(Filter): 
     '''
     A particle filter to model the dynamics of the
     state of the model as it develops in time.
+    
+    TODO: refactor to properly inherit from Filter.
     '''
 
     def __init__(self, Model, model_params, filter_params):
@@ -39,13 +42,14 @@ class ParticleFilter(Filter):
         dimensions, initialise all remaining arrays, and set initial
         particle states to the base model state using multiprocessing. 
         '''    
+        print(1)
         for key, value in filter_params.items():
             setattr(self, key, value)
         self.time = 0
         self.number_of_iterations = model_params['batch_iterations']
         self.base_model = Model(model_params)
         self.models = list([deepcopy(self.base_model) for _ in range(self.number_of_particles)])  
-        self.dimensions = len(self.base_model.agents2state())
+        self.dimensions = len(self.base_model.get_state())
         self.states = np.zeros((self.number_of_particles, self.dimensions))
         self.weights = np.ones(self.number_of_particles)
         self.indexes = np.zeros(self.number_of_particles, 'i')
@@ -60,7 +64,7 @@ class ParticleFilter(Filter):
             self.before_resample = [] # Records whether the errors were before or after resampling
 
         print("Creating initial states ... ")
-        base_model_state = self.base_model.agents2state()
+        base_model_state = self.base_model.get_state()
         self.states = np.array([ self.initial_state2(i, base_model_state) for i in range(self.number_of_particles )])
         print("\t ... finished")
         #pool.starmap(ParticleFilter.initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
@@ -88,13 +92,17 @@ class ParticleFilter(Filter):
         return self.states[particle]
 
     @classmethod
-    def assign_agents(cls, particle,self):
+    def assign_agents(cls, particle_num:int, state:np.array, model:Model):
         """
         Assign the state of the particles to the
         locations of the agents.
+        :param particle_num
+        :param state: The state of the particle to be assigned
+        :param model: The model to assign the state to
+        :type model: Return the model after having the agents assigned according to the state.
         """
-        self.models[particle].state2agents(self.states[particle])
-        return self.models[particle]
+        model.state2agents(state)
+        return model
 
     @classmethod
     def step_particles(cls, particle_num, self):
@@ -119,7 +127,7 @@ class ParticleFilter(Filter):
         return self.models[particle_num], self.states[particle_num]
 
     @classmethod
-    def step_particle(cls, particle_num, model, num_iter, particle_std, particle_shape):
+    def step_particle(cls, particle_num:int, model:Model, num_iter:int, particle_std:float, particle_shape:tuple):
         """
         Step a particle, assign the locations of the
         agents to the particle state with some noise, and
@@ -133,6 +141,10 @@ class ParticleFilter(Filter):
         :param particle_shape: the shape of the particle array
         """
         #self.models[particle_num].step()
+        #warnings.warn(
+        #    "ParticleFilter.step_particle has been replaced with a global step_particle method. This one should no longer be used",
+        #    DeprecationWarning
+        #)
         for i in range(num_iter):
             model.step()
 
@@ -157,7 +169,10 @@ class ParticleFilter(Filter):
         animations and saves will only report once per window, rather than
         every iteration
 
-        :return: Information about the run as a tuple:
+        :return: Information about the run as a list with two tuples. The first
+        tuple has information about the state of the PF *before* reweighting,
+        the second has the state after reweighting. 
+        Each tuple has the following:
            min(self.mean_errors) - the error of the particle with the smallest error
            max(self.mean_errors) - the error of the particle with the largest error
            np.average(self.mean_errors) - average of all particle errors
@@ -179,30 +194,36 @@ class ParticleFilter(Filter):
                 self.time += 1
 
             # See if some particles still have active agents
-            if any([agent.active != 2 for agent in self.base_model.agents]):
+            if any([agent.status != 2 for agent in self.base_model.agents]):
                 #print(self.time/self.number_of_iterations)
-                self.predict(numiter=numiter)
 
+                self.predict(numiter=numiter)
 
 
                 if self.time % self.resample_window == 0:
                     self.window_counter += 1
-                    self.reweight()
 
                     # Store the model states before and after resampling
                     if self.do_save:
                         self.save(before=True)
 
+                    self.reweight()
+
                     self.resample()
+
+                    # Store the model states before and after resampling
+                    if self.do_save:
+                        self.save(before=False)
+
+
                     print("\tFinished window {}, step {} (took {}s)".format(
                         self.window_counter, self.time, round(float(time.time() - window_start_time),2)))
                     window_start_time = time.time()
+
                 elif self.multi_step:
                     assert (False), "Should not get here, if multi_step is true then the condition above should always run"
 
-                # Store the model states before and after resampling
-                if self.do_save:
-                    self.save(before=False)
+
             else:
                 print("\tNo more active agents. Finishing particle step")
 
@@ -219,11 +240,33 @@ class ParticleFilter(Filter):
         #for i, a in enumerate(zip([x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == True],
         #                          [x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == False])):
         #    print("{} - before: {}, after: {}".format(i, a[0], a[1]))
+        
+        if not self.mean_errors == []:
+            
+            # Return two tuples, one with the about the error before reweighting, one after
 
+            # Work out which array indices point to results before and after reweighting
+            before_indices = [i for i, x in enumerate(self.before_resample) if x ]
+            after_indices  = [i for i, x in enumerate(self.before_resample) if not x ]
 
-        return min(self.mean_errors), max(self.mean_errors), np.average(self.mean_errors), \
-               min(self.variances),   max(self.variances),   np.average(self.variances)
-
+            result = []
+            
+            for before in [before_indices, after_indices]:
+                result.append([
+                    min(np.array(self.mean_errors)[before]),
+                    max(np.array(self.mean_errors)[before]),
+                    np.average(np.array(self.mean_errors)[before]),
+                    min(np.array(self.absolute_errors)[before]),
+                    max(np.array(self.absolute_errors)[before]),
+                    np.average(np.array(self.absolute_errors)[before]),
+                    min(np.array(self.variances)[before]),
+                    max(np.array(self.variances)[before]),
+                    np.average(np.array(self.variances)[before])
+                ])
+            return result
+        else:
+            return 
+       
     
     def predict(self, numiter=1):
         '''
@@ -243,15 +286,12 @@ class ParticleFilter(Filter):
         for i in range(numiter):
             self.base_model.step()
 
-        #stepped_particles = pool.starmap(ParticleFilter.step_particles, \
-        #                                 list(zip(range(self.number_of_particles), [self]*self.number_of_particles)))
-
-        stepped_particles = pool.starmap(ParticleFilter.step_particle, list(zip(
-            range(self.number_of_particles), # Particle numbers
-            [ m for m in self.models],  # Associated Models
-            [numiter]*self.number_of_particles, # Number of iterations to step each particle
-            [self.particle_std]*self.number_of_particles, # Particle std (for adding noise
-            [ s.shape for s in self.states], #Shape (for adding noise)
+        stepped_particles = pool.starmap(ParticleFilter.step_particle, list(zip( \
+            range(self.number_of_particles), # Particle numbers (in integer)
+            [ m for m in self.models],  # Associated Models (a Model object)
+            [numiter]*self.number_of_particles, # Number of iterations to step each particle (an integer)
+            [self.particle_std]*self.number_of_particles, # Particle std (for adding noise) (a float)
+            [ s.shape for s in self.states], #Shape (for adding noise) (a tuple)
         )))
 
         self.models = [stepped_particles[i][0] for i in range(len(stepped_particles))]
@@ -303,11 +343,16 @@ class ParticleFilter(Filter):
         self.states[:] = self.states[self.indexes]
         self.weights[:] = self.weights[self.indexes]
         
-        self.unique_particles.append(len(np.unique(self.states,axis=0)))
+        #self.unique_particles.append(len(np.unique(self.states,axis=0)))
 
-        self.models = pool.starmap(ParticleFilter.assign_agents,list(zip(range(self.number_of_particles),[self]*self.number_of_particles)))
-
+        # Could use pool.starmap here, but it's quicker to do it in a single process
+        self.models = list(itertools.starmap(ParticleFilter.assign_agents,list(zip(
+            range(self.number_of_particles),  # Particle numbers (in integer)
+            [s for s in self.states],  # States
+            [m for m in self.models]   # Associated Models (a Model object)
+        ))))
         return
+
 
     def save(self, before:bool):
         '''
@@ -338,6 +383,8 @@ class ParticleFilter(Filter):
             truth_state = self.base_model.agents2state()
             self.mean_errors.append(np.linalg.norm(mean - truth_state[active_states], axis=0))
             self.absolute_errors.append(np.linalg.norm(unweighted_mean - truth_state[active_states], axis=0))
+        
+            # min(mean_errors) is returning empty. CHeck small values for agents/particles
         
         return
     
@@ -405,7 +452,7 @@ class ParticleFilter(Filter):
                         unique_id = agent.unique_id
                         if self.base_model.agents[unique_id].active == 1:     
                             locs = np.array([self.base_model.agents[unique_id].location, agent.location]).T
-                            plt.plot(*locs, '-k', alpha=.1, linewidth=.3)
+                            plt.plot(*locs, '-k', alpha=.5, linewidth=.5)
                             plt.plot(*agent.location, 'or', alpha=.3, markersize=markersize)
             
             for agent in self.base_model.agents:                
@@ -416,79 +463,109 @@ class ParticleFilter(Filter):
             plt.pause(1 / 4)
 
 
-def single_run_particle_numbers():
+def single_run_particle_numbers(num_particles):
 
-    runs = 5
     filter_params = {
-        'number_of_particles': 50,
+        'number_of_particles': num_particles, # particles read from ARC task array variable
+        'number_of_runs': 10, # Number of times to run each particle filter configuration
         'resample_window': 100,
         'multi_step' : True, # Whether to predict() repeatedly until the sampling window is reached
-        'agents_to_visualise': 1,
-        'particle_std':1.5,
-        'model_std': 1.0,
+        'particle_std': 2.0, # was 2 or 10
+        'model_std': 1.0, # was 2 or 10
+        'agents_to_visualise': 10,
         'do_save': True,
-        'plot_save': True,
+        'plot_save': False,
         'do_ani': False,
+        
     }
-
-    # Open a file to write the $ to
-    outfile = "results/pf"+str(int(time.time()*1000))+".csv"
+    
+    # Open a file to write the results to
+    outfile = "../results/pf_particles_{}_agents_{}_noise_{}-{}.csv".format(
+        str(int(filter_params['number_of_particles'])),
+        str(int(model_params['pop_total'])),
+        str(filter_params['particle_std']),
+        str(int(time.time()))
+    )
     with open(outfile, 'w') as f:
         # Write the parameters first
         f.write("PF params: "+str(filter_params)+"\n")
         f.write("Model params: "+str(model_params)+"\n")
         # Now write the csv headers
-        f.write("Min_Mean_errors,Max_Mean_errors,Average_mean_errors,Min_variances,Max_variances,Average_variances\n")
-
+        f.write("Min_Mean_errors,Max_Mean_errors,Average_mean_errors,Min_Absolute_errors,Max_Absolute_errors,Average_Absolute_errors,Min_variances,Max_variances,Average_variances,Before_resample?\n")
+   
     print("Running filter with {} particles and {} runs (on {} cores) with {} agents. Saving files to: {}".format(
-        filter_params['number_of_particles'], runs, numcores, model_params["pop_total"], outfile), flush=True)
+        filter_params['number_of_particles'], filter_params['number_of_runs'] , numcores, model_params["pop_total"], outfile), flush=True)
     print("PF params: "+str(filter_params)+"\n")
-    print("Model params: "+str(model_params)+"\n")
-
-
-
-    for i in range(runs):
-
+    print("Model params: "+str(model_params)+"\n")    
+    
+    for i in range(filter_params['number_of_runs']):
+    
         # Run the particle filter
-        start_time = time.time() # Time how long the whole run takes
+        
+        start_time = time.time()#Time how long the whole run take
         pf = ParticleFilter(Model, model_params, filter_params)
         result = pf.step()
-
+    
         # Write the results of this run
         with open(outfile, 'a') as f:
-            f.write(str(result)[1:-1].replace(" ","")+"\n") # (slice to get rid of the brackets aruond the tuple)
-        print("Run: {}, particles: {}, took: {}(s), result: {}".format(
-            i, filter_params['number_of_particles'], round(time.time()-start_time), result), flush=True)
+            # Two sets of errors are created, those before resampling, and those after. Results is a list with two tuples.
+            # First tuple has eerrors before resampling, second has errors afterwards.
+            for before in [0,1]:
+                f.write(str(result[before])[1:-1].replace(" ","")+","+str(before)+"\n") # (slice to get rid of the brackets aruond the tuple)
 
-
+        print("Run: {}, particles: {}, agents: {}, took: {}(s), result: {}".format(
+            i, filter_params['number_of_particles'], model_params['pop_total'], round(time.time()-start_time), result), flush=True) 
+    
     print("Finished single run")
+
 
 if __name__ == '__main__':
     __spec__ = None
 
     # Pool object needed for multiprocessing
     numcores = multiprocessing.cpu_count()
+    #numcores = 5
     pool = multiprocessing.Pool(processes=numcores)
+    
+    # Lists of particle and agent values to run (old experiments by Kevin)
+    #num_par = [1]+list(range(10,1010,10))
+    #num_age = [1]+list(range(10,310,10))
+
+    # New ones by nick: (requires 1540 experiments)
+    #num_par = list(range(1,49,1))  + list(range(50,501,50)) + list(range(600,2001,100)) + list(range(2500,4001,500))
+    #num_age = list(range(1,21,1))
+    # New ones by nick: (requires 133 experiments)
+    num_par = list([1] + list(range(10,50,10))  + list(range(100,501,100)) + list(range(1000,2001,500)) + list(range(3000,10001,1500)) + [10000] )
+    num_age = list(range(1,21,3))
+
+    # List of all particle-agent combinations. ARC task
+    # array variable loops through this list
+    param_list = [(x,y) for x in num_par for y in num_age]
+    
+    # Use below to update param_list if some runs abort
+    # If used, need to update ARC task array variable
+    # 
+    # aborted = [2294, 2325, 2356, 2387, 2386, 2417, 2418, 2448, 2449, 2479, 2480, 2478, 2509, 2510, 2511, 2540, 2541, 2542]
+    # param_list = [param_list[x-1] for x in aborted]
 
     model_params = {
         'width': 200,
         'height': 100,
-        'pop_total': 10,
+        'pop_total': param_list[int(sys.argv[1])-1][1], # agents read from ARC task array variable
         'entrances': 3,
         'entrance_space': 2,
         'entrance_speed': .1,
         'exits': 2,
         'exit_space': 1,
         'speed_min': .1,
-        'wiggle': 1,
         'speed_desire_mean': 1,
         'speed_desire_std': 1,
         'separation': 2,
-        'batch_iterations': 4000,
-        'do_save': False,
-        'do_ani': False,
+        'batch_iterations': 4000, # Only relevant in batch() mode
+        'do_save': True, # Saves output data (only relevant in batch() mode)
+        'do_ani': False, # Animates the model (only relevant in batch() mode)
         }
     #Model(model_params).batch() # Runs the model as normal (one run)
 
-    # Run the particle filter
-    single_run_particle_numbers()
+    # Run the particle filter, getting the experiment number from the task array
+    single_run_particle_numbers(num_particles=param_list[int(sys.argv[1])-1][0])

@@ -16,6 +16,7 @@ Todo:
 	get_pickle?
 '''
 
+import warnings
 import numpy as np
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
@@ -364,6 +365,28 @@ class Model:
 		elif sensor is 'location2D':
 			for i, agent in enumerate(self.agents):
 				agent.location = state[i,:]
+
+	# Old state functions that are required for the particle filter.
+	# TODO: remove these and work out how that calling functions can ask the model to return particular parts of the state
+	def agents2state(self, do_ravel=True):
+		warnings.warn(
+			"agents2state should be replaced by get_state()",
+			DeprecationWarning
+		)
+		state = [agent.location for agent in self.agents]
+		if do_ravel:
+			state = np.ravel(state)
+		else:
+			state = np.array(state)
+		return state
+
+	def state2agents(self, state):
+		warnings.warn(
+			"state2agents should be replaced by set_state()",
+			DeprecationWarning
+		)
+		for i in range(len(self.agents)):
+			self.agents[i].location = state[2 * i:2 * i + 2]
 
 	# Analytics
 	def get_analytics(self, sig_fig=None):

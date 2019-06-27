@@ -50,7 +50,7 @@ class ParticleFilter(Filter):
         self.number_of_iterations = model_params['batch_iterations']
         self.base_model = Model(model_params)
         self.models = list([deepcopy(self.base_model) for _ in range(self.number_of_particles)])  
-        self.dimensions = len(self.base_model.get_state())
+        self.dimensions = len(self.base_model.agents2state())
         self.states = np.zeros((self.number_of_particles, self.dimensions))
         self.weights = np.ones(self.number_of_particles)
         self.indexes = np.zeros(self.number_of_particles, 'i')
@@ -65,7 +65,7 @@ class ParticleFilter(Filter):
             self.before_resample = [] # Records whether the errors were before or after resampling
 
         print("Creating initial states ... ")
-        base_model_state = self.base_model.get_state()
+        base_model_state = self.base_model.agents2state()
         self.states = np.array([ self.initial_state2(i, base_model_state) for i in range(self.number_of_particles )])
         print("\t ... finished")
         #pool.starmap(ParticleFilter.initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
@@ -347,9 +347,9 @@ class ParticleFilter(Filter):
         :param before: whether this is being called before or after resampling as this will have a big impact on
         what the errors mean (if they're after resampling then they should be low, before and they'll be high)
         '''
-        self.active_agents.append(sum([agent.active == 1 for agent in self.base_model.agents]))
+        self.active_agents.append(sum([agent.status == 1 for agent in self.base_model.agents]))
         
-        active_states = [agent.active == 1 for agent in self.base_model.agents for _ in range(2)]
+        active_states = [agent.status == 1 for agent in self.base_model.agents for _ in range(2)]
         
         if any(active_states):
             # Mean and variance state of all particles, weighted by their distance to the observation

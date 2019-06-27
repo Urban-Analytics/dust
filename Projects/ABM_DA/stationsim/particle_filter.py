@@ -267,26 +267,13 @@ class ParticleFilter(Filter):
         for i in range(numiter):
             self.base_model.step()
 
-        import pickle
-        pickle.dumps(self.models[1])
-
-        # Prepare lists of particles and associated data to be run synchronously
-        _parts = range(self.number_of_particles), # Particle numbers (in integer)
-        _models = [ m for m in self.models],  # Associated Models (a Model object)
-        _numiter = [numiter]*self.number_of_particles, # Number of iterations to step each particle (an integer)
-        _std = [self.particle_std]*self.number_of_particles, # Particle std (for adding noise) (a float)
-        _shape = [ s.shape for s in self.states], #Shape (for adding noise) (a tuple)
-        stepped_particles = pool.starmap(ParticleFilter.step_particle, list(zip(_parts, _models, _numiter, _std, _shape)))
-
-
-
-        # stepped_particles = pool.starmap(ParticleFilter.step_particle, list(zip( \
-        #     range(self.number_of_particles), # Particle numbers (in integer)
-        #     [ m for m in self.models],  # Associated Models (a Model object)
-        #     [numiter]*self.number_of_particles, # Number of iterations to step each particle (an integer)
-        #     [self.particle_std]*self.number_of_particles, # Particle std (for adding noise) (a float)
-        #     [ s.shape for s in self.states], #Shape (for adding noise) (a tuple)
-        # )))
+        stepped_particles = pool.starmap(ParticleFilter.step_particle, list(zip( \
+            range(self.number_of_particles), # Particle numbers (in integer)
+            [ m for m in self.models],  # Associated Models (a Model object)
+            [numiter]*self.number_of_particles, # Number of iterations to step each particle (an integer)
+            [self.particle_std]*self.number_of_particles, # Particle std (for adding noise) (a float)
+            [ s.shape for s in self.states], #Shape (for adding noise) (a tuple)
+        )))
 
         self.models = [stepped_particles[i][0] for i in range(len(stepped_particles))]
         self.states = np.array([stepped_particles[i][1] for i in range(len(stepped_particles))])
@@ -303,7 +290,7 @@ class ParticleFilter(Filter):
         state and then calculate the new particle weights as 1/distance. 
         Add a small term to avoid dividing by 0. Normalise the weights.
         '''
-        measured_state = (self.base_model.agents2state() 
+        measured_state = (self.base_model.agents2state()
                           + np.random.normal(0, self.model_std**2, size=self.states.shape))
         distance = np.linalg.norm(self.states - measured_state, axis=1)
         self.weights = 1 / (distance + 1e-9)**2

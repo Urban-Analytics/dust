@@ -260,16 +260,16 @@ class Model:
 		# Constants
 		self.speed_step = (self.speed_mean - self.speed_min) / self.speed_steps
 		self.boundaries = np.array([[0, 0], [self.width, self.height]])
-		gates_init = lambda x,y,n: np.array([np.full(n,x), np.linspace(0,y,n+2)[1:-1]]).T
-		self.gates_locations = np.concatenate([gates_init(0, self.height, self.gates_in), gates_init(self.width, self.height, self.gates_out)])
+		#gates_init = lambda x, y, n: np.array([np.full(n, x), np.linspace(0, y, n + 2)[1:-1]]).T
+		self.gates_locations = np.concatenate([Model._gates_init(0, self.height, self.gates_in), Model._gates_init(self.width, self.height, self.gates_out)])
 		# Variables
 		self.step_id = 0
 		self.pop_active = 0
 		self.pop_finished = 0
 		# Initialise
 		self.agents = [Agent(self, unique_id) for unique_id in range(self.pop_total)]
-		self.is_within_bounds = lambda loc: all(self.boundaries[0] <= loc) and all(loc <= self.boundaries[1])
-		self.re_bound = lambda loc: np.clip(loc, self.boundaries[0], self.boundaries[1])
+		#self.is_within_bounds = lambda loc: all(self.boundaries[0] <= loc) and all(loc <= self.boundaries[1])
+		#self.re_bound = lambda loc: np.clip(loc, self.boundaries[0], self.boundaries[1])
 		if self.do_history:
 			self.history_state = []
 			self.history_wiggle_locs = []
@@ -284,6 +284,16 @@ class Model:
 			self._figsize = (self._wid,self._hei)
 			self._dpi = 160
 
+	@staticmethod
+	def _gates_init(x,y,n):
+		return np.array([np.full(n,x), np.linspace(0,y,n+2)[1:-1]]).T
+
+
+	def is_within_bounds (self, loc):
+		return all(self.boundaries[0] <= loc) and all(loc <= self.boundaries[1])
+
+	def re_bound (self, loc):
+		return np.clip(loc, self.boundaries[0], self.boundaries[1])
 
 	@staticmethod
 	def _init_kwargs(dict0, dict1):

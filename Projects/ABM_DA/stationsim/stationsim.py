@@ -261,6 +261,7 @@ class Model:
 		# Constants
 		self.speed_step = (self.speed_mean - self.speed_min) / self.speed_steps
 		self.boundaries = np.array([[0, 0], [self.width, self.height]])
+		# Following replaced with a normal function
 		#gates_init = lambda x, y, n: np.array([np.full(n, x), np.linspace(0, y, n + 2)[1:-1]]).T
 		self.gates_locations = np.concatenate([Model._gates_init(0, self.height, self.gates_in), Model._gates_init(self.width, self.height, self.gates_out)])
 		# Variables
@@ -269,6 +270,7 @@ class Model:
 		self.pop_finished = 0
 		# Initialise
 		self.agents = [Agent(self, unique_id) for unique_id in range(self.pop_total)]
+		# Following replaced with a normal function
 		#self.is_within_bounds = lambda loc: all(self.boundaries[0] <= loc) and all(loc <= self.boundaries[1])
 		#self.re_bound = lambda loc: np.clip(loc, self.boundaries[0], self.boundaries[1])
 		if self.do_history:

@@ -1,7 +1,7 @@
 from filter import Filter
 from stationsim import Model
 
-
+import os
 import numpy as np
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
@@ -21,7 +21,7 @@ class ParticleFilter(Filter):
     TODO: refactor to properly inherit from Filter.
     '''
 
-    def __init__(self, Model, model_params, filter_params):
+    def __init__(self, ModelConstructor, model_params, filter_params):
         '''
         Initialise Particle Filter
             
@@ -42,13 +42,12 @@ class ParticleFilter(Filter):
         models using a deepcopy of base model. Determine particle filter 
         dimensions, initialise all remaining arrays, and set initial
         particle states to the base model state using multiprocessing. 
-        '''    
-        print(1)
+        '''
         for key, value in filter_params.items():
             setattr(self, key, value)
         self.time = 0
         self.number_of_iterations = model_params['batch_iterations']
-        self.base_model = Model(model_params)
+        self.base_model = ModelConstructor(**model_params) # (Model does not need a unique id)
         self.models = list([deepcopy(self.base_model) for _ in range(self.number_of_particles)])  
         self.dimensions = len(self.base_model.agents2state())
         self.states = np.zeros((self.number_of_particles, self.dimensions))
@@ -301,7 +300,7 @@ class ParticleFilter(Filter):
     def resample(self):
         '''
         Resample
-        
+        f
         DESCRIPTION
         Calculate a random partition of (0,1) and then 
         take the cumulative sum of the particle weights.
@@ -444,7 +443,7 @@ class ParticleFilter(Filter):
             plt.pause(1 / 4)
 
 
-def single_run_particle_numbers(num_particles):
+def single_run_particle_numbers(num_particles, model_params):
 
     filter_params = {
         'number_of_particles': num_particles, # particles read from ARC task array variable
@@ -461,7 +460,13 @@ def single_run_particle_numbers(num_particles):
     }
     
     # Open a file to write the results to
-    outfile = "../results/pf_particles_{}_agents_{}_noise_{}-{}.csv".format(
+    # The results directory should be in the parent directory of this script
+    results_dir = os.path.join( sys.path[0], "..", "results") # sys.path[0] gets the location of this file
+    if not os.path.exists(results_dir):
+        raise FileNotFoundError("Results directory ('{}') not found. Are you ".format(results_dir))
+    print("Writing results to: {}".format(results_dir))  
+    
+    outfile = (results_dir + "/pf_particles_{}_agents_{}_noise_{}-{}.csv").format(
         str(int(filter_params['number_of_particles'])),
         str(int(model_params['pop_total'])),
         str(filter_params['particle_std']),
@@ -529,7 +534,7 @@ if __name__ == '__main__':
     # aborted = [2294, 2325, 2356, 2387, 2386, 2417, 2418, 2448, 2449, 2479, 2480, 2478, 2509, 2510, 2511, 2540, 2541, 2542]
     # param_list = [param_list[x-1] for x in aborted]
 
-    model_params = {
+    _model_params = {
         'width': 200,
         'height': 100,
         'pop_total': param_list[int(sys.argv[1])-1][1], # agents read from ARC task array variable
@@ -549,4 +554,4 @@ if __name__ == '__main__':
     #Model(model_params).batch() # Runs the model as normal (one run)
 
     # Run the particle filter, getting the experiment number from the task array
-    single_run_particle_numbers(num_particles=param_list[int(sys.argv[1])-1][0])
+    single_run_particle_numbers(num_particles=param_list[int(sys.argv[1])-1][0], model_params=_model_params)

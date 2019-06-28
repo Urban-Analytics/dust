@@ -231,7 +231,7 @@ class Model:
 		'''
 		self.unique_id = unique_id
 		self.status = 1
-		# Parameters
+		# Default Parameters (usually overridden by the caller)
 		params = {
 			'pop_total': 100,
 
@@ -255,8 +255,13 @@ class Model:
 
 			'do_history': True,
 			'do_print': True,
-			}
-		self.params, self.params_changed = self._init_kwargs(params, kwargs)
+		}
+		if len(kwargs) == 0:
+			warnings.warn(
+				"No parameters have been passed to the model; using the default parameters: {}".format(params),
+				RuntimeWarning
+			)
+		self.params, self.params_changed = Model._init_kwargs(params, kwargs)
 		[setattr(self, key, value) for key, value in self.params.items()]
 		# Constants
 		self.speed_step = (self.speed_mean - self.speed_min) / self.speed_steps

@@ -19,35 +19,66 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import sys
+import warnings
 from scipy.interpolate import griddata # For interpolating across irregularly spaced grid
 
 # Needs to be set to location of results
 #path = 'M:\Particle Filter\Model Results\HPC results\With noise = 10'
-path = "/Users/nick/gp/dust/Projects/StationSim-py/Particle_Filter_Experiments/results/"
+#path = "/Users/nick/gp/dust/Projects/StationSim-py/Particle_Filter_Experiments/results/"
+#path = "/Users/nick/gp/dust/Projects/ABM_DA/Particle_Filter_Experiments/results/ManyParticlesExperiments/"
+path = os.path.join(sys.path[0], "results","ManyParticlesExperiments/")
+
 
 # Model the errors before or after resampling? 0 = before, 1= after
 before = 1
 print("Calculating errors {} resampling:".format('before' if before==0 else 'after'))
 
-# Need to set the number of particles and agents used in the experiments 
+# Need to set the number of particles and agents used in the experiments
 # (these are set in StationSim-ARCExperiments.py)
+# TODO: work these out from the results file names
 #particles  = list(range(1,49,1))  + list(range(50,501,50)) + list(range(600,2001,100)) + list(range(2500,4001,500))
 #agents = list(range(1,21,1))
-particles = list([1] + list(range(10,50,10))  + list(range(100,501,100)) + list(range(1000,2001,500)) + list(range(3000,10001,1500)) + [10000] )
-agents = list(range(1,21,3))
+#particles = list([1] + list(range(10,50,10))  + list(range(100,501,100)) + list(range(1000,2001,500)) + list(range(3000,10001,1500)) + [10000] )
+#agents = list(range(1,21,3))
+particles  = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + list(range(3000, 10001, 1500)) + [10000])
+agents = list(range(1, 21, 3))
 
 if not os.path.isdir(path):
     sys.exit("Directory '{}' does not exist".format(path))
 
+
+def is_duplicate(fname, files):
+    """
+    Sees if `fname` already exists in the `duplicates` list. Needs to strip off the integers at the end of
+    the file (these were added by the Particle Filter script to prevent overridding experiments).
+    :param fname:
+    :param duplicates:
+    :return: True if this file exists already, false otherwise
+    """
+    regex = re.compile(r"(.*?)-\d*\.csv") # Find everthing before the numbers at the end of the filename
+    fname_stripped = re.findall(regex, fname)[0]
+    for f in files:
+        if re.findall(regex, f)[0] == fname_stripped:
+            return True # There is a duplicate
+    return False # No duplicates found
+
+
 files = []
+duplicates = [] # List of diplicate files
 # r=root, d=directories, f = files
 for r, d, f in os.walk(path):
     for file in f:
         if '.csv' in file:
-            files.append(os.path.join(r, file))
-            
+            fname = os.path.join(r, file)
+            if is_duplicate(fname, files):
+                duplicates.append(fname)
+            else:
+                files.append(fname)
+
 if len(files) == 0:
     sys.exit("Found no files in {}, can't continue".format(path) )
+elif len(duplicates) > 0:
+    warnings.warn("Found {} duplicate files:\n\t{}".format(len(duplicates), "\n\t".join(duplicates)))
 else:
     print("Found {} files".format(len(files)))
     
@@ -66,15 +97,25 @@ max_var = np.zeros(shape=(len(particles),len(agents)))
 ave_var = np.zeros(shape=(len(particles),len(agents)))
 
 print("Reading files....",)
-for f in files:
+data_shape = None # Check each file has a consistent shape
+for i, f in enumerate(files):
 
     file = open(f,"r").read()
     data = pd.read_csv(f, header = 2).replace('on',np.nan)
+
+    # Check that each file has a consistent shape
+    if i==0:
+        data_shape=data.shape
+    if data.shape != data_shape:
+        sys.exit("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}".format(
+            str(data.shape), str(data_shape), f
+        ))
+
     #data.iloc[:,0] = pd.to_numeric(data.iloc[:,0]) # Not sure why this was necessary
     
     # Filter by whether errors are before or after
     data = data[ data.loc[:,'Before_resample?'] == before]
-    
+
     particle_num = int(re.findall('particles\': (\d{1,4})',file)[0])
     agent_num = int(re.findall('pop_total\': (\d{1,3})',file)[0])
     data_mean = data.mean() # Calculate the mean of all columns
@@ -89,7 +130,11 @@ for f in files:
     max_var[particles.index(particle_num),agents.index(agent_num)] = data_mean['Max_variances']
     ave_var[particles.index(particle_num),agents.index(agent_num)] = data.mean()['Average_variances']
     
-print("...finished reading")
+print("...finished reading {} files".format(len(files)))
+
+
+# There will never be zero error, so replace 0s with NA
+data[data == 0] = np.nan
     
 #%% Plot full data
 

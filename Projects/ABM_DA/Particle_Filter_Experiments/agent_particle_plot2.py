@@ -29,10 +29,6 @@ from scipy.interpolate import griddata # For interpolating across irregularly sp
 path = os.path.join(sys.path[0], "results","ManyParticlesExperiments/")
 
 
-# Model the errors before or after resampling? 0 = before, 1= after
-before = 1
-print("Calculating errors {} resampling:".format('before' if before==0 else 'after'))
-
 # Need to set the number of particles and agents used in the experiments
 # (these are set in StationSim-ARCExperiments.py)
 # TODO: work these out from the results file names
@@ -81,130 +77,162 @@ elif len(duplicates) > 0:
     warnings.warn("Found {} duplicate files:\n\t{}".format(len(duplicates), "\n\t".join(duplicates)))
 else:
     print("Found {} files".format(len(files)))
-    
 
 
-# Errors are a matrix of particles * agents
+# Do this whole thing twice, calculing errors before and then after resampling
+# (there's a neater way to do this, but a for loop will do for now)
 
-min_mean_err = np.zeros(shape=(len(particles),len(agents)))
-max_mean_err = np.zeros(shape=(len(particles),len(agents)))
-ave_mean_err = np.zeros(shape=(len(particles),len(agents)))
-min_abs_err = np.zeros(shape=(len(particles),len(agents)))
-max_abs_err = np.zeros(shape=(len(particles),len(agents)))
-ave_abs_err = np.zeros(shape=(len(particles),len(agents)))
-min_var = np.zeros(shape=(len(particles),len(agents)))
-max_var = np.zeros(shape=(len(particles),len(agents)))
-ave_var = np.zeros(shape=(len(particles),len(agents)))
+for before in [0,1]:
 
-print("Reading files....",)
-data_shape = None # Check each file has a consistent shape
-for i, f in enumerate(files):
+    print("Calculating errors {} resampling:".format('before' if before == 0 else 'after'))
 
-    file = open(f,"r").read()
-    data = pd.read_csv(f, header = 2).replace('on',np.nan)
+    # Errors are a matrix of particles * agents
 
-    # Check that each file has a consistent shape
-    if i==0:
-        data_shape=data.shape
-    if data.shape != data_shape:
-        sys.exit("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}".format(
-            str(data.shape), str(data_shape), f
-        ))
+    min_mean_err = np.zeros(shape=(len(particles),len(agents)))
+    max_mean_err = np.zeros(shape=(len(particles),len(agents)))
+    ave_mean_err = np.zeros(shape=(len(particles),len(agents)))
+    med_mean_err = np.zeros(shape=(len(particles),len(agents))) # Median of the mean errors
+    min_abs_err = np.zeros(shape=(len(particles),len(agents)))
+    max_abs_err = np.zeros(shape=(len(particles),len(agents)))
+    ave_abs_err = np.zeros(shape=(len(particles),len(agents)))
+    med_abs_err = np.zeros(shape=(len(particles),len(agents)))
+    min_var = np.zeros(shape=(len(particles),len(agents)))
+    max_var = np.zeros(shape=(len(particles),len(agents)))
+    ave_var = np.zeros(shape=(len(particles),len(agents)))
+    med_var = np.zeros(shape=(len(particles),len(agents)))
 
-    #data.iloc[:,0] = pd.to_numeric(data.iloc[:,0]) # Not sure why this was necessary
-    
-    # Filter by whether errors are before or after
-    data = data[ data.loc[:,'Before_resample?'] == before]
+    # Regular expressions to find the particle number and population total from json-formatted info at the start of the file
+    particle_num_re = re.compile(r".*?'number_of_particles': (\d*).*?")
+    agent_num_re = re.compile(r".*?'pop_total': (\d*).*?")
 
-    particle_num = int(re.findall('particles\': (\d{1,4})',file)[0])
-    agent_num = int(re.findall('pop_total\': (\d{1,3})',file)[0])
-    data_mean = data.mean() # Calculate the mean of all columns
-    
-    min_mean_err[particles.index(particle_num),agents.index(agent_num)] = data_mean['Min_Mean_errors']
-    max_mean_err[particles.index(particle_num),agents.index(agent_num)] = data_mean['Max_Mean_errors']
-    ave_mean_err[particles.index(particle_num),agents.index(agent_num)] = data_mean['Average_mean_errors']
-    min_abs_err[particles.index(particle_num),agents.index(agent_num)] = data_mean['Min_Absolute_errors']
-    max_abs_err[particles.index(particle_num),agents.index(agent_num)] = data_mean['Max_Absolute_errors']
-    ave_abs_err[particles.index(particle_num),agents.index(agent_num)] = data_mean['Average_Absolute_errors']
-    min_var[particles.index(particle_num),agents.index(agent_num)] = data_mean['Min_variances']
-    max_var[particles.index(particle_num),agents.index(agent_num)] = data_mean['Max_variances']
-    ave_var[particles.index(particle_num),agents.index(agent_num)] = data.mean()['Average_variances']
-    
-print("...finished reading {} files".format(len(files)))
+    print("Reading files....",)
+    data_shape = None # Check each file has a consistent shape
+    for i, f in enumerate(files):
 
+        file = open(f,"r").read()
+        #data = pd.read_csv(f, header = 2).replace('on',np.nan)
+        data = pd.read_csv(f, header=2).replace('on', np.nan)
+        # Check that each file has a consistent shape
+        if i==0:
+            data_shape=data.shape
+        if data.shape != data_shape:
+            sys.exit("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}".format(
+                str(data.shape), str(data_shape), f
+            ))
 
-# There will never be zero error, so replace 0s with NA
-data[data == 0] = np.nan
-    
-#%% Plot full data
+        #data.iloc[:,0] = pd.to_numeric(data.iloc[:,0]) # Not sure why this was necessary
 
-# First plot all of the locations in the grids for which we have data (these are
-# not necessarily evenly spaced).
-# See here for instructions on how to do heatmap with irregularly spaced data:
-# https://scipy-cookbook.readthedocs.io/items/Matplotlib_Gridding_irregularly_spaced_data.html 
+        # Filter by whether errors are before or after
+        data = data[ data.loc[:,'Before_resample?'] == before]
 
-# Define the grid.
-# First need the points that the observations are taken at
-x, y = [], [] 
-for i in range(len(agents)):
-    for j in range(len(particles)):
-        x.append(agents[i])
-        y.append(particles[j])
-x = np.array(x)
-y = np.array(y)
+        # Find the particle number and population total from json-formatted info at the start of the file
+        search = re.findall(particle_num_re, file)
+        try:
+            particle_num = int(search[0])
+        except:
+            sys.exit("Error: could not find the number of particles in the header for file \n\t{}\n\tFound: '{}'".format(f, search))
+        search = re.findall(agent_num_re, file)
+        try:
+            agent_num = int(search[0])
+        except:
+            sys.exit("Error: could not find the number of agents in the header for file \n\t{}\n\tFound: '{}'".format(f, search))
 
-# Now the grid to interpolate over (used later)
-xi = np.linspace(0,max(agents)   ,100)
-yi = np.linspace(0,max(particles),100)
+        data_mean =  data.mean() # Calculate the mean of all columns
+        data_median = data.median() # and also sometimes use median
 
-# Plot the point locations
-plt.figure(0)
-plt.scatter(x=x, y=y, marker='o',c='black',s=2)
-plt.xlabel('Agents')
-plt.ylabel('Particles')
-plt.title("Sampling locations of experiments")
+        min_mean_err[particles.index(particle_num),agents.index(agent_num)] = data_mean['Min_Mean_errors']
+        max_mean_err[particles.index(particle_num),agents.index(agent_num)] = data_mean['Max_Mean_errors']
+        ave_mean_err[particles.index(particle_num),agents.index(agent_num)] = data_mean['Average_mean_errors']
+        med_mean_err[particles.index(particle_num),agents.index(agent_num)] = data_median['Average_mean_errors']
+        min_abs_err [particles.index(particle_num),agents.index(agent_num)] = data_mean['Min_Absolute_errors']
+        max_abs_err [particles.index(particle_num),agents.index(agent_num)] = data_mean['Max_Absolute_errors']
+        ave_abs_err [particles.index(particle_num),agents.index(agent_num)] = data_mean['Average_Absolute_errors']
+        med_abs_err [particles.index(particle_num),agents.index(agent_num)] = data_median['Average_Absolute_errors']
+        min_var     [particles.index(particle_num),agents.index(agent_num)] = data_mean['Min_variances']
+        max_var     [particles.index(particle_num),agents.index(agent_num)] = data_mean['Max_variances']
+        ave_var     [particles.index(particle_num),agents.index(agent_num)] = data_mean['Average_variances']
+        med_var     [particles.index(particle_num),agents.index(agent_num)] = data_median['Average_variances']
+
+    print("...finished reading {} files".format(len(files)))
 
 
-# Can restrict the number of agents and/or particles to look at in the plots
-# (note this is an index into the actual number of agents/particles)
-#min_particles = particles.index(10)
-#min_particles = particles.index(10) # 1 means include all particles
-#max_agents = agents.index(agents[len(agents)-1]) # agents[len(agents)-1] gives all agents
+    # There will never be zero error, so replace 0s with NA
+    data[data == 0] = np.nan
 
+    #%% Plot full data
 
-# Define the plots so that they can be plotted in a loop
-plot_def = {
-    "Min mean error" : min_mean_err,
-    "Max mean error" : max_mean_err,
-    "Avg mean error" : ave_mean_err, 
-    "Min abs error"  : min_abs_err,
-    "Max abs error"  : max_abs_err,
-    "Avg abs error"  : ave_abs_err,
-    "Min variance"   : min_var,
-    "Max variance"   : max_var,
-    "Avg variance"  : ave_var
-    }
+    # First plot all of the locations in the grids for which we have data (these are
+    # not necessarily evenly spaced).
+    # See here for instructions on how to do heatmap with irregularly spaced data:
+    # https://scipy-cookbook.readthedocs.io/items/Matplotlib_Gridding_irregularly_spaced_data.html
 
-for i, (title, data) in enumerate(plot_def.items()):
-    # The value of the statistic being visualised (e.g. mean_error) as a long list
-    z = [] 
+    # Define the grid.
+    # First need the points that the observations are taken at
+    x, y = [], []
     for i in range(len(agents)):
         for j in range(len(particles)):
-            z.append(data[j,i])
-    assert len(x) == len(y) and len(x) == len(z)
-    z = np.array(z)
-    # Grid the data
-    zi = griddata(points=(x, y), 
-                  values=z, 
-                  xi=(xi[None,:], yi[:,None]), 
-                  method='linear')
-    
-    plt.figure(i+1) # (+1 because there was a figure before)
-    CS = plt.contour( xi,yi,zi,10,linewidths=0.5,colors='k')
-    CS = plt.contourf(xi,yi,zi,10,cmap=plt.cm.jet)
-    plt.colorbar() # draw colorbar
-    plt.scatter(x,y,marker='o',c='black',s=1)
+            x.append(agents[i])
+            y.append(particles[j])
+    x = np.array(x)
+    y = np.array(y)
+
+    # Now the grid to interpolate over (used later)
+    xi = np.linspace(0,max(agents)   ,100)
+    yi = np.linspace(0,max(particles),100)
+
+    # Plot the point locations
+    plt.figure(0)
+    plt.scatter(x=x, y=y, marker='o',c='black',s=2)
     plt.xlabel('Agents')
     plt.ylabel('Particles')
-    plt.title(title+" ({} resampling)".format('before' if before==0 else 'after') )
-    plt.show()
+    plt.title("Sampling locations of experiments")
+
+
+    # Can restrict the number of agents and/or particles to look at in the plots
+    # (note this is an index into the actual number of agents/particles)
+    #min_particles = particles.index(10)
+    #min_particles = particles.index(10) # 1 means include all particles
+    #max_agents = agents.index(agents[len(agents)-1]) # agents[len(agents)-1] gives all agents
+
+
+    # Define the plots so that they can be plotted in a loop
+    plot_def = {
+        "Min mean error" : min_mean_err,
+        "Max mean error" : max_mean_err,
+        "Avg mean error" : ave_mean_err,
+        "Median mean error":  med_mean_err,
+        "Min abs error"  : min_abs_err,
+        "Max abs error"  : max_abs_err,
+        "Avg abs error"  : ave_abs_err,
+        "Median abs error": med_abs_err,
+        "Min variance"   : min_var,
+        "Max variance"   : max_var,
+        "Avg variance"  : ave_var,
+        "Median variance"  : med_var
+        }
+
+    for i, (title, d) in enumerate(plot_def.items()): # d is the data to plot (an np array)
+        # The value of the statistic being visualised (e.g. mean_error) as a long list
+        z = []
+        for i in range(len(agents)):
+            for j in range(len(particles)):
+                z.append(d[j,i])
+        assert len(x) == len(y) and len(x) == len(z)
+        z = np.array(z)
+        # Grid the data
+        zi = griddata(points=(x, y),
+                      values=z,
+                      xi=(xi[None,:], yi[:,None]),
+                      method='linear')
+
+        plt.figure(i+1) # (+1 because there was a figure before)
+        CS = plt.contour( xi,yi,zi,10,linewidths=0.5,colors='k')
+        CS = plt.contourf(xi,yi,zi,10,cmap=plt.cm.jet)
+        plt.colorbar() # draw colorbar
+        plt.scatter(x,y,marker='o',c='black',s=1)
+        plt.xlabel('Agents')
+        plt.ylabel('Particles')
+        plt.title(title+" ({} resampling)".format('before' if before==0 else 'after') )
+        plt.show()
+
+print("Finished.")

@@ -268,7 +268,6 @@ class ParticleFilter:
         dimensions, initialise all remaining arrays, and set initial
         particle states to the base model state using multiprocessing. 
         '''    
-        print(1)
         for key, value in filter_params.items():
             setattr(self, key, value)
         self.time = 0
@@ -291,11 +290,10 @@ class ParticleFilter:
 
         print("Creating initial states ... ")
         base_model_state = self.base_model.agents2state()
-        self.states = np.array([ self.initial_state2(i, base_model_state) for i in range(self.number_of_particles )])
+        self.states = np.array([ self.initial_state(i, base_model_state) for i in range(self.number_of_particles )])
         print("\t ... finished")
-        #pool.starmap(ParticleFilter.initial_state,list(zip(range(self.number_of_particles),[self]*self.number_of_particles))))
 
-    def initial_state2(self, particle_number, base_model_state):
+    def initial_state(self, particle_number, base_model_state):
         """
         Set the state of the particles to the state of the
         base model.
@@ -303,19 +301,7 @@ class ParticleFilter:
         self.states[particle_number, :] = base_model_state
         return self.states[particle_number]
 
-    # Multiprocessing methods
-    @classmethod
-    def initial_state(cls, particle,self):
-        """
-        Set the state of the particles to the state of the
-        base model.
-        """
-        warnings.warn(
-            "initial_state has been replaced with initial_state2 (non multiprocess) and should no longer be used",
-            DeprecationWarning
-        )
-        self.states[particle,:] = self.base_model.agents2state()
-        return self.states[particle]
+
 
     @classmethod
     def assign_agents(cls, particle_num:int, state:np.array, model:Model):
@@ -366,11 +352,6 @@ class ParticleFilter:
         :param particle_std: the particle noise standard deviation
         :param particle_shape: the shape of the particle array
         """
-        #self.models[particle_num].step()
-        #warnings.warn(
-        #    "ParticleFilter.step_particle has been replaced with a global step_particle method. This one should no longer be used",
-        #    DeprecationWarning
-        #)
         for i in range(num_iter):
             model.step()
 
@@ -461,7 +442,6 @@ class ParticleFilter:
             self.p_save()
 
         # Return the errors and variences before and after sampling
-        # XXXX HERE
         # Useful for debugging in console:
         #for i, a in enumerate(zip([x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == True],
         #                          [x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == False])):

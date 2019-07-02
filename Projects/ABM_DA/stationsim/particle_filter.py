@@ -442,8 +442,7 @@ if __name__ == '__main__':
     __spec__ = None
 
     # Pool object needed for multiprocessing
-    numcores = multiprocessing.cpu_count()
-    # numcores = 5
+    numcores = int(multiprocessing.cpu_count()/2)
     pool = multiprocessing.Pool(processes=numcores)
 
     # Lists of particle and agent values to run (old experiments by Kevin)
@@ -491,7 +490,7 @@ if __name__ == '__main__':
 
     filter_params = {
         'number_of_particles': param_list[int(sys.argv[1]) - 1][0],  # particles read from ARC task array variable
-        'number_of_runs': 10,  # Number of times to run each particle filter configuration
+        'number_of_runs': 20,  # Number of times to run each particle filter configuration
         'resample_window': 100,
         'multi_step': True,  # Whether to predict() repeatedly until the sampling window is reached
         'particle_std': 2.0,  # was 2 or 10

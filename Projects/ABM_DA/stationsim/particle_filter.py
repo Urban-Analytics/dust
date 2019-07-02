@@ -90,28 +90,6 @@ class ParticleFilter(Filter):
         return model
 
     @classmethod
-    def step_particles(cls, particle_num, self):
-        """
-        Step each particle model, assign the locations of the
-        agents to the particle state with some noise, and
-        then use the new particle state to set the location
-        of the agents.
-
-        :param particle_num: The particle number to step
-        :param self: A pointer to the calling ParticleFilter object.
-        """
-        warnings.warn(
-            "step_particles has been replaced with step_particle and should no longer be used",
-            DeprecationWarning
-        )
-        self.models[particle_num].step()
-        self.states[particle_num] = (self.models[particle_num].agents2state()
-                                     + np.random.normal(0, self.particle_std ** 2,
-                                                        size=self.states[particle_num].shape))
-        self.models[particle_num].state2agents(self.states[particle_num])
-        return self.models[particle_num], self.states[particle_num]
-
-    @classmethod
     def step_particle(cls, particle_num: int, model: Model, num_iter: int, particle_std: float, particle_shape: tuple):
         """
         Step a particle, assign the locations of the
@@ -249,8 +227,7 @@ class ParticleFilter(Filter):
         Predict
 
         DESCRIPTION
-        Increment time. Step the base model. Set self as a constant
-        in step_particles and then use a multiprocessing method to step
+        Increment time. Step the base model. Use a multiprocessing method to step
         particle models, set the particle states as the agent
         locations with some added noise, and reassign the
         locations of the particle agents using the new particle
@@ -504,7 +481,9 @@ if __name__ == '__main__':
 
     # Open a file to write the results to
     # The results directory should be in the parent directory of this script
-    results_dir = os.path.join(sys.path[0], "..", "results")  # sys.path[0] gets the location of this file
+    # results_dir = os.path.join(sys.path[0], "..", "results")  # sys.path[0] gets the location of this file
+    # The results directory should be in the same location as the caller of this script
+    results_dir = os.path.join("./results")
     if not os.path.exists(results_dir):
         raise FileNotFoundError("Results directory ('{}') not found. Are you ".format(results_dir))
     outfile = os.path.join(results_dir, "pf_particles_{}_agents_{}_noise_{}-{}.csv".format(
@@ -535,11 +514,15 @@ if __name__ == '__main__':
         pf = ParticleFilter(Model, model_params, filter_params)
         result = pf.step()
 
+
         with open(outfile, 'a') as f:
-            # Two sets of errors are created, those before resampling, and those after. Results is a list with two tuples.
-            # First tuple has eerrors before resampling, second has errors afterwards.
-            for before in [0, 1]:
-                f.write(str(result[before])[1:-1].replace(" ", "") + "," + str(before) + "\n")  # (slice to get rid of the brackets aruond the tuple)
+            if result == None: # If no results then don't write anything
+                warnings.warn("Result from the particle filter is 'none' for some reason. This sometimes happens when there is only 1 agent in the model.")
+            else:
+                # Two sets of errors are created, those before resampling, and those after. Results is a list with two tuples.
+                # First tuple has eerrors before resampling, second has errors afterwards.
+                for before in [0, 1]:
+                    f.write(str(result[before])[1:-1].replace(" ", "") + "," + str(before) + "\n")  # (slice to get rid of the brackets aruond the tuple)
 
         print("Run: {}, particles: {}, agents: {}, took: {}(s), result: {}".format(
             i, filter_params['number_of_particles'], model_params['pop_total'], round(time.time() - start_time),

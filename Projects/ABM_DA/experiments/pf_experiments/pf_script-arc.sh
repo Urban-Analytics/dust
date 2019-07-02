@@ -13,8 +13,8 @@
 #$ -l h_vmem=5G # was 15 for big runs
 # Choose cores
 #$ -pe smp 5
-# Tell computer this is an array job with tasks from 1 to 3131.
+# Tell computer this is an array job with tasks from 1 to N
 # This number is determined by the length of the param_list list. 
-#$ -t 1-3131
-#Run the executable pf.py from the current working directory
-python3 StationSim-ARCExperiments.py $SGE_TASK_ID
+#$ -t 1-133
+#Run the executable pf.py
+python3 ../../stationsim/particle_filter.py $SGE_TASK_ID

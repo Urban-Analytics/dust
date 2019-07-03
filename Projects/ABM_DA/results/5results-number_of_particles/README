@@ -1,6 +1,0 @@
-Experiment: Change number of particles
-Multi-step: true
-Pop total: 700
-
-Notes: this is reporting the error before the resampling.
-It looks as if the number of particles is having no effect on the  errpr

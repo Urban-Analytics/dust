@@ -1,8 +1,0 @@
-PF params: {'number_of_particles': 500, 'resample_window': 100, 'agents_to_visualise': 2, 'particle_std': 1.0, 'model_std': 1.0, 'do_save': True, 'plot_save': False, 'do_ani': False}
-Model params: {'width': 200, 'height': 100, 'pop_total': 700, 'entrances': 3, 'entrance_space': 2, 'entrance_speed': 0.1, 'exits': 2, 'exit_space': 1, 'speed_min': 0.1, 'speed_desire_mean': 1, 'speed_desire_std': 1, 'separation': 2, 'batch_iterations': 4000, 'do_save': False, 'do_ani': False}
-Max_Mean_errors,Average_mean_errors,Max_variances,Average_variances
-1330.4238285341187,445.67819677405873,571.0490646052995,422.92188847904896
-1221.8705787487208,408.3700272742988,555.6385934203757,412.6098122865771
-1233.0269517959364,398.09251498774796,548.0637104570358,398.1718573658065
-1257.7635658955858,411.51493481380584,540.6771381861342,401.94271314814023
-1213.267543048139,419.23754409180077,558.7253510309016,417.90642702970683

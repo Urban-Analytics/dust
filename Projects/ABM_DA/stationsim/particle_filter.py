@@ -3,7 +3,6 @@ from stationsim import Model
 
 import os
 import numpy as np
-from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 from copy import deepcopy
 import multiprocessing
@@ -21,7 +20,7 @@ class ParticleFilter(Filter):
     TODO: refactor to properly inherit from Filter.
     '''
 
-    def __init__(self, ModelClass, model_params, filter_params):
+    def __init__(self, ModelClass:Model, model_params:dict, filter_params:dict, numcores:int = None):
         '''
         Initialise Particle Filter
             
@@ -54,7 +53,11 @@ class ParticleFilter(Filter):
         self.weights = np.ones(self.number_of_particles)
         self.indexes = np.zeros(self.number_of_particles, 'i')
         self.window_counter = 0 # Just for printing the progress of the PF
-        if self.do_save:
+        # Pool object needed for multiprocessing
+        if numcores == None:
+            numcores = multiprocessing.cpu_count()
+        self.pool = multiprocessing.Pool(processes=numcores)
+        if self.do_save or self.p_save:
             self.active_agents = []
             self.mean_states = [] # Mean state of all partciles, weighted by distance from observations
             self.mean_errors = [] # Mean distance between weighted mean state and the true state
@@ -63,10 +66,13 @@ class ParticleFilter(Filter):
             self.unique_particles = []
             self.before_resample = [] # Records whether the errors were before or after resampling
 
-        print("Creating initial states ... ")
+        #print("Creating initial states ... ")
         base_model_state = self.base_model.agents2state()
         self.states = np.array([ self.initial_state(i, base_model_state) for i in range(self.number_of_particles )])
-        print("\t ... finished")
+        #print("\t ... finished")
+        print("Running filter with {} particles and {} runs (on {} cores) with {} agents.".format(
+            filter_params['number_of_particles'], filter_params['number_of_runs'], numcores, model_params["pop_total"]),
+            flush=True)
 
     def initial_state(self, particle_number, base_model_state):
         """
@@ -161,7 +167,7 @@ class ParticleFilter(Filter):
                     self.window_counter += 1
 
                     # Store the model states before and after resampling
-                    if self.do_save:
+                    if self.do_save or self.p_save:
                         self.save(before=True)
 
                     self.reweight()
@@ -169,7 +175,7 @@ class ParticleFilter(Filter):
                     self.resample()
 
                     # Store the model states before and after resampling
-                    if self.do_save:
+                    if self.do_save or self.p_save:
                         self.save(before=False)
 
                     print("\tFinished window {}, step {} (took {}s)".format(
@@ -180,23 +186,26 @@ class ParticleFilter(Filter):
                     assert (
                         False), "Should not get here, if multi_step is true then the condition above should always run"
 
-
             else:
-                print("\tNo more active agents. Finishing particle step")
+                pass # Don't print the message below any more
+                #print("\tNo more active agents. Finishing particle step")
 
+            # Animate this window
             if self.do_ani:
                 self.ani()
 
         if self.plot_save:
             self.p_save()
 
-        # Return the errors and variences before and after sampling
+        # Return the errors and variences before and after sampling (if we're saving information)
         # Useful for debugging in console:
         # for i, a in enumerate(zip([x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == True],
         #                          [x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == False])):
         #    print("{} - before: {}, after: {}".format(i, a[0], a[1]))
-
-        if not self.mean_errors == []:
+        if self.do_save:
+            if self.mean_errors == []:
+                warnings.warn("For some reason the mean_errors array is empty. Cannot store errors for this run.")
+                return
 
             # Return two tuples, one with the about the error before reweighting, one after
 
@@ -239,7 +248,7 @@ class ParticleFilter(Filter):
         for i in range(numiter):
             self.base_model.step()
 
-        stepped_particles = pool.starmap(ParticleFilter.step_particle, list(zip( \
+        stepped_particles = self.pool.starmap(ParticleFilter.step_particle, list(zip( \
             range(self.number_of_particles),  # Particle numbers (in integer)
             [m for m in self.models],  # Associated Models (a Model object)
             [numiter] * self.number_of_particles,  # Number of iterations to step each particle (an integer)
@@ -402,7 +411,7 @@ class ParticleFilter(Filter):
                 for agent in model.agents[:self.agents_to_visualise]:
                     if agent.status == 1:
                         unique_id = agent.unique_id
-                        if self.base_model.agents[unique_id].active == 1:
+                        if self.base_model.agents[unique_id].status == 1:
                             locs = np.array([self.base_model.agents[unique_id].location, agent.location]).T
                             plt.plot(*locs, '-k', alpha=.5, linewidth=.5)
                             plt.plot(*agent.location, 'or', alpha=.3, markersize=markersize)
@@ -416,11 +425,10 @@ class ParticleFilter(Filter):
 
 
 if __name__ == '__main__':
+    # TODO This should all be moved into a separate script in the ABMDA/experiments/pf_experiments/ directory and run from there.
     __spec__ = None
 
-    # Pool object needed for multiprocessing
-    numcores = int(multiprocessing.cpu_count()/2)
-    pool = multiprocessing.Pool(processes=numcores)
+
 
     # Lists of particle and agent values to run (old experiments by Kevin)
     # num_par = [1]+list(range(10,1010,10))
@@ -500,18 +508,17 @@ if __name__ == '__main__':
         f.write(
             "Min_Mean_errors,Max_Mean_errors,Average_mean_errors,Min_Absolute_errors,Max_Absolute_errors,Average_Absolute_errors,Min_variances,Max_variances,Average_variances,Before_resample?\n")
 
-    print("Running filter with {} particles and {} runs (on {} cores) with {} agents. Saving files to: {}".format(
-        filter_params['number_of_particles'], filter_params['number_of_runs'], numcores, model_params["pop_total"],
-        outfile), flush=True)
-    print("PF params: " + str(filter_params) + "\n")
-    print("Model params: " + str(model_params) + "\n")
+
+    print("PF params: " + str(filter_params))
+    print("Model params: " + str(model_params))
+    print("Saving files to: {}".format(outfile))
 
     for i in range(filter_params['number_of_runs']):
 
         # Run the particle filter
 
         start_time = time.time()  # Time how long the whole run take
-        pf = ParticleFilter(Model, model_params, filter_params)
+        pf = ParticleFilter(Model, model_params, filter_params, numcores = int(multiprocessing.cpu_count()/2))
         result = pf.step()
 
 

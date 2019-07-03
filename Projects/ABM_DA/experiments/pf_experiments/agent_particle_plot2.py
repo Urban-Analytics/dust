@@ -183,7 +183,7 @@ for before in [0,1]:
     xi = np.linspace(0,max(agents)   ,100)
     yi = None
     if uselog:
-        yi = np.geomspace(0.1,np.log(max(particles)),100)
+        yi = np.geomspace(0.01,np.log(max(particles)),100)
     else:
         yi = np.linspace(0,max(particles),100)
 
@@ -230,16 +230,19 @@ for before in [0,1]:
         zi = griddata(points=(x, y),
                       values=z,
                       xi=(xi[None,:], yi[:,None]),
-                      method='linear')
+                      method='nearest')
 
         plt.figure(i+1) # (+1 because there was a figure before)
-        CS = plt.contour( xi,yi,zi,10,linewidths=0.5,colors='k')
-        CS = plt.contourf(xi,yi,zi,10,cmap=plt.cm.jet)
+        cs1 = plt.contour( xi,yi,zi,8,linewidths=0.5,colors='k')
+        cs2 = plt.contourf(xi,yi,zi,8,cmap=plt.cm.jet)
         plt.colorbar() # draw colorbar
-        plt.scatter(x,y,marker='o',c='black',s=1)
+        #plt.scatter(x,y,marker='o',c=[cs2.get_cmap()(val) for val in z], s=2)
+        plt.scatter(x,y,marker='o',c=z, cmap=cs2.get_cmap(), s=5)
         plt.xlabel('Agents')
         plt.ylabel('Log Particles' if uselog else 'Particles')
         plt.title(title+" ({} resampling)".format('before' if before==0 else 'after') )
         plt.show()
+        if title=="Median abs error":
+            print("HERE")
 
 print("Finished.")

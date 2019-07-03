@@ -430,9 +430,9 @@ if __name__ == '__main__':
     # num_par = list(range(1,49,1))  + list(range(50,501,50)) + list(range(600,2001,100)) + list(range(2500,4001,500))
     # num_age = list(range(1,21,1))
     # New ones by nick: (requires 133 experiments)
-    num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + list(
-        range(3000, 10001, 1500)) + [10000])
-    num_age = list(range(1, 21, 3))
+    num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) +
+                   [3000, 5000, 7500, 10000])
+    num_age = list([2] + list(range(5, 51, 5)))
 
     # List of all particle-agent combinations. ARC task
     # array variable loops through this list

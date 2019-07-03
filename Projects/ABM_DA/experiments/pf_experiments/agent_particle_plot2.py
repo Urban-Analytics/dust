@@ -230,7 +230,7 @@ for before in [0,1]:
         zi = griddata(points=(x, y),
                       values=z,
                       xi=(xi[None,:], yi[:,None]),
-                      method='nearest')
+                      method='linear')
 
         plt.figure(i+1) # (+1 because there was a figure before)
         cs1 = plt.contour( xi,yi,zi,8,linewidths=0.5,colors='k')

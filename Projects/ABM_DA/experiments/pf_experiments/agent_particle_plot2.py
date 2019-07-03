@@ -32,6 +32,9 @@ path = os.path.join(sys.path[0], "results","")
 particles  = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + list(range(3000, 10001, 1500)) + [10000])
 agents = list(range(1, 21, 3))
 
+# Use log on y axis?
+uselog = True
+
 if not os.path.isdir(path):
     sys.exit("Directory '{}' does not exist".format(path))
 
@@ -111,12 +114,10 @@ for before in [0,1]:
         if data.shape != data_shape:
             # If the columns are the same and there are only a few (20%) rows missing then just continue
             if ( data_shape[1] == data.shape[1] ) and ( data.shape[0] > int(data_shape[0] - data_shape[0]*0.2) ):
-                warnings.warn("Current file shape ({}) does not match the previous one ({}). "+\
-                              "Current file is: \n\t{}. \n\tLess than 20% rows missing so continuing".format(
+                warnings.warn("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}. \n\tLess than 20% rows missing so continuing".format(
                                       str(data.shape), str(data_shape), f ))
             else:
-                warnings.warn("Current file shape ({}) does not match the previous one ({}). "+\
-                              "Current file is: \n\t{}. \n\tNot continuing".format(
+                sys.exit("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}. \n\tNot continuing".format(
                         str(data.shape), str(data_shape), f  ))
 
         #data.iloc[:,0] = pd.to_numeric(data.iloc[:,0]) # Not sure why this was necessary
@@ -171,19 +172,26 @@ for before in [0,1]:
     for i in range(len(agents)):
         for j in range(len(particles)):
             x.append(agents[i])
-            y.append(particles[j])
+            if uselog:
+                y.append(np.log(particles[j]))
+            else:
+                y.append(particles[j])
     x = np.array(x)
     y = np.array(y)
 
     # Now the grid to interpolate over (used later)
     xi = np.linspace(0,max(agents)   ,100)
-    yi = np.linspace(0,max(particles),100)
+    yi = None
+    if uselog:
+        yi = np.geomspace(0.1,np.log(max(particles)),100)
+    else:
+        yi = np.linspace(0,max(particles),100)
 
     # Plot the point locations
     plt.figure(0)
     plt.scatter(x=x, y=y, marker='o',c='black',s=2)
     plt.xlabel('Agents')
-    plt.ylabel('Particles')
+    plt.ylabel('Log Particles' if uselog else 'Particles')
     plt.title("Sampling locations of experiments")
 
 
@@ -230,7 +238,7 @@ for before in [0,1]:
         plt.colorbar() # draw colorbar
         plt.scatter(x,y,marker='o',c='black',s=1)
         plt.xlabel('Agents')
-        plt.ylabel('Particles')
+        plt.ylabel('Log Particles' if uselog else 'Particles')
         plt.title(title+" ({} resampling)".format('before' if before==0 else 'after') )
         plt.show()
 

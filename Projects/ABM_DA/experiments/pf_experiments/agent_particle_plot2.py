@@ -23,19 +23,12 @@ import warnings
 from scipy.interpolate import griddata # For interpolating across irregularly spaced grid
 
 # Needs to be set to location of results
-#path = 'M:\Particle Filter\Model Results\HPC results\With noise = 10'
-#path = "/Users/nick/gp/dust/Projects/StationSim-py/Particle_Filter_Experiments/results/"
-#path = "/Users/nick/gp/dust/Projects/ABM_DA/Particle_Filter_Experiments/results/ManyParticlesExperiments/"
-path = os.path.join(sys.path[0], "results","ManyParticlesExperiments/")
+path = os.path.join(sys.path[0], "results","")
 
 
 # Need to set the number of particles and agents used in the experiments
 # (these are set in StationSim-ARCExperiments.py)
 # TODO: work these out from the results file names
-#particles  = list(range(1,49,1))  + list(range(50,501,50)) + list(range(600,2001,100)) + list(range(2500,4001,500))
-#agents = list(range(1,21,1))
-#particles = list([1] + list(range(10,50,10))  + list(range(100,501,100)) + list(range(1000,2001,500)) + list(range(3000,10001,1500)) + [10000] )
-#agents = list(range(1,21,3))
 particles  = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + list(range(3000, 10001, 1500)) + [10000])
 agents = list(range(1, 21, 3))
 
@@ -116,9 +109,15 @@ for before in [0,1]:
         if i==0:
             data_shape=data.shape
         if data.shape != data_shape:
-            sys.exit("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}".format(
-                str(data.shape), str(data_shape), f
-            ))
+            # If the columns are the same and there are only a few (20%) rows missing then just continue
+            if ( data_shape[1] == data.shape[1] ) and ( data.shape[0] > int(data_shape[0] - data_shape[0]*0.2) ):
+                warnings.warn("Current file shape ({}) does not match the previous one ({}). "+\
+                              "Current file is: \n\t{}. \n\tLess than 20% rows missing so continuing".format(
+                                      str(data.shape), str(data_shape), f ))
+            else:
+                warnings.warn("Current file shape ({}) does not match the previous one ({}). "+\
+                              "Current file is: \n\t{}. \n\tNot continuing".format(
+                        str(data.shape), str(data_shape), f  ))
 
         #data.iloc[:,0] = pd.to_numeric(data.iloc[:,0]) # Not sure why this was necessary
 

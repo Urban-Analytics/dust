@@ -2,12 +2,13 @@
 
 This folder contains the codes used to run Kevin's experimentss on the StationSim particle filter.
 
-The code to run the experiments is in the [stationsim](../../stationsim) folder.
+The code to run the experiments is in the [stationsim](../../stationsim) folder ([particle_filter.py](../../stationsim/particle_filter.py) specifically).
 
-## pf_script.sh
+## pf_script-*.sh
 
-The script to get ARC working is pf_script.sh. It's the same as before except I've introduced the task array variable which makes
-this large parameter sweep a lot easier to run. 
+These scripts run the particle filter. The python script is set up to take an integer command line argument which is an index to a list that determines the number of agents and particles to run in that experiment. 
+
+The one for Arc creates a 'task array' which allows each experiment to be run as a separate job.
 
 ## Results
 

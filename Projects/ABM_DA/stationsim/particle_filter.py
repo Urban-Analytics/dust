@@ -430,21 +430,14 @@ if __name__ == '__main__':
 
 
 
-    # Lists of particle and agent values to run (old experiments by Kevin)
-    # num_par = [1]+list(range(10,1010,10))
-    # num_age = [1]+list(range(10,310,10))
-
-    # New ones by nick: (requires 1540 experiments)
-    # num_par = list(range(1,49,1))  + list(range(50,501,50)) + list(range(600,2001,100)) + list(range(2500,4001,500))
-    # num_age = list(range(1,21,1))
-    # New ones by nick: (requires 133 experiments)
-    num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) +
-                   [3000, 5000, 7500, 10000])
-    num_age = list([2] + list(range(5, 51, 5)))
+    # Lists of particles, agent numbers, and particle noise levels
+    num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
+    num_age = [2, 5, 10, 15, 20, 30, 40, 50]
+    noise = [1.0, 2.0]
 
     # List of all particle-agent combinations. ARC task
     # array variable loops through this list
-    param_list = [(x, y) for x in num_par for y in num_age]
+    param_list = [(x, y, z) for x in num_par for y in num_age for z in noise]
 
     # Use below to update param_list if some runs abort
     # If used, need to update ARC task array variable
@@ -478,7 +471,7 @@ if __name__ == '__main__':
         'number_of_runs': 20,  # Number of times to run each particle filter configuration
         'resample_window': 100,
         'multi_step': True,  # Whether to predict() repeatedly until the sampling window is reached
-        'particle_std': 2.0,  # was 2 or 10
+        'particle_std': param_list[int(sys.argv[1]) - 1][2], # Particle noise read from task array variable
         'model_std': 1.0,  # was 2 or 10
         'agents_to_visualise': 10,
         'do_save': True,
@@ -518,7 +511,7 @@ if __name__ == '__main__':
         # Run the particle filter
 
         start_time = time.time()  # Time how long the whole run take
-        pf = ParticleFilter(Model, model_params, filter_params, numcores = int(multiprocessing.cpu_count()/2))
+        pf = ParticleFilter(Model, model_params, filter_params, numcores = int(multiprocessing.cpu_count()))
         result = pf.step()
 
 

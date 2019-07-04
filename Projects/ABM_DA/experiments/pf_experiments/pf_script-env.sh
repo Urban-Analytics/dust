@@ -4,7 +4,7 @@
 # IMPORTANT: set the number of experiments to run below (determined by length of 'param_list'
 # variable in StationSim-ARCExperiments.py)
 
-for i in {187..1}
+for i in {1..272}
 do
  printf " \n\n ********************* \n\n  *** EXPERIMENT $i *** \n\n ********************* \n\n"
  python3 ../../stationsim/particle_filter.py $i

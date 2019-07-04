@@ -32,13 +32,15 @@ filter_params = {
 
 }
 
-#%%
-# Show what a PF looks like with few agents
-N = 1000
+#%% Example with low noise. 
+# Most agents are simulated well
+
+N = 10
 model_params['pop_total'] = N
 filter_params['agents_to_visualise'] = N
-filter_params['number_of_particles'] = 50
+filter_params['number_of_particles'] = 100
 filter_params['resample_window'] = 50
+filter_params['particle_std'] =  1.0
 
 start_time = time.time()  # Time how long the whole run take
 pf = ParticleFilter(Model, model_params, filter_params)

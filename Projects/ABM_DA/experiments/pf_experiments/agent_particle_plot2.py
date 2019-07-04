@@ -11,7 +11,7 @@ Created on Thu Apr  4 14:09:12 2019
 @author: medkmin (adapted by Nick Malleson)
 """
 
-#%% Initialise and read files
+# Initialise and read files
 
 import os
 import re
@@ -23,17 +23,20 @@ import warnings
 from scipy.interpolate import griddata # For interpolating across irregularly spaced grid
 
 # Needs to be set to location of results
-path = os.path.join(sys.path[0], "results","")
+path = os.path.join(sys.path[0], "results","noise2")
 
 
 # Need to set the number of particles and agents used in the experiments
 # (these are set in StationSim-ARCExperiments.py)
 # TODO: work these out from the results file names
-particles  = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + list(range(3000, 10001, 1500)) + [10000])
-agents = list(range(1, 21, 3))
+#particles  = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + list(range(3000, 10001, 1500)) + [10000])
+#agents = list(range(1, 21, 3))
+
+particles = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
+agents = list([2] + list(range(5, 51, 5)))
 
 # Use log on y axis?
-uselog = True
+uselog = False
 
 if not os.path.isdir(path):
     sys.exit("Directory '{}' does not exist".format(path))
@@ -159,7 +162,7 @@ for before in [0,1]:
     # There will never be zero error, so replace 0s with NA
     data[data == 0] = np.nan
 
-    #%% Plot full data
+    # Plot full data
 
     # First plot all of the locations in the grids for which we have data (these are
     # not necessarily evenly spaced).

@@ -23,7 +23,7 @@ import warnings
 from scipy.interpolate import griddata # For interpolating across irregularly spaced grid
 
 # Needs to be set to location of results
-path = os.path.join(sys.path[0], "results","noise2")
+path = os.path.join(sys.path[0], "results","noise1")
 
 
 # Need to set the number of particles and agents used in the experiments
@@ -36,7 +36,7 @@ particles = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + li
 agents = list([2] + list(range(5, 51, 5)))
 
 # Use log on y axis?
-uselog = False
+uselog = True
 
 if not os.path.isdir(path):
     sys.exit("Directory '{}' does not exist".format(path))

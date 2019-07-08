@@ -2,23 +2,39 @@ from super_simple_model.visualiser import Visualiser
 import super_simple_model.renderer as renderer
 from super_simple_model.agent import Agent
 
+import pyro
+import pyro.distributions as dist
+import torch
+import numpy as np
+
+n_samples=1000
+visualiser = Visualiser()
+
 
 def main():
     renderer.clear_output_folder()
-    agent = Agent(x=1, y=500, sample_size=1000, noise=10)
-    visualiser = Visualiser()
 
-    i = 0
-    while True:
-        x, y = agent.get_sample_position()
-        visualiser.plot_agent(x, y)
+    agent = Agent(x=0., y=500., n_samples=n_samples)
+
+    location = agent.step()
+    for i in range(1000):
+        if (i % 50) == 0:
+            print('Observing!')
+            obs = pyro.sample('obs', dist.Normal(loc=torch.tensor([[float(i)], [500]]),
+                                                 scale=torch.tensor([[20.], [10]])))
+        else:
+            obs = None
+
+        location = agent.step(pred=location,
+                              obs=obs,
+                              noise=1.)
+
+        print('[x,y] {}'.format([np.median(location[0]), np.median(location[1])]))
+
+        visualiser.plot_agent(location[0], location[1])
         visualiser.save_plt()
         visualiser.clear_frame()
-        agent.step()
-        # Issue with recursion depth if i is too large.
-        if i > 300:
-            break
-        i += 1
+
     renderer.render_agent()
 
 

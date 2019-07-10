@@ -1,151 +1,221 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu May 23 11:13:26 2019
-
-@author: RC
-
-first attempt at a square root UKF class
-class built into 5 steps
--init
--Prediction SP generation
--Predictions
--Update SP generation
--Update
-
-SR filter generally the same as regular filters for efficiency 
-but more numerically stable wrt rounding errors 
-and preserving PSD covariance matrices
-
-based on
-https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6179312
-"""
-import os
-os.chdir("/home/rob/dust/Projects/RC_Scripts/")
 import numpy as np
-from StationSim_UKF import Model, Agent
-import scipy
+from choldate import cholupdate,choldowndate
+import multiprocessing
+#"pip install git+git://github.com/jcrudy/choldate.git"
+"""
+for cholesky update/downdate.
+see cholupdate matlab equivalent not converted into numpy.linalg from LAPACK yet (probably never will be)
+but I found this nice package in the meantime.
+"""
 
-model_params = {
-            'width': 200,
-            'height': 100,
-            'pop_total': 2,
-            'entrances': 3,
-            'entrance_space': 2,
-            'entrance_speed': 1,
-            'exits': 2,
-            'exit_space': 1,
-            'speed_min': .1,
-            'speed_desire_mean': 1,
-            'speed_desire_std': 1,
-            'separation': 4,
-            'wiggle': 1,
-            'batch_iterations': 10_000,
-            'do_save': True,
-            'do_plot': True,
-            'do_ani': False
-        }
-
-
-class SRUKF():
+class srukf:
     
-    def __init__(self,model_params):
-        """this needs to:
-            - init x0, S_0,S_v and S_n
-           
-            
+    def __init__(self,srukf_params,init_x,fx,hx,Q,R):
         """
-        self.model_params = model_params
-        self.base_model = Model(self.model_params)
-        self.x0 =  Model.agents2state(self.base_model)      
-        self.P = np.eye(2*model_params["pop_total"])*2
-        self.Q = np.eye(2*model_params["pop_total"])
-        self.h = 1.7320508 #root 3
-        #self.wm = np.zeros(((2*self.x0.shape)+1,1))
-        #self.wc = np.zeros(((2*self.x0.shape)+1,1))
-
-    def P_Sigmas(self):
-        """
-        central differenced sigmas as per the paper.
-        very similar formula to Merwe's Sigmas but based on different background
-        (Stirling's Formula and various Numeric Analysis Techniques)
-        takes in :
-            -current state estimate (x0)
-            -current process and sensor covariance matrices (P,Q)
-            
-        """
-        self.x0 = np.append(self.x0,np.zeros((2*self.model_params["pop_total"],)))
-        self.sqrtP = scipy.linalg.cholesky(self.P) #square roots of process/noise covariances
-        self.sqrtQ = scipy.linalg.cholesky(self.Q)
-        self.S =  scipy.linalg.block_diag(self.sqrtP,self.sqrtQ)#blocking of above covariances
-        
-        self.psigmas = np.zeros(((2*self.x0.shape[0])+1,self.x0.shape[0])) #calculating sigmas using x0,h and S
-        self.psigmas[0,:]= self.x0
-        for i in range(self.x0.shape[0]):
-            self.psigmas[i+1,:] = self.x0 + self.h*self.S[:,i]
-            self.psigmas[self.x0.shape[0]+i+1,:] = self.x0 - self.h*self.S[:,i]
-
-        return self.psigmas
-    
-    def F_x(self,psigmas):
-        """
-        (non-)linear transition function taking current state space and predicting 
-        innovation
-        """
-        fpsigmas = np.zeros(psigmas.shape)
-        for j, agent in enumerate(self.base_model.agents):
-            fpsigmas[0,(2*j):(2*j)+2] = agent.ideal_location
-            loc1 = agent.loc_desire
-            for i in range(1,int((psigmas.shape[0]/2)-1)):
-                loc2 = psigmas[i,(2*j):(2*j)+2]
-                reciprocal_distance = 1.41421 / sum(abs(loc1 - loc2))  # lerp5: profiled at 6.41μs
-                fpsigmas[i,(2*j):(2*j)+2] = loc2 + agent.speed_desire * (loc1 - loc2) * reciprocal_distance
-                
-                
-                loc2 = psigmas[self.model_params["pop_total"]+i-1,(2*j):(2*j)+1]
-                reciprocal_distance = 1.41421 / sum(abs(loc1 - loc2))  # lerp5: profiled at 6.41μs
-                fpsigmas[i+self.model_params["pop_total"],(2*j):(2*j)+2] = loc2 + agent.speed_desire * (loc1 - loc2) * reciprocal_distance
-            
-        return fpsigmas
-
-    def predict(self):
-        """
-        predict transitions
-        calculate estimates of new mean in the usual way
-        calculate predicted covariance using qr decomposition
+        x - state
+        n - state size 
+        P - Initial state covariance. This is generally the only 
+        cholesky decomposition used to get a ballpark initial value.
+        S- UT element of P. 
+        fx - transition function
+        hx - measurement function
+        lam - lambda paramter
+        g - gamma parameter
+        wm/wc - unscented weights for mean and covariances respectively calculated using dimension size 
+        and srukf parameters a,b and k.
+        Q,R -noise structures for fx and hx
+        sqrtQ,sqrtR - similar to P only square rooted once and propagated through S
+        for efficiency
+        xs,Ss - lists for storage
         """
         
-        return
+        #init initial state
+        self.x = init_x #!!initialise some positions and covariances
+        self.n = self.x.shape[0] #state space dimension
+
+        self.P = np.eye(self.n)
+        #self.P = np.linalg.cholesky(self.x)
+        self.S = np.linalg.cholesky(self.P)
+        self.fx=fx
+        self.hx=hx
+        
+        #init further parameters based on a through el
+        self.lam = srukf_params["a"]**2*(self.n+srukf_params["k"]) - self.n #lambda paramter calculated viar
+        self.g = np.sqrt(self.n+self.lam) #gamma parameter
+
+        
+        #init weights based on paramters a through el
+        main_weight =  1/(2*(self.n+self.lam))
+        self.wm = np.ones(((2*self.n)+1))*main_weight
+        self.wm[0] *= 2*self.lam
+        self.wc = self.wm.copy()
+        self.wc[0] += (1-srukf_params["a"]**2+srukf_params["b"])
+
     
-    def U_Sigmas(self):
-        "new sigma points involving predicted prior (hatS)"
-        return    
+            
+        self.Q=Q
+        self.R=R
+        self.sqrtQ = np.linalg.cholesky(self.Q)
+        self.sqrtR = np.linalg.cholesky(self.R)
+         
+        self.xs = []
+        self.Ss = []
+
+    def Sigmas(self,mean,S):
+        """
+        sigma point calculations based on current mean x and  UT (upper triangular) 
+        decomposition S of covariance P
+        !! this should probably be profiled to find the most efficient method as it is 
+        called A LOT. this current method has proven more efficient than equivalent 
+        for loops thus far and any further improvement would be massive.
+        in:
+            some mean and confidence stucutre S
+        out: 
+            sigmas based on above mean and S
+        """
+        
+     
+        sigmas = np.ones((self.n,(2*self.n)+1)).T*mean
+        sigmas=sigmas.T
+        sigmas[:,1:self.n+1] += self.g*S #'upper' confidence sigmas
+        sigmas[:,self.n+1:] -= self.g*S #'lower' confidence sigmas
+        return sigmas 
+
+    def predict(self,**fx_args):
+        """
+        - calculate sigmas using prior mean and UT element of covariance S
+        - predict interim sigmas X for next timestep using transition function Fx
+        - predict unscented mean for next timestep
+        - calculate qr decomposition of concatenated columns of all but the first sigma scaled 
+            by the 1st (not 0th) wc and the square root of process noise (sqrtQ) 
+            to calculate another interim S.
+        - cholesky up(/down)date to nudge interim S on potentially unstable 0th 
+            column of Y. if 0th wc weight +ve update else downdate
+        - calculate futher interim sigmas using interim S and unscented mean
+        in:
+            -prior x and S
+            -fx
+            -wm,wc
+        out:
+            -interim x and S
+        """
+        "nl_sigmas calculated using either apply along axis or multithreading"
+        #calculate NL projection of sigmas
+        sigmas = self.Sigmas(self.x,self.S) #calculate current sigmas using state x and UT element S
+        nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
+        #p = multiprocessing.Pool()
+        #nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
+        #p.close()
+        wnl_sigmas = nl_sigmas*self.wm
+            
+        xhat = np.sum(wnl_sigmas,axis=1)#unscented mean for predicitons
+        
+        
+        """
+        a qr decompositions of the compound matrix contanining the weighted predicted sigmas points
+        and the matrix square root of the additive process noise.
+
+        the qr decomposition is wierdly worded in the reference paper here and 
+        i have written this to follow it as to avoid confusion mainly with myself.
+        in particular np.linalg.qr solves for a different qr decomposition form
+        A^T = QR (as opposed to A=QR). this gives R as a pseudo UT mxn (m>n)** rectangular matrix.
+        from this only bottom n rows are take as an actual UT matrix used as an interim S
+        ** m sigmas points, n state space dimension
+        """
+        
+        Pxx =np.vstack([np.sqrt(self.wc[1])*(nl_sigmas[:,1:].T-xhat),self.sqrtQ])
+        Sxx = np.linalg.qr(Pxx,mode="r")
+        Sxx = Sxx[Sxx.shape[0]-len(self.x):,:]
+        "up/downdating as necessary depending on sign of first covariance weight"
+        u =  np.sqrt(np.sqrt(np.abs(self.wc[0])))*(nl_sigmas[:,0]-xhat)
+        if self.wc[0]>0:    
+            cholupdate(Sxx,u)
+        if self.wc[0]<0:    
+            choldowndate(Sxx,u)   
+            
+        self.S = Sxx #update Sxx
+        self.x = xhat #update xhat
     
-    def H_x(self,x):
+    def update(self,z):     
         """
-        measurement function converting state space into same dimensions 
-        as measurements to assess residuals
+        Does numerous things in the following order
+        - calculate interim sigmas using Sxx and unscented mean estimate
+        - calculate measurement sigmas Y = h(X)
+        - calculate unscented mean of Ys
+        - calculate qr decomposition of concatenated columns of all but the first sigma scaled 
+            by the 1st (not 0th) wc and the square root of sensor noise (sqrtR) to calculate another interim S
+        - cholesky up(/down)date to nudge interim S on potentially unstable 0th 
+            column of Y. if 0th wc weight +ve update else downdate
+        - calculate sum of scaled cross covariances between Ys and Xs Pxy
+        - calculate kalman gain through double back propagation 
+        (uses moore-penrose pseudo inversion to improve stability in inverting near singular matrix)
+        - calculate x update
+        - calculate posterior S by cholesky downdating interim S Sxx on each column of matrix U
+        
+         in:
+            -interim x and S
+            -hx
+            -wm,wc
+        out:
+            -posterior x and S
         """
-        return
-    
-    def update(self):
+        sigmas = self.Sigmas(self.x,self.S) #update using Sxx and unscented mean
+        nl_sigmas = np.apply_along_axis(self.hx,0,sigmas)
+        wnl_sigmas = nl_sigmas*self.wm
+
+        yhat = np.sum(wnl_sigmas,axis=1) #unscented mean for measurements
         """
-        calculate residuals
-        calculate kalman gain
-        merge prediction with measurements in the Kalman style using
-        cholesky update function
+        a qr decompositions of the compound matrix contanining the weighted measurement sigmas points
+        and the matrix square root of the additive sensor noise.
+        
+        same wierd formatting as Sxx above.
         """
-        return
+        Pyy =np.vstack([np.sqrt(self.wc[1])*(nl_sigmas[:,1:].T-yhat),self.sqrtR])
+        Syy = np.linalg.qr(Pyy,mode='r')
+        Syy = Syy[Syy.shape[0]-len(z):,:]
+
+        u =  np.sqrt(np.sqrt(np.abs(self.wc[0])))*(nl_sigmas[:,0]-yhat)
+        #fourth root squares back to square root for outer product uu.T
+        
+        if self.wc[0]>0:    
+            cholupdate(Syy,u)
+        if self.wc[0]<0:    
+            choldowndate(Syy,u)   
+        
+        #!! do this with quadratic form may be much quicker
+        Pxy =  self.wc[0]*np.outer((sigmas[:,0].T-self.x),(nl_sigmas[:,0].T-yhat))
+        for i in range(1,len(self.wc)):
+            Pxy += self.wc[i]*np.outer((sigmas[:,i].T-self.x),(nl_sigmas[:,i].T-yhat))
+            
+        "line 1 is standard matrix inverse. generally slow for large spaces"
+        "lines 2-3 are double back prop avoiding true inversion and much quicker/stable."
+        #K = np.matmul(Pxy,np.linalg.inv(np.matmul(Syy,Syy.T)))
+        #K = np.dot(Pxy,np.linalg.pinv(Syy.T))
+        #K = np.dot(K,np.linalg.pinv(Syy))
+        
+        #double back prop
+        K = np.linalg.lstsq(Syy,Pxy.T,rcond=1e-8)[0].T
+        K = np.linalg.lstsq(Syy.T,K.T,rcond=1e-8)[0].T
+
+        U = np.matmul(K,Syy)
+        
+        #update xhat
+        self.x =self.x + np.matmul(K,(z-yhat))
+        
+        "U is a matrix (not a vector) and so requires dim(U) updates of Sxx using each column of U as a 1 step cholup/down/date as if it were a vector"
+        Sxx = self.S
+        for j in range(U.shape[1]):
+            choldowndate(Sxx,U[:,j])
+        
+        self.S = Sxx
+        self.Ss.append(self.S)
+        self.xs.append(self.x)
+        
+        
         
     def batch(self):
         """
-        batch
+        batch function maybe build later
         """
+        return
 
-        sigmas = self.P_Sigmas()
-        fsigmas = self.F_x(sigmas)
-        return fsigmas
-    
-    
-s = SRUKF(model_params)
-sigmas = s.P_Sigmas()
-fsigmas = s.F_x(sigmas)

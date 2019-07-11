@@ -142,6 +142,7 @@ class Agent:
             self.active = 2
             model.pop_active -= 1
             model.pop_finished += 1
+            self.wiggle=0
             if model.do_save:
                 time_delta = model.time_id - self.time_start
                 model.time_taken.append(time_delta)

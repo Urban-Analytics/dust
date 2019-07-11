@@ -32,8 +32,7 @@ from copy import deepcopy
 import os #for animations folder handling
 from shutil import rmtree#as above
 import sys #for print suppression
-if os.path.basename(os.getcwd())=="stationsim":
-    from stationsim import Model
+from stationsim_model import Model
 #import local packages
 
 
@@ -300,7 +299,7 @@ class ukf_ss:
         
         return state
     
-    def init_ukf(self,ukf_params):
+    def init_ukf(self):
         "initialise ukf with initial state and covariance structures."
         x = self.base_model.get_state(sensor="location")#initial state
         Q = np.eye(self.pop_total*2)#process noise
@@ -324,7 +323,7 @@ class ukf_ss:
         #np.random.seed(seed = 7)# another seed if  wanted else hash it
 
         ukf_params = self.ukf_params
-        self.init_ukf(ukf_params) 
+        self.init_ukf() 
         for _ in range(self.number_of_iterations-1):
             #if _%100 ==0: #progress bar
             #    print(f"iterations: {_}")

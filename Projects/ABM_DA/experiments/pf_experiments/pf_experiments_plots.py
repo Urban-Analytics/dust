@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Reads the out files that are created by StationSim-ARCExperiments.py
+Reads the out files that are created by station_sim/particle_filter.py
 
 This version accounts for two types of results being written for each 
 experiment (before and after reweighting) and also doesn't assume that the 
 agents v.s. particles heat map is evenly spaced.
 
-Created on Thu Apr  4 14:09:12 2019
-
-@author: medkmin (adapted by Nick Malleson)
+@author: medkmin
+@author: nickmalleson
 """
 
 # Initialise and read files
@@ -23,20 +22,21 @@ import warnings
 from scipy.interpolate import griddata # For interpolating across irregularly spaced grid
 
 # Needs to be set to location of results
-path = os.path.join(sys.path[0], "results","noise1")
-
+path = os.path.join(sys.path[0], "results","2/noise1")
 
 # Need to set the number of particles and agents used in the experiments
 # (these are set in StationSim-ARCExperiments.py)
 # TODO: work these out from the results file names
-#particles  = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + list(range(3000, 10001, 1500)) + [10000])
-#agents = list(range(1, 21, 3))
 
 particles = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
-agents = list([2] + list(range(5, 51, 5)))
+agents = [2, 5, 10, 15, 20, 30, 40, 50]
 
 # Use log on y axis?
 uselog = True
+
+# Type of interpolation i.e. 'nearest' of 'linear' (see help(griddata)))
+interpolate_method = "nearest"
+#interpolate_method = "linear"
 
 if not os.path.isdir(path):
     sys.exit("Directory '{}' does not exist".format(path))
@@ -112,16 +112,16 @@ for before in [0,1]:
         #data = pd.read_csv(f, header = 2).replace('on',np.nan)
         data = pd.read_csv(f, header=2).replace('on', np.nan)
         # Check that each file has a consistent shape
-        if i==0:
-            data_shape=data.shape
-        if data.shape != data_shape:
-            # If the columns are the same and there are only a few (20%) rows missing then just continue
-            if ( data_shape[1] == data.shape[1] ) and ( data.shape[0] > int(data_shape[0] - data_shape[0]*0.2) ):
-                warnings.warn("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}. \n\tLess than 20% rows missing so continuing".format(
-                                      str(data.shape), str(data_shape), f ))
-            else:
-                sys.exit("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}. \n\tNot continuing".format(
-                        str(data.shape), str(data_shape), f  ))
+        #if i==0:
+        #    data_shape=data.shape
+        #if data.shape != data_shape:
+        #    # If the columns are the same and there are only a few (20%) rows missing then just continue
+        #    if ( data_shape[1] == data.shape[1] ) and ( data.shape[0] > int(data_shape[0] - data_shape[0]*0.2) ):
+        #        warnings.warn("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}. \n\tLess than 20% rows missing so continuing".format(
+        #                              str(data.shape), str(data_shape), f ))
+        #    else:
+        #        sys.exit("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}. \n\tNot continuing".format(
+        #                str(data.shape), str(data_shape), f  ))
 
         #data.iloc[:,0] = pd.to_numeric(data.iloc[:,0]) # Not sure why this was necessary
 
@@ -233,7 +233,7 @@ for before in [0,1]:
         zi = griddata(points=(x, y),
                       values=z,
                       xi=(xi[None,:], yi[:,None]),
-                      method='linear')
+                      method=interpolate_method)
 
         plt.figure(i+1) # (+1 because there was a figure before)
         cs1 = plt.contour( xi,yi,zi,8,linewidths=0.5,colors='k')

@@ -7,13 +7,13 @@ Written by: Minh Kieu, University of Leeds
 import numpy as np
 import pickle
 from scipy.stats import truncnorm
-#from BusSim_static_deterministic import Bus, BusStop,Model
+#from BusSim_static_deterministic import Model
 from BusSim_static_v2 import Model
 
 def unpickle_initiation(maxDemand):
     #load up ground truth data from a pickle
     # Remember to run BusSim_static_v2 first to generate Historical_data_static
-    name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Data/Historical_data_static_maxDemand_',str(maxDemand),'.pkl']
+    name0 = ['./Data/Historical_data_static_maxDemand_',str(maxDemand),'.pkl']
     str1 = ''.join(name0)    
     with open(str1, 'rb') as f:
         model_params,meanGPS,stdGPS = pickle.load(f)
@@ -155,7 +155,7 @@ if __name__ == '__main__':  # Let's run the model
                 '''
                 Step 3: Store the final parameter solution of BusSim                            '''
                 
-                name1 = ['BusSim_Model2_calibration_static_maxDemand_',str(maxDemand),'.pkl']
+                name1 = ['./Calibration/BusSim_Model2_calibration_static_maxDemand_',str(maxDemand),'.pkl']
                 str2 = ''.join(name1)
                 with open(str2, 'wb') as f:
                     pickle.dump([model_params, best_mean,Sol_archived_mean,Sol_archived_std,PI_archived], f)

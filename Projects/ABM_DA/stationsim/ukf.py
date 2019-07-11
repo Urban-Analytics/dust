@@ -20,7 +20,7 @@ citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
 
 #import pip packages
 import numpy as np
-from math import floor
+from math import floor,log10,ceil
 import matplotlib.pyplot as plt
 import datetime
 from multiprocessing import Pool
@@ -61,7 +61,7 @@ class HiddenPrints:
 """general ukf class"""
 class ukf:
     
-    def __init__(self,srukf_params,init_x,fx,hx,P,Q,R):
+    def __init__(self,ukf_params,init_x,fx,hx,P,Q,R):
         """
         x - state
         n - state size 
@@ -85,7 +85,7 @@ class ukf:
         self.hx=hx
         
         #init further parameters based on a through el
-        self.lam = srukf_params["a"]**2*(self.n+srukf_params["k"]) - self.n #lambda paramter calculated viar
+        self.lam = ukf_params["a"]**2*(self.n+ukf_params["k"]) - self.n #lambda paramter calculated viar
         self.g = np.sqrt(self.n+self.lam) #gamma parameter
 
         
@@ -94,7 +94,7 @@ class ukf:
         self.wm = np.ones(((2*self.n)+1))*main_weight
         self.wm[0] *= 2*self.lam
         self.wc = self.wm.copy()
-        self.wc[0] += (1-srukf_params["a"]**2+srukf_params["b"])
+        self.wc[0] += (1-ukf_params["a"]**2+ukf_params["b"])
 
     
             
@@ -300,7 +300,7 @@ class ukf_ss:
         
         return state
     
-    def init_ukf(self):
+    def init_ukf(self,ukf_params):
         "initialise ukf with initial state and covariance structures."
         x = self.base_model.get_state(sensor="location")#initial state
         Q = np.eye(self.pop_total*2)#process noise
@@ -323,8 +323,8 @@ class ukf_ss:
         np.random.seed(seed = 8)#seeding if  wanted else hash it
         #np.random.seed(seed = 7)# another seed if  wanted else hash it
 
-        
-        self.init_ukf() 
+        ukf_params = self.ukf_params
+        self.init_ukf(ukf_params) 
         for _ in range(self.number_of_iterations-1):
             #if _%100 ==0: #progress bar
             #    print(f"iterations: {_}")
@@ -530,52 +530,110 @@ class plots:
     def __init__(self,filter_class):
         self.filter_class=filter_class
         self.frame_number=0
-    def heatmap(self,a,b):
+        
+    "filters data into observed/unobserved if necessary"
+    def plot_data_parser(self,a,b,observed):
+        filter_class = self.filter_class
+        if observed:
+                a = a[:,filter_class.index2]
+                if len(filter_class.index2)<b.shape[1]:
+                    b = b[:,filter_class.index2]
+                plot_range =filter_class.model_params["pop_total"]*(filter_class.filter_params["prop"])
+
+        else:      
+                mask = np.ones(a.shape[1])
+                mask[filter_class.index2]=False
+                a = a[:,np.where(mask!=0)][:,0,:]
+                b = b[:,np.where(mask!=0)][:,0,:]
+                plot_range = filter_class.model_params["pop_total"]*(1-filter_class.filter_params["prop"])
+        return a,b,plot_range
+            
+        
+    def heatmap(self,a):
+        "provide density of agents positions as a 2.5d histogram"
         #sample_agents = [self.base_model.agents[j] for j in self.index]
         #swap if restricting observed agents
         filter_class = self.filter_class
-        bins = filter_class.filter_params["bin_size"]
+        bin_size = filter_class.filter_params["bin_size"]
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
-        self.frame_number=0
-        
-        for j in range(a.shape[0]):
-            locs = a[j,:]
+        os.mkdir("output_heatmap")
+
+        for i in range(a.shape[0]):
+            locs = a[i,:]
             
             f = plt.figure(figsize=(12,8))
             ax = f.add_subplot(111)
-    
-            plt.scatter(locs[:,0],locs[:,1],color="cyan")
-            ax.set_ylim(0,height)
-            ax.set_xlim(0,width)        
-            hist,xb,yb = np.histogram2d(locs[:,0],locs[:,1],
-                                        range = [[0,width],[0,height]],
-                                        bins = [2*bins,bins],density=True)
-            hist *= bins**2
-            hist= hist.T
-            hist = np.flip(hist,axis=0)
-    
-            extent = [0,width,0,height]
-            plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                       ,cmap = cm.Spectral ,extent=extent
-                       ,norm=cm.DivergingNorm(vmin=1e-10,vcenter=0.1,vmax=1))
+            "plot density histogram and locations scatter plot assuming at least one agent available"
+            if np.abs(np.nansum(locs))>0:
+                ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
+                ax.set_ylim(0,height)
+                ax.set_xlim(0,width)        
+                hist,xb,yb = np.histogram2d(locs[0::2],locs[1::2],
+                                            range = [[0,width],[0,height]],
+                                            bins = [int(width/bin_size),int(height/bin_size)],density=True)
+                hist *= bin_size**2
+                hist= hist.T
+                hist = np.flip(hist,axis=0)
+        
+                extent = [0,width,0,height]
+                plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
+                           ,cmap = cm.Spectral ,extent=extent
+                           ,norm=DivergingNorm(vmin=1/filter_class.pop_total,
+                                               vcenter=5/filter_class.pop_total,vmax=1))
+            else:
+                """
+                dummy frame if no locations present e.g. at the start. 
+                prevents divide by zero error in hist2d
+                """
+                fake_locs = np.array([-1,-1])
+                ax.scatter(fake_locs[0::2],fake_locs[1::2],color="cyan",label="True Positions")
+                hist,xb,yb = np.histogram2d(fake_locs[0::2],fake_locs[1::2],
+                                            range = [[0,width],[0,height]],
+                                            bins = [int(width/bin_size),int(height/bin_size)],density=True)
+                hist *= bin_size**2
+                hist= hist.T
+                hist = np.flip(hist,axis=0)
+        
+                extent = [0,width,0,height]
+                plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
+                           ,cmap = cm.Spectral ,extent=extent
+                           ,norm=DivergingNorm(vmin=1/filter_class.pop_total,
+                                               vcenter=5/filter_class.pop_total,vmax=1))
             
-            ticks = np.array([0.001,0.1,0.2,0.5,1.0])
+            "set up cbar. colouration proportional to number of agents"
+            #ticks = np.array([0.001,0.01,0.025,0.05,0.075,0.1,0.5,1.0])
+            ticks = np.arange(0,1.1,0.1)
             cbar = plt.colorbar(fraction=0.046,pad=0.04,shrink=0.71,
-                                ticks = ticks,spacing="proportional")
+                                ticks = ticks,spacing="uniform")
+            cbar.set_label("Agent Density (x100%)")
             plt.clim(0,1)
             cbar.set_alpha(1)
             cbar.draw_all()
-                
+               
+            "set legend to bottom centre outside of plot"
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                             box.width, box.height * 0.9])
+            
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18),
+                      ncol=2)
+            "labels"
             plt.xlabel("Corridor width")
             plt.ylabel("Corridor height")
-            cbar.set_label("Agent Density (x100%)") 
-            number = str(self.frame_number).zfill(5)
-            file = f"output/heatmap{number}"
+            plt.title("Agent Densities vs True Positions")
+            cbar.set_label("Agent Density (x100%)")
+            """
+            frame number and saving. padded zeroes to keep frames in order.
+            padded to nearest upper order of 10 of number of iterations.
+            """
+            number = str(i).zfill(ceil(log10(a.shape[0])))
+            file = f"output_heatmap/{number}"
             f.savefig(file)
             plt.close()
-            self.frame_number+=1
         
+        animations.animate(self,"output_heatmap",f"heatmap_gif_{filter_class.pop_total}")
+
     """
     old dont use
     !! probably not worth getting this to work post hoc with new stationsim
@@ -625,7 +683,7 @@ class plots:
             extent = [0,width,0,height]
             im=plt.imshow(np.ma.masked_where(hist==0,hist)
                        ,cmap = cmap,extent=extent,
-                       norm=cm.DivergingNorm(vmin=1e-10,vcenter=0.11,vmax=1))
+                       norm=DivergingNorm(vmin=1e-10,vcenter=0.11,vmax=1))
             
         #if no wiggles plot a "ghost histogram" to maintain frame structure  
         else:
@@ -638,7 +696,7 @@ class plots:
             #plot ghost hist with no opacity (alpha=0) to make it invisible
             im=plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
                        ,cmap = cm.Spectral ,extent=extent,alpha=0
-                       ,norm=cm.DivergingNorm(vmin=1e-10,vcenter=0.1,vmax=1))
+                       ,norm=DivergingNorm(vmin=1e-10,vcenter=0.1,vmax=1))
         
         #colourbar and various plot fluff
         ticks = np.array([0.001,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
@@ -676,20 +734,9 @@ class plots:
         
         
         """
-        if observed:
-                a = a[:,self.index2]
-                if len(self.index2)<b.shape[1]:
-                    b = b[:,self.index2]
-                plot_range = self.model_params["pop_total"]*(self.filter_params["prop"])
-
-        else:      
-                mask = np.ones(a.shape[1])
-                mask[self.index2]=False
-                a = a[:,np.where(mask!=0)][:,0,:]
-                b = b[:,np.where(mask!=0)][:,0,:]
-                plot_range = self.model_params["pop_total"]*(1-self.filter_params["prop"])
-
-            
+        fil=self.filter_class
+        a,b,plot_range = self.plot_data_parser(a,b,observed)
+        
         f=plt.figure(figsize=(12,8))
         for j in range(int(plot_range)):
             plt.plot(a[:,(2*j)],a[:,(2*j)+1])    
@@ -697,7 +744,7 @@ class plots:
 
         g = plt.figure(figsize=(12,8))
         for j in range(int(plot_range)):
-            plt.plot(b[::self.sample_rate,2*j],b[::self.sample_rate,(2*j)+1])    
+            plt.plot(b[::fil.sample_rate,2*j],b[::fil.sample_rate,(2*j)+1])    
             plt.title("KF predictions")
 
             
@@ -721,7 +768,7 @@ class plots:
         agent_means = np.nanmean(c,axis=0)
         time_means = np.nanmean(c,axis=1)
         h = plt.figure(figsize=(12,8))
-        plt.plot(time_means[::self.sample_rate])
+        plt.plot(time_means[::fil.sample_rate])
         plt.axhline(y=0,color="r")
         plt.title("MAE over time")
             
@@ -735,13 +782,12 @@ class plots:
             
             i = plt.figure(figsize=(12,8))
             plt.plot(a1[:,0],a1[:,1],label= "True Path")
-            plt.plot(b1[::self.sample_rate,0],b1[::self.sample_rate,1],label = "KF Prediction")
+            plt.plot(b1[::fil.sample_rate,0],b1[::fil.sample_rate,1],label = "KF Prediction")
             plt.legend()
             plt.title("Worst agent")
             
         j = plt.figure(figsize=(12,8))
         plt.hist(agent_means)
-        plt.legend()
         plt.title("Mean Error per agent histogram")
                   
         if save:
@@ -758,118 +804,133 @@ class plots:
         return c,time_means
     
             
-    def density_frames(self,a,b):
+    def difference_frames(self,a,b):
         "snapshots of densities"
-        bins = self.filter_params["bin_size"]
-        width = self.model_params["width"]
-        height = self.model_params["height"]
+        filter_class = self.filter_class
+        bin_size = filter_class.filter_params["bin_size"]
+        width = filter_class.model_params["width"]
+        height = filter_class.model_params["height"]
+        os.mkdir("output_diff")
         #generate full from observed
-        first_time =True
-        if first_time:
-            for _ in range(a.shape[0]):
-                hista,xb,yb = np.histogram2d(a[_,::2],a[_,1::2],
-                                        range = [[0,width],[0,height]],
-                                        bins = [2*bins,bins],density=True)
-                hista *= bins**2
-                hista= hista.T
-                hista = np.flip(hista,axis=0)
-                self.densities.append(hista)
-        
-        for _ in range(b.shape[0]):
+        densities=[]
+        kf_densities =[]
+        diffs = []
+        for _ in range(1,a.shape[0]):
+            hista,xb,yb = np.histogram2d(a[_,::2],a[_,1::2],
+                                    range = [[0,width],[0,height]],
+                                    bins = [int(width/bin_size),int(height/bin_size)],density=True)
+            hista *= bin_size**2
+            hista= hista.T
+            hista = np.flip(hista,axis=0)
+            densities.append(hista)
+    
+        for _ in range(1,b.shape[0]):
             histb,xb,yb = np.histogram2d(b[_,0::2],b[_,1::2],
                                     range = [[0,width],[0,height]],
-                                    bins = [2*bins,bins],density=True)
-            histb *= bins**2
+                                    bins = [int(width/bin_size),int(height/bin_size)],density=True)
+            histb *= bin_size**2
             histb= histb.T
             histb = np.flip(histb,axis=0)
-            self.kf_densities.append(histb)
+            kf_densities.append(histb)
     
-        for _ in range(len(self.densities)):
-           self.diff_densities.append(np.abs(self.densities[_]-self.kf_densities[_]))
+        for _ in range(len(densities)):
+           diffs.append(np.abs(densities[_]-kf_densities[_]))
            
-        c = np.dstack(self.diff_densities)
-        
-        for _ in range(1,c.shape[2]):
+        for i,hist in enumerate(diffs):
             f = plt.figure(figsize=(12,8))
             ax = f.add_subplot(111)
-            bins = self.filter_params["bin_size"]
-            width = self.model_params["width"]
-            height = self.model_params["height"]
-            #plot non-wigglers and set plot size
-            ax.set_ylim(0,height)
-            ax.set_xlim(0,width)
-
-            cmap = cm.Spectral
-            cmap.set_bad(color="black")
-            #check for any wigglers and plot the 2dhist 
-            if np.sum(c[:,:,_])!=0:
-                hista = c[:,:,_]
-                extent = [0,width,0,height]
-                im=plt.imshow(np.ma.masked_where(hista==0,hista)
-                           ,cmap = cmap,extent=extent,norm=DoubleDivergingNorm(vcenter=0.05))
-                
-            #if no wiggles plot a "ghost histogram" to maintain frame structure  
+            
+            if np.abs(np.nansum(hist))>0:
+                  ax.set_ylim(0,height)
+                  ax.set_xlim(0,width)        
+                  
+                  extent = [0,width,0,height]
+                  plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
+                             ,cmap = cm.Spectral ,extent=extent
+                             ,norm=DivergingNorm(vmin=1/filter_class.pop_total,
+                                                 vcenter=5/filter_class.pop_total,vmax=1))
             else:
-                #ghost histogram with one entry and (1,1)
-                hist,xb,yb = np.histogram2d(np.array([-1]),np.array([-1]),
-                                            range = [[0,width],[0,height]],
-                                            bins = [bins,bins],density=True)   
-               
+                """
+                dummy frame if no locations present e.g. at the start. 
+                e.g. perfect aggregates
+                """
+                fake_locs = np.array([-1,-1])
+                ax.scatter(fake_locs[0::2],fake_locs[1::2],color="cyan",label="True Positions")
+            
                 extent = [0,width,0,height]
-                #plot ghost hist with no opacity (alpha=0) to make it invisible
-                im=plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                              ,cmap = cmap ,extent=extent,alpha=1
-                              ,norm=DoubleDivergingNorm(vmin=-0.5,vcenter=0.05,vmax=0.5))
+                plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
+                           ,cmap = cm.Spectral ,extent=extent
+                           ,norm=DivergingNorm(vmin=1/filter_class.pop_total,
+                                               vcenter=5/filter_class.pop_total,vmax=1))   
+            
+
             #colourbar and various plot fluff
-            ticks = np.array([-0.5,-0.2,-0.1,-0.05,0,0.05,0.1,0.2,0.5])
-            #!! numbers adjusted by trial and error for 200x100 field. 
-            #should probably generalise this and the bin structure at some point
-            cbar = plt.colorbar(im,fraction=0.046,pad=0.04,shrink=0.71,
-                                ticks = ticks,spacing="proportional")
-            plt.clim(-0.5,0.5)
+            ticks = np.arange(0,1.1,0.1)
+            cbar = plt.colorbar(fraction=0.046,pad=0.04,shrink=0.71,
+                                ticks = ticks,spacing="uniform")
+            cbar.set_label("Agent Density (x100%)")
+            plt.clim(0,1)
             cbar.set_alpha(1)
             cbar.draw_all()
-            
+               
+            #"set legend to bottom centre outside of plot"
+            #box = ax.get_position()
+            #ax.set_position([box.x0, box.y0 + box.height * 0.1,
+            #                 box.width, box.height * 0.9])
+            # 
+            # ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18),
+            #           ncol=2)
+            "labels"
             plt.xlabel("Corridor width")
             plt.ylabel("Corridor height")
-            cbar.set_label("Wiggle Density (x100%)")
-            
-            number =  str(_).zfill(5)
-            file = f"output_diff/wiggle{number}"
+            plt.title("Predicted vs Actual Densities")
+            cbar.set_label("Agent Density (x100%)")
+            """
+            frame number and saving. padded zeroes to keep frames in order.
+            padded to nearest upper order of 10 of number of iterations.
+            """
+            number = str(i).zfill(ceil(log10(a.shape[0])))
+            file = f"output_diff/{number}"
             f.savefig(file)
             plt.close()
-       
+        
+        animations.animate(self,"output_diff",f"diff_gif_{filter_class.pop_total}")
         
     def pair_frames(self,a,b):
         "paired side by side preds/truth"
+        filter_class = self.filter_class
+        a_u,b_u,plot_range = self.plot_data_parser(a,b,False)
+        a_o,b_o,plot_range = self.plot_data_parser(a,b,True)
 
-        a = a[::self.filter_params["sample_rate"],self.index2]
         os.mkdir("output_pairs")
-        for i in range(b.shape[0]):
-            a2 = a[i,:]
-            b2 = b[i,:]
-            
+        for i in range(a.shape[0]):
+            a_s = [a_o[i,:],a_u[i,:]]
+            b_s = [b_o[i,:], b_u[i,:]]
             f = plt.figure(figsize=(12,8))
             ax = plt.subplot(111)
             plt.xlim([0,200])
             plt.ylim([0,100])
-            
-            
-            ax.scatter(a2[0::2],a2[1::2],color="skyblue",label = "Truth")
-            ax.scatter(-1,-1,color="orangered",label = "KF_Predictions")
+            ax.scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o")
+            ax.scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
 
+            ax.scatter(-1,-1,color="orangered",label = "KF_Observed",marker="o")
+            ax.scatter(-1,-1,color="orangered",label = "KF_Unobserved",marker="^")
+
+            markers = ["o","^"]
+            for j in range(len(a_s)):
+
+                a = a_s[j]
+                b = b_s[j]
+                if np.abs(np.nansum(a-b))>1e-4: #check for perfect conditions (initial)
+                    for k in range(int(a.shape[0]/2)):
+                        a2 = a[(2*k):(2*k)+2]
+                        b2 = b[(2*k):(2*k)+2]          
+                        if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
+                            x = [a2[0],b2[0]]
+                            y = [a2[1],b2[1]]
+                            ax.plot(x,y,color="white")
+                            ax.scatter(b2[0],b2[1],color="orangered",marker = markers[j])
             
-            if np.nansum(a2-b2)>1e-4: #check for perfect conditions (initial)
-            
-                for j in range(int(b.shape[1]/2)):
-                    a3 = a2[(2*j):(2*j)+2]
-                    b3 = b2[(2*j):(2*j)+2]          
-                    if not np.isnan(np.sum(a3+b3)): #check for finished agents that appear NaN
-                        x = [a3[0],b3[0]]
-                        y = [a3[1],b3[1]]
-                        ax.plot(x,y,color="white")
-                        ax.scatter(b3[0],b3[1],color="orangered")
-           
             box = ax.get_position()
             ax.set_position([box.x0, box.y0 + box.height * 0.1,
                              box.width, box.height * 0.9])
@@ -878,11 +939,14 @@ class plots:
                       ncol=2)
             plt.xlabel("corridor width")
             plt.ylabel("corridor height")
+            plt.title("Agent Position Predictions with UKF")
             number =  str(i).zfill(5) #zfill names files such that sort() does its job properly later
             file = f"output_pairs/pairs{number}"
             f.savefig(file)
             plt.close()
-    
+        
+        animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
+
 class animations:
     def animate(self,file,name):
         files = sorted(os.listdir(file))
@@ -895,19 +959,6 @@ class animations:
         #animations.clear_output_folder(self,file)
         
 
-    """clears animated frames after being animated"""
-    def clear_output_folder(self,file_name):
-       folder = file_name
-       for the_file in os.listdir(folder):
-           file_path = os.path.join(folder, the_file)
-           try:
-               if os.path.isfile(file_path):
-                   os.unlink(file_path)
-           except Exception as e:
-               print(e)
-    
-
-
 if __name__ == "__main__":
     """
         width - corridor width
@@ -918,8 +969,9 @@ if __name__ == "__main__":
         exits - how many exits
         exit_space- how wide are exits 
         speed_min - minimum agents speed to prevent ridiculuous iteration numbers
-        speed_desire_mean - desired mean of normal distribution of speed of agents
-        speed_desire_std - as above but standard deviation
+        speed_mean - desired mean of normal distribution of speed of agents
+        speed_std - as above but standard deviation
+        speed_steps - how many levels of speed between min and max for each agent
         separation - agent radius to determine collisions
         wiggle - wiggle distance
         batch_iterations - how many model steps to do as a maximum
@@ -928,8 +980,8 @@ if __name__ == "__main__":
     model_params = {
 			'pop_total': 10,
 
-			'width': 400,
-			'height': 200,
+			'width': 200,
+			'height': 100,
 
 			'gates_in': 3,
 			'gates_out': 2,
@@ -977,7 +1029,7 @@ if __name__ == "__main__":
             "do_density_animate":True,
             "do_pair_animate":False,
             "prop": 0.5,
-            "heatmap_rate": 2,
+            "heatmap_rate": 1,
             "bin_size":10,
             "do_batch":False,
             "do_unobserved":False
@@ -1007,8 +1059,11 @@ if __name__ == "__main__":
     actual,preds= u.data_parser(True)
             
     """plots"""
+    plts = plots(u)
+
     if filter_params["prop"]<1 or filter_params["do_unobserved"]:
-        distances,t_mean = plots.diagnostic_plots(u,actual,preds,False,False)
-    distances2,t_mean2 = plots.diagnostic_plots(u,actual,preds,True,False)
+        distances,t_mean = plts.diagnostic_plots(actual,preds,False,False)
+    distances2,t_mean2 = plts.diagnostic_plots(actual,preds,True,False)
     
-    
+    plts.pair_frames(actual,preds)
+    plts.heatmap(actual,preds)

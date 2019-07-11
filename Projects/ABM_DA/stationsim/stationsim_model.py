@@ -504,3 +504,8 @@ class Model:
 		frames = self.step_id
 		ani = FuncAnimation(fig, func, frames, init, interval=100, blit=True)
 		return ani
+
+if __name__ == '__main__':
+    warnings.warn("The stationsim_model.py code should not be run directly. Create a separate script and use that "
+                  "to run experimets (e.g. see ABM_DA/experiments/StationSim basic experiment.ipynb )")
+    print("Nothing to do")

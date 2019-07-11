@@ -24,12 +24,14 @@ from scipy.interpolate import griddata # For interpolating across irregularly sp
 # Needs to be set to location of results
 path = os.path.join(sys.path[0], "results","2/noise1")
 
-# Need to set the number of particles and agents used in the experiments
-# (these are set in StationSim-ARCExperiments.py)
+# Need to set the number of particles and agents used in the experiments. These are set in the file that runs
+# the experiments: ./run_pf.py
+# Copy the lines near the top that set the number of particles and agents
 # TODO: work these out from the results file names
 
-particles = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
-agents = [2, 5, 10, 15, 20, 30, 40, 50]
+# Lists of particles, agent numbers, and particle noise levels
+num_par = list ( [1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
+num_age = [2, 5, 10, 15, 20, 30, 40, 50]
 
 # Use log on y axis?
 uselog = True
@@ -37,6 +39,11 @@ uselog = True
 # Type of interpolation i.e. 'nearest' of 'linear' (see help(griddata)))
 interpolate_method = "nearest"
 #interpolate_method = "linear"
+
+# From now on refer to the lists of agents and particles using different names (TODO: refactor)
+particles = num_par
+agents = num_age
+
 
 if not os.path.isdir(path):
     sys.exit("Directory '{}' does not exist".format(path))
@@ -112,18 +119,17 @@ for before in [0,1]:
         #data = pd.read_csv(f, header = 2).replace('on',np.nan)
         data = pd.read_csv(f, header=2).replace('on', np.nan)
         # Check that each file has a consistent shape
-        #if i==0:
-        #    data_shape=data.shape
-        #if data.shape != data_shape:
-        #    # If the columns are the same and there are only a few (20%) rows missing then just continue
-        #    if ( data_shape[1] == data.shape[1] ) and ( data.shape[0] > int(data_shape[0] - data_shape[0]*0.2) ):
-        #        warnings.warn("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}. \n\tLess than 20% rows missing so continuing".format(
-        #                              str(data.shape), str(data_shape), f ))
-        #    else:
-        #        sys.exit("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}. \n\tNot continuing".format(
-        #                str(data.shape), str(data_shape), f  ))
-
-        #data.iloc[:,0] = pd.to_numeric(data.iloc[:,0]) # Not sure why this was necessary
+        if i==0:
+            data_shape=data.shape
+        if data.shape != data_shape:
+            # If the columns are the same and there are only a few (20%) rows missing then just continue
+            if ( data_shape[1] == data.shape[1] ) and ( data.shape[0] > int(data_shape[0] - data_shape[0]*0.2) ):
+                warnings.warn("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}. \n\tLess than 20% rows missing so continuing".format(
+                                      str(data.shape), str(data_shape), f ))
+            # Can exit if the shapes are too bad (turn this off for now)
+            #else:
+            #    sys.exit("Current file shape ({}) does not match the previous one ({}). Current file is: \n\t{}. \n\tNot continuing".format(
+            #            str(data.shape), str(data_shape), f  ))
 
         # Filter by whether errors are before or after
         data = data[ data.loc[:,'Before_resample?'] == before]

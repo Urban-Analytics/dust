@@ -2,15 +2,16 @@
 
 This folder contains the codes used to run Kevin's experimentss on the StationSim particle filter.
 
-The code to run the experiments is in the [stationsim](../../stationsim) folder ([particle_filter.py](../../stationsim/particle_filter.py) specifically).
+To run the experiments, use the [`run_pf.py`](./run_pf.py) file. That script expects a single integer commandline input which corresponds to a particular configuration (number of agents, number of particles, amount of noise). These are specified in the script itself. E.g. to run experiment 17:
 
-## pf_script-*.sh
+```
+	python run_pf.py 17
+```
 
-These scripts run the particle filter. The python script is set up to take an integer command line argument which is an index to a list that determines the number of agents and particles to run in that experiment. 
+The `pf_script-*.sh` files run all the expeirments as a batch job by repeatedly calling `run_pf.py` with different integer inputs.
 
-The one for Arc creates a 'task array' which allows each experiment to be run as a separate job.
+The code that actually does the filtering is in the [`stationsim`](../../stationsim) folder ([`particle_filter.py`](../../stationsim/particle_filter.py) specifically). One is for the Environment linux servers (all jobs run on the same machine), the other is for Arc (it creates a 'task array' which allows each experiment to be run as a separate job).
 
 ## Results
 
-The results will end up in the [results](./results) folder. The script to read all the results is agent_particle_plot.py. The path in this code
-needs to be set to the location of the results. 
+The results will end up in the [`results`](./results) folder. The script to read all the results is [`pf_experiments_plots.py`](pf_experiments_plots.py). 

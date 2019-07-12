@@ -127,10 +127,10 @@ class ukf:
         #calculate NL projection of sigmas
         sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.P)) #calculate current sigmas using state x and UT element S
         "numpy apply along axis or multiprocessing options"
-        nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
-        #p = multiprocessing.Pool()
-        #nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
-        #p.close()
+        #nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
+        p = multiprocessing.Pool()
+        nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
+        p.close()
         wnl_sigmas = nl_sigmas*self.wm
             
         xhat = np.sum(wnl_sigmas,axis=1)#unscented mean for predicitons
@@ -299,7 +299,7 @@ class ukf_ss:
         
         return state
     
-    def init_ukf(self):
+    def init_ukf(self,ukf_params):
         "initialise ukf with initial state and covariance structures."
         x = self.base_model.get_state(sensor="location")#initial state
         Q = np.eye(self.pop_total*2)#process noise
@@ -322,8 +322,7 @@ class ukf_ss:
         np.random.seed(seed = 8)#seeding if  wanted else hash it
         #np.random.seed(seed = 7)# another seed if  wanted else hash it
 
-        ukf_params = self.ukf_params
-        self.init_ukf() 
+        self.init_ukf(self.ukf_params) 
         for _ in range(self.number_of_iterations-1):
             #if _%100 ==0: #progress bar
             #    print(f"iterations: {_}")
@@ -898,17 +897,19 @@ class plots:
     def pair_frames(self,a,b):
         "paired side by side preds/truth"
         filter_class = self.filter_class
+        width = filter_class.model_params["width"]
+        height = filter_class.model_params["height"]
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)
-
+        
         os.mkdir("output_pairs")
         for i in range(a.shape[0]):
             a_s = [a_o[i,:],a_u[i,:]]
             b_s = [b_o[i,:], b_u[i,:]]
             f = plt.figure(figsize=(12,8))
             ax = plt.subplot(111)
-            plt.xlim([0,200])
-            plt.ylim([0,100])
+            plt.xlim([0,width])
+            plt.ylim([0,height])
             ax.scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o")
             ax.scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
 
@@ -1060,7 +1061,7 @@ if __name__ == "__main__":
     """plots"""
     plts = plots(u)
 
-    if filter_params["prop"]<1 or filter_params["do_unobserved"]:
+    if filter_params["prop"]<1 and filter_params["do_unobserved"]:
         distances,t_mean = plts.diagnostic_plots(actual,preds,False,False)
     distances2,t_mean2 = plts.diagnostic_plots(actual,preds,True,False)
     

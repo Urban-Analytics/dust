@@ -1,24 +1,28 @@
 # Probabalistic Experiments
 
-TODO: One Paragraph of project description goes here.
+This project explores modern probablistic programming languages and libraries for
 
 ## Getting Started
+This document will help you to get this project running on your own machine.
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project.
+### Installation
 
-### Prerequisites
+This project is being developed using Anaconda Distribution with Python 3.7. All version requirments for sofware packages can be found in [Requirements_Pyro.txt](https://github.com/Urban-Analytics/dust/blob/ProbablisticABM/Projects/ProbablisticABM/super_simple_model/requirements_Pyro.txt)
 
-What things you need to install the software and how to install them
+### Checklist for Dependencies
+These are the core packages that are needed for the project to fully work;<br>
+1.[Pyro](https://pyro.ai/), a universal probabilistic programming language (PPL) written in Python and supported by PyTorch on the backend.<br>
+
+2.[Imageio](https://imageio.github.io/) a Python library that provides an easy interface to read and write a wide range of image data, including animated images, video, volumetric data, and scientific formats. **For the ability to render output as a video media format install;**
 
 ```
-Give examples
-```
+imageio=2.5.0=py37_0
+imageio-ffmpeg=0.3.0=py_0
+``` 
 
-### Installing
+### Install using the
 
-A step by step series of examples that tell you how to get a development env running
 
-Say what the step will be
 
 ```
 Give the example
@@ -32,14 +36,18 @@ until finished
 
 End with an example of getting some data out of the system or using it for a little demo
 
-## Authors
+## Project Intern
 
-* **Benjamin Isaac Wilson** - *Initial work* - (https://github.com/BenjaminIsaac0111)
+  **Benjamin Isaac Wilson** - (https://github.com/BenjaminIsaac0111)
 
 ## Project Supervisors
 
-  **Professor Nick Malleson** - (N.S.Malleson@leeds.ac.uk)
+  **Professor Nick Malleson** - (N.S.Malleson@leeds.ac.uk)<br>
   **Dr Jon Ward** - (J.A.Ward@leeds.ac.uk)
+  
+## Dust Project Sites
+* **Data Assimilation for Agent-Based Models (DUST)** - (https://dust.leeds.ac.uk/)<br>
+* **Data Assimilation for Agent-Based Modelling** - (https://urban-analytics.github.io/dust/)
 
 ## License
 

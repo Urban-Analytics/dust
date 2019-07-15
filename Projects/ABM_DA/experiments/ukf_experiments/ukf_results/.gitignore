@@ -1,0 +1,77 @@
+
+# Main .gitignore file. Don't use any others!
+
+# ********** Global stuff **********
+
+# Mac crap
+.DS_Store
+
+# Vim swap files
+*.swp
+
+# All build directories
+build
+target
+classes/
+
+# R stuff
+*.Rhistory
+.Rproj.user
+
+# Python stuff:
+
+__pycache__/
+.ipynb_checkpoints/
+
+# Compiled python modules.
+*.pyc
+
+# Setuptools distribution folder.
+/dist/
+
+# Python egg metadata, regenerated from source files by setuptools.
+/*.egg-info
+
+
+# Gradle stuff (from https://github.com/github/gitignore/blob/master/Gradle.gitignore )
+.gradle
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+
+# ********** FOR IDEA / netbeans  **********
+
+
+.idea
+.gradle
+nbproject
+*.iml
+
+
+# ********** Latex **********
+*.aux
+*.bbl
+*.log
+*.toc
+*.blg
+*.synctex.gz
+
+
+
+# ********** NativeModel **********
+Improbable/NativeModel-keanu/results/*.csv
+Improbable/NativeModel-keanu/results/*.dot
+Improbable/NativeModel-keanu/results/*.html
+Improbable/NativeModel-keanu/results/figures/
+Improbable/NativeModel-keanu/results/*.png
+
+# ********** stationSim ***********
+Improbable/stationSim-keanu/simulation_outputs/
+
+# ********** **********
+# ********** **********
+# ********** **********
+# ********** **********
+# ********** **********
+Projects/DataAssimilation/Kalman-and-Bayesian-Filters-in-Python

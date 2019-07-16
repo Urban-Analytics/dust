@@ -2,9 +2,13 @@
 
 This project explores the application of modern probablistic programming languages on agent tracking and prediction.
 
+Civil emergencies such as flooding, terrorist attacks, fire, etc., can have devastating impacts on people, infrastructure, and economies. Knowing how to best respond to an emergency can be extremely difficult because building a clear picture of the emerging situation is challenging with the limited data and modelling capabilities that are available. Agent-based modelling (ABM) is a field that excels in its ability to simulate human systems and has therefore become a popular tool for simulating disasters and for modelling strategies that are aimed at mitigating developing problems. However, the field suffers from a serious drawback: models are not able to incorporate up-to-date data (e.g. social media, mobile telephone use, public transport records, etc.). Instead they are initialised with historical data and therefore their forecasts diverge rapidly from reality.
+
+To address this major shortcoming, this new research project will develop dynamic data assimilation methods for use in ABMs. These techniques have already revolutionised weather forecasts and could offer the same advantages for ABMs of social systems. There are serious methodological barriers that must be overcome, but this research has the potential to produce a step change in the ability of models to create accurate short-term forecasts of social systems.
+
 ## Installation
 
-This project is being developed using Anaconda Distribution with Python 3.7. All versions for sofware packages can be found in [Requirements_Pyro.txt](https://github.com/Urban-Analytics/dust/blob/ProbablisticABM/Projects/ProbablisticABM/super_simple_model/requirements_Pyro.txt) Though this is subject to change during development. The easiest way to install do this run these commands in turn;
+This project is being developed using Anaconda Distribution with Python 3.7. All versions for sofware packages can be found in [Requirements_Pyro.txt](https://github.com/Urban-Analytics/dust/blob/ProbablisticABM/Projects/ProbablisticABM/super_simple_model/requirements_Pyro.txt) Though this is subject to change during development. Currenly, the easiest way to install run these commands in turn.
 
 First create your environment;
 ```

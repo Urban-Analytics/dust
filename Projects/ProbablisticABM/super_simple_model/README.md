@@ -1,6 +1,6 @@
 # Probabalistic Experiments
 
-This project explores modern probablistic programming languages and libraries for
+This project explores the application of modern probablistic programming languages on agent tracking and prediction.
 
 ## Getting Started
 This document will help you to get this project running on your own machine.
@@ -24,7 +24,6 @@ conda install -c conda-forge imageio-ffmpeg
 ```
 
 ### Checklist for Packages
-These are the core packages that are needed for the code to work;<br>
 1.[PyTorch](https://pytorch.org/), An open source deep learning platform that provides a seamless path from research prototyping to production deployment.
 
 2.[Pyro](https://pyro.ai/), a universal probabilistic programming language (PPL) written in Python and supported by PyTorch on the backend.<br>

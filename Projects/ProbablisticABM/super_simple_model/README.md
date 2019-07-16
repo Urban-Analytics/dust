@@ -2,10 +2,7 @@
 
 This project explores the application of modern probablistic programming languages on agent tracking and prediction.
 
-## Getting Started
-This document will help you to get this project running on your own machine.
-
-### Installation
+## Installation
 
 This project is being developed using Anaconda Distribution with Python 3.7. All versions for sofware packages can be found in [Requirements_Pyro.txt](https://github.com/Urban-Analytics/dust/blob/ProbablisticABM/Projects/ProbablisticABM/super_simple_model/requirements_Pyro.txt) Though this is subject to change during development. The easiest way to install do this run these commands in turn;
 
@@ -23,7 +20,7 @@ conda install imageio matplotlib
 conda install -c conda-forge imageio-ffmpeg
 ```
 
-### Checklist for Packages
+## Checklist for Packages
 1.[PyTorch](https://pytorch.org/), An open source deep learning platform that provides a seamless path from research prototyping to production deployment.
 
 2.[Pyro](https://pyro.ai/), a universal probabilistic programming language (PPL) written in Python and supported by PyTorch on the backend.<br>

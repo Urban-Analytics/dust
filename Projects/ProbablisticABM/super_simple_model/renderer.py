@@ -5,11 +5,14 @@ import os
 
 def render_agent():
     files = sorted(os.listdir('output'))
-    print('{} frames generated.'.format(len(files)))
+    print('Renderer: {} frame(s) found...'.format(len(files)))
     images = []
+    i = 1
     for filename in files:
         images.append(imageio.imread('output/{}'.format(filename)))
-    imageio.mimsave('outputGIFs/{}.mp4'.format(time.time()), images)
+        print('Rendering frame {} of {}'.format(i, len(files)))
+        i+=1
+    imageio.mimsave('video_output/{}.mp4'.format(time.time()), images)
 
 
 def clear_output_folder():

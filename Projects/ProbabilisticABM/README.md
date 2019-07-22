@@ -1,4 +1,4 @@
-# Probabilistic Experiments
+# Probabilistic ABM (Pre-Alpha)
 
 This project explores the application of modern probabilistic programming languages on agent tracking and prediction.
 

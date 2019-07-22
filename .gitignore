@@ -20,8 +20,9 @@ classes/
 
 # Python stuff:
 
-__pycache__/
-.ipynb_checkpoints/
+*__pycache__/
+*.ipynb_checkpoints/
+
 
 # Compiled python modules.
 *.pyc

@@ -8,9 +8,9 @@ import pyro.distributions as dist
 import torch
 import numpy as np
 
-n_samples=1000
-steps=1000
-observation_freq=101
+n_samples = 1000
+steps = 1000
+observation_freq = 101
 visualiser = Visualiser(environment=(1000, 1000))
 
 

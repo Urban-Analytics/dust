@@ -1,7 +1,5 @@
-import numpy as np
-import os
-
 import torch
+from torch import tensor
 from pyro import distributions as dist
 import pyro
 
@@ -9,16 +7,28 @@ import pyro
 class Agent:
 	def __init__(self, x, y, n_samples, **kwargs):
 		self.n_samples = n_samples
-		self.xy = torch.tensor([[x for _ in range(self.n_samples)],
-								[y for _ in range(self.n_samples)]])
-		self.s = pyro.sample('s', dist.Normal(loc=torch.tensor([[1. for _ in range(self.n_samples)],
-																[0. for _ in range(self.n_samples)]]),
-											  scale=torch.as_tensor([[1.], [.25]])))
+		self.destination = pyro.sample('destination', dist.Bernoulli(.5))
+		self.s = tensor([1. for _ in range(self.n_samples)])
 
-	def step(self, pred=None, obs=None, noise=0.):
+		self.xy = tensor([[x for _ in range(self.n_samples)],
+						  [y for _ in range(self.n_samples)]])
+
+		self.rv_v = pyro.sample('rv_s', dist.Normal(loc=self.s, scale=1.))
+
+	def step(self, pred=None, obs=None):
 		xy = pyro.sample('xy', dist.Normal(loc=self.xy if pred is None else pred,
-										   scale=torch.as_tensor([1.])), obs=obs)
+										   scale=tensor([[0.], [0.]])), obs=obs)
 
-		n = pyro.sample('n', dist.Normal(loc=torch.as_tensor([0. for _ in range(self.n_samples)]),
-										 scale=torch.as_tensor([noise])))
-		return (xy + self.s) + n
+		# PLACE HOLDER DOORS
+		door_x = tensor([1000.])
+		door_y = tensor([500.*1.33])
+		door = torch.stack([door_x, door_y])
+
+		return self.move(origin=xy, destination=door)
+
+	def move(self, origin, destination):
+		x = destination[0] - origin[0]
+		y = destination[1] - origin[1]
+		distance = (x*x + y*y)**.5
+		loc = origin + self.s * (destination - origin) / distance
+		return loc

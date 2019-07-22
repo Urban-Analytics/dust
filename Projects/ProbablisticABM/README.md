@@ -1,6 +1,6 @@
-# Probabalistic Experiments
+# Probabilistic Experiments
 
-This project explores the application of modern probablistic programming languages on agent tracking and prediction.
+This project explores the application of modern probabilistic programming languages on agent tracking and prediction.
 
 Civil emergencies such as flooding, terrorist attacks, fire, etc., can have devastating impacts on people, infrastructure, and economies. Knowing how to best respond to an emergency can be extremely difficult because building a clear picture of the emerging situation is challenging with the limited data and modelling capabilities that are available. Agent-based modelling (ABM) is a field that excels in its ability to simulate human systems and has therefore become a popular tool for simulating disasters and for modelling strategies that are aimed at mitigating developing problems. However, the field suffers from a serious drawback: models are not able to incorporate up-to-date data (e.g. social media, mobile telephone use, public transport records, etc.). Instead they are initialised with historical data and therefore their forecasts diverge rapidly from reality.
 
@@ -8,15 +8,17 @@ To address this major shortcoming, this new research project will develop dynami
 
 ## Installation
 
-This project is being developed using Anaconda Distribution with Python 3.7. All versions for sofware packages can be found in [Requirements_Pyro.txt](https://github.com/Urban-Analytics/dust/blob/ProbablisticABM/Projects/ProbablisticABM/super_simple_model/requirements_Pyro.txt) Though this is subject to change during development. Currenly, the easiest way to install run these commands in turn.
+This project is being developed using Anaconda Distribution with Python 3.7. All versions for software packages can be found in [Requirements_Pyro.txt](https://github.com/Urban-Analytics/dust/blob/ProbablisticABM/Projects/ProbablisticABM/super_simple_model/requirements_Pyro.txt) Though this is subject to change during development. Currenly, the easiest way to install run these commands in turn.
 
-First create your environment;
+
+
+Then you will need to create your environment;
 ```
 conda update conda
 conda create --name <your_environment_name>
 conda activate <your_enviroment_name>
 ```
-Then install the nessisary software. Note that some of these are not part of conda's main channel and need to be installed from conda-forge or using pip.
+Then install the necessary software. Note that some of these are not part of conda's main channel and need to be installed from conda-forge or using pip.
 ```
 conda install pytorch-cpu torchvision-cpu -c pytorch
 pip install pyro-ppl

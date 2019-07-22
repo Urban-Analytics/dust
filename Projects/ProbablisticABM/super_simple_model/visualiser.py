@@ -15,6 +15,9 @@ class Visualiser:
 		self.rect_scatter = [self.left, self.bottom, self.width, self.height]
 		self.rect_histx = [self.left, self.bottom + self.height + self.spacing, self.width, 0.2]
 		self.rect_histy = [self.left + self.width + self.spacing, self.bottom, 0.2, self.height]
+		self.ax_scatter = None
+		self.ax_histx = None
+		self.ax_histy = None
 
 	def plot_agent(self, x, y, **kwargs):
 		self.ax_scatter = plt.axes(self.rect_scatter)
@@ -49,7 +52,7 @@ class Visualiser:
 	def plot_median_loc(self, x, y):
 		self.ax_scatter.scatter(np.median(x),
 								np.median(y),
-								s=10,
+								s=20,
 								c='red',
 								marker='x',
 								label='Centre')

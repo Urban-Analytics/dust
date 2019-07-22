@@ -9,8 +9,8 @@ import torch
 import numpy as np
 
 n_samples=1000
-steps=100
-delta=301
+steps=1000
+delta=101
 visualiser = Visualiser(environment=(1000, 1000))
 
 
@@ -22,6 +22,7 @@ def main():
     location = agent.step()
 
     for i in range(steps):
+        # TODO: Refactor
         doors = [Door(xy=(1000-width/2, (500*1.33)-height/2), width=width, height=height, fill=True),
                  Door(xy=(1000-width/2, (500*.66)-height/2), width=width, height=height, fill=True)]
 
@@ -30,7 +31,7 @@ def main():
         location = agent.step(pred=location,
                               obs=obs)
 
-        print_agent_loc(location)
+        print_agent_loc(i, location)
 
         visualiser.plot_agent(location[0], location[1], median=False)
         visualiser.plot_doors(doors=doors)
@@ -40,8 +41,8 @@ def main():
     renderer.render_agent()
 
 
-def print_agent_loc(location):
-    print('[x,y] {}'.format([np.median(location[0]), np.median(location[1])]))
+def print_agent_loc(i, location):
+    print('Step:{} [x,y] {}'.format(i, [np.median(location[0]), np.median(location[1])]))
 
 
 def observe(i):

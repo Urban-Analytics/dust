@@ -10,7 +10,7 @@ import numpy as np
 
 n_samples=1000
 steps=1000
-delta=101
+observation_freq=101
 visualiser = Visualiser(environment=(1000, 1000))
 
 
@@ -46,7 +46,7 @@ def print_agent_loc(i, location):
 
 
 def observe(i):
-    if (i % delta) == 0:
+    if (i % observation_freq) == 0:
         print('Observing!')
         obs = pyro.sample('obs', dist.Normal(loc=torch.tensor([[float(i)], [500.]]),
                                              scale=torch.tensor([[10.], [10.]])))

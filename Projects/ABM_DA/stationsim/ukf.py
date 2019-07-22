@@ -23,7 +23,7 @@ import numpy as np
 from math import floor,log10,ceil
 import matplotlib.pyplot as plt
 import datetime
-from multiprocessing import Pool
+import multiprocessing
 import matplotlib.cm as cm
 import matplotlib.colors as col
 import imageio
@@ -32,8 +32,7 @@ from copy import deepcopy
 import os #for animations folder handling
 from shutil import rmtree#as above
 import sys #for print suppression
-if os.path.basename(os.getcwd())=="stationsim":
-    from stationsim import Model
+from stationsim_model import Model
 #import local packages
 
 
@@ -49,6 +48,8 @@ with HiddenPrints():
 everything here prints again
 https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
 """
+
+#%%
 class HiddenPrints:
     def __enter__(self):
         self._original_stdout = sys.stdout
@@ -128,10 +129,10 @@ class ukf:
         #calculate NL projection of sigmas
         sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.P)) #calculate current sigmas using state x and UT element S
         "numpy apply along axis or multiprocessing options"
-        nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
-        #p = multiprocessing.Pool()
-        #nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
-        #p.close()
+        #nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
+        p = multiprocessing.Pool()
+        nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
+        p.close()
         wnl_sigmas = nl_sigmas*self.wm
             
         xhat = np.sum(wnl_sigmas,axis=1)#unscented mean for predicitons
@@ -181,6 +182,7 @@ class ukf:
         
         
         "similar weighted estimates as Pxx for cross covariance and posterior covariance"
+        "need to do this with quadratic form at some point"
         Pyy =  self.wc[0]*np.outer((nl_sigmas[:,0].transpose()-yhat),(nl_sigmas[:,0].transpose()-yhat))+self.R
         for i in range(1,len(self.wc)):
             Pyy += self.wc[i]*np.outer((nl_sigmas[:,i].transpose()-yhat),(nl_sigmas[:,i].transpose()-yhat))
@@ -320,11 +322,9 @@ class ukf_ss:
         -repeat until model ends or max iterations reached
         
         """
-        np.random.seed(seed = 8)#seeding if  wanted else hash it
-        #np.random.seed(seed = 7)# another seed if  wanted else hash it
+        #seeding if  wanted else hash it
 
-        ukf_params = self.ukf_params
-        self.init_ukf(ukf_params) 
+        self.init_ukf(self.ukf_params) 
         for _ in range(self.number_of_iterations-1):
             #if _%100 ==0: #progress bar
             #    print(f"iterations: {_}")
@@ -547,6 +547,59 @@ class plots:
                 b = b[:,np.where(mask!=0)][:,0,:]
                 plot_range = filter_class.model_params["pop_total"]*(1-filter_class.filter_params["prop"])
         return a,b,plot_range
+
+    def trajectories(self,a):
+        "provide density of agents positions as a 2.5d histogram"
+        #sample_agents = [self.base_model.agents[j] for j in self.index]
+        #swap if restricting observed agents
+        filter_class = self.filter_class
+        width = filter_class.model_params["width"]
+        height = filter_class.model_params["height"]
+        os.mkdir("output_positions")
+        for i in range(a.shape[0]):
+            locs = a[i,:]
+            
+            f = plt.figure(figsize=(12,8))
+            ax = f.add_subplot(111)
+            "plot density histogram and locations scatter plot assuming at least one agent available"
+            if np.abs(np.nansum(locs))>0:
+                ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
+                ax.set_ylim(0,height)
+                ax.set_xlim(0,width)
+            else:
+                """
+                dummy frame if no locations present e.g. at the start. 
+                prevents divide by zero error in hist2d
+                """
+                fake_locs = np.array([-1,-1])
+                ax.scatter(fake_locs[0::2],fake_locs[1::2],color="cyan",label="True Positions")
+               
+            
+            "set up cbar. colouration proportional to number of agents"
+            #ticks = np.array([0.001,0.01,0.025,0.05,0.075,0.1,0.5,1.0])
+           
+               
+            "set legend to bottom centre outside of plot"
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                             box.width, box.height * 0.9])
+            
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18),
+                      ncol=2)
+            "labels"
+            plt.xlabel("Corridor width")
+            plt.ylabel("Corridor height")
+            plt.title("Agent Positions")
+            """
+            frame number and saving. padded zeroes to keep frames in order.
+            padded to nearest upper order of 10 of number of iterations.
+            """
+            number = str(i).zfill(ceil(log10(a.shape[0])))
+            file = f"output_positions/{number}"
+            f.savefig(file)
+            plt.close()
+        
+        animations.animate(self,"output_positions",f"positions_{filter_class.pop_total}_")
             
         
     def heatmap(self,a):
@@ -603,9 +656,8 @@ class plots:
             
             "set up cbar. colouration proportional to number of agents"
             #ticks = np.array([0.001,0.01,0.025,0.05,0.075,0.1,0.5,1.0])
-            ticks = np.arange(0,1.1,0.1)
             cbar = plt.colorbar(fraction=0.046,pad=0.04,shrink=0.71,
-                                ticks = ticks,spacing="uniform")
+                                spacing="proportional")
             cbar.set_label("Agent Density (x100%)")
             plt.clim(0,1)
             cbar.set_alpha(1)
@@ -632,7 +684,7 @@ class plots:
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,"output_heatmap",f"heatmap_gif_{filter_class.pop_total}")
+        animations.animate(self,"output_heatmap",f"heatmap_{filter_class.pop_total}_")
 
     """
     old dont use
@@ -899,17 +951,19 @@ class plots:
     def pair_frames(self,a,b):
         "paired side by side preds/truth"
         filter_class = self.filter_class
+        width = filter_class.model_params["width"]
+        height = filter_class.model_params["height"]
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)
-
+        
         os.mkdir("output_pairs")
         for i in range(a.shape[0]):
             a_s = [a_o[i,:],a_u[i,:]]
             b_s = [b_o[i,:], b_u[i,:]]
             f = plt.figure(figsize=(12,8))
             ax = plt.subplot(111)
-            plt.xlim([0,200])
-            plt.ylim([0,100])
+            plt.xlim([0,width])
+            plt.ylim([0,height])
             ax.scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o")
             ax.scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
 
@@ -939,7 +993,7 @@ class plots:
                       ncol=2)
             plt.xlabel("corridor width")
             plt.ylabel("corridor height")
-            plt.title("Agent Position Predictions with UKF")
+            plt.title("True Positions vs UKF Predictions")
             number =  str(i).zfill(5) #zfill names files such that sort() does its job properly later
             file = f"output_pairs/pairs{number}"
             f.savefig(file)
@@ -954,12 +1008,13 @@ class animations:
         images = []
         for filename in files:
             images.append(imageio.imread(f'{file}/{filename}'))
-        imageio.mimsave(f'{name}GIF.mp4', images,fps=10)
+        imageio.mimsave(f'{name}GIF.mp4', images,fps=24)
         rmtree(file)
         #animations.clear_output_folder(self,file)
         
-
+#%%
 if __name__ == "__main__":
+    np.random.seed(seed = 8)
     """
         width - corridor width
         height - corridor height
@@ -1028,15 +1083,15 @@ if __name__ == "__main__":
             "do_wiggle_animate": False,
             "do_density_animate":True,
             "do_pair_animate":False,
-            "prop": 0.5,
+            "prop": 0.2,
             "heatmap_rate": 1,
             "bin_size":10,
             "do_batch":False,
-            "do_unobserved":False
             }
     
     """
     a - alpha between 1 and 1e-4 typically determines spread of sigma points.
+        however for large dimensions may need to be even higher
     b - beta set to 2 for gaussian. determines trust in prior distribution.
     k - kappa usually 0 for state estimation and 3-dim(state) for parameters.
         not 100% sure what kappa does. think its a bias parameter.
@@ -1061,9 +1116,10 @@ if __name__ == "__main__":
     """plots"""
     plts = plots(u)
 
-    if filter_params["prop"]<1 or filter_params["do_unobserved"]:
+    if filter_params["prop"]<1:
         distances,t_mean = plts.diagnostic_plots(actual,preds,False,False)
     distances2,t_mean2 = plts.diagnostic_plots(actual,preds,True,False)
     
-    plts.pair_frames(actual,preds)
-    plts.heatmap(actual,preds)
+    #plts.trajectories(actual)
+    #plts.pair_frames(actual,preds)
+    #plts.heatmap(actual)

@@ -1009,7 +1009,6 @@ class animations:
             images.append(imageio.imread(f'{file}/{filename}'))
         imageio.mimsave(f'{name}GIF.mp4', images,fps=24)
         rmtree(file)
-        #animations.clear_output_folder(self,file)
         
 #%%
 if __name__ == "__main__":

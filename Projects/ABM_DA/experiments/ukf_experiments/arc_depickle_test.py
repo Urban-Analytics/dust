@@ -1,4 +1,3 @@
-
 import pickle
 import sys
 import os
@@ -11,11 +10,12 @@ from stationsim_model import Model
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.style.use("dark_background")
-matplotlib.style.use("tableau-colorblind10")
 
 import glob
 import seaborn as sns
+import warnings
+
+plt.style.use("dark_background")
 
 class HiddenPrints:
     def __enter__(self):
@@ -47,7 +47,9 @@ def grand_mean_plot(data,f_name):
     for i,frame in enumerate(data):
         mean_frame = np.ones((frame.shape[0],2))*np.nan
         mean_frame[:,0] = np.arange(0,frame.shape[0],1)
-        mean_frame[:,1]=(np.nanmean(frame,1))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore",category = RuntimeWarning)
+            mean_frame[:,1]=(np.nanmean(frame,1))
         reg_frames.append(mean_frame)
     
     grand_frame = np.vstack(reg_frames)
@@ -59,15 +61,14 @@ def grand_mean_plot(data,f_name):
     
 if __name__ == "__main__":
     
-    n=10
-    prop = 0.5
-    runs =2
+    n=50
+    prop = 0.8
     actual = []
     preds = []
     d_obs = []
     d_uobs = []
 
-    files = glob.glob(f"ukf_results/ukf_agents_{n}_prop_{prop}*")
+    files = glob.glob(f"ukf_results/ukf_agents_{n}_prop_{prop}-0*")
     
     for file in files:
         
@@ -85,8 +86,8 @@ if __name__ == "__main__":
     grand_mean_plot(d_obs,f"obs_{n}_{prop}.pdf")
     if prop<1:
         grand_mean_plot(d_uobs,f"uobs_{n}_{prop}.pdf")
-        #plts.trajectories(a)
-        #plts.pair_frames(a,b)
+        plts.trajectories(a)
+        plts.pair_frames(a,b)
     
     
         

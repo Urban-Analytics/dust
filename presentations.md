@@ -12,7 +12,7 @@ tagline: Presentations about, or relating to, the surf project
  
    - [Dynamic Simulation Models and Digital Twins of Urban Systems]({{site.baseurl}}/p/2019-06-18-URBAIN-AI_For_Cities.html). Presentation to the [Artificial Intelligence for Cities](https://cp.catapult.org.uk/events/artificial-intelligence-for-cities/) workshop. University of Leeds (Nexus), 18th June 2019.
    
-   - [Reducing the impacts of uncertainty in agent-based models for real-time applications]({{site.baseurl}}/p/2019-05-14-ABMUS-BusSim-MK). Presentation to the 4th International Workshop on Agent-Based Modelling of Urban Systems ([ABMUS](http://modelling-urban-systems.com/abmus2019)), part of the International Conference on Autonomous Agents and Multiagent Systems ([AAMAS 2019](http://aamas2019.encs.concordia.ca/)). 13-17 May, Montreal.
+   - [Reducing the impacts of uncertainty in agent-based models for real-time applications]({{site.baseurl}}/p/2019-05-14-ABMUS-BusSim-MK.html). Presentation to the 4th International Workshop on Agent-Based Modelling of Urban Systems ([ABMUS](http://modelling-urban-systems.com/abmus2019)), part of the International Conference on Autonomous Agents and Multiagent Systems ([AAMAS 2019](http://aamas2019.encs.concordia.ca/)). 13-17 May, Montreal.
 
    - [State Estimation and Data Assimilation for an Agent-Based Model using a Probabilistic Framework]({{site.baseurl}}/p/2019-05-14-abmus-keanu_probabilistic.html). Presentation to the 4th International Workshop on Agent-Based Modelling of Urban Systems ([ABMUS](http://modelling-urban-systems.com/abmus2019)), part of the International Conference on Autonomous Agents and Multiagent Systems ([AAMAS 2019](http://aamas2019.encs.concordia.ca/)). 13-17 May, Montreal.
 

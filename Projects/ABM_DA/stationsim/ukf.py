@@ -18,28 +18,32 @@ based on
 citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
 """
 
-#import pip packages
+#for filter
 import numpy as np
-from math import floor,log10,ceil
+from math import floor,log10,ceil,cos,sin
 import matplotlib.pyplot as plt
 import datetime
 import multiprocessing
+from copy import deepcopy
+import os 
+import sys 
+from stationsim_model import Model
+
+#for plots
 import matplotlib.cm as cm
 import matplotlib.colors as col
+import matplotlib.gridspec as gridspec
 import imageio
 from scipy.spatial import distance as dist
-from copy import deepcopy
-import os #for animations folder handling
+from scipy.stats import norm, multivariate_normal
 from shutil import rmtree#as above
-import sys #for print suppression
-from stationsim_model import Model
-#import local packages
-
-
-#for dark plots. purely an aesthetic choice.
-plt.style.use("dark_background")
-
+from filterpy.stats import covariance_ellipse
 """
+As of 3.6 only imageio (and ffmpeg dependency) and scipy.spatial are additional installs
+pip install imageio
+pip install ffmpeg
+pip install scipy
+
 suppress repeat printing in F_x from new stationsim
 E.g. 
 with HiddenPrints():
@@ -48,6 +52,9 @@ with HiddenPrints():
 everything here prints again
 https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
 """
+
+"for dark plots. purely an aesthetic choice. plt.style.available() for other styles"
+plt.style.use("dark_background")
 
 #%%
 class HiddenPrints:
@@ -142,9 +149,13 @@ class ukf:
         covariance estimation for prior P as a sum of the outer products of 
         (sigmas - unscented mean) weighted by wc
         """
-        Pxx =  self.wc[0]*np.outer((nl_sigmas[:,0].T-xhat),(nl_sigmas[:,0].T-xhat))+self.Q
-        for i in range(1,len(self.wc)): 
-            Pxx += self.wc[i]*np.outer((nl_sigmas[:,i].T-self.x),nl_sigmas[:,i].T-xhat)
+        
+        " quadratic form calculation of (cross/within) variances to replace old for loop"
+        Pxx = np.matmul(np.matmul((nl_sigmas.transpose()-xhat).T,np.diag(self.wc)),(nl_sigmas.transpose()-xhat))+self.Q
+
+        #Pxx =  self.wc[0]*np.outer((nl_sigmas[:,0].T-xhat),(nl_sigmas[:,0].T-xhat))+self.Q
+        #for i in range(1,len(self.wc)): 
+        #    Pxx += self.wc[i]*np.outer((nl_sigmas[:,i].T-self.x),nl_sigmas[:,i].T-xhat)
             
         self.P = Pxx #update Sxx
         self.x = xhat #update xhat
@@ -182,15 +193,19 @@ class ukf:
         
         
         "similar weighted estimates as Pxx for cross covariance and posterior covariance"
-        "need to do this with quadratic form at some point"
-        Pyy =  self.wc[0]*np.outer((nl_sigmas[:,0].transpose()-yhat),(nl_sigmas[:,0].transpose()-yhat))+self.R
-        for i in range(1,len(self.wc)):
-            Pyy += self.wc[i]*np.outer((nl_sigmas[:,i].transpose()-yhat),(nl_sigmas[:,i].transpose()-yhat))
+        "now with quadratic form"
         
+        Pyy = np.matmul(np.matmul((nl_sigmas.transpose()-yhat).T,np.diag(self.wc)),(nl_sigmas.transpose()-yhat))+self.R
 
-        Pxy =  self.wc[0]*np.outer((sigmas[:,0].T-self.x),(nl_sigmas[:,0].transpose()-yhat))
-        for i in range(1,len(self.wc)):
-            Pxy += self.wc[i]*np.outer((sigmas[:,i].T-self.x),(nl_sigmas[:,i].transpose()-yhat))
+        #Pyy =  self.wc[0]*np.outer((nl_sigmas[:,0].transpose()-yhat),(nl_sigmas[:,0].transpose()-yhat))+self.R
+        #for i in range(1,len(self.wc)):
+        #    Pyy += self.wc[i]*np.outer((nl_sigmas[:,i].transpose()-yhat),(nl_sigmas[:,i].transpose()-yhat))
+        
+        Pxy = np.matmul(np.matmul((sigmas.transpose()-self.x).T,np.diag(self.wc)),(nl_sigmas.transpose()-yhat))
+
+        #Pxy =  self.wc[0]*np.outer((sigmas[:,0].T-self.x),(nl_sigmas[:,0].transpose()-yhat))
+        #for i in range(1,len(self.wc)):
+        #    Pxy += self.wc[i]*np.outer((sigmas[:,i].T-self.x),(nl_sigmas[:,i].transpose()-yhat))
             
         "kalman gain"
         K = np.matmul(Pxy,np.linalg.inv(Pyy))
@@ -309,7 +324,6 @@ class ukf_ss:
         R = np.eye(len(self.index2))#sensor noise
         P = np.eye(self.pop_total*2)#inital guess at state covariance
         self.ukf = ukf(ukf_params,x,self.fx,self.hx,P,Q,R)
-        self.ukf_histories.append(self.ukf.x) #
     
     
     def main(self):
@@ -599,8 +613,9 @@ class plots:
         animations.animate(self,"output_positions",f"positions_{filter_class.pop_total}_")
             
         
-    def heatmap(self,a):
+    def heatmap(self,a,poly_list):
         "provide density of agents positions as a 2.5d histogram"
+        "!! add poly list"
         #sample_agents = [self.base_model.agents[j] for j in self.index]
         #swap if restricting observed agents
         filter_class = self.filter_class
@@ -682,92 +697,33 @@ class plots:
             plt.close()
         
         animations.animate(self,"output_heatmap",f"heatmap_{filter_class.pop_total}_")
+        
+    def MAEs(self,a,b):
+        """
+        MAE (mean absolute error) metric. 
+        finds mean average euclidean error at each time step and per each agent
+        provides whole array of distances per agent and time
+        and MAEs per agent and time. 
+        """
+        c = np.ones((a.shape[0],int(a.shape[1]/2)))*np.nan
+        
+        "!!theres probably a faster way of doing this with apply over axis"
+        #loop over each agent
+        a = a[:,::self.filter_class.sample_rate]
+        b = b[:,::self.filter_class.sample_rate]
 
-    """
-    old dont use
-    !! probably not worth getting this to work post hoc with new stationsim
-    """   
-    def wiggle_heatmap(self,a,b):
-          
-        bins = self.filter_params["bin_size"]
-        width = self.model_params["width"]
-        height = self.model_params["height"]
-        
-            #sample_agents = [self.base_model.agents[j] for j in self.index]
-            #swap if restricting observed wiggles
-        sample_agents = self.base_model.agents
-        wiggles = np.array([agent.wiggle for agent in sample_agents])
-        #are you having a wiggle m8
-        index = np.where(wiggles==1)
-        non_index = np.where(wiggles==0)
-        #sort locations
-        locs = [agent.location for agent in sample_agents]
-        locs = np.vstack(locs)
-        non_locs = locs[non_index,:][0,:,:]
-        locs = locs[index,:][0,:,:]
-        #initiate figure /axes
-        f = plt.figure(figsize=(12,8))
-        ax = f.add_subplot(111)
-        bins = self.filter_params["bin_size"]
-        width = self.model_params["width"]
-        height = self.model_params["height"]
 
-        #plot non-wigglers and set plot size
-        plt.scatter(non_locs[:,0],non_locs[:,1],color="cyan")
-        ax.set_ylim(0,height)
-        ax.set_xlim(0,width)
-        cmap = cm.Spectral
-
-        #check for any wigglers and plot the 2dhist 
-        if np.sum(wiggles)!=0:
-            plt.scatter(locs[:,0],locs[:,1],color="magenta")
-            hist,xb,yb = np.histogram2d(locs[:,0],locs[:,1],
-                                        range = [[0,width],[0,height]],
-                                        bins = [2*bins,bins],density=True)  #!! some formula for bins to make even binxbin squares??  
-            hist *= bins**2
-            hist= hist.T
-            hist = np.flip(hist,axis=0)
-            self.wiggle_densities[self.wiggle_frame_number] = hist
-            
-            extent = [0,width,0,height]
-            im=plt.imshow(np.ma.masked_where(hist==0,hist)
-                       ,cmap = cmap,extent=extent,
-                       norm=DivergingNorm(vmin=1e-10,vcenter=0.11,vmax=1))
-            
-        #if no wiggles plot a "ghost histogram" to maintain frame structure  
-        else:
-            #ghost histogram with one entry and (1,1)
-            hist,xb,yb = np.histogram2d(np.array([1]),np.array([1]),
-                                        range = [[0,width],[0,height]],
-                                        bins = [bins,bins],density=True)   
-           
-            extent = [0,width,0,height]
-            #plot ghost hist with no opacity (alpha=0) to make it invisible
-            im=plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                       ,cmap = cm.Spectral ,extent=extent,alpha=0
-                       ,norm=DivergingNorm(vmin=1e-10,vcenter=0.1,vmax=1))
+        #loop over each time per agent
+        for i in range(a.shape[0]):
+                a2 = np.array([a[i,0::2],a[i,1::2]]).T
+                b2 = np.array([b[i,0::2],b[i,1::2]]).T
+                res = a2-b2
+                c[i,:]=np.apply_along_axis(np.linalg.norm,1,res)
+                    
+        agent_means = np.nanmean(c,axis=0)
+        time_means = np.nanmean(c,axis=1)
+        return c,agent_means,time_means
         
-        #colourbar and various plot fluff
-        ticks = np.array([0.001,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
-        #!! numbers adjusted by trial and error for 200x100 field. 
-        #should probably generalise this and the bin structure at some point
-        cbar = plt.colorbar(im,fraction=0.046,pad=0.04,shrink=0.71,
-                            ticks = ticks,spacing="proportional")
-        plt.clim(0,1)
-        cbar.set_alpha(1)
-        cbar.draw_all()
-        
-        plt.xlabel("Corridor width")
-        plt.ylabel("Corridor height")
-        cbar.set_label("Wiggle Density (x100%)")
-        
-        number = str(self.wiggle_frame_number).zfill(5)
-        file = f"output_wiggle/wiggle{number}"
-        f.savefig(file)
-        plt.close()
-        self.wiggle_frame_number+=1
-        
-    
     def diagnostic_plots(self,a,b,observed,save):
         """
         self - UKf class for various information
@@ -795,27 +751,13 @@ class plots:
         for j in range(int(plot_range)):
             plt.plot(b[::fil.sample_rate,2*j],b[::fil.sample_rate,(2*j)+1])    
             plt.title("KF predictions")
-
             
+        """
+        MAE metric. 
+        finds mean average euclidean error at each time step and per each agent
+        """
+        c,agent_means,time_means = self.MAEs(a,b)
         
-            
-        """MAE metric. 
-        finds mean average euclidean error at each time step and per each agent"""
-        c = np.ones((a.shape[0],int(a.shape[1]/2)))*np.nan
-        
-       
-        
-        for i in range(int(a.shape[1]/2)):
-            a_2 =   a[:,(2*i):(2*i)+2] 
-            b_2 =   b[:,(2*i):(2*i)+2] 
-    
-
-            for k in range(floor(np.min([a.shape[0],b.shape[0]]))):
-                if not(np.any(np.isnan(a_2[k,:])) or np.any(np.isnan(b_2[k,:]))):                
-                    c[k,i]=dist.euclidean(a_2[k,:],b_2[k,:])
-                        
-        agent_means = np.nanmean(c,axis=0)
-        time_means = np.nanmean(c,axis=1)
         h = plt.figure(figsize=(12,8))
         plt.plot(time_means[::fil.sample_rate])
         plt.axhline(y=0,color="r")
@@ -831,7 +773,7 @@ class plots:
             
             i = plt.figure(figsize=(12,8))
             plt.plot(a1[:,0],a1[:,1],label= "True Path")
-            plt.plot(b1[::fil.sample_rate,0],b1[::fil.sample_rate,1],label = "KF Prediction")
+            plt.plot(b1[::self.filter_class.sample_rate,0],b1[::self.filter_class.sample_rate,1],label = "KF Prediction")
             plt.legend()
             plt.title("Worst agent")
             
@@ -852,98 +794,6 @@ class plots:
             j.savefig(f"{s}_agent_hist")
         return c,time_means
     
-            
-    def difference_frames(self,a,b):
-        "snapshots of densities"
-        filter_class = self.filter_class
-        bin_size = filter_class.filter_params["bin_size"]
-        width = filter_class.model_params["width"]
-        height = filter_class.model_params["height"]
-        os.mkdir("output_diff")
-        #generate full from observed
-        densities=[]
-        kf_densities =[]
-        diffs = []
-        for _ in range(1,a.shape[0]):
-            hista,xb,yb = np.histogram2d(a[_,::2],a[_,1::2],
-                                    range = [[0,width],[0,height]],
-                                    bins = [int(width/bin_size),int(height/bin_size)],density=True)
-            hista *= bin_size**2
-            hista= hista.T
-            hista = np.flip(hista,axis=0)
-            densities.append(hista)
-    
-        for _ in range(1,b.shape[0]):
-            histb,xb,yb = np.histogram2d(b[_,0::2],b[_,1::2],
-                                    range = [[0,width],[0,height]],
-                                    bins = [int(width/bin_size),int(height/bin_size)],density=True)
-            histb *= bin_size**2
-            histb= histb.T
-            histb = np.flip(histb,axis=0)
-            kf_densities.append(histb)
-    
-        for _ in range(len(densities)):
-           diffs.append(np.abs(densities[_]-kf_densities[_]))
-           
-        for i,hist in enumerate(diffs):
-            f = plt.figure(figsize=(12,8))
-            ax = f.add_subplot(111)
-            
-            if np.abs(np.nansum(hist))>0:
-                  ax.set_ylim(0,height)
-                  ax.set_xlim(0,width)        
-                  
-                  extent = [0,width,0,height]
-                  plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                             ,cmap = cm.Spectral ,extent=extent
-                             ,norm=DivergingNorm(vmin=1/filter_class.pop_total,
-                                                 vcenter=5/filter_class.pop_total,vmax=1))
-            else:
-                """
-                dummy frame if no locations present e.g. at the start. 
-                e.g. perfect aggregates
-                """
-                fake_locs = np.array([-1,-1])
-                ax.scatter(fake_locs[0::2],fake_locs[1::2],color="cyan",label="True Positions")
-            
-                extent = [0,width,0,height]
-                plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                           ,cmap = cm.Spectral ,extent=extent
-                           ,norm=DivergingNorm(vmin=1/filter_class.pop_total,
-                                               vcenter=5/filter_class.pop_total,vmax=1))   
-            
-
-            #colourbar and various plot fluff
-            ticks = np.arange(0,1.1,0.1)
-            cbar = plt.colorbar(fraction=0.046,pad=0.04,shrink=0.71,
-                                ticks = ticks,spacing="uniform")
-            cbar.set_label("Agent Density (x100%)")
-            plt.clim(0,1)
-            cbar.set_alpha(1)
-            cbar.draw_all()
-               
-            #"set legend to bottom centre outside of plot"
-            #box = ax.get_position()
-            #ax.set_position([box.x0, box.y0 + box.height * 0.1,
-            #                 box.width, box.height * 0.9])
-            # 
-            # ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18),
-            #           ncol=2)
-            "labels"
-            plt.xlabel("Corridor width")
-            plt.ylabel("Corridor height")
-            plt.title("Predicted vs Actual Densities")
-            cbar.set_label("Agent Density (x100%)")
-            """
-            frame number and saving. padded zeroes to keep frames in order.
-            padded to nearest upper order of 10 of number of iterations.
-            """
-            number = str(i).zfill(ceil(log10(a.shape[0])))
-            file = f"output_diff/{number}"
-            f.savefig(file)
-            plt.close()
-        
-        animations.animate(self,"output_diff",f"diff_gif_{filter_class.pop_total}")
         
     def pair_frames(self,a,b):
         "paired side by side preds/truth"
@@ -993,13 +843,265 @@ class plots:
             plt.xlabel("corridor width")
             plt.ylabel("corridor height")
             plt.title("True Positions vs UKF Predictions")
-            number =  str(i).zfill(5) #zfill names files such that sort() does its job properly later
+            number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
             file = f"output_pairs/pairs{number}"
             f.savefig(file)
             plt.close()
         
         animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
 
+    def pair_frames_stack(self,a,b):
+        "paired side by side preds/truth"
+        filter_class = self.filter_class
+        width = filter_class.model_params["width"]
+        height = filter_class.model_params["height"]
+        a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
+        a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
+        c,agent_means,time_means = self.MAEs(a_o,b_o) #maes
+        c2,agent_means2,time_means2 = self.MAEs(a_u,b_u) #maes
+
+        os.mkdir("output_pairs")
+        for i in range(a.shape[0]):
+            a_s = [a_o[i,:],a_u[i,:]]
+            b_s = [b_o[i,:], b_u[i,:]]
+            f=plt.figure()
+            gs = gridspec.GridSpec(4,4)
+            axes = [plt.subplot(gs[:2,:]),plt.subplot(gs[2:,:2]),plt.subplot(gs[2:,2:])]
+
+            axes[0].set_xlim([0,width])
+            axes[0].set_ylim([0,height])
+            axes[1].set_xlim([0,a_u.shape[0]])
+            axes[1].set_ylim([0,np.nanmax(time_means)*1.05])
+            axes[2].set_xlim([0,a_u.shape[0]])
+            axes[2].set_ylim([0,np.nanmax(time_means2)*1.05])         
+            
+            "plot true agents and dummies for legend"
+            axes[0].scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o")
+            axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
+            axes[0].scatter(-1,-1,color="orangered",label = "KF_Observed",marker="o")
+            axes[0].scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^")
+
+            
+            markers = ["o","^"]
+            colours = ["orangered","yellow"]
+            for j in range(len(a_s)):
+
+                a1 = a_s[j]
+                b1 = b_s[j]
+                if np.abs(np.nansum(a1-b1))>1e-4: #check for perfect conditions (initial)
+                    for k in range(int(a1.shape[0]/2)):
+                        a2 = a1[(2*k):(2*k)+2]
+                        b2 = b1[(2*k):(2*k)+2]          
+                        if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
+                            x = [a2[0],b2[0]]
+                            y = [a2[1],b2[1]]
+                            axes[0].plot(x,y,color="white")
+                            axes[0].scatter(b2[0],b2[1],color=colours[j],marker = markers[j])
+            
+            #box = axes[1].get_position()
+            #axes[1].set_position([box.x0, box.y0 + box.height * 0.1,
+            #                 box.width, box.height * 0.9])
+            
+            axes[1].plot(time_means[:i],label="observed")
+            axes[2].plot(time_means2[:i],label="unobserved")
+
+            axes[0].legend(bbox_to_anchor=(1.012, 1.2),
+                      ncol=3,prop={'size':7})
+            axes[0].set_xlabel("corridor width")
+            axes[0].set_ylabel("corridor height")
+            axes[1].set_ylabel("Observed MAE")
+            axes[1].set_xlabel("Time (steps)")
+            axes[2].set_ylabel("Unobserved MAE")
+            axes[2].set_xlabel("Time (steps)")
+            #axes[0].title("True Positions vs UKF Predictions")
+            number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
+            axes[0].text(0,1.05*height,"Frame Number: "+str(i))
+            
+            file = f"output_pairs/pairs{number}"
+            f.tight_layout()
+            f.savefig(file)
+            plt.close()
+        
+        animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
+        
+    def pair_frames_stack_ellipse(self,a,b):
+
+        "paired side by side preds/truth"
+        filter_class = self.filter_class
+        width = filter_class.model_params["width"]
+        height = filter_class.model_params["height"]
+        a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
+        a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
+        c,agent_means,time_means = self.MAEs(a_o,b_o) #maes
+        c2,agent_means2,time_means2 = self.MAEs(a_u,b_u) #maes
+
+        os.mkdir("output_pairs")
+        for i in range(a.shape[0]):
+            a_s = [a_o[i,:],a_u[i,:]]
+            b_s = [b_o[i,:], b_u[i,:]]
+            f=plt.figure()
+            gs = gridspec.GridSpec(4,4)
+            axes = [plt.subplot(gs[:2,:]),plt.subplot(gs[2:,:2]),plt.subplot(gs[2:,2:])]
+
+            axes[0].set_xlim([0,width])
+            axes[0].set_ylim([0,height])
+            axes[1].set_xlim([0,a_u.shape[0]])
+            axes[1].set_ylim([0,np.nanmax(time_means)*1.05])
+            axes[2].set_xlim([0,a_u.shape[0]])
+            axes[2].set_ylim([0,np.nanmax(time_means2)*1.05])         
+            
+            "plot true agents and dummies for legend"
+            
+            P = self.filter_class.ukf.Ps[i]
+            agent_covs = []
+            for i in range(int(a.shape[1]/2)):
+                agent_covs.append(P[(2*i):(2*i)+2,(2*i):(2*i)+2])
+            #axes[0].scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o")
+            #axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
+            axes[0].scatter(-1,-1,color="orangered",label = "KF_Observed",marker="o")
+            axes[0].scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^")
+
+            
+            markers = ["o","^"]
+            colours = ["orangered","yellow"]
+            for j in range(len(a_s)):
+                a1 = a_s[j]
+                b1 = b_s[j]
+                if np.abs(np.nansum(a1-b1))>1e-4: #check for perfect conditions (initial)
+                    for k in range(int(a1.shape[0]/2)):
+                        a2 = a1[(2*k):(2*k)+2]
+                        b2 = b1[(2*k):(2*k)+2]          
+                        if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
+                            x = [a2[0],b2[0]]
+                            y = [a2[1],b2[1]]
+                            axes[0].plot(x,y,color="white")
+                            axes[0].scatter(b2[0],b2[1],color=colours[j],marker = markers[j])
+                            plot_covariance((x[0],y[0]),agent_covs[k],ax=axes[0],edgecolor="orangered",alpha=0.4)
+            #box = axes[1].get_position()
+            #axes[1].set_position([box.x0, box.y0 + box.height * 0.1,
+            #                 box.width, box.height * 0.9])
+            
+            axes[1].plot(time_means[:i],label="observed")
+            axes[2].plot(time_means2[:i],label="unobserved")
+
+            axes[0].legend(bbox_to_anchor=(1.012, 1.2),
+                      ncol=3,prop={'size':7})
+            axes[0].set_xlabel("corridor width")
+            axes[0].set_ylabel("corridor height")
+            axes[1].set_ylabel("Observed MAE")
+            axes[1].set_xlabel("Time (steps)")
+            axes[2].set_ylabel("Unobserved MAE")
+            axes[2].set_xlabel("Time (steps)")
+            #axes[0].title("True Positions vs UKF Predictions")
+            number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
+            axes[0].text(0,1.05*height,"Frame Number: "+str(i))
+            
+            file = f"output_pairs/pairs{number}"
+            f.tight_layout()
+            f.savefig(file)
+            plt.close()
+        
+        animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
+                
+
+def _std_tuple_of(var=None, std=None, interval=None):
+    """
+    Convienence function for plotting. Given one of var, standard
+    deviation, or interval, return the std. Any of the three can be an
+    iterable list.
+
+    Examples
+    --------
+    >>>_std_tuple_of(var=[1, 3, 9])
+    (1, 2, 3)
+
+    """
+
+    if std is not None:
+        if np.isscalar(std):
+            std = (std,)
+        return std
+
+
+    if interval is not None:
+        if np.isscalar(interval):
+            interval = (interval,)
+
+        return norm.interval(interval)[1]
+
+    if var is None:
+        raise ValueError("no inputs were provided")
+
+    if np.isscalar(var):
+        var = (var,)
+    return np.sqrt(var) 
+
+
+def plot_covariance(
+        mean, cov=None, variance=1.0, std=None, interval=None,
+        ellipse=None, title=None, axis_equal=True,
+        show_semiaxis=False, show_center=True,
+        facecolor=None, edgecolor=None,
+        fc='none', ec='#004080',
+        alpha=1.0, xlim=None, ylim=None,
+        ls='solid',ax=None):
+    "filterpy.stats covariance ellipse plot function with added parameter for custom axis"
+    from matplotlib.patches import Ellipse
+    import matplotlib.pyplot as plt
+
+    if cov is not None and ellipse is not None:
+        raise ValueError('You cannot specify both cov and ellipse')
+
+    if cov is None and ellipse is None:
+        raise ValueError('Specify one of cov or ellipse')
+
+    if facecolor is None:
+        facecolor = fc
+
+    if edgecolor is None:
+        edgecolor = ec
+
+    if cov is not None:
+        ellipse = covariance_ellipse(cov)
+
+    if axis_equal:
+        plt.axis('equal')
+
+    if title is not None:
+        plt.title(title)
+
+    if ax==None:
+        ax = plt.gca()
+
+
+    angle = np.degrees(ellipse[0])
+    width = ellipse[1] * 2.
+    height = ellipse[2] * 2.
+
+    std = _std_tuple_of(variance, std, interval)
+    for sd in std:
+        e = Ellipse(xy=mean, width=sd*width, height=sd*height, angle=angle,
+                    facecolor=facecolor,
+                    edgecolor=edgecolor,
+                    alpha=alpha,
+                    lw=2, ls=ls)
+        ax.add_patch(e)
+    x, y = mean
+    if show_center:
+        ax.scatter(x, y, marker='+', color=edgecolor)
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    if show_semiaxis:
+        a = ellipse[0]
+        h, w = height/4, width/4
+        ax.plot([x, x+ h*cos(a+np.pi/2)], [y, y + h*sin(a+np.pi/2)])
+        ax.plot([x, x+ w*cos(a)], [y, y + w*sin(a)])
+       
 class animations:
     def animate(self,file,name):
         files = sorted(os.listdir(file))

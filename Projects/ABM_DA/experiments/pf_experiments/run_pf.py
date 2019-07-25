@@ -48,18 +48,18 @@ if __name__ == '__main__':
         'width': 200,
         'height': 100,
         'pop_total': param_list[int(sys.argv[1]) - 1][1],  # agents read from ARC task array variable
-        'entrances': 3,
-        'entrance_space': 2,
-        'entrance_speed': .1,
-        'exits': 2,
-        'exit_space': 1,
+        #'entrances': 3,
+        #'entrance_space': 2,
+        #'entrance_speed': .1,
+        #'exits': 2,
+        #'exit_space': 1,
         'speed_min': .1,
-        'speed_desire_mean': 1,
-        'speed_desire_std': 1,
+        #'speed_desire_mean': 1,
+        #'speed_desire_std': 1,
         'separation': 2,
         'batch_iterations': 4000,  # Only relevant in batch() mode
-        'do_save': True,  # Saves output data (only relevant in batch() mode)
-        'do_ani': False,  # Animates the model (only relevant in batch() mode)
+        #'do_save': True,  # Saves output data (only relevant in batch() mode)
+        #'do_ani': False,  # Animates the model (only relevant in batch() mode)
         'do_history': False,
         'do_print': False,
     }
@@ -76,7 +76,7 @@ if __name__ == '__main__':
         'do_save': True,
         'plot_save': False,
         'do_ani': False,
-
+        'show_ani': False, # Don't actually show the animation. They can be extracted later from self.animation
     }
 
     # Open a file to write the results to

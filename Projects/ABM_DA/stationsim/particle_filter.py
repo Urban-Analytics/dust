@@ -33,6 +33,8 @@ class ParticleFilter(Filter):
          - do_save:                 Boolean to determine if data should be saved and stats printed
          - do_ani:                  Boolean to determine if particle filter data should be animated
                                     and displayed
+         - show_ani:                If false then don't actually show the animation. The individual
+                                    can be retrieved later from self.animation
         
         DESCRIPTION
         Firstly, set all attributes using filter parameters. Set time and
@@ -64,6 +66,8 @@ class ParticleFilter(Filter):
             self.absolute_errors = [] # Unweighted distance between mean state and the true state
             self.unique_particles = []
             self.before_resample = [] # Records whether the errors were before or after resampling
+
+        self.animation = [] # Keep a record of each plot created if animating so the individual ones can be viewed later
 
         #print("Creating initial states ... ")
         base_model_state = self.base_model.agents2state()
@@ -145,90 +149,96 @@ class ParticleFilter(Filter):
         '''
         print("Starting particle filter step()")
 
-        window_start_time = time.time()  # time how long each window takes
-        while self.time < self.number_of_iterations:
+        try:
 
-            # Whether to run predict repeatedly, or just once
-            numiter = 1
-            if self.multi_step:
-                self.time += self.resample_window
-                numiter = self.resample_window
-            else:
-                self.time += 1
+            window_start_time = time.time()  # time how long each window takes
+            while self.time < self.number_of_iterations:
 
-            # See if some particles still have active agents
-            if any([agent.status != 2 for agent in self.base_model.agents]):
-                # print(self.time/self.number_of_iterations)
+                # Whether to run predict repeatedly, or just once
+                numiter = 1
+                if self.multi_step:
+                    self.time += self.resample_window
+                    numiter = self.resample_window
+                else:
+                    self.time += 1
 
-                self.predict(numiter=numiter)
+                # See if some particles still have active agents
+                if any([agent.status != 2 for agent in self.base_model.agents]):
+                    # print(self.time/self.number_of_iterations)
 
-                if self.time % self.resample_window == 0:
-                    self.window_counter += 1
+                    self.predict(numiter=numiter)
 
-                    # Store the model states before and after resampling
-                    if self.do_save or self.p_save:
-                        self.save(before=True)
+                    if self.time % self.resample_window == 0:
+                        self.window_counter += 1
 
-                    self.reweight()
+                        # Store the model states before and after resampling
+                        if self.do_save or self.p_save:
+                            self.save(before=True)
 
-                    self.resample()
+                        self.reweight()
 
-                    # Store the model states before and after resampling
-                    if self.do_save or self.p_save:
-                        self.save(before=False)
+                        self.resample()
 
-                    print("\tFinished window {}, step {} (took {}s)".format(
-                        self.window_counter, self.time, round(float(time.time() - window_start_time), 2)))
-                    window_start_time = time.time()
+                        # Store the model states before and after resampling
+                        if self.do_save or self.p_save:
+                            self.save(before=False)
 
-                elif self.multi_step:
-                    assert (
-                        False), "Should not get here, if multi_step is true then the condition above should always run"
+                        print("\tFinished window {}, step {} (took {}s)".format(
+                            self.window_counter, self.time, round(float(time.time() - window_start_time), 2)))
+                        window_start_time = time.time()
 
-            else:
-                pass # Don't print the message below any more
-                #print("\tNo more active agents. Finishing particle step")
+                    elif self.multi_step:
+                        assert (
+                            False), "Should not get here, if multi_step is true then the condition above should always run"
 
-            # Animate this window
-            if self.do_ani:
-                self.ani()
+                else:
+                    pass # Don't print the message below any more
+                    #print("\tNo more active agents. Finishing particle step")
 
-        if self.plot_save:
-            self.p_save()
+                # Animate this window
+                if self.do_ani:
+                    self.ani()
 
-        # Return the errors and variences before and after sampling (if we're saving information)
-        # Useful for debugging in console:
-        # for i, a in enumerate(zip([x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == True],
-        #                          [x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == False])):
-        #    print("{} - before: {}, after: {}".format(i, a[0], a[1]))
-        if self.do_save:
-            if self.mean_errors == []:
-                warnings.warn("For some reason the mean_errors array is empty. Cannot store errors for this run.")
-                return
+            if self.plot_save:
+                self.p_save()
 
-            # Return two tuples, one with the about the error before reweighting, one after
+            # Return the errors and variences before and after sampling (if we're saving information)
+            # Useful for debugging in console:
+            # for i, a in enumerate(zip([x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == True],
+            #                          [x[1] for x in zip(self.before_resample, self.mean_errors) if x[0] == False])):
+            #    print("{} - before: {}, after: {}".format(i, a[0], a[1]))
+            if self.do_save:
+                if self.mean_errors == []:
+                    warnings.warn("For some reason the mean_errors array is empty. Cannot store errors for this run.")
+                    return
 
-            # Work out which array indices point to results before and after reweighting
-            before_indices = [i for i, x in enumerate(self.before_resample) if x]
-            after_indices = [i for i, x in enumerate(self.before_resample) if not x]
+                # Return two tuples, one with the about the error before reweighting, one after
 
-            result = []
+                # Work out which array indices point to results before and after reweighting
+                before_indices = [i for i, x in enumerate(self.before_resample) if x]
+                after_indices = [i for i, x in enumerate(self.before_resample) if not x]
 
-            for before in [before_indices, after_indices]:
-                result.append([
-                    min(np.array(self.mean_errors)[before]),
-                    max(np.array(self.mean_errors)[before]),
-                    np.average(np.array(self.mean_errors)[before]),
-                    min(np.array(self.absolute_errors)[before]),
-                    max(np.array(self.absolute_errors)[before]),
-                    np.average(np.array(self.absolute_errors)[before]),
-                    min(np.array(self.variances)[before]),
-                    max(np.array(self.variances)[before]),
-                    np.average(np.array(self.variances)[before])
-                ])
-            return result
-        else:
+                result = []
+
+                for before in [before_indices, after_indices]:
+                    result.append([
+                        min(np.array(self.mean_errors)[before]),
+                        max(np.array(self.mean_errors)[before]),
+                        np.average(np.array(self.mean_errors)[before]),
+                        min(np.array(self.absolute_errors)[before]),
+                        max(np.array(self.absolute_errors)[before]),
+                        np.average(np.array(self.absolute_errors)[before]),
+                        min(np.array(self.variances)[before]),
+                        max(np.array(self.variances)[before]),
+                        np.average(np.array(self.variances)[before])
+                    ])
+                return result
+
+            # If not saving then just return null
             return
+
+        finally: # Whatever happens, make sure the multiprocessing pool is colsed
+            self.pool.close()
 
     def predict(self, numiter=1):
         '''
@@ -247,13 +257,16 @@ class ParticleFilter(Filter):
         for i in range(numiter):
             self.base_model.step()
 
-        stepped_particles = self.pool.starmap(ParticleFilter.step_particle, list(zip( \
-            range(self.number_of_particles),  # Particle numbers (in integer)
-            [m for m in self.models],  # Associated Models (a Model object)
-            [numiter] * self.number_of_particles,  # Number of iterations to step each particle (an integer)
-            [self.particle_std] * self.number_of_particles,  # Particle std (for adding noise) (a float)
-            [s.shape for s in self.states],  # Shape (for adding noise) (a tuple)
-        )))
+        try:
+            stepped_particles = self.pool.starmap(ParticleFilter.step_particle, list(zip( \
+                range(self.number_of_particles),  # Particle numbers (in integer)
+                [m for m in self.models],  # Associated Models (a Model object)
+                [numiter] * self.number_of_particles,  # Number of iterations to step each particle (an integer)
+                [self.particle_std] * self.number_of_particles,  # Particle std (for adding noise) (a float)
+                [s.shape for s in self.states],  # Shape (for adding noise) (a tuple)
+            )))
+        except Exception as e: # If there is an error then make sure the pool closes; don't want old processes hanging around
+            self.pool.close()
 
         self.models = [stepped_particles[i][0] for i in range(len(stepped_particles))]
         self.states = np.array([stepped_particles[i][1] for i in range(len(stepped_particles))])
@@ -395,7 +408,11 @@ class ParticleFilter(Filter):
         '''
         if any([agent.status == 1 for agent in self.base_model.agents]):
 
-            plt.figure(1)
+            if not self.show_ani:
+                # Turn interactive plotting off
+                plt.ioff()
+
+            fig = plt.figure(len(self.animation)+1) # Make sure figures aren't overridden
             plt.clf()
 
             markersizes = self.weights
@@ -420,7 +437,10 @@ class ParticleFilter(Filter):
                     plt.plot(*agent.location, 'sk', markersize=4)
 
             plt.axis(np.ravel(self.base_model.boundaries, 'F'))
-            plt.pause(1 / 4)
+            if self.show_ani:
+                plt.pause(1.0 / 4) # If we're showing animations then show and pause briefly
+
+            self.animation.append(fig) # Store this plot to browse later
 
 
 if __name__ == '__main__':

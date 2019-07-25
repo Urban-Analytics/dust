@@ -183,6 +183,10 @@ class ParticleFilter(Filter):
                         if self.do_save or self.p_save:
                             self.save(before=False)
 
+                        # Animate this window
+                        if self.do_ani:
+                            self.ani()
+
                         print("\tFinished window {}, step {} (took {}s)".format(
                             self.window_counter, self.time, round(float(time.time() - window_start_time), 2)))
                         window_start_time = time.time()
@@ -194,10 +198,6 @@ class ParticleFilter(Filter):
                 else:
                     pass # Don't print the message below any more
                     #print("\tNo more active agents. Finishing particle step")
-
-                # Animate this window
-                if self.do_ani:
-                    self.ani()
 
             if self.plot_save:
                 self.p_save()

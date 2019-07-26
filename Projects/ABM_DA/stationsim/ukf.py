@@ -27,22 +27,24 @@ import multiprocessing
 from copy import deepcopy
 import os 
 import sys 
-from stationsim_model import Model
+
+#due to import errors from other directories
+sys.path.append("..")
+from stationsim.stationsim_model import Model
 
 #for plots
-import matplotlib.cm as cm
-import matplotlib.colors as col
+
 import matplotlib.gridspec as gridspec
 import imageio
-from scipy.spatial import distance as dist
-from scipy.stats import norm, multivariate_normal
-from shutil import rmtree#as above
-from filterpy.stats import covariance_ellipse
+from scipy.stats import norm
+from shutil import rmtree
+from filterpy.stats import covariance_ellipse #needed solely for pairwise_frames_stack_ellipse for covariance ellipse plotting
 """
 As of 3.6 only imageio (and ffmpeg dependency) and scipy.spatial are additional installs
 pip install imageio
 pip install ffmpeg
 pip install scipy
+
 
 suppress repeat printing in F_x from new stationsim
 E.g. 
@@ -113,8 +115,15 @@ class ukf:
         self.Ps = []
 
     def Sigmas(self,mean,S):
-        """sigma point calculations based on current mean x and  UT (upper triangular) 
-        decomposition S of covariance P"""
+        """
+        sigma point calculations based on current mean x and  covariance matrix square root S
+        in:
+            mean x (n by 1)
+            covariance square root S (n by n)
+            
+        out:
+            2*n+1 rows of n dimensional sigma points
+        """
         
      
         sigmas = np.ones((self.n,(2*self.n)+1)).T*mean
@@ -235,15 +244,20 @@ class ukf_ss:
     """
     def __init__(self,model_params,filter_params,ukf_params,base_model):
         """
-        *_params - loads in parameters for the model, station sim filter and general UKF parameters
-        base_model - initiate stationsim 
-        pop_total - population total
-        number_of_iterations - how many steps for station sim
-        sample_rate - how often to update the kalman filter. intigers greater than 1 repeatedly step the station sim forward
-        sample_size - how many agents observed if prop is 1 then sample_size is same as pop_total
-        index and index 2 - indicate which agents are being observed
-        ukf_histories- placeholder to store ukf trajectories
-        time1 - initial time used to calculate run time 
+        in:
+            *_params - loads in parameters for the model, station sim filter and general UKF parameters
+            base_model - initiate stationsim 
+        
+        out:
+            *_params - loads in parameters for the model, station sim filter and general UKF parameters
+            base_model - initiate stationsim 
+            pop_total - population total
+            number_of_iterations - how many steps for station sim
+            sample_rate - how often to update the kalman filter. intigers greater than 1 repeatedly step the station sim forward
+            sample_size - how many agents observed if prop is 1 then sample_size is same as pop_total
+            index and index 2 - indicate which agents are being observed
+            ukf_histories- placeholder to store ukf trajectories
+            time1 - initial time used to calculate run time 
         """
         #call params
         self.model_params = model_params #stationsim parameters
@@ -275,21 +289,23 @@ class ukf_ss:
         self.ukf_histories = []
    
         self.time1 =  datetime.datetime.now()#timer
-
+        self.time2 = None
     def fx(self,x,**fx_args):
         """
-        Transition function for each agent. where it is predicted to be.
-        For station sim this is essentially a placeholder step with
-        varying initial locations depending on each sigma point.
-        
+        Transition function for the state space giving where it is predicted to be
+        at the next time step.
 
-        """
-        """
-        call placeholder base_model created in main via pickling
-        this is done to essentially rollback the basemodel as stepping 
-        it is non-invertible (afaik).
+        In this case it is a placeholder which receives a vector a base_model class
+        instance with specified agent locations and speed and predicts where
+        they will be at the next time step
+        
+        in:
+            base_model class with current agent attributes
+        out:
+            base_model positions predicted for next time step
         """
             
+     
      
                 
         
@@ -306,19 +322,38 @@ class ukf_ss:
    
     def hx(self,state,**hx_args):
         """
-        Measurement function for agent. I.E. where the agents are recorded to be
-        returns observed agents.
+        Measurement function for aggregates.
+        This converts our state space with latent variables output by fx 
+        into one with the same state space as what we can observe.
+        For example, if we may use position and speed in our
+        transition function fx to predict the state at the next time interval.
+        If we can only measure position then this function may 
+        just simply omit the speed or use it to further estimate the position.
+        
+        In this case this function simply omits agents which cannot be observed.
+        
         in:
-            full state space
+            full latent state space output by fx
         out: 
-            observed subset of full state
+            vector of aggregates from measuring how many agents in each polygon in poly_list 
         """
         state = state[self.index2]
         
         return state
     
     def init_ukf(self,ukf_params):
-        "initialise ukf with initial state and covariance structures."
+        """
+        initialise ukf with initial state and covariance structures.
+        in:
+            base model
+            number of agents
+            some list of aggregate polygons
+            some transition f and measurement h functions
+            
+        out:
+            initalised ukf class object
+        """
+        
         x = self.base_model.get_state(sensor="location")#initial state
         Q = np.eye(self.pop_total*2)#process noise
         R = np.eye(len(self.index2))#sensor noise
@@ -330,12 +365,21 @@ class ukf_ss:
         """
         main function for ukf station sim
         -initiates ukf
-        -predict with ukf
-        -step true model
-        -update ukf with new model positions
-        -repeat until model ends or max iterations reached
+        while any agents are still active
+            -predict with ukf
+            -step true model
+            -update ukf with new model positions
+            -repeat until all agents finish or max iterations reached
+            
+        in: 
+            __init__ with various parameters including base model, parameters for
+            filter,ukf, and model, which agents (if any) are unobserved and
+            storage for data
         
+        out:
+            -agents trajectories and UKF predictions of said trajectories
         """
+        
         #seeding if  wanted else hash it
 
         self.init_ukf(self.ukf_params) 
@@ -368,8 +412,8 @@ class ukf_ss:
             if self.base_model.pop_finished == self.pop_total: #break condition
                 break
         
-        time2 = datetime.datetime.now()#timer
-        print(time2-self.time1)
+        self.time2 = datetime.datetime.now()#timer
+        print(self.time2-self.time1)
         
     def data_parser(self,do_fill):
         """
@@ -412,141 +456,24 @@ class ukf_ss:
         
         return a,b
 
-class DivergingNorm(col.Normalize):
-    def __init__(self, vcenter, vmin=None, vmax=None):
-        """
-        Normalize data with a set center.Rebuilt to be left heavy with the colouration
-        given a skewed data set.
-
-        Useful when mapping data with an unequal rates of change around a
-        conceptual center, e.g., data that range from -2 to 4, with 0 as
-        the midpoint.
-
-        Parameters
-        ----------
-        vcenter : float
-            The data value that defines ``0.5`` in the normalization.
-        vmin : float, optional
-            The data value that defines ``0.0`` in the normalization.
-            Defaults to the min value of the dataset.
-        vmax : float, optional
-            The data value that defines ``1.0`` in the normalization.
-            Defaults to the the max value of the dataset.
-
-        
-        
-        """
-
-        self.vcenter = vcenter
-        self.vmin = vmin
-        self.vmax = vmax
-        if vcenter is not None and vmax is not None and vcenter >= vmax:
-            raise ValueError('vmin, vcenter, and vmax must be in '
-                             'ascending order')
-        if vcenter is not None and vmin is not None and vcenter <= vmin:
-            raise ValueError('vmin, vcenter, and vmax must be in '
-                             'ascending order')
-
-    def autoscale_None(self, A):
-        """
-        Get vmin and vmax, and then clip at vcenter
-        """
-        super().autoscale_None(A)
-        if self.vmin > self.vcenter:
-            self.vmin = self.vcenter
-        if self.vmax < self.vcenter:
-            self.vmax = self.vcenter
-
-
-    def __call__(self, value, clip=None):
-        """
-        Map value to the interval [0, 1]. The clip argument is unused.
-        """
-        result, is_scalar = self.process_value(value)
-        self.autoscale_None(result)  # sets self.vmin, self.vmax if None
-
-        if not self.vmin <= self.vcenter <= self.vmax:
-            raise ValueError("vmin, vcenter, vmax must increase monotonically")
-        result = np.ma.masked_array(
-            np.interp(result, [self.vmin, self.vcenter, self.vmax],
-                      [0, 0.9, 1.]), mask=np.ma.getmask(result))
-        if is_scalar:
-            result = np.atleast_1d(result)[0]
-        return result
-
-class DoubleDivergingNorm(col.Normalize):
-    def __init__(self, vcenter, vmin=None, vmax=None):
-        """
-        Normalize data with a set center.Rebuilt to be left heavy with the colouration
-        given a skewed data set.
-
-        Useful when mapping data with an unequal rates of change around a
-        conceptual center, e.g., data that range from -2 to 4, with 0 as
-        the midpoint.
-
-        Parameters
-        ----------
-        vcenter : float
-            The data value that defines ``0.5`` in the normalization.
-        vmin : float, optional
-            The data value that defines ``0.0`` in the normalization.
-            Defaults to the min value of the dataset.
-        vmax : float, optional
-            The data value that defines ``1.0`` in the normalization.
-            Defaults to the the max value of the dataset.
-
-        
-        
-        """
-
-        self.vcenter = vcenter
-        self.vmin = vmin
-        self.vmax = vmax
-        if vcenter is not None and vmax is not None and vcenter >= vmax:
-            raise ValueError('vmin, vcenter, and vmax must be in '
-                             'ascending order')
-        if vcenter is not None and vmin is not None and vcenter <= vmin:
-            raise ValueError('vmin, vcenter, and vmax must be in '
-                             'ascending order')
-
-    def autoscale_None(self, A):
-        """
-        Get vmin and vmax, and then clip at vcenter
-        """
-        super().autoscale_None(A)
-        if self.vmin > self.vcenter:
-            self.vmin = self.vcenter
-        if self.vmax < self.vcenter:
-            self.vmax = self.vcenter
-
-
-    def __call__(self, value, clip=None):
-        """
-        Map value to the interval [0, 1]. The clip argument is unused.
-        """
-        result, is_scalar = self.process_value(value)
-        self.autoscale_None(result)  # sets self.vmin, self.vmax if None
-
-        if not self.vmin <= self.vcenter <= self.vmax:
-            raise ValueError("vmin, vcenter, vmax must increase monotonically")
-        result = np.ma.masked_array(
-            np.interp(result, [self.vmin,-self.vcenter,0,self.vcenter, self.vmax],
-                      [0, 0.15,0.5,0.85, 1.]), mask=np.ma.getmask(result))
-        if is_scalar:
-            result = np.atleast_1d(result)[0]
-        return result
-
-
 class plots:
     """
     class for all plots using in UKF
     """
     def __init__(self,filter_class):
+        "define which class to plot from"
         self.filter_class=filter_class
-        self.frame_number=0
         
-    "filters data into observed/unobserved if necessary"
     def plot_data_parser(self,a,b,observed):
+        """
+        takes data from ukf_ss data parser and preps it for plotting
+        in: 
+            ukf_ss class
+        out: 
+            split data depending on plotting observed or unobserved agents
+            
+        """
+
         filter_class = self.filter_class
         if observed:
                 a = a[:,filter_class.index2]
@@ -562,141 +489,6 @@ class plots:
                 plot_range = filter_class.model_params["pop_total"]*(1-filter_class.filter_params["prop"])
         return a,b,plot_range
 
-    def trajectories(self,a):
-        "provide density of agents positions as a 2.5d histogram"
-        #sample_agents = [self.base_model.agents[j] for j in self.index]
-        #swap if restricting observed agents
-        filter_class = self.filter_class
-        width = filter_class.model_params["width"]
-        height = filter_class.model_params["height"]
-        os.mkdir("output_positions")
-        for i in range(a.shape[0]):
-            locs = a[i,:]
-            
-            f = plt.figure(figsize=(12,8))
-            ax = f.add_subplot(111)
-            "plot density histogram and locations scatter plot assuming at least one agent available"
-            if np.abs(np.nansum(locs))>0:
-                ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
-                ax.set_ylim(0,height)
-                ax.set_xlim(0,width)
-            else:
-
-                fake_locs = np.array([-1,-1])
-                ax.scatter(fake_locs[0::2],fake_locs[1::2],color="cyan",label="True Positions")
-               
-            
-            "set up cbar. colouration proportional to number of agents"
-            #ticks = np.array([0.001,0.01,0.025,0.05,0.075,0.1,0.5,1.0])
-           
-               
-            "set legend to bottom centre outside of plot"
-            box = ax.get_position()
-            ax.set_position([box.x0, box.y0 + box.height * 0.1,
-                             box.width, box.height * 0.9])
-            
-            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18),
-                      ncol=2)
-            "labels"
-            plt.xlabel("Corridor width")
-            plt.ylabel("Corridor height")
-            plt.title("Agent Positions")
-            """
-            frame number and saving. padded zeroes to keep frames in order.
-            padded to nearest upper order of 10 of number of iterations.
-            """
-            number = str(i).zfill(ceil(log10(a.shape[0])))
-            file = f"output_positions/{number}"
-            f.savefig(file)
-            plt.close()
-        
-        animations.animate(self,"output_positions",f"positions_{filter_class.pop_total}_")
-            
-        
-    def heatmap(self,a,poly_list):
-        "provide density of agents positions as a 2.5d histogram"
-        "!! add poly list"
-        #sample_agents = [self.base_model.agents[j] for j in self.index]
-        #swap if restricting observed agents
-        filter_class = self.filter_class
-        bin_size = filter_class.filter_params["bin_size"]
-        width = filter_class.model_params["width"]
-        height = filter_class.model_params["height"]
-        os.mkdir("output_heatmap")
-
-        for i in range(a.shape[0]):
-            locs = a[i,:]
-            
-            f = plt.figure(figsize=(12,8))
-            ax = f.add_subplot(111)
-            "plot density histogram and locations scatter plot assuming at least one agent available"
-            if np.abs(np.nansum(locs))>0:
-                ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
-                ax.set_ylim(0,height)
-                ax.set_xlim(0,width)        
-                hist,xb,yb = np.histogram2d(locs[0::2],locs[1::2],
-                                            range = [[0,width],[0,height]],
-                                            bins = [int(width/bin_size),int(height/bin_size)],density=True)
-                hist *= bin_size**2
-                hist= hist.T
-                hist = np.flip(hist,axis=0)
-        
-                extent = [0,width,0,height]
-                plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                           ,cmap = cm.Spectral ,extent=extent
-                           ,norm=DivergingNorm(vmin=1/filter_class.pop_total,
-                                               vcenter=5/filter_class.pop_total,vmax=1))
-            else:
-                """
-                dummy frame if no locations present e.g. at the start. 
-                prevents divide by zero error in hist2d
-                """
-                fake_locs = np.array([-1,-1])
-                ax.scatter(fake_locs[0::2],fake_locs[1::2],color="cyan",label="True Positions")
-                hist,xb,yb = np.histogram2d(fake_locs[0::2],fake_locs[1::2],
-                                            range = [[0,width],[0,height]],
-                                            bins = [int(width/bin_size),int(height/bin_size)],density=True)
-                hist *= bin_size**2
-                hist= hist.T
-                hist = np.flip(hist,axis=0)
-        
-                extent = [0,width,0,height]
-                plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                           ,cmap = cm.Spectral ,extent=extent
-                           ,norm=DivergingNorm(vmin=1/filter_class.pop_total,
-                                               vcenter=5/filter_class.pop_total,vmax=1))
-            
-            "set up cbar. colouration proportional to number of agents"
-            #ticks = np.array([0.001,0.01,0.025,0.05,0.075,0.1,0.5,1.0])
-            cbar = plt.colorbar(fraction=0.046,pad=0.04,shrink=0.71,
-                                spacing="proportional")
-            cbar.set_label("Agent Density (x100%)")
-            plt.clim(0,1)
-            cbar.set_alpha(1)
-            cbar.draw_all()
-               
-            "set legend to bottom centre outside of plot"
-            box = ax.get_position()
-            ax.set_position([box.x0, box.y0 + box.height * 0.1,
-                             box.width, box.height * 0.9])
-            
-            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18),
-                      ncol=2)
-            "labels"
-            plt.xlabel("Corridor width")
-            plt.ylabel("Corridor height")
-            plt.title("Agent Densities vs True Positions")
-            cbar.set_label("Agent Density (x100%)")
-            """
-            frame number and saving. padded zeroes to keep frames in order.
-            padded to nearest upper order of 10 of number of iterations.
-            """
-            number = str(i).zfill(ceil(log10(a.shape[0])))
-            file = f"output_heatmap/{number}"
-            f.savefig(file)
-            plt.close()
-        
-        animations.animate(self,"output_heatmap",f"heatmap_{filter_class.pop_total}_")
         
     def MAEs(self,a,b):
         """
@@ -739,7 +531,6 @@ class plots:
         
         
         """
-        fil=self.filter_class
         a,b,plot_range = self.plot_data_parser(a,b,observed)
         
         f=plt.figure(figsize=(12,8))
@@ -749,7 +540,7 @@ class plots:
 
         g = plt.figure(figsize=(12,8))
         for j in range(int(plot_range)):
-            plt.plot(b[::fil.sample_rate,2*j],b[::fil.sample_rate,(2*j)+1])    
+            plt.plot(b[::self.filter_class.sample_rate,2*j],b[::self.filter_class.sample_rate,(2*j)+1])    
             plt.title("KF predictions")
             
         """
@@ -759,7 +550,7 @@ class plots:
         c,agent_means,time_means = self.MAEs(a,b)
         
         h = plt.figure(figsize=(12,8))
-        plt.plot(time_means[::fil.sample_rate])
+        plt.plot(time_means[::self.filter_class.sample_rate])
         plt.axhline(y=0,color="r")
         plt.title("MAE over time")
             
@@ -939,25 +730,23 @@ class plots:
         for i in range(a.shape[0]):
             a_s = [a_o[i,:],a_u[i,:]]
             b_s = [b_o[i,:], b_u[i,:]]
-            f=plt.figure()
+            f=plt.figure(figsize=(12,12))
             gs = gridspec.GridSpec(4,4)
             axes = [plt.subplot(gs[:2,:]),plt.subplot(gs[2:,:2]),plt.subplot(gs[2:,2:])]
-
-            axes[0].set_xlim([0,width])
-            axes[0].set_ylim([0,height])
-            axes[1].set_xlim([0,a_u.shape[0]])
-            axes[1].set_ylim([0,np.nanmax(time_means)*1.05])
-            axes[2].set_xlim([0,a_u.shape[0]])
-            axes[2].set_ylim([0,np.nanmax(time_means2)*1.05])         
+            
+             
             
             "plot true agents and dummies for legend"
             
             P = self.filter_class.ukf.Ps[i]
             agent_covs = []
-            for i in range(int(a.shape[1]/2)):
-                agent_covs.append(P[(2*i):(2*i)+2,(2*i):(2*i)+2])
+            for j in range(int(a.shape[1]/2)):
+                agent_covs.append(P[(2*j):(2*j)+2,(2*j):(2*j)+2])
             #axes[0].scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o")
             #axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
+            
+            "placeholders for a consistent legend. make sure theyre outside the domain of plotting"
+            axes[0].scatter(-1,-1,color="skyblue",label = "Truth",marker = "o")
             axes[0].scatter(-1,-1,color="orangered",label = "KF_Observed",marker="o")
             axes[0].scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^")
 
@@ -976,29 +765,42 @@ class plots:
                             y = [a2[1],b2[1]]
                             axes[0].plot(x,y,color="white")
                             axes[0].scatter(b2[0],b2[1],color=colours[j],marker = markers[j])
-                            plot_covariance((x[0],y[0]),agent_covs[k],ax=axes[0],edgecolor="orangered",alpha=0.4)
+                            plot_covariance((x[0],y[0]),agent_covs[k],ax=axes[0],edgecolor="skyblue",alpha=0.6)
             #box = axes[1].get_position()
             #axes[1].set_position([box.x0, box.y0 + box.height * 0.1,
             #                 box.width, box.height * 0.9])
             
-            axes[1].plot(time_means[:i],label="observed")
+            axes[2].set_xlim([0,a.shape[0]])
             axes[2].plot(time_means2[:i],label="unobserved")
-
-            axes[0].legend(bbox_to_anchor=(1.012, 1.2),
-                      ncol=3,prop={'size':7})
-            axes[0].set_xlabel("corridor width")
-            axes[0].set_ylabel("corridor height")
-            axes[1].set_ylabel("Observed MAE")
-            axes[1].set_xlabel("Time (steps)")
+            axes[2].set_xlim([0,a.shape[0]])
+            axes[2].set_ylim([0,np.nanmax(time_means2)*1.05])  
             axes[2].set_ylabel("Unobserved MAE")
             axes[2].set_xlabel("Time (steps)")
+
+
+            axes[1].set_xlim([0,a_u.shape[0]])
+            axes[1].set_ylim([0,np.nanmax(time_means)*1.05])
+            axes[1].set_ylabel("Observed MAE")
+            axes[1].set_xlabel("Time (steps)")
+            axes[1].plot(time_means[:i],label="observed")
+            
+
+            axes[0].legend(bbox_to_anchor=(1.012, 1.2),ncol=3,prop={'size':14})
+            axes[0].set_xlim([0,width])
+            axes[0].set_ylim([0,height])
+            axes[0].set_xlabel("corridor width")
+            axes[0].set_ylabel("corridor height")
+            
+
             #axes[0].title("True Positions vs UKF Predictions")
+            
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
             axes[0].text(0,1.05*height,"Frame Number: "+str(i))
-            
+
             file = f"output_pairs/pairs{number}"
+            
             f.tight_layout()
-            f.savefig(file)
+            f.savefig(file,bbox_inches="tight")
             plt.close()
         
         animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
@@ -1039,7 +841,7 @@ def _std_tuple_of(var=None, std=None, interval=None):
 
 def plot_covariance(
         mean, cov=None, variance=1.0, std=None, interval=None,
-        ellipse=None, title=None, axis_equal=True,
+        ellipse=None, title=None, axis_equal=False,
         show_semiaxis=False, show_center=True,
         facecolor=None, edgecolor=None,
         fc='none', ec='#004080',
@@ -1070,10 +872,6 @@ def plot_covariance(
     if title is not None:
         plt.title(title)
 
-    if ax==None:
-        ax = plt.gca()
-
-
     angle = np.degrees(ellipse[0])
     width = ellipse[1] * 2.
     height = ellipse[2] * 2.
@@ -1090,18 +888,13 @@ def plot_covariance(
     if show_center:
         ax.scatter(x, y, marker='+', color=edgecolor)
 
-    if xlim is not None:
-        ax.set_xlim(xlim)
-
-    if ylim is not None:
-        ax.set_ylim(ylim)
-
     if show_semiaxis:
         a = ellipse[0]
         h, w = height/4, width/4
         ax.plot([x, x+ h*cos(a+np.pi/2)], [y, y + h*sin(a+np.pi/2)])
         ax.plot([x, x+ w*cos(a)], [y, y + w*sin(a)])
        
+        
 class animations:
     def animate(self,file,name):
         files = sorted(os.listdir(file))
@@ -1217,9 +1010,11 @@ if __name__ == "__main__":
     """plots"""
     plts = plots(u)
 
+
+    plot_save=False
     if filter_params["prop"]<1:
-        distances,t_mean = plts.diagnostic_plots(actual,preds,False,False)
-    distances2,t_mean2 = plts.diagnostic_plots(actual,preds,True,False)
+        distances,t_mean = plts.diagnostic_plots(actual,preds,False,plot_save)
+    distances2,t_mean2 = plts.diagnostic_plots(actual,preds,True,plot_save)
     
     #plts.trajectories(actual)
     #plts.pair_frames(actual,preds)

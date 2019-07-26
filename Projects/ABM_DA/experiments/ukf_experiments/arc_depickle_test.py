@@ -62,13 +62,13 @@ def grand_mean_plot(data,f_name):
 if __name__ == "__main__":
     
     n=50
-    prop = 0.8
-    actual = []
+    prop = 0.5
+    actuals = []
     preds = []
     d_obs = []
     d_uobs = []
 
-    files = glob.glob(f"ukf_results/ukf_agents_{n}_prop_{prop}-0*")
+    files = glob.glob(f"ukf_results/ukf_agents_{n}_prop_{prop}-*")
     
     for file in files:
         
@@ -76,21 +76,26 @@ if __name__ == "__main__":
         u = pickle.load(f)
         f.close()
     
-        a,b,d1,d2 = l2_parser(u,prop)#
-        actual.append(a)
-        preds.append(b)
+        actual,pred,d1,d2 = l2_parser(u,prop)#
+        actuals.append(actual)
+        preds.append(pred)
         d_obs.append(d1)
         if prop<1:
             d_uobs.append(d2)
     plts = plots(u)
-    grand_mean_plot(d_obs,f"obs_{n}_{prop}.pdf")
-    if prop<1:
-        grand_mean_plot(d_uobs,f"uobs_{n}_{prop}.pdf")
-        plts.trajectories(a)
-        plts.pair_frames(a,b)
     
+    if len(files)>1:
+        grand_mean_plot(d_obs,f"obs_{n}_{prop}.pdf")
+        if prop<1:
+            grand_mean_plot(d_uobs,f"uobs_{n}_{prop}.pdf")
+            #plts.trajectories(actual)
+            #plts.pair_frames(actual,preds)
+    else:
+        "single test diagnostics"
+        if prop<1:
+            distances,t_mean = plts.diagnostic_plots(actuals[0],preds[0],False,False)
+        distances2,t_mean2 = plts.diagnostic_plots(actuals[0],preds[0],True,False)
     
-        
 
 
 

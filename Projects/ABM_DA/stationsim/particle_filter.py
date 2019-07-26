@@ -437,7 +437,7 @@ class ParticleFilter(Filter):
                     plt.plot(*agent.location, 'sk', markersize=4)
 
             plt.axis(np.ravel(self.base_model.boundaries, 'F'))
-            plt.title(f"{self.time} iterations (window {self.resample_window})", fontsize=13)
+            plt.title(f"{self.time} iterations", fontsize=13)
             plt.xlabel("X position")
             plt.ylabel("Y position")
             if self.show_ani:

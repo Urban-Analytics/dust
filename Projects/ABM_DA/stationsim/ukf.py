@@ -384,9 +384,6 @@ class ukf_ss:
 
         self.init_ukf(self.ukf_params) 
         for _ in range(self.number_of_iterations-1):
-            #if _%100 ==0: #progress bar
-            #    print(f"iterations: {_}")
-                
 
             #f_name = f"temp_pickle_model_ukf_{self.time1}"
             #f = open(f_name,"wb")
@@ -397,7 +394,15 @@ class ukf_ss:
             self.ukf.predict() #predict where agents will jump
             self.base_model.step() #jump stationsim agents forwards
             
-
+            "apply noise to active agents"
+            if filter_params["bring_noise"]:
+                noise_array=np.ones(self.pop_total*2)
+                noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
+                noise_array*=np.random.normal(0,self.filter_params["noise"],self.pop_total*2)
+                state = self.base_model.get_state(sensor="location") #observed agents states
+                state+=noise_array
+                self.base_model.set_state(state=state,sensor="location")
+            "update step and data logging"    
             if self.base_model.step_id%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
                 
                 state = self.base_model.get_state(sensor="location") #observed agents states
@@ -613,12 +618,12 @@ class plots:
             colours = ["orangered","yellow"]
             for j in range(len(a_s)):
 
-                a = a_s[j]
-                b = b_s[j]
-                if np.abs(np.nansum(a-b))>1e-4: #check for perfect conditions (initial)
-                    for k in range(int(a.shape[0]/2)):
-                        a2 = a[(2*k):(2*k)+2]
-                        b2 = b[(2*k):(2*k)+2]          
+                a1 = a_s[j]
+                b1 = b_s[j]
+                if np.abs(np.nansum(a1-b1))>1e-4: #check for perfect conditions (initial)
+                    for k in range(int(a1.shape[0]/2)):
+                        a2 = a1[(2*k):(2*k)+2]
+                        b2 = b1[(2*k):(2*k)+2]          
                         if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
                             x = [a2[0],b2[0]]
                             y = [a2[1],b2[1]]
@@ -927,7 +932,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 10,
+			'pop_total': 5,
 
 			'width': 200,
 			'height': 100,
@@ -964,6 +969,8 @@ if __name__ == "__main__":
     
     heatmap_rate - after how many updates to record a frame
     bin_size - square sizes for aggregate plots,
+    bring_noise: add noise to true ukf paths
+    noise: variance of said noise (0 mean)
     do_batch - do batch processing on some pre-recorded truth data.
     """
     
@@ -974,12 +981,11 @@ if __name__ == "__main__":
             'sample_rate': 1,
             "do_restrict": True, 
             "do_animate": False,
-            "do_wiggle_animate": False,
-            "do_density_animate":True,
-            "do_pair_animate":False,
-            "prop": 0.2,
+            "prop": 0.4,
             "heatmap_rate": 1,
             "bin_size":10,
+            "bring_noise":False,
+            "noise":0.25,
             "do_batch":False,
             }
     

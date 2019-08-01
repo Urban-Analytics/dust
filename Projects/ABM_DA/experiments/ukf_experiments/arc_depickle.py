@@ -15,9 +15,16 @@ import glob
 import seaborn as sns
 import warnings
 
+
+"""
+function to take instanced clases output from arc ukf scripts and produce grand mean plots.
+
+"""
+
 plt.style.use("dark_background")
 
 class HiddenPrints:
+    "suppress repeat printing"
     def __enter__(self):
         self._original_stdout = sys.stdout
         sys.stdout = open(os.devnull, 'w')
@@ -27,6 +34,8 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
         
 def l2_parser(instance,prop):
+    "extract arrays of real paths, predicted paths, l2 distances between them."
+    "HiddenPrints suppresses plots class from spam printing figures"
     matplotlib.use("Agg")
     actual,preds = instance.data_parser(False)
     plts = plots(instance)
@@ -61,8 +70,8 @@ def grand_mean_plot(data,f_name):
     
 if __name__ == "__main__":
     
-    n=50
-    prop = 0.5
+    n=15
+    prop = 0.8
     actuals = []
     preds = []
     d_obs = []
@@ -85,16 +94,21 @@ if __name__ == "__main__":
     plts = plots(u)
     
     if len(files)>1:
+        #observed grand MAE
         grand_mean_plot(d_obs,f"obs_{n}_{prop}.pdf")
         if prop<1:
+            #unobserved grand MAE
             grand_mean_plot(d_uobs,f"uobs_{n}_{prop}.pdf")
             #plts.trajectories(actual)
             #plts.pair_frames(actual,preds)
     else:
         "single test diagnostics"
         if prop<1:
+            "unobserved agents then observed agents"
             distances,t_mean = plts.diagnostic_plots(actuals[0],preds[0],False,False)
-        distances2,t_mean2 = plts.diagnostic_plots(actuals[0],preds[0],True,False)
+        else:
+            "all observed just one plot"
+            distances2,t_mean2 = plts.diagnostic_plots(actuals[0],preds[0],True,False)
     
 
 

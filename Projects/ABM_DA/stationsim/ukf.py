@@ -34,6 +34,7 @@ from stationsim.stationsim_model import Model
 
 #for plots
 
+from seaborn import kdeplot
 import matplotlib.gridspec as gridspec
 import imageio
 from scipy.stats import norm
@@ -286,8 +287,11 @@ class ukf_ss:
         self.index2[0::2] = 2*self.index
         self.index2[1::2] = (2*self.index)+1
         
-        self.ukf_histories = []
-   
+        self.ukf_preds=[]
+        self.ukf_histories = [] #actual assimilated ukf value
+        self.full_Ps=[]
+
+    
         self.time1 =  datetime.datetime.now()#timer
         self.time2 = None
     def fx(self,x,**fx_args):
@@ -395,24 +399,34 @@ class ukf_ss:
             self.base_model.step() #jump stationsim agents forwards
             
             "apply noise to active agents"
-            if filter_params["bring_noise"]:
+            if self.filter_params["bring_noise"]:
                 noise_array=np.ones(self.pop_total*2)
                 noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
                 noise_array*=np.random.normal(0,self.filter_params["noise"],self.pop_total*2)
                 state = self.base_model.get_state(sensor="location") #observed agents states
                 state+=noise_array
                 self.base_model.set_state(state=state,sensor="location")
-            "update step and data logging"    
-            if self.base_model.step_id%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
+                
+            "DA update step and data logging"
+            "data logged for full preds and only assimilated preds (just predict step or predict and update)"
+            if _%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
                 
                 state = self.base_model.get_state(sensor="location") #observed agents states
                 self.ukf.update(z=state[self.index2]) #update UKF
-                self.ukf_histories.append(self.ukf.x) #append histories
                 
+                self.ukf_histories.append(self.ukf.x) #append histories
+                self.ukf_preds.append(self.ukf.x)
+                self.full_Ps.append(self.ukf.P)
+
                 x = self.ukf.x
                 if np.sum(np.isnan(x))==x.shape[0]:
                     print("math error. try larger values of alpha else check fx and hx.")
                     break
+            else:
+                "update full preds that arent assimilated"
+                self.ukf_preds.append(self.ukf.x)
+                self.full_Ps.append(self.ukf.P)
+
                 ""
             if self.base_model.pop_finished == self.pop_total: #break condition
                 break
@@ -442,24 +456,33 @@ class ukf_ss:
             a2[k] =  agent.history_locations
         max_iter = max([len(value) for value in a2.values()])
         b2 = np.vstack(self.ukf_histories)
+
         
         a= np.zeros((max_iter,self.pop_total*2))*np.nan
         b= np.zeros((max_iter,b2.shape[1]))*np.nan
-        
+
   
         for i in range(int(a.shape[1]/2)):
             a3 = np.vstack(list(a2.values())[i])
             a[:a3.shape[0],(2*i):(2*i)+2] = a3
+            
             if do_fill:
                 a[a3.shape[0]:,(2*i):(2*i)+2] = a3[-1,:]
 
         
         for j in range(int(b.shape[0]//sample_rate)):
             b[j*sample_rate,:] = b2[j,:]
+          
+        if sample_rate>1:
+            c= np.vstack(self.ukf_preds)
+
+    
             
-        "all agent observations"
+            "all agent observations"
         
-        return a,b
+            return a,b,c
+        else:
+            return a,b
 
 class plots:
     """
@@ -480,6 +503,8 @@ class plots:
         """
 
         filter_class = self.filter_class
+        plot_range =floor(filter_class.model_params["pop_total"]*(filter_class.filter_params["prop"]))
+
         if observed:
                 a = a[:,filter_class.index2]
                 if len(filter_class.index2)<b.shape[1]:
@@ -488,10 +513,10 @@ class plots:
 
         else:      
                 mask = np.ones(a.shape[1])
-                mask[filter_class.index2]=False
-                a = a[:,np.where(mask!=0)][:,0,:]
-                b = b[:,np.where(mask!=0)][:,0,:]
-                plot_range = filter_class.model_params["pop_total"]*(1-filter_class.filter_params["prop"])
+                mask[filter_class.index2]=0
+                a = a[:,np.where(mask==1)][:,0,:]
+                b = b[:,np.where(mask==1)][:,0,:]
+                plot_range = filter_class.pop_total-plot_range
         return a,b,plot_range
 
         
@@ -502,16 +527,18 @@ class plots:
         provides whole array of distances per agent and time
         and MAEs per agent and time. 
         """
-        c = np.ones((a.shape[0],int(a.shape[1]/2)))*np.nan
+        sample_rate =self.filter_class.filter_params["sample_rate"]
+        c = np.ones(((a.shape[0]//sample_rate),int(a.shape[1]/2)))*np.nan
         
         "!!theres probably a faster way of doing this with apply over axis"
         #loop over each agent
-        a = a[:,::self.filter_class.sample_rate]
-        b = b[:,::self.filter_class.sample_rate]
+        index = np.arange(0,a.shape[0])[::self.filter_class.filter_params["sample_rate"]]
+        a = a[::sample_rate,:]
+        b = b[::sample_rate,:]
 
 
         #loop over each time per agent
-        for i in range(a.shape[0]):
+        for i in range(c.shape[0]):
                 a2 = np.array([a[i,0::2],a[i,1::2]]).T
                 b2 = np.array([b[i,0::2],b[i,1::2]]).T
                 res = a2-b2
@@ -519,7 +546,7 @@ class plots:
                     
         agent_means = np.nanmean(c,axis=0)
         time_means = np.nanmean(c,axis=1)
-        return c,agent_means,time_means
+        return c,index,agent_means,time_means
         
     def diagnostic_plots(self,a,b,observed,save):
         """
@@ -537,6 +564,7 @@ class plots:
         
         """
         a,b,plot_range = self.plot_data_parser(a,b,observed)
+        sample_rate =self.filter_class.filter_params["sample_rate"]
         
         f=plt.figure(figsize=(12,8))
         for j in range(int(plot_range)):
@@ -545,17 +573,19 @@ class plots:
 
         g = plt.figure(figsize=(12,8))
         for j in range(int(plot_range)):
-            plt.plot(b[::self.filter_class.sample_rate,2*j],b[::self.filter_class.sample_rate,(2*j)+1])    
+            plt.plot(b[::sample_rate,2*j],b[::sample_rate,(2*j)+1])    
             plt.title("KF predictions")
             
         """
         MAE metric. 
         finds mean average euclidean error at each time step and per each agent
         """
-        c,agent_means,time_means = self.MAEs(a,b)
+        c,c_index,agent_means,time_means = self.MAEs(a,b)
         
         h = plt.figure(figsize=(12,8))
-        plt.plot(time_means[::self.filter_class.sample_rate])
+        time_means[np.isnan(time_means)]=0
+        plt.plot(c_index,time_means)
+        
         plt.axhline(y=0,color="r")
         plt.title("MAE over time")
             
@@ -575,6 +605,7 @@ class plots:
             
         j = plt.figure(figsize=(12,8))
         plt.hist(agent_means)
+        kdeplot(agent_means,color="red",cut=0)
         plt.title("Mean Error per agent histogram")
                   
         if save:
@@ -653,9 +684,11 @@ class plots:
         height = filter_class.model_params["height"]
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
-        c,agent_means,time_means = self.MAEs(a_o,b_o) #maes
-        c2,agent_means2,time_means2 = self.MAEs(a_u,b_u) #maes
-
+        c,c_index,agent_means,time_means = self.MAEs(a_o,b_o) #maes
+        c2,c_index2,agent_means2,time_means2 = self.MAEs(a_u,b_u) #maes
+        time_means[np.isnan(time_means)]=0
+        time_means2[np.isnan(time_means)]=0
+        
         os.mkdir("output_pairs")
         for i in range(a.shape[0]):
             a_s = [a_o[i,:],a_u[i,:]]
@@ -698,8 +731,8 @@ class plots:
             #axes[1].set_position([box.x0, box.y0 + box.height * 0.1,
             #                 box.width, box.height * 0.9])
             
-            axes[1].plot(time_means[:i],label="observed")
-            axes[2].plot(time_means2[:i],label="unobserved")
+            axes[1].plot(c_index,time_means[:i],label="observed")
+            axes[2].plot(c_index2,time_means2[:i],label="unobserved")
 
             axes[0].legend(bbox_to_anchor=(1.012, 1.2),
                       ncol=3,prop={'size':7})
@@ -726,10 +759,13 @@ class plots:
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
-        a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
+        sample_rate=self.filter_class.filter_params["sample_rate"]
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
-        c,agent_means,time_means = self.MAEs(a_o,b_o) #maes
-        c2,agent_means2,time_means2 = self.MAEs(a_u,b_u) #maes
+        a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
+        c,c_index,agent_means,time_means = self.MAEs(a_o,b_o) #obs maes
+        c2,c_index2,agent_means2,time_means2 = self.MAEs(a_u,b_u) #uobs maes
+        time_means[np.isnan(time_means)]=0
+        time_means2[np.isnan(time_means)]=0
 
         os.mkdir("output_pairs")
         for i in range(a.shape[0]):
@@ -743,7 +779,7 @@ class plots:
             
             "plot true agents and dummies for legend"
             
-            P = self.filter_class.ukf.Ps[i]
+            P = self.filter_class.full_Ps[i]
             agent_covs = []
             for j in range(int(a.shape[1]/2)):
                 agent_covs.append(P[(2*j):(2*j)+2,(2*j):(2*j)+2])
@@ -751,7 +787,7 @@ class plots:
             #axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
             
             "placeholders for a consistent legend. make sure theyre outside the domain of plotting"
-            axes[0].scatter(-1,-1,color="skyblue",label = "Truth",marker = "o")
+            axes[0].scatter(-1,-1,color="skyblue",label = "Truth",marker = "+")
             axes[0].scatter(-1,-1,color="orangered",label = "KF_Observed",marker="o")
             axes[0].scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^")
 
@@ -776,7 +812,7 @@ class plots:
             #                 box.width, box.height * 0.9])
             
             axes[2].set_xlim([0,a.shape[0]])
-            axes[2].plot(time_means2[:i],label="unobserved")
+            axes[2].plot(c_index2[:(1+i//sample_rate)],time_means2[:(1+i//sample_rate)],label="unobserved")
             axes[2].set_xlim([0,a.shape[0]])
             axes[2].set_ylim([0,np.nanmax(time_means2)*1.05])  
             axes[2].set_ylabel("Unobserved MAE")
@@ -787,7 +823,7 @@ class plots:
             axes[1].set_ylim([0,np.nanmax(time_means)*1.05])
             axes[1].set_ylabel("Observed MAE")
             axes[1].set_xlabel("Time (steps)")
-            axes[1].plot(time_means[:i],label="observed")
+            axes[1].plot(c_index[:(1+i//sample_rate)],time_means[:(1+i//sample_rate)],label="observed")
             
 
             axes[0].legend(bbox_to_anchor=(1.012, 1.2),ncol=3,prop={'size':14})
@@ -934,8 +970,8 @@ if __name__ == "__main__":
     model_params = {
 			'pop_total': 5,
 
-			'width': 200,
-			'height': 100,
+			'width': 400,
+			'height': 200,
 
 			'gates_in': 3,
 			'gates_out': 2,
@@ -978,7 +1014,7 @@ if __name__ == "__main__":
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 1,
+            'sample_rate': 100,
             "do_restrict": True, 
             "do_animate": False,
             "prop": 0.4,
@@ -987,6 +1023,7 @@ if __name__ == "__main__":
             "bring_noise":False,
             "noise":0.25,
             "do_batch":False,
+
             }
     
     """
@@ -1003,7 +1040,6 @@ if __name__ == "__main__":
             "a":1,
             "b":2,
             "k":0,
-            "d_rate" : 10, #data assimilotion rate every "d_rate model steps recalibrate UKF positions with truth
 
             }
     
@@ -1011,8 +1047,11 @@ if __name__ == "__main__":
     base_model = Model(**model_params)
     u = ukf_ss(model_params,filter_params,ukf_params,base_model)
     u.main()
-    actual,preds= u.data_parser(True)
-            
+    if filter_params["sample_rate"]>1:
+        actual,preds,full_preds= u.data_parser(True)
+    else:
+        actual,preds,full_preds= u.data_parser(True)
+
     """plots"""
     plts = plots(u)
 
@@ -1022,6 +1061,13 @@ if __name__ == "__main__":
         distances,t_mean = plts.diagnostic_plots(actual,preds,False,plot_save)
     distances2,t_mean2 = plts.diagnostic_plots(actual,preds,True,plot_save)
     
-    #plts.trajectories(actual)
-    #plts.pair_frames(actual,preds)
-    #plts.heatmap(actual)
+    
+    if filter_params["sample_rate"]==1:
+        #plts.pair_frames(actual,preds)
+        #plts.heatmap(actual)
+        plts.pair_frames_stack_ellipse(actual,full_preds)
+
+    else:
+      #  plts.pair_frames(actual,full_preds)
+        plts.pair_frames_stack_ellipse(actual,full_preds)
+        #plts.heatmap(actual)

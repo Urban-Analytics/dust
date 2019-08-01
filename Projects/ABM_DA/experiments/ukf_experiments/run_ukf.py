@@ -3,13 +3,42 @@
 Run some experiments using the stationsim/particle_filter.
 The script
 @author: RC
+
+run following in bash console:
+    
+scp username@arc3.leeds.ac.uk
+git clone https://github.com/Urban-Analytics/dust/
+cd dust/Projects/ABM_DA/experiments/ukf_experiments
+
+module load python python-libs
+virtualenv mypython
+source mypython/bin/activate
+
+pip install imageio
+pip install filterpy
+pip install ffmpeg
+pip install seaborn
+(and any other dependencies)
+ 
+qsub arc_ukf.sh
+
+when exporting from arc in another linux terminal use 
+
+scp username@leeds.ac.uk:source_in_arc/* destination_in_linux/.
+
+e.g.
+ 
+scp medrclaa@arc3.leeds.ac.uk:/home/home02/medrclaa/dust/Projects/ABM_DA/experiments
+/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments
+/ukf_experiments/ukf_results/.
+
 """
 
 # Need to append the main project directory (ABM_DA) and stationsim folders to the path, otherwise either
 # this script will fail, or the code in the stationsim directory will fail.
 import sys
-#sys.path.append('../../stationsim')
-#sys.path.append('../..')
+sys.path.append('../../stationsim')
+sys.path.append('../..')
 from stationsim.ukf import ukf_ss
 from stationsim.stationsim_model import Model
 
@@ -32,13 +61,14 @@ if __name__ == '__main__':
     #num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
     #num_age = np.arange(5,105,5)
     #props = np.arange(0.1,1.1,0.1)
-    num_age = np.arange(5,15,5)
-    props = np.arange(0.5,1.5,0.5)
+    num_age = np.arange(5,55,5) # 5 to 50 by 5
+    props = np.arange(0.2,1.2,0.2) #.2 to 1 by .2
+    run_id = np.arange(0,20,1) #20 runs
     #noise = [1.0, 2.0]
 
     # List of all particle-agent combinations. ARC task
     # array variable loops through this list
-    param_list = [(x, y) for x in num_age for y in props]
+    param_list = [(x, y,z) for x in num_age for y in props for z in run_id]
 
     # Use below to update param_list if some runs abort
     # If used, need to update ARC task array variable
@@ -47,10 +77,10 @@ if __name__ == '__main__':
     # param_list = [param_list[x-1] for x in aborted]
     
     model_params = {
-			'pop_total': param_list[int(sys.argv[1]) - 1][0],
+			'pop_total': param_list[int(sys.argv[0])-1][0],
 
-			'width': 400,
-			'height': 200,
+			'width': 200,
+			'height': 100,
 
 			'gates_in': 3,
 			'gates_out': 2,
@@ -68,7 +98,7 @@ if __name__ == '__main__':
 			'step_limit': 3600,
 
 			'do_history': True,
-			'do_print': False,
+			'do_print': True,
 		}
 
     filter_params = {      
@@ -78,15 +108,15 @@ if __name__ == '__main__':
             'sample_rate': 1,
             "do_restrict": True, 
             "do_animate": False,
-            "do_wiggle_animate": False,
-            "do_density_animate":False,
-            "do_pair_animate":False,
-            "prop": param_list[int(sys.argv[1]) - 1][1],
+            "prop": param_list[int(sys.arg(v[1]))-1][1],
+            "run_id":param_list[int(sys.arg(v[2]))-1][2],
             "heatmap_rate": 1,
             "bin_size":10,
+            "bring_noise":False,
+            "noise":0.25,
             "do_batch":False,
-            "do_unobserved":True,
-            "number_of_runs": 20
+            "d_rate" : 10, 
+
             }
     
     ukf_params = {
@@ -94,8 +124,6 @@ if __name__ == '__main__':
             "a":1,
             "b":2,
             "k":0,
-            "d_rate" : 10, #data assimilotion rate every "d_rate model steps recalibrate UKF positions with truth
-
             }
 
     # Open a file to write the results to
@@ -124,24 +152,22 @@ if __name__ == '__main__':
     
     #print("Saving files to: {}".format(outfile))
 
-    for i in range(filter_params['number_of_runs']):
-        os.chdir("ukf_results")
-        # Run the particle filter
-        
-        #init and run ukf
-        start_time = time.time()  # Time how long the whole run take
-        base_model = Model(**model_params)
-        u = ukf_ss(model_params,filter_params,ukf_params,base_model)
-        u.main()
-        
-        #store final class instance via pickle
-        f_name = "ukf_agents_{}_prop_{}-{}".format(      
-        str(int(model_params['pop_total'])),
-        str(filter_params['prop']),
-        str(i))
-        f = open(f_name,"wb")
-        pickle.dump(u,f)
-        f.close()
+    # Run the particle filter
+    
+    #init and run ukf
+    start_time = time.time()  # Time how long the whole run take
+    base_model = Model(**model_params)
+    u = ukf_ss(model_params,filter_params,ukf_params,base_model)
+    u.main()
+    
+    #store final class instance via pickle
+    f_name = "ukf_results/ukf_agents_{}_prop_{}-{}".format(      
+    str(int(model_params['pop_total'])),
+    str(filter_params['prop']),
+    str(filter_params["run_id"]))
+    f = open(f_name,"wb")
+    pickle.dump(u,f)
+    f.close()
 
 
         #with open(outfile, 'a') as f:
@@ -153,8 +179,7 @@ if __name__ == '__main__':
         #        for before in [0, 1]:
         #            f.write(str(result[before])[1:-1].replace(" ", "") + "," + str(before) + "\n")  # (slice to get rid of the brackets aruond the tuple)
 
-        print("Run: {}, prop: {}, agents: {}, took: {}(s)".format(i, filter_params['prop'], 
-              model_params['pop_total'], round(time.time() - start_time),flush=True))
-        
-        os.chdir("..")
+    print("Run: {}, prop: {}, agents: {}, took: {}(s)".format(i, filter_params['prop'], 
+          model_params['pop_total'], round(time.time() - start_time),flush=True))
+    
     print("Finished single run")

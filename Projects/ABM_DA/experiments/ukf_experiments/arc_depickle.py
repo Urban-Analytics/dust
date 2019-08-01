@@ -70,14 +70,14 @@ def grand_mean_plot(data,f_name):
     
 if __name__ == "__main__":
     
-    n=15
-    prop = 0.8
+    n=20
+    prop = 0.6
     actuals = []
     preds = []
     d_obs = []
     d_uobs = []
 
-    files = glob.glob(f"ukf_results/ukf_agents_{n}_prop_{prop}-*")
+    files = glob.glob(f"ukf_results/ukf_agents_{n}_prop_{prop}-0")
     
     for file in files:
         
@@ -104,11 +104,12 @@ if __name__ == "__main__":
     else:
         "single test diagnostics"
         if prop<1:
+            save_plots=True
             "unobserved agents then observed agents"
-            distances,t_mean = plts.diagnostic_plots(actuals[0],preds[0],False,False)
-        else:
-            "all observed just one plot"
-            distances2,t_mean2 = plts.diagnostic_plots(actuals[0],preds[0],True,False)
+            distances,t_mean = plts.diagnostic_plots(actuals[0],preds[0],False,save_plots)
+        
+        "all observed just one plot"
+        distances2,t_mean2 = plts.diagnostic_plots(actuals[0],preds[0],True,save_plots)
     
 
 

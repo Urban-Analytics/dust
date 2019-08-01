@@ -21,7 +21,9 @@ citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
 #import pip packages
 
 import sys #for print suppression#
-from stationsim_model import Model
+sys.path.append('../../stationsim')
+sys.path.append('../..')
+from stationsim.stationsim_model import Model
 from ukf import plots,animations
 import numpy as np
 from math import floor
@@ -286,12 +288,7 @@ class agg_ukf_ss:
             base_model class with current agent attributes
         out:
             base_model positions predicted for next time step
-        """
-            
-     
-     
-                
-        
+        """      
         #f = open(f"temp_pickle_model_ukf_{self.time1}","rb")
         #model = pickle.load(f)
         #f.close()
@@ -338,7 +335,7 @@ class agg_ukf_ss:
         """
         x = self.base_model.get_state(sensor="location")#initial state
         Q = np.eye(self.pop_total*2)#process noise
-        R = np.eye(len(poly_list))#sensor noise
+        R = np.eye(len(self.poly_list))#sensor noise
         P = np.eye(self.pop_total*2)#inital guess at state covariance
         self.ukf = agg_ukf(ukf_params,x,self.poly_list,self.fx,self.hx,P,Q,R)
     
@@ -839,7 +836,7 @@ if __name__ == "__main__":
             "do_pair_animate":False,
             "prop": 1,
             "heatmap_rate": 1,
-            "bin_size":10,
+            "bin_size":25,
             "do_batch":False,
             }
     
@@ -863,7 +860,7 @@ if __name__ == "__main__":
     
     """run and extract data"""
     base_model = Model(**model_params)
-    poly_list = grid_poly(200,100,25)
+    poly_list = grid_poly(model_params["width"],model_params["height"],filter_params["bin_size"]) #generic square grid over corridor
     u = agg_ukf_ss(model_params,filter_params,ukf_params,poly_list,base_model)
     u.main()
     actual,preds= u.data_parser(True)

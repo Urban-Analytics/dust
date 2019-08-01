@@ -18,19 +18,21 @@ pip install imageio
 pip install filterpy
 pip install ffmpeg
 pip install seaborn
-#(and any other dependencies)
+pip install shapely
+pip install 
+(and any other dependencies)
  
 qsub arc_ukf.sh
-"""
 
-"""
 when exporting from arc in another linux terminal use 
 
 scp username@leeds.ac.uk:source_in_arc/* destination_in_linux/.
 
 e.g.
  
-scp medrclaa@arc3.leeds.ac.uk:/home/home02/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
+scp medrclaa@arc3.leeds.ac.uk:/home/home02/medrclaa/dust/Projects/ABM_DA/experiments
+/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments
+/ukf_experiments/ukf_results/.
 
 """
 
@@ -39,7 +41,8 @@ scp medrclaa@arc3.leeds.ac.uk:/home/home02/medrclaa/dust/Projects/ABM_DA/experim
 import sys
 sys.path.append('../../stationsim')
 sys.path.append('../..')
-from stationsim.ukf import ukf_ss
+from stationsim.ukf_aggregate import agg_ukf_ss,grid_poly
+
 from stationsim.stationsim_model import Model
 
 import os
@@ -59,16 +62,16 @@ if __name__ == '__main__':
     # Lists of particles, agent numbers, and particle noise levels
     
     #num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
-    #num_age = np.arange(5,105,5)
-    #props = np.arange(0.1,1.1,0.1)
+    
     num_age = np.arange(5,55,5) # 5 to 50 by 5
-    props = np.arange(0.2,1.2,0.2) #.2 to 1 by .2
-    run_id = np.arange(0,20,1) #20 runs
+    run_id = [0]
+    #run_id = np.arange(0,20,1) #20 runs
+    
     #noise = [1.0, 2.0]
 
     # List of all particle-agent combinations. ARC task
     # array variable loops through this list
-    param_list = [(x, y,z) for x in num_age for y in props for z in run_id]
+    param_list = [(x, y) for x in num_age for y in run_id]
 
     # Use below to update param_list if some runs abort
     # If used, need to update ARC task array variable
@@ -77,7 +80,7 @@ if __name__ == '__main__':
     # param_list = [param_list[x-1] for x in aborted]
     
     model_params = {
-			'pop_total': param_list[int(sys.argv[1])-1][0],
+			'pop_total': param_list[int(sys.argv[0])-1][0],
 
 			'width': 200,
 			'height': 100,
@@ -105,20 +108,23 @@ if __name__ == '__main__':
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 100,
+            'sample_rate': 1,
             "do_restrict": True, 
             "do_animate": False,
-            "prop": param_list[int(sys.argv[1])-1][1],
-            "run_id":param_list[int(sys.argv[1])-1][2],
+            "prop":1,
+            #"run_id":param_list[int(sys.argv[2])-1][2],
+            "run_id":0,
             "heatmap_rate": 1,
             "bin_size":25,
             "bring_noise":False,
             "noise":0.25,
             "do_batch":False,
+            "d_rate" : 10, 
+
             }
     
     ukf_params = {
-        
+            
             "a":1,
             "b":2,
             "k":0,
@@ -155,11 +161,12 @@ if __name__ == '__main__':
     #init and run ukf
     start_time = time.time()  # Time how long the whole run take
     base_model = Model(**model_params)
-    u = ukf_ss(model_params,filter_params,ukf_params,base_model)
+    poly_list = grid_poly(model_params["width"],model_params["height"],filter_params["bin_size"]) #generic square grid over corridor
+    u = agg_ukf_ss(model_params,filter_params,ukf_params,poly_list,base_model)
     u.main()
     
     #store final class instance via pickle
-    f_name = "ukf_results/ukf_agents_{}_prop_{}-{}".format(      
+    f_name = "ukf_results/agg_ukf_agents_{}_prop_{}-{}".format(      
     str(int(model_params['pop_total'])),
     str(filter_params['prop']),
     str(filter_params["run_id"]))

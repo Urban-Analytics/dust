@@ -613,12 +613,12 @@ class plots:
                 s = "observed"
             else:
                 s = "unobserved"
-            f.savefig(f"{s}_actual")
-            g.savefig(f"{s}_kf")
-            h.savefig(f"{s}_mae")
+            f.savefig(f"{s}_actual.pdf")
+            g.savefig(f"{s}_kf.pdf")
+            h.savefig(f"{s}_mae.pdf")
             if len(agent_means)>1:
-                i.savefig(f"{s}_worst")
-            j.savefig(f"{s}_agent_hist")
+                i.savefig(f"{s}_worst.pdf")
+            j.savefig(f"{s}_agent_hist.pdf")
         return c,time_means
     
         
@@ -970,8 +970,8 @@ if __name__ == "__main__":
     model_params = {
 			'pop_total': 5,
 
-			'width': 400,
-			'height': 200,
+			'width': 200,
+			'height': 100,
 
 			'gates_in': 3,
 			'gates_out': 2,

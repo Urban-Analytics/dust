@@ -24,7 +24,6 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from seaborn import kdeplot as sns_kdeplot
 
-
 class Agent:
     '''
     A class representing a generic agent for the StationSim ABM.
@@ -231,10 +230,11 @@ class Model:
     '''
     def __init__(self, unique_id=None, **kwargs):
         '''
-        Create a new model, reading parameters from a keyword arguement dictionary.
+        Create a new model, reading parameters from a keyword argument dictionary.
         '''
         self.unique_id = unique_id
         self.status = 1
+
         # Default Parameters (usually overridden by the caller)
         params = {
             'pop_total': 100,
@@ -260,25 +260,32 @@ class Model:
             'do_history': True,
             'do_print': True,
         }
+        
         if len(kwargs) == 0:
             warnings.warn(
                 "No parameters have been passed to the model; using the default parameters: {}".format(params),
                 RuntimeWarning
             )
+
         self.params, self.params_changed = Model._init_kwargs(params, kwargs)
         [setattr(self, key, value) for key, value in self.params.items()]
+
         # Constants
         self.speed_step = (self.speed_mean - self.speed_min) / self.speed_steps
         self.boundaries = np.array([[0, 0], [self.width, self.height]])
+
         # Following replaced with a normal function
         #gates_init = lambda x, y, n: np.array([np.full(n, x), np.linspace(0, y, n + 2)[1:-1]]).T
         self.gates_locations = np.concatenate([Model._gates_init(0, self.height, self.gates_in), Model._gates_init(self.width, self.height, self.gates_out)])
+
         # Variables
         self.step_id = 0
         self.pop_active = 0
         self.pop_finished = 0
+
         # Initialise
         self.agents = [Agent(self, unique_id) for unique_id in range(self.pop_total)]
+
         # Following replaced with a normal function
         #self.is_within_bounds = lambda loc: all(self.boundaries[0] <= loc) and all(loc <= self.boundaries[1])
         #self.re_bound = lambda loc: np.clip(loc, self.boundaries[0], self.boundaries[1])
@@ -289,6 +296,7 @@ class Model:
             self.steps_taken = []
             self.steps_exped = []
             self.steps_delay = []
+
             # Figure Shape Stuff
             self._wid = 8
             self._rel = self._wid / self.width

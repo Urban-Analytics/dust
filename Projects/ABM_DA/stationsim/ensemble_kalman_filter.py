@@ -59,9 +59,9 @@ class EnsembleKalmanFilter(Filter):
                                range(self.ensemble_size)]
 
         # Make sure that models have state
-        for m in self.models:
-            if not hasattr(m, 'state'):
-                raise AttributeError("Model has no 'state' attribute.")
+        # for m in self.models:
+            # if not hasattr(m, 'state'):
+                # raise AttributeError("Model has no 'state' attribute.")
 
         # We're going to need H.T very often, so just do it once and store
         self.H_transpose = self.H.T
@@ -120,7 +120,8 @@ class EnsembleKalmanFilter(Filter):
         self.update_state_mean()
         if self.time % self.assimilation_period == 0:
             # Construct observations
-            truth = self.base_model.state_history[-1]
+            base_state = self.base_model.history_state[-1]
+            truth = np.ravel(base_state)
             noise = np.random.normal(0, self.R_vector, truth.shape)
             data = truth + noise
 
@@ -193,10 +194,12 @@ class EnsembleKalmanFilter(Filter):
         Update self.state_ensemble based on the states of the models.
         """
         for i in range(self.ensemble_size):
-            self.state_ensemble[:, i] = self.models[i].state
+            state_vector = self.models[i].get_state(sensor='location')
+            self.state_ensemble[:, i] = state_vector
 
         for i in range(self.ensemble_size):
-            self.vanilla_state_ensemble[:, i] = self.vanilla_models[i].state
+            state_vector = self.models[i].get_state(sensor='location')
+            self.vanilla_state_ensemble[:, i] = state_vector
 
     def update_state_mean(self):
         """
@@ -222,7 +225,8 @@ class EnsembleKalmanFilter(Filter):
         Update individual model states based on state ensemble.
         """
         for i in range(self.ensemble_size):
-            self.models[i].state = self.state_ensemble[:, i]
+            state_vector = self.state_ensemble[:, i]
+            self.models[i].set_state(state_vector, sensor='location')
 
     def make_ensemble_covariance(self):
         """
@@ -277,9 +281,10 @@ class EnsembleKalmanFilter(Filter):
         Plot base_model, observations and ensemble mean for each agent.
         """
         # Get coords
-        base_x, base_y = self.separate_coords(self.base_model.state)
+        base_state = self.base_model.get_state(sensor='location')
+        base_x, base_y = self.separate_coords(base_state)
         mean_x, mean_y = self.separate_coords(self.state_mean)
-        if obs:
+        if len(obs) > 0:
             obs_x, obs_y = self.separate_coords(obs)
         # vanilla_x, vanilla_y = self.separate_coords(self.vanilla_state_mean)
 
@@ -293,7 +298,7 @@ class EnsembleKalmanFilter(Filter):
         # plt.title(title_str)
         plt.scatter(base_x, base_y, label='Ground truth')
         plt.scatter(mean_x, mean_y, marker='x', label='Ensemble mean')
-        if obs:
+        if len(obs) > 0:
             plt.scatter(obs_x, obs_y, marker='*', label='Observation')
         # plt.scatter(vanilla_x, vanilla_y, alpha=0.5, label='mean w/o da',
                     # color='black')
@@ -319,9 +324,10 @@ class EnsembleKalmanFilter(Filter):
         y_coords = list()
 
         # Get coords
-        base_x, base_y = self.separate_coords(self.base_model.state)
+        base_state = self.base_model.get_state(sensor='location')
+        base_x, base_y = self.separate_coords(base_state)
         mean_x, mean_y = self.separate_coords(self.state_mean)
-        if obs:
+        if len(obs) > 0:
             obs_x, obs_y = self.separate_coords(obs)
         # vanilla_x, vanilla_y = self.separate_coords(self.vanilla_state_mean)
 
@@ -337,7 +343,7 @@ class EnsembleKalmanFilter(Filter):
                     base_y[self.agent_number], label='Ground truth')
         plt.scatter(mean_x[self.agent_number],
                     mean_y[self.agent_number], marker='x', label='Ensemble mean')
-        if obs:
+        if len(obs) > 0:
             plt.scatter(obs_x[self.agent_number],
                         obs_y[self.agent_number], marker='*', label='Observation')
         # plt.scatter(vanilla_x, vanilla_y, alpha=0.5, label='mean w/o da',
@@ -350,7 +356,8 @@ class EnsembleKalmanFilter(Filter):
 
         # Plot ensemble members
         for i, model in enumerate(self.models):
-            xs, ys = self.separate_coords(model.state)
+            state_vector = model.get_state(sensor='location')
+            xs, ys = self.separate_coords(state_vector)
             if i == 0:
                 plt.scatter(xs[self.agent_number], ys[self.agent_number],
                             s=1, color='red', label='Ensemble members')
@@ -380,7 +387,8 @@ class EnsembleKalmanFilter(Filter):
         x_mean_errors = list()
         y_mean_errors = list()
         distance_mean_errors = list()
-        truth = self.base_model.state_history
+        base_states = self.base_model.history_state
+        truth = [np.ravel(x) for x in base_states]
         without = list()
 
         for i, result in enumerate(self.results):

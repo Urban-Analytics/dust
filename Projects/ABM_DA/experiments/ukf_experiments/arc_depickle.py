@@ -5,7 +5,6 @@ sys.path.append("../../stationsim")
 sys.path.append("../..")
 
 from stationsim.ukf import ukf,ukf_ss,plots
-from stationsim_model import Model
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,13 +14,12 @@ import glob
 import seaborn as sns
 import warnings
 
-
+matplotlib.style.use("classic")
 """
 function to take instanced clases output from arc ukf scripts and produce grand mean plots.
 
 """
 
-plt.style.use("dark_background")
 
 class HiddenPrints:
     "suppress repeat printing"
@@ -37,25 +35,34 @@ def l2_parser(instance,prop):
     "extract arrays of real paths, predicted paths, l2 distances between them."
     "HiddenPrints suppresses plots class from spam printing figures"
     matplotlib.use("Agg")
-    actual,preds = instance.data_parser(False)
+    actual,preds,full_preds = instance.data_parser(False)
     plts = plots(instance)
-    with HiddenPrints():        
-        distances_obs,t_mean_obs = plts.diagnostic_plots(actual,preds,True,False)
-        if prop<1:
-            distances_uobs,t_mean_uobs = plts.diagnostic_plots(actual,preds,False,False)
-        else:
-            distances_uobs = []
+    a_u,b_u,plot_range = plts.plot_data_parser(actual,preds,False)
+    a_o,b_o,plot_range = plts.plot_data_parser(actual,preds,True)    
+
+    distances_obs,oindex,agent_means,t_mean_obs = plts.MAEs(a_o,b_o)
+    if prop<1:
+        distances_uobs,uindex,agent_means,t_mean_uobs = plts.MAEs(a_u,b_u)
+    else:
+        distances_uobs = []
     matplotlib.use("module://ipykernel.pylab.backend_inline")    
     preds[np.isnan(actual)]=np.nan
     
     return actual,preds,distances_obs,distances_uobs
 
-def grand_mean_plot(data,f_name):
+def grand_mean_plot(data,f_name,instances):
     "take list of dataframes take means and stack them by row"
+    """
+    !!some entries have time stamps but are NaN.
+    due to all (un)observed agents finished but other set still going
+    typically happens when one agent is SLOW. maybe better to
+    reduce variance of speeds.
+    """
+    
     reg_frames = []
     for i,frame in enumerate(data):
         mean_frame = np.ones((frame.shape[0],2))*np.nan
-        mean_frame[:,0] = np.arange(0,frame.shape[0],1)
+        mean_frame[:,0] = np.arange(0,frame.shape[0],1)*instance.filter_params["sample_rate"]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore",category = RuntimeWarning)
             mean_frame[:,1]=(np.nanmean(frame,1))
@@ -70,13 +77,13 @@ def grand_mean_plot(data,f_name):
     
 if __name__ == "__main__":
     
-    n=20
+    n=30
     prop = 0.6
     actuals = []
     preds = []
     d_obs = []
     d_uobs = []
-
+    instances=[]
     files = glob.glob(f"ukf_results/ukf_agents_{n}_prop_{prop}-0")
     
     for file in files:
@@ -89,28 +96,33 @@ if __name__ == "__main__":
         actuals.append(actual)
         preds.append(pred)
         d_obs.append(d1)
+        instances.append(u)
         if prop<1:
             d_uobs.append(d2)
-    plts = plots(u)
+    #plts = plots(u)
     
     if len(files)>1:
         #observed grand MAE
-        grand_mean_plot(d_obs,f"obs_{n}_{prop}.pdf")
+        grand_mean_plot(d_obs,f"obs_{n}_{prop}.pdf",u)
         if prop<1:
             #unobserved grand MAE
-            grand_mean_plot(d_uobs,f"uobs_{n}_{prop}.pdf")
+            grand_mean_plot(d_uobs,f"uobs_{n}_{prop}.pdf",u)
             #plts.trajectories(actual)
             #plts.pair_frames(actual,preds)
     else:
+        actual,pred,full_preds=u.data_parser(False)
+        plts=plots(u)
         "single test diagnostics"
+        save_plots=True
         if prop<1:
-            save_plots=True
             "unobserved agents then observed agents"
-            distances,t_mean = plts.diagnostic_plots(actuals[0],preds[0],False,save_plots)
+            distances,t_mean = plts.diagnostic_plots(actual,pred,False,save_plots)
         
         "all observed just one plot"
-        distances2,t_mean2 = plts.diagnostic_plots(actuals[0],preds[0],True,save_plots)
-    
+        distances2,t_mean2 = plts.diagnostic_plots(actual,pred,True,save_plots)
+        #plts.pair_frames(actual,full_preds)
+        #plts.pair_frames_stack_ellipse(actual,full_preds)
+
 
 
 

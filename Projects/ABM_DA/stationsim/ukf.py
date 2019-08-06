@@ -57,7 +57,7 @@ https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
 """
 
 "for dark plots. purely an aesthetic choice. plt.style.available() for other styles"
-plt.style.use("dark_background")
+#plt.style.use("dark_background")
 
 #%%
 class HiddenPrints:
@@ -532,20 +532,19 @@ class plots:
         
         "!!theres probably a faster way of doing this with apply over axis"
         #loop over each agent
-        index = np.arange(0,a.shape[0])[::self.filter_class.filter_params["sample_rate"]]
-        a = a[::sample_rate,:]
-        b = b[::sample_rate,:]
-
+        index = np.arange(0,c.shape[0])*sample_rate
 
         #loop over each time per agent
-        for i in range(c.shape[0]):
-                a2 = np.array([a[i,0::2],a[i,1::2]]).T
-                b2 = np.array([b[i,0::2],b[i,1::2]]).T
+        for i in range(len(index)):
+                a2 = np.array([a[sample_rate*i,0::2],a[sample_rate*i,1::2]]).T
+                b2 = np.array([b[sample_rate*i,0::2],b[sample_rate*i,1::2]]).T
                 res = a2-b2
                 c[i,:]=np.apply_along_axis(np.linalg.norm,1,res)
                     
         agent_means = np.nanmean(c,axis=0)
         time_means = np.nanmean(c,axis=1)
+        time_means[np.isnan(time_means)]=0
+        
         return c,index,agent_means,time_means
         
     def diagnostic_plots(self,a,b,observed,save):
@@ -585,7 +584,6 @@ class plots:
         h = plt.figure(figsize=(12,8))
         time_means[np.isnan(time_means)]=0
         plt.plot(c_index,time_means)
-        
         plt.axhline(y=0,color="r")
         plt.title("MAE over time")
             
@@ -623,7 +621,7 @@ class plots:
     
         
     def pair_frames(self,a,b):
-        "paired side by side preds/truth"
+        "pairwise animation"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
@@ -678,7 +676,7 @@ class plots:
         animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
 
     def pair_frames_stack(self,a,b):
-        "paired side by side preds/truth"
+        "pairwise with error plots"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
@@ -754,7 +752,7 @@ class plots:
         animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
         
     def pair_frames_stack_ellipse(self,a,b):
-
+        "pairwise,MAEs and covariances. This takes FOREVER to render so I made it seperate"
         "paired side by side preds/truth"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
@@ -787,7 +785,8 @@ class plots:
             #axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
             
             "placeholders for a consistent legend. make sure theyre outside the domain of plotting"
-            axes[0].scatter(-1,-1,color="skyblue",label = "Truth",marker = "+")
+            axes[0].scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o")
+            axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")            
             axes[0].scatter(-1,-1,color="orangered",label = "KF_Observed",marker="o")
             axes[0].scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^")
 
@@ -806,7 +805,7 @@ class plots:
                             y = [a2[1],b2[1]]
                             axes[0].plot(x,y,color="white")
                             axes[0].scatter(b2[0],b2[1],color=colours[j],marker = markers[j])
-                            plot_covariance((x[0],y[0]),agent_covs[k],ax=axes[0],edgecolor="skyblue",alpha=0.6)
+                            plot_covariance((x[1],y[1]),agent_covs[k],ax=axes[0],edgecolor="skyblue",alpha=0.6,show_center=False)
             #box = axes[1].get_position()
             #axes[1].set_position([box.x0, box.y0 + box.height * 0.1,
             #                 box.width, box.height * 0.9])

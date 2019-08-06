@@ -21,8 +21,8 @@ citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
 #import pip packages
 
 import sys #for print suppression#
-sys.path.append('../../stationsim')
-sys.path.append('../..')
+#sys.path.append('../../stationsim')
+sys.path.append('..')
 from stationsim.stationsim_model import Model
 from ukf import plots,animations
 import numpy as np
@@ -467,7 +467,7 @@ def poly_count(poly_list,points):
     counts how many agents in each polygon
     
     in: 
-        1D vector of points from agents2state(),
+        1D vector of points from agents2state()/get_state(sensor=location),
     out: 
         counts of agents in each polygon in poly_list
     """

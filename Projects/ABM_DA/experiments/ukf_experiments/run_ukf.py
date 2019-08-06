@@ -6,7 +6,7 @@ The script
 
 run following in bash console:
     
-scp username@arc3.leeds.ac.uk
+ssh username@arc3.leeds.ac.uk
 git clone https://github.com/Urban-Analytics/dust/
 cd dust/Projects/ABM_DA/experiments/ukf_experiments
 
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     f_name = "ukf_results/ukf_agents_{}_prop_{}-{}".format(      
     str(int(model_params['pop_total'])),
     str(filter_params['prop']),
-    str(filter_params["run_id"]))
+    str(filter_params["run_id"]).zfill(3))
     f = open(f_name,"wb")
     pickle.dump(u,f)
     f.close()

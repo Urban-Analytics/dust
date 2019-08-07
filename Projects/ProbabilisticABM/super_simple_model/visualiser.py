@@ -8,7 +8,7 @@ class Visualiser:
 	plt.figure(figsize=(12, 12))
 
 	def __init__(self, environment=None, **kwargs):
-		self.ENVIRONMENT = (1000, 1000) if environment is None else environment
+		self.ENVIRONMENT = (1000, 1000) if environment is None else environment.get_env_size()
 		self.left, self.width = 0.1, 0.65
 		self.bottom, self.height = 0.1, 0.65
 		self.spacing = 0.02
@@ -60,6 +60,9 @@ class Visualiser:
 	def plot_doors(self, doors=None):
 		doors = PatchCollection(doors)
 		self.ax_scatter.add_collection(doors)
+
+	def plot_environment(self, environment):
+		self.plot_doors(environment.doors)
 
 	@staticmethod
 	def build_heatmap(n, patches):

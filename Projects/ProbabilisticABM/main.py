@@ -3,17 +3,18 @@ import super_simple_model.renderer as renderer
 from super_simple_model.agent import Agent
 from super_simple_model.door import Door
 from super_simple_model.environment import Environment
+from super_simple_model.sensor import Sensor
 
 import pyro
 import pyro.distributions as dist
 import torch
 import numpy as np
 
-n_samples =1000
-steps = 1000
-observation_freq = 1001
+n_samples = 10000
+steps = 400
 environment = Environment()
 visualiser = Visualiser(environment)
+sensor = Sensor(freq=100, n_samples=n_samples)
 
 
 def main():
@@ -30,17 +31,17 @@ def main():
     location = agent.step()
     obs = None
 
-    for i in range(steps):
-        if i != 0:
-            obs = observe(i)
+    for t in range(steps):
+        if t != 0:
+            obs = sensor.observe(t, location)
 
         location = agent.step(pred=location,
                               obs=obs)
 
-        print_agent_loc(i, location)
+        print_agent_loc(t, location)
 
         visualiser.plot_agent(location[0], location[1], median=False)
-        visualiser.plot_environment(environment)
+        visualiser.plot_environment()
         visualiser.save_plt()
         visualiser.clear_frame()
 
@@ -50,21 +51,6 @@ def main():
 # TODO Should move this to Agent class.
 def print_agent_loc(i, location):
     print('Step:{} [x,y] {}'.format(i, [np.median(location[0]), np.median(location[1])]))
-
-
-def observe(i):
-    if (i % observation_freq) == 0:
-        print('Observing!')
-        obs = pyro.sample('obs', dist.Normal(loc=torch.tensor([[float(i)], [500.]]),
-                                             scale=torch.tensor([[100.], [100.]])))
-
-        # Have a look at using a whole tensor of noise.
-        n = pyro.sample('obs_noise', dist.Normal(loc=torch.tensor([[0.], [0.]]), scale=10.))
-
-        obs = obs + n
-    else:
-        obs = None
-    return obs
 
 
 if __name__ == '__main__':

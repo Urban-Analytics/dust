@@ -8,7 +8,8 @@ class Visualiser:
 	plt.figure(figsize=(12, 12))
 
 	def __init__(self, environment=None, **kwargs):
-		self.ENVIRONMENT = (1000, 1000) if environment is None else environment.get_env_size()
+		self.environment = environment
+		self.bounds = (1000, 1000) if environment is None else self.environment.get_env_size()
 		self.left, self.width = 0.1, 0.65
 		self.bottom, self.height = 0.1, 0.65
 		self.spacing = 0.02
@@ -35,8 +36,8 @@ class Visualiser:
 		if kwargs['median']:
 			self.plot_median_loc(x, y)
 
-		self.ax_scatter.set_xlim((self.ENVIRONMENT[0] * -.2, self.ENVIRONMENT[0]))
-		self.ax_scatter.set_ylim((0, self.ENVIRONMENT[1]))
+		self.ax_scatter.set_xlim((self.bounds[0] * -.2, self.bounds[0]))
+		self.ax_scatter.set_ylim((0, self.bounds[1]))
 
 		self.ax_scatter.legend(loc='upper right')
 		self.ax_scatter.grid(True)
@@ -61,8 +62,8 @@ class Visualiser:
 		doors = PatchCollection(doors)
 		self.ax_scatter.add_collection(doors)
 
-	def plot_environment(self, environment):
-		self.plot_doors(environment.doors)
+	def plot_environment(self):
+		self.plot_doors(self.environment.doors)
 
 	@staticmethod
 	def build_heatmap(n, patches):

@@ -7,17 +7,17 @@ import pyro
 class Agent:
 	def __init__(self, x, y, n_samples, **kwargs):
 		self.n_samples = n_samples
-		self.rv_destination = int(pyro.sample('destination', dist.Bernoulli(.5)))
+		self.destination_preference = .5
+		self.rv_destination = int(pyro.sample('destination', dist.Bernoulli(probs=self.destination_preference)))
 		self.destination = None
 		self.xy = tensor([[x for _ in range(self.n_samples)],
 						  [y for _ in range(self.n_samples)]])
-
 		self.s = tensor([1. for _ in range(self.n_samples)])
 		self.rv_v = pyro.sample('rv_s', dist.LogNormal(loc=self.s, scale=1.))
 
 	def step(self, pred=None, obs=None):
 		xy = pyro.sample('xy', dist.Normal(loc=self.xy if pred is None else pred,
-										   scale=tensor([[1.], [1.]])), obs=obs)
+										   scale=tensor([[5.], [5.]])), obs=obs)
 		return self.move(origin=xy, destination=self.destination)
 
 	def pick_destination(self, doors):

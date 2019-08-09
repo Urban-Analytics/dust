@@ -20,7 +20,7 @@ import warnings
 
 """
 function to take instanced clases output from arc ukf scripts and produce grand mean plots.
-
+These plots take MSEs for each mean and variance into one grand MSE 
 """
 
 #plt.style.use("dark_background")
@@ -44,9 +44,9 @@ def l2_parser(instance,prop):
     a_u,b_u,plot_range = plts.plot_data_parser(actual,preds,False)
     a_o,b_o,plot_range = plts.plot_data_parser(actual,preds,True)    
 
-    distances_obs,oindex,agent_means,t_mean_obs = plts.MAEs(a_o,b_o)
+    distances_obs,oindex,agent_means,t_mean_obs = plts.RMSEs(a_o,b_o)
     if prop<1:
-        distances_uobs,uindex,agent_means,t_mean_uobs = plts.MAEs(a_u,b_u)
+        distances_uobs,uindex,agent_means,t_mean_uobs = plts.RMSEs(a_u,b_u)
     else:
         distances_uobs = []
     matplotlib.use("module://ipykernel.pylab.backend_inline")    
@@ -56,9 +56,9 @@ def l2_parser(instance,prop):
 
 
 
-def grand_MAE_matrix(n,prop,n_step):
-    o_MAE = np.ones((len(n),len(prop)))*np.nan
-    u_MAE = np.ones((len(n),len(prop)))*np.nan
+def grand_RMSE_matrix(n,prop,n_step):
+    o_RMSE = np.ones((len(n),len(prop)))*np.nan
+    u_RMSE = np.ones((len(n),len(prop)))*np.nan
     
 
     for i in n:
@@ -68,65 +68,76 @@ def grand_MAE_matrix(n,prop,n_step):
             files[j.round(2)] = glob.glob(f"ukf_results/ukf_agents_{i}_prop_{j.round(2)}*")
 
         for _ in files.keys():
-            o_MAE2=[]
-            u_MAE2 = []
+            o_RMSE2=[]
+            u_RMSE2 = []
             for file in files[_]:
                 f = open(file,"rb")
                 u = pickle.load(f)
                 f.close()
                 actual,pred,do,du = l2_parser(u,float(_))#
-                o_MAE2.append(np.nanmean(do))
-                u_MAE2.append(np.nanmean(du))
+                o_RMSE2.append(np.nanmean(do))
+                u_RMSE2.append(np.nanmean(du))
         
-            o_MAE[i_index,int(_*len(n))-1]=np.nanmean(o_MAE2)
-            u_MAE[i_index,int(_*len(n))-1]=np.nanmean(u_MAE2)
+            o_RMSE[i_index,int(_*len(prop))-1]=np.nanmean(o_RMSE2)
+            u_RMSE[i_index,int(_*len(prop))-1]=np.nanmean(u_RMSE2)
             
-    return o_MAE,u_MAE
+    return o_RMSE,u_RMSE
 
-def grand_MAE_plot(data,n,prop,n_step,p_step,observed):
-    n_range = n.max()-n.min()
-    prop_range = prop.max()-prop.min()
+def grand_RMSE_plot(data,n,prop,n_step,p_step,observed,save):
+
     
+    data = np.rot90(data,k=1) #rotate frame 90 degrees so right way up for plots
     f,ax=plt.subplots(figsize=(8,8))
     cmap = cm.viridis
-    cmap.set_bad("black")
-    data2 = np.ma.masked_where(np.isnan(data),data)
-    im=ax.imshow(data2,interpolation="none",aspect="auto",cmap=cmap,extent = [10,35,0,1])
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right",size="5%",pad=0.05)
-    ax.set_xlim([n.min()-n_range/40,n.max()+n_step+n_range/40])
-    ax.set_ylim([prop.min()-p_step-prop_range/40,prop.max()+prop_range/40])
-    ax.set_xticks(n+n_step/2)
+    cmap.set_bad("black") #set nans for unobserved full prop to black
+    data2 = np.ma.masked_where(np.isnan(data),data) #needed to get bad black squares in imshow
+    data2=np.flip(data2,axis=0)
+    im=ax.imshow(data2,interpolation="nearest",cmap=cmap,origin="lower")
+    #ax.set_xlim([n.min()-n_step/20,n.max()+n_step/20])
+    #ax.set_ylim([prop.min()-p_step/20,prop.max()+p_step/20])
+    #ax.set_xticks((n+n_step/2)[:-1])
+    ax.set_xticks(np.arange(len(n)))
+    ax.set_yticks(np.arange(len(prop)))
     ax.set_xticklabels(n)
-    ax.set_yticks((prop-p_step/2))
     ax.set_yticklabels(prop.round(2))
     ax.set_xlabel("Number of Agents")
+    ax.set_ylabel("Proportion of Agents Observed")
+    plt.title("Grand RMSEs Over Varying Agents and Percentage Observed")
+    b = im.get_extent()
+    ax.set_xlim([b[0]-len(n)/40,b[1]+len(n)/40])
+    ax.set_ylim([b[2]-len(prop)/40,b[3]+len(prop)/40])
+
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right",size="5%",pad=0.05)
     cbar=plt.colorbar(im,cax,cax)
     if observed:
-        cbar.set_label("Observed MAE")
-        ax.set_title("Observed Agent MAEs")
+        cbar.set_label("Observed RMSE")
+        ax.set_title("Observed Agent RMSEs")
         ax.set_ylabel("Proportion of Agents Observed (x100%)")
-        plt.savefig("Observed_Grand_MAES.pdf")
+        if save:
+            plt.savefig("Observed_Grand_RMSES.pdf")
 
     else:
-        cbar.set_label("Unobserved MAE")
-        ax.set_title("Unobserved Agent MAEs")
+        cbar.set_label("Unobserved RMSE")
+        ax.set_title("Unobserved Agent RMSEs")
         ax.set_ylabel("Proportion of Agents Observed (x100%)")
-        plt.savefig("Unobserved_Grand_MAES.pdf")
+        if save:
+            plt.savefig("Unobserved_Grand_RMSES.pdf")
  
 if __name__ == "__main__":
     
     n_step=5
     n_min = 10
-    n_max = 30
+    n_max = 50
     p_step=0.2
     p_min = 0.2
     p_max = 1.0
     
     n= np.arange(n_min,n_max+n_step,n_step)
-    prop = 2*np.arange(p_min,p_max+p_step,p_step)/2
+    prop = np.arange(p_min,p_max+p_step,p_step)
     
-    O,U = grand_MAE_matrix(n,prop,n_step)
-    #grand_MAE_plot(O,n,prop,n_step,p_step,True)
-    #grand_MAE_plot(U,n,prop,n_step,p_step,False)
+    O,U = grand_RMSE_matrix(n,prop,n_step)
+    save=True
+    grand_RMSE_plot(O,n,prop,n_step,p_step,True,save)
+    grand_RMSE_plot(U,n,prop,n_step,p_step,False,save)
    

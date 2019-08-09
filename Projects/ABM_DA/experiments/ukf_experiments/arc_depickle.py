@@ -15,6 +15,7 @@ import seaborn as sns
 import warnings
 
 matplotlib.style.use("classic")
+plt.rcParams.update({'font.size':20})
 """
 function to take instanced clases output from arc ukf scripts and produce grand mean plots.
 
@@ -40,9 +41,9 @@ def l2_parser(instance,prop):
     a_u,b_u,plot_range = plts.plot_data_parser(actual,preds,False)
     a_o,b_o,plot_range = plts.plot_data_parser(actual,preds,True)    
 
-    distances_obs,oindex,agent_means,t_mean_obs = plts.MAEs(a_o,b_o)
+    distances_obs,oindex,agent_means,t_mean_obs = plts.RMSEs(a_o,b_o)
     if prop<1:
-        distances_uobs,uindex,agent_means,t_mean_uobs = plts.MAEs(a_u,b_u)
+        distances_uobs,uindex,agent_means,t_mean_uobs = plts.RMSEs(a_u,b_u)
     else:
         distances_uobs = []
     matplotlib.use("module://ipykernel.pylab.backend_inline")    
@@ -50,13 +51,21 @@ def l2_parser(instance,prop):
     
     return actual,preds,distances_obs,distances_uobs
 
-def grand_mean_plot(data,f_name,instances):
-    "take list of dataframes take means and stack them by row"
+def grand_mean_plot(data,f_name,instance):
     """
-    !!some entries have time stamps but are NaN.
+    take list of RMSE dataframes and produces confidence plot for given number
+    of agents and proportion over time.
+    
+    This function is a bit odd as it essentially 
+    stacks a bunch of frames into two massive columns.
+    Blame sns.lineplot.
+    
+    some entries have time stamps but are NaN.
     due to all (un)observed agents finished but other set still going
-    typically happens when one agent is SLOW. maybe better to
-    reduce variance of speeds.
+    typically happens when one agent is very slow.
+    
+    Can have ending of graphs with no confidence interval due to only 1 run being
+    left by the end.
     """
     
     reg_frames = []
@@ -70,21 +79,24 @@ def grand_mean_plot(data,f_name,instances):
     
     grand_frame = np.vstack(reg_frames)
     
-    sns.lineplot(grand_frame[:,0],grand_frame[:,1])
+    sns.lineplot(grand_frame[:,0],grand_frame[:,1],lw=3)
     plt.savefig(f_name)
+    plt.xlabel("Time (steps)")
+    plt.ylabel("RMSE Distribution over Time")
+    plt.title("RMSEs over time")
     plt.show()
     plt.close()
     
 if __name__ == "__main__":
     
-    n=30
+    n=50
     prop = 0.6
     actuals = []
     preds = []
     d_obs = []
     d_uobs = []
     instances=[]
-    files = glob.glob(f"ukf_results/ukf_agents_{n}_prop_{prop}-0")
+    files = glob.glob(f"ukf_results/ukf_agents_{n}_prop_{prop}-*")
     
     for file in files:
         
@@ -102,11 +114,11 @@ if __name__ == "__main__":
     #plts = plots(u)
     
     if len(files)>1:
-        #observed grand MAE
-        grand_mean_plot(d_obs,f"obs_{n}_{prop}.pdf",u)
+        #observed grand RMSE
+        grand_mean_plot(d_obs,f"RMSE_obs_{n}_{prop}.pdf",u)
         if prop<1:
-            #unobserved grand MAE
-            grand_mean_plot(d_uobs,f"uobs_{n}_{prop}.pdf",u)
+            #unobserved grand RMSE
+            grand_mean_plot(d_uobs,f"RMSE_uobs_{n}_{prop}.pdf",u)
             #plts.trajectories(actual)
             #plts.pair_frames(actual,preds)
     else:

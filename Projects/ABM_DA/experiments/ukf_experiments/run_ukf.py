@@ -29,10 +29,11 @@ when exporting from arc in another linux terminal use
 scp username@leeds.ac.uk:source_in_arc/* destination_in_linux/.
 
 e.g.
- 
-scp medrclaa@arc3.leeds.ac.uk:/home/home02/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
 
+from linux terminal 
+scp medrclaa@arc3.leeds.ac.uk:/home/home02/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
 """
+
 
 # Need to append the main project directory (ABM_DA) and stationsim folders to the path, otherwise either
 # this script will fail, or the code in the stationsim directory will fail.

@@ -649,7 +649,7 @@ class agg_plots:
         
     def heatmap(self,a,poly_list):
         "provide density of agents positions as a 2.5d histogram"
-        "!! add poly list"
+        "!! add poly list not working yet"
         #sample_agents = [self.base_model.agents[j] for j in self.index]
         #swap if restricting observed agents
         filter_class = self.filter_class
@@ -736,12 +736,12 @@ class agg_plots:
         
         animations.animate(self,"output_heatmap",f"heatmap_{filter_class.pop_total}_")
         
-    def MAEs(self,a,b):
+    def RMSEs(self,a,b):
         """
-        MAE (mean absolute error) metric. 
+        RMSE (root mean squared error) metric. 
         finds mean average euclidean error at each time step and per each agent
         provides whole array of distances per agent and time
-        and MAEs per agent and time. 
+        and RMSEs per agent and time. 
         """
         c = np.ones((a.shape[0],int(a.shape[1]/2)))*np.nan
         
@@ -784,10 +784,10 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 5,
+			'pop_total': 25,
 
-			'width': 400,
-			'height': 200,
+			'width': 200,
+			'height': 100,
 
 			'gates_in': 3,
 			'gates_out': 2,
@@ -828,7 +828,7 @@ if __name__ == "__main__":
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 10,
+            'sample_rate': 50,
             "do_restrict": True, 
             "do_animate": False,
             "do_wiggle_animate": False,

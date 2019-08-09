@@ -520,12 +520,12 @@ class plots:
         return a,b,plot_range
 
         
-    def MAEs(self,a,b):
+    def RMSEs(self,a,b):
         """
-        MAE (mean absolute error) metric. 
+        RMSE (root mean squared error) metric. 
         finds mean average euclidean error at each time step and per each agent
         provides whole array of distances per agent and time
-        and MAEs per agent and time. 
+        and RMSEs per agent and time. 
         """
         sample_rate =self.filter_class.filter_params["sample_rate"]
         c = np.ones(((a.shape[0]//sample_rate),int(a.shape[1]/2)))*np.nan
@@ -562,62 +562,84 @@ class plots:
         
         
         """
+        if observed:
+            obs_text = "Observed"
+        else:
+            obs_text="Unobserved"
+            
         a,b,plot_range = self.plot_data_parser(a,b,observed)
         sample_rate =self.filter_class.filter_params["sample_rate"]
         
         f=plt.figure(figsize=(12,8))
         for j in range(int(plot_range)):
-            plt.plot(a[:,(2*j)],a[:,(2*j)+1])    
-            plt.title("True Positions")
+            plt.plot(a[:,(2*j)],a[:,(2*j)+1],lw=3)  
+            plt.xlim([0,self.filter_class.model_params["width"]])
+            plt.ylim([0,self.filter_class.model_params["height"]])
+            plt.xlabel("Corridor Width")
+            plt.ylabel("Corridor Height")
+            plt.title(f"{obs_text} True Positions")
 
         g = plt.figure(figsize=(12,8))
         for j in range(int(plot_range)):
-            plt.plot(b[::sample_rate,2*j],b[::sample_rate,(2*j)+1])    
-            plt.title("KF predictions")
+            plt.plot(b[::sample_rate,2*j],b[::sample_rate,(2*j)+1],lw=3) 
+            plt.xlim([0,self.filter_class.model_params["width"]])
+            plt.ylim([0,self.filter_class.model_params["height"]])
+            plt.xlabel("Corridor Width")
+            plt.ylabel("Corridor Height")
+            plt.title(f"{obs_text} KF Predictions")
             
         """
-        MAE metric. 
+        RMSE metric. 
         finds mean average euclidean error at each time step and per each agent
         """
-        c,c_index,agent_means,time_means = self.MAEs(a,b)
+        c,c_index,agent_means,time_means = self.RMSEs(a,b)
         
         h = plt.figure(figsize=(12,8))
         time_means[np.isnan(time_means)]=0
-        plt.plot(c_index,time_means)
-        plt.axhline(y=0,color="r")
-        plt.title("MAE over time")
-            
-        """find agent with highest MAE and plot it.
+        plt.plot(c_index,time_means,lw=3)
+        plt.axhline(y=0,color="k",ls="--",alpha=0.5)
+        plt.xlabel("Time (steps)")
+        plt.ylabel("RMSE Over Time")
+        plt.title(obs_text+" ")
+        plt.title(f"{obs_text} RMSEs Over Time")
+     
+        """find agent with highest RMSE and plot it.
         mainly done to check something odd isnt happening"""
-        if len(agent_means)>1:
-            index = np.where(agent_means == np.nanmax(agent_means))[0][0]
-            print(index)
-            a1 = a[:,(2*index):(2*index)+2]
-            b1 = b[:,(2*index):(2*index)+2]
-            
-            i = plt.figure(figsize=(12,8))
-            plt.plot(a1[:,0],a1[:,1],label= "True Path")
-            plt.plot(b1[::self.filter_class.sample_rate,0],b1[::self.filter_class.sample_rate,1],label = "KF Prediction")
-            plt.legend()
-            plt.title("Worst agent")
-            
+        
+        index = np.where(agent_means == np.nanmax(agent_means))[0][0]
+        print(index)
+        a1 = a[:,(2*index):(2*index)+2]
+        b1 = b[:,(2*index):(2*index)+2]
+        
+        i = plt.figure(figsize=(12,8))
+        plt.plot(a1[:,0],a1[:,1],label= "True Path",lw=3)
+        plt.plot(b1[::self.filter_class.sample_rate,0],b1[::self.filter_class.sample_rate,1],label = "KF Prediction",lw=3)
+        plt.legend()
+        plt.xlim([0,self.filter_class.model_params["width"]])
+        plt.ylim([0,self.filter_class.model_params["height"]])
+        plt.xlabel("Corridor Width")
+        plt.ylabel("Corridor Height")
+        plt.title(obs_text+" True Positions")
+        plt.title("Worst agent")
+        plt.title(f"{obs_text} Worst Agent")
+
         j = plt.figure(figsize=(12,8))
-        plt.hist(agent_means)
-        kdeplot(agent_means,color="red",cut=0)
-        plt.title("Mean Error per agent histogram")
-                  
+        plt.hist(agent_means,density=True)
+        plt.xlabel("Agent RMSE")
+        plt.ylabel("Density ([0,1])")
+        plt.title(obs_text+" Histogram of agent RMSEs")
+        kdeplot(agent_means,color="red",cut=0,lw=4)
+        plt.title(f"{obs_text} Agent RMSE Histogram")
+  
         if save:
-            if observed:
-                s = "observed"
-            else:
-                s = "unobserved"
-            f.savefig(f"{s}_actual.pdf")
-            g.savefig(f"{s}_kf.pdf")
-            h.savefig(f"{s}_mae.pdf")
-            if len(agent_means)>1:
-                i.savefig(f"{s}_worst.pdf")
-            j.savefig(f"{s}_agent_hist.pdf")
+            f.savefig(f"{obs_text}_actual.pdf")
+            g.savefig(f"{obs_text}_kf.pdf")
+            h.savefig(f"{obs_text}_rmse.pdf")
+            i.savefig(f"{obs_text}_worst.pdf")
+            j.savefig(f"{obs_text}_agent_hist.pdf")
+            
         return c,time_means
+    
     
         
     def pair_frames(self,a,b):
@@ -682,8 +704,8 @@ class plots:
         height = filter_class.model_params["height"]
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
-        c,c_index,agent_means,time_means = self.MAEs(a_o,b_o) #maes
-        c2,c_index2,agent_means2,time_means2 = self.MAEs(a_u,b_u) #maes
+        c,c_index,agent_means,time_means = self.RMSEs(a_o,b_o) #mses
+        c2,c_index2,agent_means2,time_means2 = self.RMSEs(a_u,b_u) #mses
         time_means[np.isnan(time_means)]=0
         time_means2[np.isnan(time_means)]=0
         
@@ -736,9 +758,9 @@ class plots:
                       ncol=3,prop={'size':7})
             axes[0].set_xlabel("corridor width")
             axes[0].set_ylabel("corridor height")
-            axes[1].set_ylabel("Observed MAE")
+            axes[1].set_ylabel("Observed RMSE")
             axes[1].set_xlabel("Time (steps)")
-            axes[2].set_ylabel("Unobserved MAE")
+            axes[2].set_ylabel("Unobserved RMSE")
             axes[2].set_xlabel("Time (steps)")
             #axes[0].title("True Positions vs UKF Predictions")
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
@@ -752,7 +774,7 @@ class plots:
         animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
         
     def pair_frames_stack_ellipse(self,a,b):
-        "pairwise,MAEs and covariances. This takes FOREVER to render so I made it seperate"
+        "pairwise,RMSEs and covariances. This takes FOREVER to render so I made it seperate"
         "paired side by side preds/truth"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
@@ -760,8 +782,8 @@ class plots:
         sample_rate=self.filter_class.filter_params["sample_rate"]
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
-        c,c_index,agent_means,time_means = self.MAEs(a_o,b_o) #obs maes
-        c2,c_index2,agent_means2,time_means2 = self.MAEs(a_u,b_u) #uobs maes
+        c,c_index,agent_means,time_means = self.RMSEs(a_o,b_o) #obs rmses
+        c2,c_index2,agent_means2,time_means2 = self.RMSEs(a_u,b_u) #uobs rmses
         time_means[np.isnan(time_means)]=0
         time_means2[np.isnan(time_means)]=0
 
@@ -814,13 +836,13 @@ class plots:
             axes[2].plot(c_index2[:(1+i//sample_rate)],time_means2[:(1+i//sample_rate)],label="unobserved")
             axes[2].set_xlim([0,a.shape[0]])
             axes[2].set_ylim([0,np.nanmax(time_means2)*1.05])  
-            axes[2].set_ylabel("Unobserved MAE")
+            axes[2].set_ylabel("Unobserved RMSE")
             axes[2].set_xlabel("Time (steps)")
 
 
             axes[1].set_xlim([0,a_u.shape[0]])
             axes[1].set_ylim([0,np.nanmax(time_means)*1.05])
-            axes[1].set_ylabel("Observed MAE")
+            axes[1].set_ylabel("Observed RMSE")
             axes[1].set_xlabel("Time (steps)")
             axes[1].plot(c_index[:(1+i//sample_rate)],time_means[:(1+i//sample_rate)],label="observed")
             
@@ -967,7 +989,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 5,
+			'pop_total': 25,
 
 			'width': 200,
 			'height': 100,

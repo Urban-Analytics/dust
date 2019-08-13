@@ -408,11 +408,11 @@ class Model:
             'Total': self.pop_total,
             'Active': self.pop_active,
             'Finished': self.pop_finished,
-            'Time Taken': np.mean(self.steps_taken),
-            'Time Expected': np.mean(self.steps_exped),
-            'Time Delay': np.mean(self.steps_delay),
-            'Collisions': np.mean([agent.history_collisions for agent in self.agents]),
-            'Wiggles': np.mean([agent.history_wiggles for agent in self.agents]),
+            'Mean Time Taken': np.mean(self.steps_taken),
+            'Mean Time Expected': np.mean(self.steps_exped),
+            'Mean Time Delay': np.mean(self.steps_delay),
+            'Mean Collisions': np.mean([agent.history_collisions for agent in self.agents]),
+            'Mean Wiggles': np.mean([agent.history_wiggles for agent in self.agents]),
             # 'GateWiggles': sum(wig[0]<self.gates_space for wig in self.history_wiggle_locs)/self.pop_total
             }
         return analytics
@@ -464,15 +464,33 @@ class Model:
             ax.contourf(hdata.T, cmap=cmap, alpha=alpha, extend='min', extent=(binx[0],binx[-1],biny[0],biny[-1]))
         return ax
 
-    def get_wiggle_map(self, do_kdeplot=True):
+    def get_wiggle_map(self, do_kdeplot=True, title="Collision Map"):
+        """ Show where wiggles and collisions took place
+
+        :param do_kdeplot:
+        :param title: (optional) title for the graph
+        :return: The figure object
+        """
         fig, ax = plt.subplots(1, figsize=self._figsize, dpi=self._dpi)
         fig.tight_layout(pad=0)
         self._heightmap(np.array(self.history_collision_locs).T, ax=ax, kdeplot=do_kdeplot)
         self._heightmap(np.array(self.history_wiggle_locs).T, ax=ax)
-        ax.set(frame_on=False, aspect='equal', xlim=self.boundaries[:,0], xticks=[], ylim=self.boundaries[:,1], yticks=[])
+        ax.set(frame_on=False, aspect='equal', xlim=self.boundaries[:,0], xticks=[],
+               ylim=self.boundaries[:,1], yticks=[], title=title)
         return fig
 
-    def get_location_map(self, do_kdeplot=True):
+    def get_collision_map(self, *args, **kwargs):
+        """For making a map of collisions and wiggles. Just calls get_wiggle_map"""
+        self.get_wiggle_map(*args, **kwargs)
+
+    def get_location_map(self, do_kdeplot=True, title="Location Map"):
+        """
+        Create a density plot of the agents' locations
+
+        :param do_kdeplot:
+        :param title: (optional) title for the plot
+        :return:
+        """
         history_locs = []
         for agent in self.agents:
             for loc in agent.history_locations:
@@ -482,7 +500,8 @@ class Model:
         fig, ax = plt.subplots(1, figsize=self._figsize, dpi=self._dpi)
         fig.tight_layout(pad=0)
         self._heightmap(history_locs, ax=ax, kdeplot=do_kdeplot, cmap='gray_r')
-        ax.set(frame_on=False, aspect='equal', xlim=self.boundaries[:,0], xticks=[], ylim=self.boundaries[:,1], yticks=[])
+        ax.set(frame_on=False, aspect='equal', xlim=self.boundaries[:,0], xticks=[],
+               ylim=self.boundaries[:,1], yticks=[], title=title)
         return fig
 
     def get_ani(self, agents=None, colour='k', alpha=.5, show_separation=False, wiggle_map=False):

@@ -121,7 +121,7 @@ class Agent:
         '''
         direction = (self.loc_desire - self.location) / self.distance(self.loc_desire, self.location)
         for speed in self.speeds:
-            # Direct
+            # Direct. Try to move forwards by gradually smaller and smaller amounts
             new_location = self.location + speed * direction
             if self.collision(model, new_location):
                 if model.do_history:
@@ -129,7 +129,7 @@ class Agent:
                     model.history_collision_locs.append(new_location)
             else:
                 break
-            # Wiggle
+            # If even the slowest speed results in a colision, then wiggle.
             if speed == self.speeds[-1]:
                 new_location = self.location + [0, self.wiggle*np.random.randint(-1, 1+1)]
                 if model.do_history:
@@ -456,9 +456,9 @@ class Model:
         return fig
 
     @staticmethod
-    def _heightmap(data, ax=None, kdeplot=True, cmap=None, alpha=.7):
+    def _heightmap(data, ax=None, kdeplot=True, cmap=None, alpha=.7, cbar=False):
         if kdeplot:
-            sns_kdeplot(*data, ax=ax, cmap=cmap, alpha=alpha, shade=True, shade_lowest=False)
+            sns_kdeplot(*data, ax=ax, cmap=cmap, alpha=alpha, shade=True, shade_lowest=False, cbar=cbar)
         else:
             hdata, binx, biny = np.histogram2d(*data, (20, 10))
             ax.contourf(hdata.T, cmap=cmap, alpha=alpha, extend='min', extent=(binx[0],binx[-1],biny[0],biny[-1]))
@@ -480,7 +480,7 @@ class Model:
         return fig
 
     def get_collision_map(self, *args, **kwargs):
-        """For making a map of collisions and wiggles. Just calls get_wiggle_map"""
+        """For making a map of collisions and wiggles. Just calls get_wiggle_map()"""
         self.get_wiggle_map(*args, **kwargs)
 
     def get_location_map(self, do_kdeplot=True, title="Location Map"):

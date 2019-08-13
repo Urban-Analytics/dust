@@ -55,7 +55,7 @@ class Filter:
         # attributes = ['state']
         has_methods = [cls.has_method(model, m) for m in methods]
         # has_attributes = [hasattr(model, a) for a in attributes]
-        print(has_methods)
+        # print(has_methods)
         # print(has_attributes)
         # b = all(has_methods) and all(has_attributes)
         b = all(has_methods)

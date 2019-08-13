@@ -7,7 +7,9 @@ Python script for running experiments with the enkf.
 # Imports
 import json
 import sys
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from numpy.random import normal
 sys.path.append('../../stationsim/')
 
@@ -167,6 +169,8 @@ def process_repeat_results(results):
     forecasts = list()
     analyses = list()
     observations = list()
+    first = True
+    times = list()
 
     for res in results:
         # Sort results by time
@@ -175,21 +179,48 @@ def process_repeat_results(results):
         analysis = list()
         observation = list()
         for r in res:
+            if first:
+                times.append(r['time'])
             forecast.append(r['forecast'])
             analysis.append(r['analysis'])
             observation.append(r['obs'])
+        first = False
         forecasts.append(forecast)
         analyses.append(analysis)
         observations.append(observation)
 
-    return np.array(forecasts), np.array(analyses), np.array(observations)
+    forecasts = make_dataframe(forecasts, times)
+    analyses = make_dataframe(analyses, times)
+    observations = make_dataframe(observations, times)
+    return forecasts, analyses, observations
+
+def make_dataframe(dataset, times):
+    d = pd.DataFrame(np.array(dataset).T)
+    d['mean'] = d.mean(axis=1)
+    d['time'] = times
+    return d.set_index('time')
+
+def plot_results(dataset):
+    colnames = list(dataset)
+    plt.figure()
+    for col in colnames:
+        if col != 'mean':
+            plt.plot(dataset[col], 'b--', alpha=0.25, label='_nolegend_')
+        else:
+            plt.plot(dataset[col], 'b-', linewidth=5, label='mean')
+    plt.legend()
+    plt.xlabel('time')
+    plt.ylabel('RMSE')
+    plt.show()
 
 # run_all(20, 300, 50, 10)
 # run_combos()
 # run_repeat()
 
-with open('data.json') as json_file:
-    data = json.load(json_file)
+def testing():
+    with open('data.json') as json_file:
+        data = json.load(json_file)
+    forecasts, analyses, observations = process_repeat_results(data)
+    plot_results(forecasts)
 
-forecasts, analyses, observations = process_repeat_results(data)
-print(forecasts[0,:])
+testing()

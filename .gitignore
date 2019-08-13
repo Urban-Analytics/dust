@@ -80,5 +80,6 @@ Projects/DataAssimilation/Kalman-and-Bayesian-Filters-in-Python
 # ********** tags **********
 tags
 
-# ********** enkf experiment resutls **********
+# ********** enkf experiment results **********
 Projects/ABM_DA/experiments/enkf_experiments/results
+Projects/ABM_DA/experiments/enkf_experiments/data.json

@@ -34,6 +34,7 @@ from stationsim.stationsim_model import Model
 
 #for plots
 
+from seaborn import kdeplot
 import matplotlib.gridspec as gridspec
 import imageio
 from scipy.stats import norm
@@ -56,7 +57,7 @@ https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
 """
 
 "for dark plots. purely an aesthetic choice. plt.style.available() for other styles"
-plt.style.use("dark_background")
+#plt.style.use("dark_background")
 
 #%%
 class HiddenPrints:
@@ -286,8 +287,11 @@ class ukf_ss:
         self.index2[0::2] = 2*self.index
         self.index2[1::2] = (2*self.index)+1
         
-        self.ukf_histories = []
-   
+        self.ukf_preds=[]
+        self.ukf_histories = [] #actual assimilated ukf value
+        self.full_Ps=[]
+
+    
         self.time1 =  datetime.datetime.now()#timer
         self.time2 = None
     def fx(self,x,**fx_args):
@@ -384,9 +388,6 @@ class ukf_ss:
 
         self.init_ukf(self.ukf_params) 
         for _ in range(self.number_of_iterations-1):
-            #if _%100 ==0: #progress bar
-            #    print(f"iterations: {_}")
-                
 
             #f_name = f"temp_pickle_model_ukf_{self.time1}"
             #f = open(f_name,"wb")
@@ -397,17 +398,35 @@ class ukf_ss:
             self.ukf.predict() #predict where agents will jump
             self.base_model.step() #jump stationsim agents forwards
             
-
-            if self.base_model.step_id%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
+            "apply noise to active agents"
+            if self.filter_params["bring_noise"]:
+                noise_array=np.ones(self.pop_total*2)
+                noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
+                noise_array*=np.random.normal(0,self.filter_params["noise"],self.pop_total*2)
+                state = self.base_model.get_state(sensor="location") #observed agents states
+                state+=noise_array
+                self.base_model.set_state(state=state,sensor="location")
+                
+            "DA update step and data logging"
+            "data logged for full preds and only assimilated preds (just predict step or predict and update)"
+            if _%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
                 
                 state = self.base_model.get_state(sensor="location") #observed agents states
                 self.ukf.update(z=state[self.index2]) #update UKF
-                self.ukf_histories.append(self.ukf.x) #append histories
                 
+                self.ukf_histories.append(self.ukf.x) #append histories
+                self.ukf_preds.append(self.ukf.x)
+                self.full_Ps.append(self.ukf.P)
+
                 x = self.ukf.x
                 if np.sum(np.isnan(x))==x.shape[0]:
                     print("math error. try larger values of alpha else check fx and hx.")
                     break
+            else:
+                "update full preds that arent assimilated"
+                self.ukf_preds.append(self.ukf.x)
+                self.full_Ps.append(self.ukf.P)
+
                 ""
             if self.base_model.pop_finished == self.pop_total: #break condition
                 break
@@ -437,24 +456,33 @@ class ukf_ss:
             a2[k] =  agent.history_locations
         max_iter = max([len(value) for value in a2.values()])
         b2 = np.vstack(self.ukf_histories)
+
         
         a= np.zeros((max_iter,self.pop_total*2))*np.nan
         b= np.zeros((max_iter,b2.shape[1]))*np.nan
-        
+
   
         for i in range(int(a.shape[1]/2)):
             a3 = np.vstack(list(a2.values())[i])
             a[:a3.shape[0],(2*i):(2*i)+2] = a3
+            
             if do_fill:
                 a[a3.shape[0]:,(2*i):(2*i)+2] = a3[-1,:]
 
         
         for j in range(int(b.shape[0]//sample_rate)):
             b[j*sample_rate,:] = b2[j,:]
+          
+        if sample_rate>1:
+            c= np.vstack(self.ukf_preds)
+
+    
             
-        "all agent observations"
+            "all agent observations"
         
-        return a,b
+            return a,b,c
+        else:
+            return a,b
 
 class plots:
     """
@@ -475,6 +503,8 @@ class plots:
         """
 
         filter_class = self.filter_class
+        plot_range =floor(filter_class.model_params["pop_total"]*(filter_class.filter_params["prop"]))
+
         if observed:
                 a = a[:,filter_class.index2]
                 if len(filter_class.index2)<b.shape[1]:
@@ -483,38 +513,39 @@ class plots:
 
         else:      
                 mask = np.ones(a.shape[1])
-                mask[filter_class.index2]=False
-                a = a[:,np.where(mask!=0)][:,0,:]
-                b = b[:,np.where(mask!=0)][:,0,:]
-                plot_range = filter_class.model_params["pop_total"]*(1-filter_class.filter_params["prop"])
+                mask[filter_class.index2]=0
+                a = a[:,np.where(mask==1)][:,0,:]
+                b = b[:,np.where(mask==1)][:,0,:]
+                plot_range = filter_class.pop_total-plot_range
         return a,b,plot_range
 
         
-    def MAEs(self,a,b):
+    def RMSEs(self,a,b):
         """
-        MAE (mean absolute error) metric. 
+        RMSE (root mean squared error) metric. 
         finds mean average euclidean error at each time step and per each agent
         provides whole array of distances per agent and time
-        and MAEs per agent and time. 
+        and RMSEs per agent and time. 
         """
-        c = np.ones((a.shape[0],int(a.shape[1]/2)))*np.nan
+        sample_rate =self.filter_class.filter_params["sample_rate"]
+        c = np.ones(((a.shape[0]//sample_rate),int(a.shape[1]/2)))*np.nan
         
         "!!theres probably a faster way of doing this with apply over axis"
         #loop over each agent
-        a = a[:,::self.filter_class.sample_rate]
-        b = b[:,::self.filter_class.sample_rate]
-
+        index = np.arange(0,c.shape[0])*sample_rate
 
         #loop over each time per agent
-        for i in range(a.shape[0]):
-                a2 = np.array([a[i,0::2],a[i,1::2]]).T
-                b2 = np.array([b[i,0::2],b[i,1::2]]).T
+        for i in range(len(index)):
+                a2 = np.array([a[sample_rate*i,0::2],a[sample_rate*i,1::2]]).T
+                b2 = np.array([b[sample_rate*i,0::2],b[sample_rate*i,1::2]]).T
                 res = a2-b2
                 c[i,:]=np.apply_along_axis(np.linalg.norm,1,res)
                     
         agent_means = np.nanmean(c,axis=0)
         time_means = np.nanmean(c,axis=1)
-        return c,agent_means,time_means
+        time_means[np.isnan(time_means)]=0
+        
+        return c,index,agent_means,time_means
         
     def diagnostic_plots(self,a,b,observed,save):
         """
@@ -531,63 +562,88 @@ class plots:
         
         
         """
+        if observed:
+            obs_text = "Observed"
+        else:
+            obs_text="Unobserved"
+            
         a,b,plot_range = self.plot_data_parser(a,b,observed)
+        sample_rate =self.filter_class.filter_params["sample_rate"]
         
         f=plt.figure(figsize=(12,8))
         for j in range(int(plot_range)):
-            plt.plot(a[:,(2*j)],a[:,(2*j)+1])    
-            plt.title("True Positions")
+            plt.plot(a[:,(2*j)],a[:,(2*j)+1],lw=3)  
+            plt.xlim([0,self.filter_class.model_params["width"]])
+            plt.ylim([0,self.filter_class.model_params["height"]])
+            plt.xlabel("Corridor Width")
+            plt.ylabel("Corridor Height")
+            plt.title(f"{obs_text} True Positions")
 
         g = plt.figure(figsize=(12,8))
         for j in range(int(plot_range)):
-            plt.plot(b[::self.filter_class.sample_rate,2*j],b[::self.filter_class.sample_rate,(2*j)+1])    
-            plt.title("KF predictions")
+            plt.plot(b[::sample_rate,2*j],b[::sample_rate,(2*j)+1],lw=3) 
+            plt.xlim([0,self.filter_class.model_params["width"]])
+            plt.ylim([0,self.filter_class.model_params["height"]])
+            plt.xlabel("Corridor Width")
+            plt.ylabel("Corridor Height")
+            plt.title(f"{obs_text} KF Predictions")
             
         """
-        MAE metric. 
+        RMSE metric. 
         finds mean average euclidean error at each time step and per each agent
         """
-        c,agent_means,time_means = self.MAEs(a,b)
+        c,c_index,agent_means,time_means = self.RMSEs(a,b)
         
         h = plt.figure(figsize=(12,8))
-        plt.plot(time_means[::self.filter_class.sample_rate])
-        plt.axhline(y=0,color="r")
-        plt.title("MAE over time")
-            
-        """find agent with highest MAE and plot it.
+        time_means[np.isnan(time_means)]=0
+        plt.plot(c_index,time_means,lw=3)
+        plt.axhline(y=0,color="k",ls="--",alpha=0.5)
+        plt.xlabel("Time (steps)")
+        plt.ylabel("RMSE Over Time")
+        plt.title(obs_text+" ")
+        plt.title(f"{obs_text} RMSEs Over Time")
+     
+        """find agent with highest RMSE and plot it.
         mainly done to check something odd isnt happening"""
-        if len(agent_means)>1:
-            index = np.where(agent_means == np.nanmax(agent_means))[0][0]
-            print(index)
-            a1 = a[:,(2*index):(2*index)+2]
-            b1 = b[:,(2*index):(2*index)+2]
-            
-            i = plt.figure(figsize=(12,8))
-            plt.plot(a1[:,0],a1[:,1],label= "True Path")
-            plt.plot(b1[::self.filter_class.sample_rate,0],b1[::self.filter_class.sample_rate,1],label = "KF Prediction")
-            plt.legend()
-            plt.title("Worst agent")
-            
+        
+        index = np.where(agent_means == np.nanmax(agent_means))[0][0]
+        print(index)
+        a1 = a[:,(2*index):(2*index)+2]
+        b1 = b[:,(2*index):(2*index)+2]
+        
+        i = plt.figure(figsize=(12,8))
+        plt.plot(a1[:,0],a1[:,1],label= "True Path",lw=3)
+        plt.plot(b1[::self.filter_class.sample_rate,0],b1[::self.filter_class.sample_rate,1],label = "KF Prediction",lw=3)
+        plt.legend()
+        plt.xlim([0,self.filter_class.model_params["width"]])
+        plt.ylim([0,self.filter_class.model_params["height"]])
+        plt.xlabel("Corridor Width")
+        plt.ylabel("Corridor Height")
+        plt.title(obs_text+" True Positions")
+        plt.title("Worst agent")
+        plt.title(f"{obs_text} Worst Agent")
+
         j = plt.figure(figsize=(12,8))
-        plt.hist(agent_means)
-        plt.title("Mean Error per agent histogram")
-                  
+        plt.hist(agent_means,density=True)
+        plt.xlabel("Agent RMSE")
+        plt.ylabel("Density ([0,1])")
+        plt.title(obs_text+" Histogram of agent RMSEs")
+        kdeplot(agent_means,color="red",cut=0,lw=4)
+        plt.title(f"{obs_text} Agent RMSE Histogram")
+  
         if save:
-            if observed:
-                s = "observed"
-            else:
-                s = "unobserved"
-            f.savefig(f"{s}_actual")
-            g.savefig(f"{s}_kf")
-            h.savefig(f"{s}_mae")
-            if len(agent_means)>1:
-                i.savefig(f"{s}_worst")
-            j.savefig(f"{s}_agent_hist")
+            f.savefig(f"{obs_text}_actual.pdf")
+            g.savefig(f"{obs_text}_kf.pdf")
+            h.savefig(f"{obs_text}_rmse.pdf")
+            i.savefig(f"{obs_text}_worst.pdf")
+            j.savefig(f"{obs_text}_agent_hist.pdf")
+            
         return c,time_means
+    
     
         
     def pair_frames(self,a,b):
-        "paired side by side preds/truth"
+        "pairwise animation"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
@@ -613,12 +669,12 @@ class plots:
             colours = ["orangered","yellow"]
             for j in range(len(a_s)):
 
-                a = a_s[j]
-                b = b_s[j]
-                if np.abs(np.nansum(a-b))>1e-4: #check for perfect conditions (initial)
-                    for k in range(int(a.shape[0]/2)):
-                        a2 = a[(2*k):(2*k)+2]
-                        b2 = b[(2*k):(2*k)+2]          
+                a1 = a_s[j]
+                b1 = b_s[j]
+                if np.abs(np.nansum(a1-b1))>1e-4: #check for perfect conditions (initial)
+                    for k in range(int(a1.shape[0]/2)):
+                        a2 = a1[(2*k):(2*k)+2]
+                        b2 = b1[(2*k):(2*k)+2]          
                         if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
                             x = [a2[0],b2[0]]
                             y = [a2[1],b2[1]]
@@ -642,15 +698,17 @@ class plots:
         animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
 
     def pair_frames_stack(self,a,b):
-        "paired side by side preds/truth"
+        "pairwise with error plots"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
-        c,agent_means,time_means = self.MAEs(a_o,b_o) #maes
-        c2,agent_means2,time_means2 = self.MAEs(a_u,b_u) #maes
-
+        c,c_index,agent_means,time_means = self.RMSEs(a_o,b_o) #mses
+        c2,c_index2,agent_means2,time_means2 = self.RMSEs(a_u,b_u) #mses
+        time_means[np.isnan(time_means)]=0
+        time_means2[np.isnan(time_means)]=0
+        
         os.mkdir("output_pairs")
         for i in range(a.shape[0]):
             a_s = [a_o[i,:],a_u[i,:]]
@@ -693,16 +751,16 @@ class plots:
             #axes[1].set_position([box.x0, box.y0 + box.height * 0.1,
             #                 box.width, box.height * 0.9])
             
-            axes[1].plot(time_means[:i],label="observed")
-            axes[2].plot(time_means2[:i],label="unobserved")
+            axes[1].plot(c_index,time_means[:i],label="observed")
+            axes[2].plot(c_index2,time_means2[:i],label="unobserved")
 
             axes[0].legend(bbox_to_anchor=(1.012, 1.2),
                       ncol=3,prop={'size':7})
             axes[0].set_xlabel("corridor width")
             axes[0].set_ylabel("corridor height")
-            axes[1].set_ylabel("Observed MAE")
+            axes[1].set_ylabel("Observed RMSE")
             axes[1].set_xlabel("Time (steps)")
-            axes[2].set_ylabel("Unobserved MAE")
+            axes[2].set_ylabel("Unobserved RMSE")
             axes[2].set_xlabel("Time (steps)")
             #axes[0].title("True Positions vs UKF Predictions")
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
@@ -716,15 +774,18 @@ class plots:
         animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
         
     def pair_frames_stack_ellipse(self,a,b):
-
+        "pairwise,RMSEs and covariances. This takes FOREVER to render so I made it seperate"
         "paired side by side preds/truth"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
-        a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
+        sample_rate=self.filter_class.filter_params["sample_rate"]
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
-        c,agent_means,time_means = self.MAEs(a_o,b_o) #maes
-        c2,agent_means2,time_means2 = self.MAEs(a_u,b_u) #maes
+        a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
+        c,c_index,agent_means,time_means = self.RMSEs(a_o,b_o) #obs rmses
+        c2,c_index2,agent_means2,time_means2 = self.RMSEs(a_u,b_u) #uobs rmses
+        time_means[np.isnan(time_means)]=0
+        time_means2[np.isnan(time_means)]=0
 
         os.mkdir("output_pairs")
         for i in range(a.shape[0]):
@@ -738,7 +799,7 @@ class plots:
             
             "plot true agents and dummies for legend"
             
-            P = self.filter_class.ukf.Ps[i]
+            P = self.filter_class.full_Ps[i]
             agent_covs = []
             for j in range(int(a.shape[1]/2)):
                 agent_covs.append(P[(2*j):(2*j)+2,(2*j):(2*j)+2])
@@ -746,7 +807,8 @@ class plots:
             #axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
             
             "placeholders for a consistent legend. make sure theyre outside the domain of plotting"
-            axes[0].scatter(-1,-1,color="skyblue",label = "Truth",marker = "o")
+            axes[0].scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o")
+            axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")            
             axes[0].scatter(-1,-1,color="orangered",label = "KF_Observed",marker="o")
             axes[0].scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^")
 
@@ -765,24 +827,24 @@ class plots:
                             y = [a2[1],b2[1]]
                             axes[0].plot(x,y,color="white")
                             axes[0].scatter(b2[0],b2[1],color=colours[j],marker = markers[j])
-                            plot_covariance((x[0],y[0]),agent_covs[k],ax=axes[0],edgecolor="skyblue",alpha=0.6)
+                            plot_covariance((x[1],y[1]),agent_covs[k],ax=axes[0],edgecolor="skyblue",alpha=0.6,show_center=False)
             #box = axes[1].get_position()
             #axes[1].set_position([box.x0, box.y0 + box.height * 0.1,
             #                 box.width, box.height * 0.9])
             
             axes[2].set_xlim([0,a.shape[0]])
-            axes[2].plot(time_means2[:i],label="unobserved")
+            axes[2].plot(c_index2[:(1+i//sample_rate)],time_means2[:(1+i//sample_rate)],label="unobserved")
             axes[2].set_xlim([0,a.shape[0]])
             axes[2].set_ylim([0,np.nanmax(time_means2)*1.05])  
-            axes[2].set_ylabel("Unobserved MAE")
+            axes[2].set_ylabel("Unobserved RMSE")
             axes[2].set_xlabel("Time (steps)")
 
 
             axes[1].set_xlim([0,a_u.shape[0]])
             axes[1].set_ylim([0,np.nanmax(time_means)*1.05])
-            axes[1].set_ylabel("Observed MAE")
+            axes[1].set_ylabel("Observed RMSE")
             axes[1].set_xlabel("Time (steps)")
-            axes[1].plot(time_means[:i],label="observed")
+            axes[1].plot(c_index[:(1+i//sample_rate)],time_means[:(1+i//sample_rate)],label="observed")
             
 
             axes[0].legend(bbox_to_anchor=(1.012, 1.2),ncol=3,prop={'size':14})
@@ -927,7 +989,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 10,
+			'pop_total': 25,
 
 			'width': 200,
 			'height': 100,
@@ -964,6 +1026,8 @@ if __name__ == "__main__":
     
     heatmap_rate - after how many updates to record a frame
     bin_size - square sizes for aggregate plots,
+    bring_noise: add noise to true ukf paths
+    noise: variance of said noise (0 mean)
     do_batch - do batch processing on some pre-recorded truth data.
     """
     
@@ -971,16 +1035,16 @@ if __name__ == "__main__":
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 1,
+            'sample_rate': 100,
             "do_restrict": True, 
             "do_animate": False,
-            "do_wiggle_animate": False,
-            "do_density_animate":True,
-            "do_pair_animate":False,
-            "prop": 0.2,
+            "prop": 0.4,
             "heatmap_rate": 1,
             "bin_size":10,
+            "bring_noise":False,
+            "noise":0.25,
             "do_batch":False,
+
             }
     
     """
@@ -997,7 +1061,6 @@ if __name__ == "__main__":
             "a":1,
             "b":2,
             "k":0,
-            "d_rate" : 10, #data assimilotion rate every "d_rate model steps recalibrate UKF positions with truth
 
             }
     
@@ -1005,8 +1068,11 @@ if __name__ == "__main__":
     base_model = Model(**model_params)
     u = ukf_ss(model_params,filter_params,ukf_params,base_model)
     u.main()
-    actual,preds= u.data_parser(True)
-            
+    if filter_params["sample_rate"]>1:
+        actual,preds,full_preds= u.data_parser(True)
+    else:
+        actual,preds,full_preds= u.data_parser(True)
+
     """plots"""
     plts = plots(u)
 
@@ -1016,6 +1082,13 @@ if __name__ == "__main__":
         distances,t_mean = plts.diagnostic_plots(actual,preds,False,plot_save)
     distances2,t_mean2 = plts.diagnostic_plots(actual,preds,True,plot_save)
     
-    #plts.trajectories(actual)
-    #plts.pair_frames(actual,preds)
-    #plts.heatmap(actual)
+    
+    if filter_params["sample_rate"]==1:
+        #plts.pair_frames(actual,preds)
+        #plts.heatmap(actual)
+        plts.pair_frames_stack_ellipse(actual,full_preds)
+
+    else:
+      #  plts.pair_frames(actual,full_preds)
+        plts.pair_frames_stack_ellipse(actual,full_preds)
+        #plts.heatmap(actual)

@@ -163,8 +163,33 @@ def run_combos():
             combo = (20, 300, a, e)
             run_all(*combo)
 
+def process_repeat_results(results):
+    forecasts = list()
+    analyses = list()
+    observations = list()
+
+    for res in results:
+        # Sort results by time
+        res = sorted(res, key=lambda k: k['time'])
+        forecast = list()
+        analysis = list()
+        observation = list()
+        for r in res:
+            forecast.append(r['forecast'])
+            analysis.append(r['analysis'])
+            observation.append(r['obs'])
+        forecasts.append(forecast)
+        analyses.append(analysis)
+        observations.append(observation)
+
+    return np.array(forecasts), np.array(analyses), np.array(observations)
 
 # run_all(20, 300, 50, 10)
 # run_combos()
 # run_repeat()
 
+with open('data.json') as json_file:
+    data = json.load(json_file)
+
+forecasts, analyses, observations = process_repeat_results(data)
+print(forecasts[0,:])

@@ -20,13 +20,14 @@ class Visualiser:
 		self.ax_histx = None
 		self.ax_histy = None
 
-	def plot_agent(self, x, y, **kwargs):
+	def plot_agent(self, agent, **kwargs):
 		self.ax_scatter = plt.axes(self.rect_scatter)
 		self.ax_scatter.tick_params(direction='in', top=True, right=True)
 		self.ax_histx = plt.axes(self.rect_histx)
 		self.ax_histx.tick_params(direction='in', labelbottom=False)
 		self.ax_histy = plt.axes(self.rect_histy)
 		self.ax_histy.tick_params(direction='in', labelleft=False)
+		x,y = agent.xy
 
 		self.ax_scatter.scatter(x,
 							   y,

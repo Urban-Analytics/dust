@@ -2,6 +2,7 @@ import torch
 from torch import tensor
 from pyro import distributions as dist
 import pyro
+import numpy as np
 
 
 class Agent:
@@ -14,11 +15,8 @@ class Agent:
 						  [y for _ in range(self.n_samples)]])
 		self.s = tensor([1. for _ in range(self.n_samples)])
 		self.rv_v = pyro.sample('rv_s', dist.LogNormal(loc=self.s, scale=1.))
-
-	def step(self, pred=None, obs=None):
-		xy = pyro.sample('xy', dist.Normal(loc=self.xy if pred is None else pred,
-										   scale=tensor([[5.], [5.]])), obs=obs)
-		return self.move(origin=xy, destination=self.destination)
+		self.obs = None
+		self.truth = None
 
 	def pick_destination(self, doors):
 		door = doors[self.rv_destination]
@@ -27,9 +25,24 @@ class Agent:
 		door = torch.stack([door_x, door_y])
 		self.destination = door
 
+	def step(self, pred=None, obs=None):
+		self.xy = pyro.sample('xy', dist.Normal(loc=self.xy if pred is None else pred,
+										   scale=tensor([[1.], [1.]])), obs=obs)
+		self.xy = self.move(origin=self.xy, destination=self.destination)
+
+	def get_xy(self):
+		return self.xy
+
+	def step_and_get(self, xy=None, obs=None):
+		self.step(pred=xy, obs=obs)
+		return self.get_xy()
+
 	def move(self, origin, destination):
 		x = destination[0] - origin[0]
 		y = destination[1] - origin[1]
 		distance = (x*x + y*y)**.5
 		loc = origin + self.rv_v * (destination - origin) / distance
 		return loc
+
+	def print_median_agent_loc(self, i):
+		print('Step:{} [x,y] {}'.format(i, [np.median(self.xy[0]), np.median(self.xy[1])]))

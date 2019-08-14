@@ -236,6 +236,7 @@ def make_dataframe(dataset, times):
     """
     d = pd.DataFrame(np.array(dataset).T)
     d['mean'] = d.mean(axis=1)
+    d['sd'] = d.std(axis=1)
     d['time'] = times
     return d.set_index('time')
 
@@ -257,10 +258,10 @@ def plot_results(dataset):
     colnames = list(dataset)
     plt.figure()
     for col in colnames:
-        if col != 'mean':
-            plt.plot(dataset[col], 'b--', alpha=0.25, label='_nolegend_')
-        else:
+        if col == 'mean':
             plt.plot(dataset[col], 'b-', linewidth=5, label='mean')
+        elif col != 'sd':
+            plt.plot(dataset[col], 'b--', alpha=0.25, label='_nolegend_')
     plt.legend()
     plt.xlabel('time')
     plt.ylabel('RMSE')

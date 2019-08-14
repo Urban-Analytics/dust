@@ -316,6 +316,36 @@ def plot_all_results(forecast, analysis, observation):
 
     plt.show()
 
+def plot_with_errors(forecast, analysis, observation):
+    f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, sharey=True)
+
+    ax1.plot(forecast['mean'], 'b-', label='forecast mean')
+    ax1.fill_between(forecast.index,
+                     forecast['mean'] - forecast['sd'],
+                     forecast['mean'] + forecast['sd'],
+                     alpha=0.25)
+    ax1.legend(loc='upper left')
+    ax1.set_ylabel('RMSE')
+
+    ax2.plot(analysis['mean'], 'g-', label='analysis mean')
+    ax2.fill_between(analysis.index,
+                     analysis['mean'] - analysis['sd'],
+                     analysis['mean'] + analysis['sd'],
+                     alpha=0.25)
+    ax2.legend(loc='upper left')
+    ax2.set_ylabel('RMSE')
+
+    ax3.plot(observation['mean'], 'k-', label='observation mean')
+    ax3.fill_between(observation.index,
+                     observation['mean'] - observation['sd'],
+                     observation['mean'] + observation['sd'],
+                     alpha=0.25)
+    ax3.legend(loc='upper left')
+    ax3.set_ylabel('RMSE')
+
+    plt.show()
+
+
 # run_all(20, 300, 50, 10)
 # run_combos()
 # run_repeat()
@@ -325,5 +355,6 @@ def testing():
         data = json.load(json_file)
     forecasts, analyses, observations = process_repeat_results(data)
     plot_all_results(forecasts, analyses, observations)
+    plot_with_errors(forecasts, analyses, observations)
 
 testing()

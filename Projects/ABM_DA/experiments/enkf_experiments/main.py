@@ -166,6 +166,23 @@ def run_combos():
             run_all(*combo)
 
 def process_repeat_results(results):
+    """
+    process_repeat_results
+
+    Takes the results of running the enkf repeatedly and restructures it into
+    separate data structures for forecasts, analyses and observations.
+
+    Parameters
+    ----------
+    results : list(list(dict()))
+        Each list entry is a list of dictionaries which stores the time-series
+        of the forecast, analysis and observations for that realisation.
+        Each dictionary contains entries for:
+            - time
+            - forecast
+            - analysis
+            - observation
+    """
     forecasts = list()
     analyses = list()
     observations = list()
@@ -195,12 +212,48 @@ def process_repeat_results(results):
     return forecasts, analyses, observations
 
 def make_dataframe(dataset, times):
+    """
+    make_dataframe
+
+    Make a dataframe from a dataset.
+    This requires that the data undergo the following transformations:
+        - Convert to numpy array
+        - Transpose array
+        - Convert array to pandas dataframe
+        - Calculate row-mean in new column
+        - Add time to data
+        - Set time as index
+
+    Parameters
+    ----------
+    dataset : list(list())
+        List of lists containing data.
+        Each inner list contains a single time-series.
+        The outer list contains a collection of inner lists, each pertaining to
+        a realisation of the model.
+    times : list-like
+        List of times at which data is provided.
+    """
     d = pd.DataFrame(np.array(dataset).T)
     d['mean'] = d.mean(axis=1)
     d['time'] = times
     return d.set_index('time')
 
 def plot_results(dataset):
+    """
+    plot_results
+
+    Plot results for a single dataset (i.e. either forecast, analysis or
+    observations). Produces a line graph containing individual lines for each
+    realisation (low alpha and dashed), and a line for the mean of the
+    realisations (full alpha and bold).
+
+    Parameters
+    ----------
+    dataset : pandas dataframe
+        pandas dataframe of data containing multiple realisations and mean of
+        all realisations indexed on time.
+    """
     colnames = list(dataset)
     plt.figure()
     for col in colnames:
@@ -213,6 +266,55 @@ def plot_results(dataset):
     plt.ylabel('RMSE')
     plt.show()
 
+def plot_all_results(forecast, analysis, observation):
+    """
+    plot_all_results
+
+    Plot forecast, analysis and observations in one plot.
+    Contains three subplots, each one pertaining to one of the datasets.
+    Subplots share x-axis and y-axis.
+
+    Parameters
+    ----------
+    forecast : pandas dataframe
+        pandas dataframe of forecast data.
+    analysis : pandas dataframe
+        pandas dataframe of analysis data.
+    observation : pandas dataframe
+        pandas dataframe of observation data.
+    """
+    f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, sharey=True)
+
+    colnames = list(forecast)
+    for col in colnames:
+        if col != 'mean':
+            ax1.plot(forecast[col], 'b--', alpha=0.25, label='_nolegend_')
+        else:
+            ax1.plot(forecast[col], 'b-', linewidth=2, label='forecast mean')
+    ax1.legend(loc='upper left')
+    ax1.set_ylabel('RMSE')
+
+    colnames = list(analysis)
+    for col in colnames:
+        if col != 'mean':
+            ax2.plot(analysis[col], 'g--', alpha=0.25, label='_nolegend_')
+        else:
+            ax2.plot(analysis[col], 'g-', linewidth=2, label='analysis mean')
+    ax2.legend(loc='upper left')
+    ax2.set_ylabel('RMSE')
+
+    colnames = list(observation)
+    for col in colnames:
+        if col != 'mean':
+            ax3.plot(observation[col], 'k--', alpha=0.25, label='_nolegend_')
+        else:
+            ax3.plot(observation[col], 'k-', linewidth=2, label='observation mean')
+    ax3.legend(loc='upper left')
+    ax3.set_xlabel('time')
+    ax3.set_ylabel('RMSE')
+
+    plt.show()
+
 # run_all(20, 300, 50, 10)
 # run_combos()
 # run_repeat()
@@ -221,6 +323,6 @@ def testing():
     with open('data.json') as json_file:
         data = json.load(json_file)
     forecasts, analyses, observations = process_repeat_results(data)
-    plot_results(forecasts)
+    plot_all_results(forecasts, analyses, observations)
 
 testing()

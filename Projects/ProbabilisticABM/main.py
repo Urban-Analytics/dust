@@ -8,21 +8,26 @@ import super_simple_model.renderer as renderer
 
 n_samples = 1000
 steps = 400
+
 environment = Environment()
-visualiser = Visualiser(environment)
+
+agent = Agent(x=0., y=500., n_samples=n_samples)
 width, height = 20, 100
+
+sensor = Sensor(freq=200, n_samples=n_samples)
+
+visualiser = Visualiser(environment=environment, agent=agent)
+
 environment.doors = [Door(id=0, xy=(1000 - width / 2, (500 * 1.33) - height / 2),
 						  width=width, height=height, fill=True),
 					 Door(id=1, xy=(1000 - width / 2, (500 * 0.66) - height / 2),
 						  width=width, height=height, fill=True)]
 
-sensor = Sensor(freq=10, n_samples=n_samples)
 
 
 def main():
 	renderer.clear_output_folder()
 
-	agent = Agent(x=0., y=500., n_samples=n_samples)
 	agent.pick_destination(doors=environment.doors)
 	obs = None
 
@@ -35,7 +40,7 @@ def main():
 
 		agent.print_median_agent_loc(t)
 
-		visualiser.plot_agent(agent, median=False)
+		visualiser.plot_agent(median=False)
 		visualiser.plot_environment()
 		visualiser.save_plt()
 		visualiser.clear_frame()

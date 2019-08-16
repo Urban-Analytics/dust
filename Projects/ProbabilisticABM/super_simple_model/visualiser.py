@@ -7,8 +7,9 @@ import time
 class Visualiser:
 	plt.figure(figsize=(12, 12))
 
-	def __init__(self, environment=None, **kwargs):
+	def __init__(self, environment=None, agent=None, **kwargs):
 		self.environment = environment
+		self.agent = agent
 		self.bounds = (1000, 1000) if environment is None else self.environment.get_env_size()
 		self.left, self.width = 0.1, 0.65
 		self.bottom, self.height = 0.1, 0.65
@@ -20,19 +21,27 @@ class Visualiser:
 		self.ax_histx = None
 		self.ax_histy = None
 
-	def plot_agent(self, agent, **kwargs):
+	def plot_agent(self, **kwargs):
 		self.ax_scatter = plt.axes(self.rect_scatter)
 		self.ax_scatter.tick_params(direction='in', top=True, right=True)
 		self.ax_histx = plt.axes(self.rect_histx)
 		self.ax_histx.tick_params(direction='in', labelbottom=False)
 		self.ax_histy = plt.axes(self.rect_histy)
 		self.ax_histy.tick_params(direction='in', labelleft=False)
-		x,y = agent.xy
 
+		x,y = self.agent.xy
 		self.ax_scatter.scatter(x,
 							   y,
-							   s=1,
-							   label='Potential Locations')
+							   s=3,
+							   label='Prior')
+
+		if self.agent.obs is not None:
+			x_o,y_o = self.agent.obs
+			self.ax_scatter.scatter(x_o,
+									y_o,
+									s=1,
+									c='red',
+									label='Observation')
 
 		if kwargs['median']:
 			self.plot_median_loc(x, y)

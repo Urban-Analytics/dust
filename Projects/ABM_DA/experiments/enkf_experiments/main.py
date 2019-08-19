@@ -235,8 +235,10 @@ def make_dataframe(dataset, times):
         List of times at which data is provided.
     """
     d = pd.DataFrame(np.array(dataset).T)
-    d['mean'] = d.mean(axis=1)
-    d['sd'] = d.std(axis=1)
+    m = d.mean(axis=1)
+    s = d.std(axis=1)
+    d['mean'] = m
+    d['sd'] = s
     d['time'] = times
     return d.set_index('time')
 
@@ -288,28 +290,28 @@ def plot_all_results(forecast, analysis, observation):
 
     colnames = list(forecast)
     for col in colnames:
-        if col != 'mean':
-            ax1.plot(forecast[col], 'b--', alpha=0.25, label='_nolegend_')
-        else:
+        if col == 'mean':
             ax1.plot(forecast[col], 'b-', linewidth=2, label='forecast mean')
+        elif col != 'sd':
+            ax1.plot(forecast[col], 'b--', alpha=0.25, label='_nolegend_')
     ax1.legend(loc='upper left')
     ax1.set_ylabel('RMSE')
 
     colnames = list(analysis)
     for col in colnames:
-        if col != 'mean':
-            ax2.plot(analysis[col], 'g--', alpha=0.25, label='_nolegend_')
-        else:
+        if col == 'mean':
             ax2.plot(analysis[col], 'g-', linewidth=2, label='analysis mean')
+        elif col != 'sd':
+            ax2.plot(analysis[col], 'g--', alpha=0.25, label='_nolegend_')
     ax2.legend(loc='upper left')
     ax2.set_ylabel('RMSE')
 
     colnames = list(observation)
     for col in colnames:
-        if col != 'mean':
-            ax3.plot(observation[col], 'k--', alpha=0.25, label='_nolegend_')
-        else:
+        if col == 'mean':
             ax3.plot(observation[col], 'k-', linewidth=2, label='observation mean')
+        elif col != 'sd':
+            ax3.plot(observation[col], 'k--', alpha=0.25, label='_nolegend_')
     ax3.legend(loc='upper left')
     ax3.set_xlabel('time')
     ax3.set_ylabel('RMSE')

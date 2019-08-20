@@ -42,7 +42,7 @@ from shapely.prepared import prep
 import geopandas as gpd
 
 #for dark plots. purely an aesthetic choice.
-plt.style.use("dark_background")
+#plt.style.use("dark_background")
 
 """
 suppress repeat printing in F_x from new stationsim
@@ -272,7 +272,9 @@ class agg_ukf_ss:
         self.index2[1::2] = (2*self.index)+1
         
         self.ukf_histories = []
-   
+        self.agg_ukf_preds=[]
+        self.full_Ps = []
+        
         self.time1 =  datetime.datetime.now()#timer
 
     def fx(self,x,**fx_args):
@@ -381,12 +383,19 @@ class agg_ukf_ss:
                 state =poly_count(poly_list,self.base_model.agents2state()) #observed agents states
                 self.ukf.update(z=state) #update UKF
                 self.ukf_histories.append(self.ukf.x) #append histories
+                self.agg_ukf_preds.append(self.ukf.x)
+                self.full_Ps.append(self.ukf.P)
                 
                 x = self.ukf.x
                 if np.sum(np.isnan(x))==x.shape[0]:
-                    print("math error. try larger values of alpha else check fx and hx.")
+                    print("math error. try larger values of alpha else check fx and hx. Could also be random rounding errors.")
                     break
                 ""
+            else:
+                "update full preds that arent assimilated"
+                self.agg_ukf_preds.append(self.ukf.x)
+                self.full_Ps.append(self.ukf.P)
+                
             if self.base_model.pop_finished == self.pop_total: #break condition
                 break
         
@@ -433,7 +442,11 @@ class agg_ukf_ss:
             
         "all agent observations"
         
-        return a,b
+        if sample_rate>1:
+            c= np.vstack(self.agg_ukf_preds)
+            return a,b,c
+        else:
+            return a,b
 
 def grid_poly(width,length,bin_size):
     """
@@ -736,12 +749,12 @@ class agg_plots:
         
         animations.animate(self,"output_heatmap",f"heatmap_{filter_class.pop_total}_")
         
-    def RMSEs(self,a,b):
+    def AEDs(self,a,b):
         """
-        RMSE (root mean squared error) metric. 
+        AED (average euclidean distance) error metric. 
         finds mean average euclidean error at each time step and per each agent
         provides whole array of distances per agent and time
-        and RMSEs per agent and time. 
+        and AEDs per agent and time. 
         """
         c = np.ones((a.shape[0],int(a.shape[1]/2)))*np.nan
         
@@ -863,17 +876,16 @@ if __name__ == "__main__":
     poly_list = grid_poly(model_params["width"],model_params["height"],filter_params["bin_size"]) #generic square grid over corridor
     u = agg_ukf_ss(model_params,filter_params,ukf_params,poly_list,base_model)
     u.main()
-    actual,preds= u.data_parser(True)
+    actual,preds,full_preds= u.data_parser(True)
     "additional step for aggregate"
     preds[np.isnan(actual)]=np.nan 
     """plots"""
     plts = plots(u)
 
-    if filter_params["prop"]<1:
-        distances,t_mean = plts.diagnostic_plots(actual,preds,False,False)
-    distances2,t_mean2 = plts.diagnostic_plots(actual,preds,True,False)
+
+    distances,t_mean = plts.diagnostic_plots(actual,preds,True,False)
     
     #plts.trajectories(actual)
-    #plts.pair_frames(actual,preds)
+    plts.pair_frames(actual,full_preds)
     #plts.heatmap(actual)
     

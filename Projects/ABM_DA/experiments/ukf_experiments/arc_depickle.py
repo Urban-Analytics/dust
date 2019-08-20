@@ -41,9 +41,9 @@ def l2_parser(instance,prop):
     a_u,b_u,plot_range = plts.plot_data_parser(actual,preds,False)
     a_o,b_o,plot_range = plts.plot_data_parser(actual,preds,True)    
 
-    distances_obs,oindex,agent_means,t_mean_obs = plts.RMSEs(a_o,b_o)
+    distances_obs,oindex,agent_means,t_mean_obs = plts.AEDs(a_o,b_o)
     if prop<1:
-        distances_uobs,uindex,agent_means,t_mean_uobs = plts.RMSEs(a_u,b_u)
+        distances_uobs,uindex,agent_means,t_mean_uobs = plts.AEDs(a_u,b_u)
     else:
         distances_uobs = []
     matplotlib.use("module://ipykernel.pylab.backend_inline")    
@@ -53,7 +53,7 @@ def l2_parser(instance,prop):
 
 def grand_mean_plot(data,f_name,instance):
     """
-    take list of RMSE dataframes and produces confidence plot for given number
+    take list of AED dataframes and produces confidence plot for given number
     of agents and proportion over time.
     
     This function is a bit odd as it essentially 
@@ -78,18 +78,16 @@ def grand_mean_plot(data,f_name,instance):
         reg_frames.append(mean_frame)
     
     grand_frame = np.vstack(reg_frames)
-    
+    f = plt.figure()
     sns.lineplot(grand_frame[:,0],grand_frame[:,1],lw=3)
-    plt.savefig(f_name)
     plt.xlabel("Time (steps)")
-    plt.ylabel("RMSE Distribution over Time")
-    plt.title("RMSEs over time")
-    plt.show()
-    plt.close()
+    plt.ylabel("AED Distribution over Time")
+    plt.title("AEDs over time")
+    plt.savefig(f_name)
     
 if __name__ == "__main__":
     
-    n=50
+    n=25
     prop = 0.6
     actuals = []
     preds = []
@@ -114,11 +112,11 @@ if __name__ == "__main__":
     #plts = plots(u)
     
     if len(files)>1:
-        #observed grand RMSE
-        grand_mean_plot(d_obs,f"RMSE_obs_{n}_{prop}.pdf",u)
+        #observed grand AED
+        grand_mean_plot(d_obs,f"AED_obs_{n}_{prop}.pdf",u)
         if prop<1:
-            #unobserved grand RMSE
-            grand_mean_plot(d_uobs,f"RMSE_uobs_{n}_{prop}.pdf",u)
+            #unobserved grand AED
+            grand_mean_plot(d_uobs,f"AED_uobs_{n}_{prop}.pdf",u)
             #plts.trajectories(actual)
             #plts.pair_frames(actual,preds)
     else:

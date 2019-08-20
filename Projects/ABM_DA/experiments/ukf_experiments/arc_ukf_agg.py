@@ -63,15 +63,15 @@ if __name__ == '__main__':
     
     #num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
     
-    num_age = np.arange(5,55,5) # 5 to 50 by 5
-    run_id = [0]
-    #run_id = np.arange(0,20,1) #20 runs
+    num_age = np.arange(5,55,5) # number of agents 5 to 50 by 5
+    bins = np.arange(5,35,5) # bin 
+    run_id = np.arange(0,20,1) #20 runs
     
     #noise = [1.0, 2.0]
 
     # List of all particle-agent combinations. ARC task
     # array variable loops through this list
-    param_list = [(x, y) for x in num_age for y in run_id]
+    param_list = [(x,y,z) for x in num_age for y in bins for z in run_id]
 
     # Use below to update param_list if some runs abort
     # If used, need to update ARC task array variable
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     # param_list = [param_list[x-1] for x in aborted]
     
     model_params = {
-			'pop_total': param_list[int(sys.argv[0])-1][0],
+			'pop_total': param_list[int(sys.argv[1])-1][0],
 
 			'width': 200,
 			'height': 100,
@@ -113,9 +113,9 @@ if __name__ == '__main__':
             "do_animate": False,
             "prop":1,
             #"run_id":param_list[int(sys.argv[2])-1][2],
-            "run_id":0,
+            "run_id":param_list[int(sys.argv[1])-1][2],
             "heatmap_rate": 1,
-            "bin_size":25,
+            "bin_size":param_list[int(sys.argv[1])-1][1],
             "bring_noise":False,
             "noise":0.25,
             "do_batch":False,

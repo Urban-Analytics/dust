@@ -520,12 +520,12 @@ class plots:
         return a,b,plot_range
 
         
-    def RMSEs(self,a,b):
+    def AEDs(self,a,b):
         """
-        RMSE (root mean squared error) metric. 
+        AED (average euclidean distance) error metric. 
         finds mean average euclidean error at each time step and per each agent
         provides whole array of distances per agent and time
-        and RMSEs per agent and time. 
+        and AEDs per agent and time. 
         """
         sample_rate =self.filter_class.filter_params["sample_rate"]
         c = np.ones(((a.shape[0]//sample_rate),int(a.shape[1]/2)))*np.nan
@@ -589,21 +589,21 @@ class plots:
             plt.title(f"{obs_text} KF Predictions")
             
         """
-        RMSE metric. 
+        AED metric. 
         finds mean average euclidean error at each time step and per each agent
         """
-        c,c_index,agent_means,time_means = self.RMSEs(a,b)
+        c,c_index,agent_means,time_means = self.AEDs(a,b)
         
         h = plt.figure(figsize=(12,8))
         time_means[np.isnan(time_means)]=0
         plt.plot(c_index,time_means,lw=3)
         plt.axhline(y=0,color="k",ls="--",alpha=0.5)
         plt.xlabel("Time (steps)")
-        plt.ylabel("RMSE Over Time")
+        plt.ylabel("AED Over Time")
         plt.title(obs_text+" ")
-        plt.title(f"{obs_text} RMSEs Over Time")
+        plt.title(f"{obs_text} AEDs Over Time")
      
-        """find agent with highest RMSE and plot it.
+        """find agent with highest AED and plot it.
         mainly done to check something odd isnt happening"""
         
         index = np.where(agent_means == np.nanmax(agent_means))[0][0]
@@ -625,16 +625,16 @@ class plots:
 
         j = plt.figure(figsize=(12,8))
         plt.hist(agent_means,density=True)
-        plt.xlabel("Agent RMSE")
+        plt.xlabel("Agent AED")
         plt.ylabel("Density ([0,1])")
-        plt.title(obs_text+" Histogram of agent RMSEs")
+        plt.title(obs_text+" Histogram of agent AEDs")
         kdeplot(agent_means,color="red",cut=0,lw=4)
-        plt.title(f"{obs_text} Agent RMSE Histogram")
+        plt.title(f"{obs_text} Agent AED Histogram")
   
         if save:
             f.savefig(f"{obs_text}_actual.pdf")
             g.savefig(f"{obs_text}_kf.pdf")
-            h.savefig(f"{obs_text}_rmse.pdf")
+            h.savefig(f"{obs_text}_aed.pdf")
             i.savefig(f"{obs_text}_worst.pdf")
             j.savefig(f"{obs_text}_agent_hist.pdf")
             
@@ -678,7 +678,7 @@ class plots:
                         if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
                             x = [a2[0],b2[0]]
                             y = [a2[1],b2[1]]
-                            ax.plot(x,y,color="white")
+                            ax.plot(x,y,color="k")
                             ax.scatter(b2[0],b2[1],color=colours[j],marker = markers[j])
             
             box = ax.get_position()
@@ -704,8 +704,8 @@ class plots:
         height = filter_class.model_params["height"]
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
-        c,c_index,agent_means,time_means = self.RMSEs(a_o,b_o) #mses
-        c2,c_index2,agent_means2,time_means2 = self.RMSEs(a_u,b_u) #mses
+        c,c_index,agent_means,time_means = self.AEDs(a_o,b_o) #mses
+        c2,c_index2,agent_means2,time_means2 = self.AEDs(a_u,b_u) #mses
         time_means[np.isnan(time_means)]=0
         time_means2[np.isnan(time_means)]=0
         
@@ -744,7 +744,7 @@ class plots:
                         if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
                             x = [a2[0],b2[0]]
                             y = [a2[1],b2[1]]
-                            axes[0].plot(x,y,color="white")
+                            axes[0].plot(x,y,color="k")
                             axes[0].scatter(b2[0],b2[1],color=colours[j],marker = markers[j])
             
             #box = axes[1].get_position()
@@ -758,9 +758,9 @@ class plots:
                       ncol=3,prop={'size':7})
             axes[0].set_xlabel("corridor width")
             axes[0].set_ylabel("corridor height")
-            axes[1].set_ylabel("Observed RMSE")
+            axes[1].set_ylabel("Observed AED")
             axes[1].set_xlabel("Time (steps)")
-            axes[2].set_ylabel("Unobserved RMSE")
+            axes[2].set_ylabel("Unobserved AED")
             axes[2].set_xlabel("Time (steps)")
             #axes[0].title("True Positions vs UKF Predictions")
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
@@ -774,7 +774,7 @@ class plots:
         animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
         
     def pair_frames_stack_ellipse(self,a,b):
-        "pairwise,RMSEs and covariances. This takes FOREVER to render so I made it seperate"
+        "pairwise,AEDs and covariances. This takes FOREVER to render so I made it seperate"
         "paired side by side preds/truth"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
@@ -782,8 +782,8 @@ class plots:
         sample_rate=self.filter_class.filter_params["sample_rate"]
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
-        c,c_index,agent_means,time_means = self.RMSEs(a_o,b_o) #obs rmses
-        c2,c_index2,agent_means2,time_means2 = self.RMSEs(a_u,b_u) #uobs rmses
+        c,c_index,agent_means,time_means = self.AEDs(a_o,b_o) #obs AEDs
+        c2,c_index2,agent_means2,time_means2 = self.AEDs(a_u,b_u) #uobs AEDs
         time_means[np.isnan(time_means)]=0
         time_means2[np.isnan(time_means)]=0
 
@@ -825,7 +825,7 @@ class plots:
                         if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
                             x = [a2[0],b2[0]]
                             y = [a2[1],b2[1]]
-                            axes[0].plot(x,y,color="white")
+                            axes[0].plot(x,y,color="k")
                             axes[0].scatter(b2[0],b2[1],color=colours[j],marker = markers[j])
                             plot_covariance((x[1],y[1]),agent_covs[k],ax=axes[0],edgecolor="skyblue",alpha=0.6,show_center=False)
             #box = axes[1].get_position()
@@ -836,13 +836,13 @@ class plots:
             axes[2].plot(c_index2[:(1+i//sample_rate)],time_means2[:(1+i//sample_rate)],label="unobserved")
             axes[2].set_xlim([0,a.shape[0]])
             axes[2].set_ylim([0,np.nanmax(time_means2)*1.05])  
-            axes[2].set_ylabel("Unobserved RMSE")
+            axes[2].set_ylabel("Unobserved AED")
             axes[2].set_xlabel("Time (steps)")
 
 
             axes[1].set_xlim([0,a_u.shape[0]])
             axes[1].set_ylim([0,np.nanmax(time_means)*1.05])
-            axes[1].set_ylabel("Observed RMSE")
+            axes[1].set_ylabel("Observed AED")
             axes[1].set_xlabel("Time (steps)")
             axes[1].plot(c_index[:(1+i//sample_rate)],time_means[:(1+i//sample_rate)],label="observed")
             
@@ -1035,7 +1035,7 @@ if __name__ == "__main__":
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 100,
+            'sample_rate': 10,
             "do_restrict": True, 
             "do_animate": False,
             "prop": 0.4,
@@ -1058,7 +1058,7 @@ if __name__ == "__main__":
     
     ukf_params = {
             
-            "a":1,
+            "a":.1,
             "b":2,
             "k":0,
 
@@ -1086,7 +1086,7 @@ if __name__ == "__main__":
     if filter_params["sample_rate"]==1:
         #plts.pair_frames(actual,preds)
         #plts.heatmap(actual)
-        plts.pair_frames_stack_ellipse(actual,full_preds)
+        plts.pair_frames_stack_ellipse(actual,preds)
 
     else:
       #  plts.pair_frames(actual,full_preds)

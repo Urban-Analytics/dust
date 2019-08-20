@@ -4,24 +4,33 @@ Run some experiments using the stationsim/particle_filter.
 The script
 @author: RC
 
-run following in bash console:
+run following in arc console:
     
+#log in with
 scp username@arc3.leeds.ac.uk
+#import dust repo
 git clone https://github.com/Urban-Analytics/dust/
+#move to experiments folder
 cd dust/Projects/ABM_DA/experiments/ukf_experiments
 
+#set up python virtual environment to install various dependencies/run python
 module load python python-libs
 virtualenv mypython
 source mypython/bin/activate
 
+#install dependencies
 pip install imageio
 pip install filterpy
 pip install ffmpeg
 pip install seaborn
 pip install shapely
-pip install 
-(and any other dependencies)
- 
+pip install geopandas
+
+# open python script. change num_age, bins, and run_id
+# to change number of agents, bin size, and number of runs
+nano arc_ukf.py
+
+#run arc jobs with 
 qsub arc_ukf.sh
 
 when exporting from arc in another linux terminal use 
@@ -159,7 +168,6 @@ if __name__ == '__main__':
     # Run the particle filter
     
     #init and run ukf
-    start_time = time.time()  # Time how long the whole run take
     base_model = Model(**model_params)
     poly_list = grid_poly(model_params["width"],model_params["height"],filter_params["bin_size"]) #generic square grid over corridor
     u = agg_ukf_ss(model_params,filter_params,ukf_params,poly_list,base_model)
@@ -185,6 +193,6 @@ if __name__ == '__main__':
         #            f.write(str(result[before])[1:-1].replace(" ", "") + "," + str(before) + "\n")  # (slice to get rid of the brackets aruond the tuple)
 
     print("Run: {}, prop: {}, agents: {}, took: {}(s)".format(str(filter_params["run_id"]).zfill(4), filter_params['prop'], 
-          model_params['pop_total'], round(time.time() - start_time),flush=True))
+          model_params['pop_total'], round(u.time2 - u.time1),flush=True))
     
     print("Finished single run")

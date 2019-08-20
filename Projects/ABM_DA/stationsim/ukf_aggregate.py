@@ -319,8 +319,25 @@ class agg_ukf_ss:
         out: 
             vector of aggregates from measuring how many agents in each polygon in poly_list 
         """
-        counts = poly_count(poly_list,state)
+        counts = self.poly_count(poly_list,state)
         
+        return counts
+    
+    def poly_count(poly_list,points):
+        """
+        counts how many agents in each polygon
+        
+        in: 
+            1D vector of points from agents2state()/get_state(sensor=location),
+        out: 
+            counts of agents in each polygon in poly_list
+        """
+        counts = []
+        points = np.array([points[::2],points[1::2]]).T
+        points =MultiPoint(points)
+        for poly in poly_list:
+            poly = prep(poly)
+            counts.append(int(len(list(filter(poly.contains,points)))))
         return counts
     
     def init_ukf(self,ukf_params):
@@ -380,7 +397,7 @@ class agg_ukf_ss:
 
             if self.base_model.step_id%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
                 
-                state =poly_count(poly_list,self.base_model.agents2state()) #observed agents states
+                state = self.poly_count(poly_list,self.base_model.agents2state()) #observed agents states
                 self.ukf.update(z=state) #update UKF
                 self.ukf_histories.append(self.ukf.x) #append histories
                 self.agg_ukf_preds.append(self.ukf.x)
@@ -475,22 +492,7 @@ def grid_poly(width,length,bin_size):
     #    plt.plot(*poly.exterior.xy)
     return polys
        
-def poly_count(poly_list,points):
-    """
-    counts how many agents in each polygon
-    
-    in: 
-        1D vector of points from agents2state()/get_state(sensor=location),
-    out: 
-        counts of agents in each polygon in poly_list
-    """
-    counts = []
-    points = np.array([points[::2],points[1::2]]).T
-    points =MultiPoint(points)
-    for poly in poly_list:
-        poly = prep(poly)
-        counts.append(int(len(list(filter(poly.contains,points)))))
-    return counts
+
 
 
 class DivergingNorm(col.Normalize):
@@ -678,7 +680,7 @@ class agg_plots:
             locs = a[i,:]
             
              
-            counts = poly_count(poly_list,locs)
+            counts = self.filter_class.poly_count(poly_list,locs)
             counts = np.array(counts)/np.nansum(counts)
             #counts[np.where(counts==0)]=np.nan
             frame =gpd.GeoDataFrame([counts,poly_list]).T
@@ -721,7 +723,7 @@ class agg_plots:
             
             "set up cbar. colouration proportional to number of agents"
             #ticks = np.array([0.001,0.01,0.025,0.05,0.075,0.1,0.5,1.0])
-            cbar = plt.colorbar(sm,cax=cax)
+            cbar = plt.colorbar(cax=cax)
             cbar.set_label("Agent Density (x100%)")
             cbar.set_alpha(1)
             cbar.draw_all()

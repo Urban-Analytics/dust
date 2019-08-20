@@ -276,7 +276,7 @@ class agg_ukf_ss:
         self.full_Ps = []
         
         self.time1 =  datetime.datetime.now()#timer
-
+        self.time2 = 0
     def fx(self,x,**fx_args):
         """
         Transition function for the state space giving where it is predicted to be
@@ -319,11 +319,11 @@ class agg_ukf_ss:
         out: 
             vector of aggregates from measuring how many agents in each polygon in poly_list 
         """
-        counts = self.poly_count(poly_list,state)
+        counts = self.poly_count(self.poly_list,state)
         
         return counts
     
-    def poly_count(poly_list,points):
+    def poly_count(self,poly_list,points):
         """
         counts how many agents in each polygon
         
@@ -335,7 +335,7 @@ class agg_ukf_ss:
         counts = []
         points = np.array([points[::2],points[1::2]]).T
         points =MultiPoint(points)
-        for poly in poly_list:
+        for poly in self.poly_list:
             poly = prep(poly)
             counts.append(int(len(list(filter(poly.contains,points)))))
         return counts
@@ -380,7 +380,7 @@ class agg_ukf_ss:
         #seeding if  wanted else hash it
 
         self.init_ukf(self.ukf_params) 
-        for _ in range(self.number_of_iterations-1):
+        for _ in range(self.number_of_iterations):
             #if _%100 ==0: #progress bar
             #    print(f"iterations: {_}")
                 
@@ -395,9 +395,9 @@ class agg_ukf_ss:
             self.base_model.step() #jump stationsim agents forwards
             
 
-            if self.base_model.step_id%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
+            if (self.base_model.step_id-1)%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
                 
-                state = self.poly_count(poly_list,self.base_model.agents2state()) #observed agents states
+                state = self.poly_count(self.poly_list,self.base_model.get_state(sensor="location")) #observed agents states
                 self.ukf.update(z=state) #update UKF
                 self.ukf_histories.append(self.ukf.x) #append histories
                 self.agg_ukf_preds.append(self.ukf.x)
@@ -416,8 +416,8 @@ class agg_ukf_ss:
             if self.base_model.pop_finished == self.pop_total: #break condition
                 break
         
-        time2 = datetime.datetime.now()#timer
-        print(time2-self.time1)
+        self.time2 = datetime.datetime.now()#timer
+        print(self.time2-self.time1)
         
     def data_parser(self,do_fill):
         """
@@ -799,7 +799,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 25,
+			'pop_total': 10,
 
 			'width': 200,
 			'height': 100,
@@ -843,7 +843,7 @@ if __name__ == "__main__":
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 50,
+            'sample_rate': 100,
             "do_restrict": True, 
             "do_animate": False,
             "do_wiggle_animate": False,
@@ -879,8 +879,9 @@ if __name__ == "__main__":
     u = agg_ukf_ss(model_params,filter_params,ukf_params,poly_list,base_model)
     u.main()
     actual,preds,full_preds= u.data_parser(True)
+    actual = actual[1:,:]
     "additional step for aggregate"
-    preds[np.isnan(actual)]=np.nan 
+    #preds[np.isnan(actual)]=np.nan 
     """plots"""
     plts = plots(u)
 
@@ -888,6 +889,6 @@ if __name__ == "__main__":
     distances,t_mean = plts.diagnostic_plots(actual,preds,True,False)
     
     #plts.trajectories(actual)
-    plts.pair_frames(actual,full_preds)
+    #plts.pair_frames(actual,full_preds)
     #plts.heatmap(actual)
     

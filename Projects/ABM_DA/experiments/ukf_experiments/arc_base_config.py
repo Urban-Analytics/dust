@@ -4,63 +4,48 @@ Run some experiments using the stationsim/particle_filter.
 The script
 @author: RC
 
-run following in arc console:
+run following in bash console:
     
-#log in with
-scp username@arc3.leeds.ac.uk
-#go to nobackup
-cd /nobackup/username
-#import dust repo
+ssh username@arc3.leeds.ac.uk
 git clone https://github.com/Urban-Analytics/dust/
-#move to experiments folder
 cd dust/Projects/ABM_DA/experiments/ukf_experiments
 
-#set up python virtual environment to install various dependencies/run python
 module load python python-libs
 virtualenv mypython
 source mypython/bin/activate
 
-#install dependencies
 pip install imageio
 pip install filterpy
 pip install ffmpeg
 pip install seaborn
-pip install shapely
-pip install geopandas
-
-# open python script. change num_age, bins, and run_id
-# to change number of agents, bin size, and number of runs
-nano arc_ukf.py
-
-#run arc jobs with 
+#(and any other dependencies)
+ 
 qsub arc_ukf.sh
+"""
 
+"""
 when exporting from arc in another linux terminal use 
 
 scp username@leeds.ac.uk:source_in_arc/* destination_in_linux/.
 
 e.g.
- 
-scp medrclaa@arc3.leeds.ac.uk:/home/home02/medrclaa/dust/Projects/ABM_DA/experiments
-/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments
-/ukf_experiments/ukf_results/.
 
+from linux terminal 
+scp medrclaa@arc3.leeds.ac.uk:/home/home02/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
 """
+
 
 # Need to append the main project directory (ABM_DA) and stationsim folders to the path, otherwise either
 # this script will fail, or the code in the stationsim directory will fail.
 import sys
 sys.path.append('../../stationsim')
 sys.path.append('../..')
-from stationsim.ukf_aggregate import agg_ukf_ss,grid_poly
-
+from base_config_ukf import ukf_ss
 from stationsim.stationsim_model import Model
+from stationsim.ukf import plots
 
 import os
-import time
-import warnings
 import numpy as np
-import pickle
 
 if __name__ == '__main__':
     __spec__ = None
@@ -73,16 +58,17 @@ if __name__ == '__main__':
     # Lists of particles, agent numbers, and particle noise levels
     
     #num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
-    
-    num_age = np.arange(5,55,5) # number of agents 5 to 50 by 5
-    bins = np.arange(5,35,5) # bin 
+    #num_age = np.arange(5,105,5)
+    #props = np.arange(0.1,1.1,0.1)
+    num_age = np.arange(5,55,5) # 5 to 50 by 5
+    rates = [1,2,5,10,20,50,100] #.2 to 1 by .2
+    noise = [0,0.25,0.5,1,2,5,10,25,50,100]
     run_id = np.arange(0,20,1) #20 runs
-    
     #noise = [1.0, 2.0]
 
     # List of all particle-agent combinations. ARC task
     # array variable loops through this list
-    param_list = [(x,y,z) for x in num_age for y in bins for z in run_id]
+    param_list = [(x, y,z,a) for x in num_age for y in rates for z in noise for a in run_id]
 
     # Use below to update param_list if some runs abort
     # If used, need to update ARC task array variable
@@ -119,23 +105,20 @@ if __name__ == '__main__':
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 1,
+            'sample_rate': param_list[int(sys.argv[1])-1][1],
             "do_restrict": True, 
             "do_animate": False,
-            "prop":1,
-            #"run_id":param_list[int(sys.argv[2])-1][2],
-            "run_id":param_list[int(sys.argv[1])-1][2],
+            "prop": 1,
+            "run_id":param_list[int(sys.argv[1])-1][3],
             "heatmap_rate": 1,
-            "bin_size":param_list[int(sys.argv[1])-1][1],
-            "bring_noise":False,
-            "noise":0.25,
+            "bin_size":25,
+            "bring_noise":True,
+            "noise":param_list[int(sys.argv[1])-1][2],
             "do_batch":False,
-            "d_rate" : 10, 
-
             }
     
     ukf_params = {
-            
+        
             "a":1,
             "b":2,
             "k":0,
@@ -171,30 +154,22 @@ if __name__ == '__main__':
     
     #init and run ukf
     base_model = Model(**model_params)
-    poly_list = grid_poly(model_params["width"],model_params["height"],filter_params["bin_size"]) #generic square grid over corridor
-    u = agg_ukf_ss(model_params,filter_params,ukf_params,poly_list,base_model)
+    u = ukf_ss(model_params,filter_params,ukf_params,base_model)
     u.main()
+    true,actual,preds,histories= u.data_parser(True)
+    plts=plots(u)
+    errors = {}
+    errors["actual"] = plts.AEDs(true,actual)
+    errors["preds"] = plts.AEDs(true,preds)
+    errors["ukf"] = plts.AEDs(true,histories)
     
-    #store final class instance via pickle
-    f_name = "ukf_results/agg_ukf_agents_{}_prop_{}-{}".format(      
-    str(int(model_params['pop_total'])),
-    str(filter_params['prop']),
-    str(filter_params["run_id"]))
-    f = open(f_name,"wb")
-    pickle.dump(u,f)
-    f.close()
-
-
-        #with open(outfile, 'a') as f:
-        #    if result == None: # If no results then don't write anything
-        #        warnings.warn("Result from the particle filter is 'none' for some reason. This sometimes happens when there is only 1 agent in the model.")
-        #    else:
-        #        # Two sets of errors are created, those before resampling, and those after. Results is a list with two tuples.
-        #        # First tuple has eerrors before resampling, second has errors afterwards.
-        #        for before in [0, 1]:
-        #            f.write(str(result[before])[1:-1].replace(" ", "") + "," + str(before) + "\n")  # (slice to get rid of the brackets aruond the tuple)
-
-    print("Run: {}, prop: {}, agents: {}, took: {}(s)".format(str(filter_params["run_id"]).zfill(4), filter_params['prop'], 
-          model_params['pop_total'], round(u.time2 - u.time1),flush=True))
+    means = []
+    for key in errors.keys():
+        means.append(np.nanmean(errors[key][0]))
     
-    print("Finished single run")
+    means = np.array(means)
+    n = model_params["pop_total"]
+    r = filter_params["sample_rate"]
+    var = filter_params["noise"]
+    run_id = filter_params["run_id"]
+    np.save(f"ukf_results/agents_{n}_rate_{r}_noise_{var}_base_config_errors_{run_id}",means)

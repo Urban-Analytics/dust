@@ -221,13 +221,8 @@ class ukf:
         K = np.matmul(Pxy,np.linalg.inv(Pyy))
  
         #update xhat
-        self.x += np.matmul(K,(z-yhat))
-        
-        "U is a matrix (not a vector) and so requires dim(U) updates of Sxx using each column of U as a 1 step cholup/down/date as if it were a vector"
-        Pxx = self.P
-        Pxx -= np.matmul(K,np.matmul(Pyy,K.T))
-        
-        self.P = Pxx
+        self.x = self.x + np.matmul(K,(z-yhat))
+        self.P = self.P - np.matmul(K,np.matmul(Pyy,K.T))
         self.Ps.append(self.P)
         self.xs.append(self.x)
         
@@ -530,8 +525,7 @@ class plots:
         sample_rate =self.filter_class.filter_params["sample_rate"]
         c = np.ones(((a.shape[0]//sample_rate),int(a.shape[1]/2)))*np.nan
         
-        "!!theres probably a faster way of doing this with apply over axis"
-        #loop over each agent
+
         index = np.arange(0,c.shape[0])*sample_rate
 
         #loop over each time per agent
@@ -970,7 +964,7 @@ class animations:
         
 #%%
 if __name__ == "__main__":
-    np.random.seed(seed = 8)
+    #np.random.seed(seed = 8)
     """
         width - corridor width
         height - corridor height
@@ -1038,11 +1032,11 @@ if __name__ == "__main__":
             'sample_rate': 10,
             "do_restrict": True, 
             "do_animate": False,
-            "prop": 0.4,
+            "prop": 1,
             "heatmap_rate": 1,
             "bin_size":10,
             "bring_noise":False,
-            "noise":0.25,
+            "noise":0.5,
             "do_batch":False,
 
             }

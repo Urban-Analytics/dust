@@ -96,7 +96,7 @@ def run_all(pop_size=20, its=300, assimilation_period=50, ensemble_size=10):
     enkf = run_enkf(model_params, filter_params)
     enkf.process_results()
 
-def run_repeat(N=10, write_json=False):
+def run_repeat(a=50, e=10, p=20, s=1, N=10, write_json=False):
     """
     Repeatedly run an enkf realisation of stationsim.
 
@@ -111,7 +111,7 @@ def run_repeat(N=10, write_json=False):
     """
     model_params = {'width': 200,
                     'height': 100,
-                    'pop_total': 20,
+                    'pop_total': p,
                     'gates_in': 3,
                     'gates_space': 2,
                     'gates_speed': 4,
@@ -126,12 +126,12 @@ def run_repeat(N=10, write_json=False):
                     'do_history': True,
                     'do_print': False}
 
-    OBS_NOISE_STD = 1
+    OBS_NOISE_STD = s
     vec_length = 2 * model_params['pop_total']
 
     filter_params = {'max_iterations': model_params['step_limit'],
-                     'assimilation_period': 50,
-                     'ensemble_size': 10,
+                     'assimilation_period': a,
+                     'ensemble_size': e,
                      'state_vector_length': vec_length,
                      'data_vector_length': vec_length,
                      'H': np.identity(vec_length),
@@ -237,7 +237,11 @@ def make_dataframe(dataset, times):
     d = pd.DataFrame(np.array(dataset).T)
     m = d.mean(axis=1)
     s = d.std(axis=1)
+    up = d.max(axis=1)
+    down = d.min(axis=1)
     d['mean'] = m
+    d['up_diff'] = up - m
+    d['down_diff'] = m - down
     d['sd'] = s
     d['time'] = times
     return d.set_index('time')
@@ -257,12 +261,13 @@ def plot_results(dataset):
         pandas dataframe of data containing multiple realisations and mean of
         all realisations indexed on time.
     """
+    no_plot = ['sd', 'up_diff', 'down_diff']
     colnames = list(dataset)
     plt.figure()
     for col in colnames:
         if col == 'mean':
             plt.plot(dataset[col], 'b-', linewidth=5, label='mean')
-        elif col != 'sd':
+        elif col not in no_plot:
             plt.plot(dataset[col], 'b--', alpha=0.25, label='_nolegend_')
     plt.legend()
     plt.xlabel('time')
@@ -288,11 +293,13 @@ def plot_all_results(forecast, analysis, observation):
     """
     f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, sharey=True)
 
+    no_plot = ['sd', 'up_diff', 'down_diff']
+
     colnames = list(forecast)
     for col in colnames:
         if col == 'mean':
             ax1.plot(forecast[col], 'b-', linewidth=2, label='forecast mean')
-        elif col != 'sd':
+        elif col not in no_plot:
             ax1.plot(forecast[col], 'b--', alpha=0.25, label='_nolegend_')
     ax1.legend(loc='upper left')
     ax1.set_ylabel('RMSE')
@@ -301,7 +308,7 @@ def plot_all_results(forecast, analysis, observation):
     for col in colnames:
         if col == 'mean':
             ax2.plot(analysis[col], 'g-', linewidth=2, label='analysis mean')
-        elif col != 'sd':
+        elif col not in no_plot:
             ax2.plot(analysis[col], 'g--', alpha=0.25, label='_nolegend_')
     ax2.legend(loc='upper left')
     ax2.set_ylabel('RMSE')
@@ -310,7 +317,7 @@ def plot_all_results(forecast, analysis, observation):
     for col in colnames:
         if col == 'mean':
             ax3.plot(observation[col], 'k-', linewidth=2, label='observation mean')
-        elif col != 'sd':
+        elif col not in no_plot:
             ax3.plot(observation[col], 'k--', alpha=0.25, label='_nolegend_')
     ax3.legend(loc='upper left')
     ax3.set_xlabel('time')
@@ -323,30 +330,60 @@ def plot_with_errors(forecast, analysis, observation):
 
     ax1.plot(forecast['mean'], 'b-', label='forecast mean')
     ax1.fill_between(forecast.index,
-                     forecast['mean'] - forecast['sd'],
-                     forecast['mean'] + forecast['sd'],
+                     forecast['mean'] - forecast['down_diff'],
+                     forecast['mean'] + forecast['up_diff'],
                      alpha=0.25)
     ax1.legend(loc='upper left')
     ax1.set_ylabel('RMSE')
 
     ax2.plot(analysis['mean'], 'g-', label='analysis mean')
     ax2.fill_between(analysis.index,
-                     analysis['mean'] - analysis['sd'],
-                     analysis['mean'] + analysis['sd'],
+                     analysis['mean'] - analysis['down_diff'],
+                     analysis['mean'] + analysis['up_diff'],
                      alpha=0.25)
     ax2.legend(loc='upper left')
     ax2.set_ylabel('RMSE')
 
     ax3.plot(observation['mean'], 'k-', label='observation mean')
     ax3.fill_between(observation.index,
-                     observation['mean'] - observation['sd'],
-                     observation['mean'] + observation['sd'],
+                     observation['mean'] - observation['down_diff'],
+                     observation['mean'] + observation['up_diff'],
                      alpha=0.25)
     ax3.legend(loc='upper left')
     ax3.set_ylabel('RMSE')
 
     plt.show()
 
+def run_repeat_combos(resume=True):
+    if resume:
+        with open('combos.json') as json_file:
+            combos = json.load(json_file)
+    else:
+        ap = [2, 5, 10, 20, 50]
+        es = [2, 5, 10, 20, 50]
+        pop = [5 * i for i in range(1, 6)]
+        sigma = [0.5 * i for i in range(1, 6)]
+
+        combos = list()
+
+        for a in ap:
+            for e in es:
+                for p in pop:
+                    for s in sigma:
+                        t = (a, e, p, s)
+                        combos.append(t)
+
+    i = 0
+    while combos:
+        c = combos.pop()
+        print('running for {0}'.format(str(c)))
+        if i % 5 == 0:
+            with open('combos.json', 'w', encoding='utf-8') as f:
+                json.dump(combos, f, ensure_ascii=False, indent=4)
+        if i == 20:
+            break
+        i += 1
+        
 
 # run_all(20, 300, 50, 10)
 # run_combos()
@@ -358,5 +395,6 @@ def testing():
     forecasts, analyses, observations = process_repeat_results(data)
     plot_all_results(forecasts, analyses, observations)
     plot_with_errors(forecasts, analyses, observations)
+    # run_repeat_combos()
 
 testing()

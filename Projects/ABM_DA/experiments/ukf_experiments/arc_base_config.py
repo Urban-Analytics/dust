@@ -12,6 +12,8 @@ cd dust/Projects/ABM_DA/experiments/ukf_experiments
 
 module load python python-libs
 virtualenv mypython
+# if virtualenv already exists just use this line. 
+# MAY WANT TO PIP THE BELOW ALREADY ANYWAY
 source mypython/bin/activate
 
 pip install imageio
@@ -31,7 +33,7 @@ scp username@leeds.ac.uk:source_in_arc/* destination_in_linux/.
 e.g.
 
 from linux terminal 
-scp medrclaa@arc3.leeds.ac.uk:/home/home02/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
+scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
 """
 
 
@@ -43,6 +45,7 @@ sys.path.append('../..')
 from base_config_ukf import ukf_ss
 from stationsim.stationsim_model import Model
 from stationsim.ukf import plots
+import pickle
 
 import os
 import numpy as np
@@ -60,7 +63,7 @@ if __name__ == '__main__':
     #num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
     #num_age = np.arange(5,105,5)
     #props = np.arange(0.1,1.1,0.1)
-    num_age = np.arange(5,55,5) # 5 to 50 by 5
+    num_age = np.arange(10,70,20) # 5 to 50 by 5
     rates = [1,2,5,10,20,50,100] #.2 to 1 by .2
     noise = [0,0.25,0.5,1,2,5,10,25,50,100]
     run_id = np.arange(0,20,1) #20 runs
@@ -147,7 +150,7 @@ if __name__ == '__main__':
 
     print("UKF params: " + str(filter_params))
     print("Model params: " + str(model_params))
-    
+
     #print("Saving files to: {}".format(outfile))
 
     # Run the particle filter
@@ -160,8 +163,8 @@ if __name__ == '__main__':
     plts=plots(u)
     errors = {}
     errors["actual"] = plts.AEDs(true,actual)
-    errors["preds"] = plts.AEDs(true,preds)
-    errors["ukf"] = plts.AEDs(true,histories)
+    errors["preds"] = plts.AEDs(true[1:,:],preds)
+    errors["ukf"] = plts.AEDs(true[1:,:],histories)
     
     means = []
     for key in errors.keys():
@@ -172,4 +175,8 @@ if __name__ == '__main__':
     r = filter_params["sample_rate"]
     var = filter_params["noise"]
     run_id = filter_params["run_id"]
-    np.save(f"ukf_results/agents_{n}_rate_{r}_noise_{var}_base_config_errors_{run_id}",means)
+    
+    f_name = "ukf_results/agents_{}_rate_{}_noise_{}_base_config_errors_{}".format(str(n),str(r),str(var), str(run_id))
+    f = open(f_name,"wb")
+    pickle.dump(means,f)
+    f.close()

@@ -21,13 +21,13 @@ citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
 
 #for filter
 import numpy as np
-from math import floor,log10,ceil,cos,sin
-import matplotlib.pyplot as plt
+from math import floor
 import datetime
 import multiprocessing
 from copy import deepcopy
 import os 
 import sys 
+import pickle
 
 #due to import errors from other directories
 sys.path.append("..")
@@ -35,12 +35,6 @@ from stationsim.stationsim_model import Model
 from stationsim.ukf import plots
 #for plots
 
-from seaborn import kdeplot
-import matplotlib.gridspec as gridspec
-import imageio
-from scipy.stats import norm
-from shutil import rmtree
-from filterpy.stats import covariance_ellipse #needed solely for pairwise_frames_stack_ellipse for covariance ellipse plotting
 """
 As of 3.6 only imageio (and ffmpeg dependency) and scipy.spatial are additional installs
 pip install imageio
@@ -487,7 +481,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 1,
+			'pop_total': 5,
 
 			'width': 200,
 			'height': 100,
@@ -527,7 +521,7 @@ if __name__ == "__main__":
     bring_noise: add noise to true ukf paths
     noise -  variance of said noise producing IID p dimensional normal noise e~N_p(0,diag(noise))
     do_batch - do batch processing on some pre-recorded truth data.
-    """
+       np.save(f"ukf_results/agents_{n}_rate_{r}_noise_{var}_base_config_errors_{run_id}",means) """
     
     filter_params = {      
             "Sensor_Noise":  1, 
@@ -540,7 +534,7 @@ if __name__ == "__main__":
             "run_id":0,
             "bin_size":10,
             "bring_noise":True,
-            "noise":50,
+            "noise":0,
             "do_batch":False,
             }
     
@@ -569,8 +563,8 @@ if __name__ == "__main__":
     plts=plots(u)
     errors = {}
     errors["actual"] = plts.AEDs(true,actual)
-    errors["preds"] = plts.AEDs(true,preds)
-    errors["ukf"] = plts.AEDs(true,histories)
+    errors["preds"] = plts.AEDs(true[1:,:],preds)
+    errors["ukf"] = plts.AEDs(true[1:,:],histories)
     
     means = []
     for key in errors.keys():
@@ -581,4 +575,8 @@ if __name__ == "__main__":
     r = filter_params["sample_rate"]
     var = filter_params["noise"]
     run_id = filter_params["run_id"]
-    np.save(f"ukf_results/agents_{n}_rate_{r}_noise_{var}_base_config_errors_{run_id}")
+    
+    f_name = "ukf_results/agents_{}_rate_{}_noise_{}_base_config_errors_{}".format(str(n),str(r),str(var), str(run_id))
+    f = open(f_name,"wb")
+    pickle.dump(means,f)
+    f.close()

@@ -8,7 +8,7 @@ run following in bash console:
     
 ssh username@arc3.leeds.ac.uk
 git clone https://github.com/Urban-Analytics/dust/
-cd dust/Projects/ABM_DA/experiments/ukf_experiments
+cd /nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments
 
 module load python python-libs
 virtualenv mypython
@@ -22,7 +22,7 @@ pip install ffmpeg
 pip install seaborn
 #(and any other dependencies)
  
-qsub arc_ukf.sh
+qsub arc_base_config.sh
 """
 
 """

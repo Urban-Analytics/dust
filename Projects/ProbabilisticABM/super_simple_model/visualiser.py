@@ -43,9 +43,6 @@ class Visualiser:
 									c='red',
 									label='Observation')
 
-		if kwargs['median']:
-			self.plot_median_loc(x, y)
-
 		self.ax_scatter.set_xlim((self.bounds[0] * -.2, self.bounds[0]))
 		self.ax_scatter.set_ylim((0, self.bounds[1]))
 
@@ -60,7 +57,7 @@ class Visualiser:
 		self.ax_histx.set_xlim(self.ax_scatter.get_xlim())
 		self.ax_histy.set_ylim(self.ax_scatter.get_ylim())
 
-	def plot_median_loc(self, x, y):
+	def plot_scatter(self, x, y):
 		self.ax_scatter.scatter(np.median(x),
 								np.median(y),
 								s=20,

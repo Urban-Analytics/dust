@@ -24,7 +24,6 @@ environment.doors = [Door(id=0, xy=(1000 - width / 2, (500 * 1.33) - height / 2)
 						  width=width, height=height, fill=True)]
 
 
-
 def main():
 	renderer.clear_output_folder()
 

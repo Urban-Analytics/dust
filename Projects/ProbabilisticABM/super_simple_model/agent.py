@@ -1,12 +1,14 @@
 import torch
 from torch import tensor
 from pyro import distributions as dist
+from copy import deepcopy
 import pyro
 import numpy as np
 
 
+
 class Agent:
-	def __init__(self, x, y, n_samples, **kwargs):
+	def __init__(self, x, y, n_samples=1, **kwargs):
 		self.n_samples = n_samples
 		self.destination_preference = .5
 		self.destination = None
@@ -15,6 +17,7 @@ class Agent:
 		self.s = tensor([1. for _ in range(self.n_samples)])
 		self.rv_v = pyro.sample('rv_s', dist.LogNormal(loc=self.s, scale=1.))
 		self.obs = None
+		self.initial_state = deepcopy(self)
 
 	def pick_destination(self, doors):
 		ids = [int(pyro.sample('destination', dist.Bernoulli(probs=self.destination_preference))) for _ in range(self.n_samples)]
@@ -24,14 +27,9 @@ class Agent:
 		door = torch.stack([door_x, door_y])
 		self.destination = door
 
-	def model(self, pred=None, obs=None):
+	def step(self, pred=None, obs=None):
 		self.xy = pyro.sample('xy', dist.Normal(loc=self.xy if pred is None else pred,
-										   scale=tensor([[1.], [1.]])), obs=obs)
-		self.xy = self.move(origin=self.xy, destination=self.destination)
-
-	def guide(self, pred=None):
-		self.xy = pyro.sample('xy', dist.Normal(loc=self.xy if pred is None else pred,
-												scale=tensor([[1.], [1.]])))
+										   scale=tensor([[1.], [1.]])), obs=None if obs is None else obs[2])
 		self.xy = self.move(origin=self.xy, destination=self.destination)
 
 	def move(self, origin, destination):

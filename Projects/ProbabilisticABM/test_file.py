@@ -8,51 +8,50 @@ import super_simple_model.renderer as renderer
 import matplotlib as plt
 import numpy as np
 import pyro
-from pyro.infer import SVI, Trace_ELBO
-from pyro.optim import ClippedAdam as Adam
-
-
-pyro.set_rng_seed(101)
-
-n_samples = 1
-steps = 400
+from pyro.infer import Importance
+pyro.set_rng_seed(7)
 
 environment = Environment()
-
-agent = Agent(x=0., y=500., n_samples=n_samples)
 width, height = 20, 100
-
-sensor = Sensor(freq=1, n_samples=n_samples)
-
-visualiser = Visualiser(environment=environment,
-						agent=agent)
-
 environment.doors = [Door(id=0, xy=(1000 - width / 2, (500 * 1.33) - height / 2),
-						  width=width, height=height, fill=True),
-					 Door(id=1, xy=(1000 - width / 2, (500 * 0.66) - height / 2),
-						  width=width, height=height, fill=True)]
-
-agent.pick_destination(doors=environment.doors)
-
-adam_params = {"lr": 0.0005, "betas": (0.90, 0.999)}
-optimizer = Adam(adam_params)
-
+							  width=width, height=height, fill=True),
+						 Door(id=1, xy=(1000 - width / 2, (500 * 0.66) - height / 2),
+							  width=width, height=height, fill=True)]
 
 def main():
-	renderer.clear_output_folder()
 
-	agent.obs = sensor.observe(agent=agent)
-	conditioned_position = agent.model(obs=agent.obs)
-	posterior = SVI(model=agent.model, guide=agent.guide, optim=optimizer, loss=Trace_ELBO(),  num_samples=1000, num_steps=1000)
+	sensor = build_observations()
+	agent = Agent(x=0., y=500.)
+	agent.pick_destination(doors=environment.doors)
+	visualiser = Visualiser(environment=environment, agent=agent)
 
-	marginal = pyro.infer.EmpiricalMarginal(posterior.run(), sites='xy')
+	infer = Importance(model=agent.step, num_samples=1000)
+	posterior = pyro.infer.EmpiricalMarginal(infer.run(obs=sensor.observations), sites='xy')
 
-	visualiser.plot_agent(median=False)
+	print('xy: {}, {}'.format(agent.xy[0].item(), agent.xy[1].item()))
+	print('Posterior X Mean: {} STD: {}'.format(posterior.mean[0].item(), posterior.stddev[0].item()))
+	print('Posterior Y Mean: {} STD: {}'.format(posterior.mean[1].item(), posterior.stddev[1].item()))
+	visualiser.plot_agent()
 	visualiser.plot_environment()
 	visualiser.save_plt()
 	visualiser.clear_frame()
 
 
+def build_observations(n_samples=1, steps=400):
+	n_samples = n_samples
+	steps = steps
+	agent = Agent(x=0., y=500., n_samples=n_samples)
+	sensor = Sensor(freq=50, n_samples=n_samples)
+	agent.pick_destination(doors=environment.doors)
+	renderer.clear_output_folder()
+	for t in range(steps):
+		if t != 0:
+			sensor.observe(t, agent)
+
+		agent.step(pred=agent.xy)
+
+		agent.print_median_agent_loc(t)
+	return sensor
 
 
 if __name__ == '__main__':

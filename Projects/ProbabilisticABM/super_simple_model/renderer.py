@@ -11,7 +11,7 @@ def render_agent():
     for filename in files:
         images.append(imageio.imread('output/{}'.format(filename)))
         print('Rendering frame {} of {}'.format(i, len(files)))
-        i+=1
+        i += 1
     imageio.mimsave('video_output/{}.mp4'.format(time.time()), images)
 
 

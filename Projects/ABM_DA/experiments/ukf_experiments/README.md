@@ -15,3 +15,84 @@ The code that actually does the filtering is in the [`stationsim`](../../station
 ## Results
 
 The pickled class instances for each experiment will end up in the [`ukf_results`](./results) folder. The script to read all the results is [`arc_depickle_test.py`] which depickles the classes and plots various metrics. 
+
+## Usage Guide
+
+To use the experiment files here in arc we require initial set up. In a linux bash terminal run the following with USERNAME replaced as necessary:
+
+"""
+ssh USERNAME@arc3.leeds.ac.uk
+git clone https://github.com/Urban-Analytics/dust/
+cd /nobackup/USERNAME/dust/Projects/ABM_DA/experiments/ukf_experiments
+module load python python-libs
+virtualenv mypython
+source mypython/bin/activate
+"""
+
+This logs the user onto the arc3 system setting up a python3 virtual environment to run the experiments in. Now we can pip in the desired packages as necessary depending on the desired experiment. We have two sets of packages:
+
+"""
+for arc_base_config.py and arc_ukf.py
+
+pip install imageio
+pip install filterpy
+pip install ffmpeg
+pip install seaborn
+
+for arc_ukf_agg.py also install:
+
+pip install shapely
+pip install geopandas
+"""
+
+We now have a fully equipped environment for our experiments. We will now run an example experiment in which we run a basic experiment in arc_ukf.py. We will run the UKF 10 times for 5 and 10 agents at 0.5 and 1.0 proportion observed. First we define the parameters we wish to run in ['arc_ukf.py'].
+
+"""
+nano arc_ukf.py #open text editor
+
+default experiment parameters:
+
+65    num_age = np.arange(5,55,5) # 5 to 50 by 5
+66    props = np.arange(0.2,1.2,0.2) #.2 to 1 by .2
+67    run_id = np.arange(0,20,1) #20 runs
+
+new desired parameters:
+
+65    num_age = [5,10] # 5 to 10 by 5
+66    props = [0.5,1.0] #.5 to 1 by .5
+67    run_id = np.arange(0,10,1) #10 runs
+"""
+
+With our new parameters defined we calculate the total number of experiments. This is simply multiplying the length of each parameter list together N = 2x2x20 = 80. We must update ["arc_ukf.sh"] with this number such that it runs every experiment or does not run blank experiments.
+
+"""
+nano arc_ukf.py #open text editor
+
+#$ -t 1-3
+
+becomes
+
+#$ -t 1-80
+"""
+
+Now everything is ready to run the experiment in arc. To do this we use the simple command qsub.
+
+"""
+qsub arc_ukf.sh
+"""
+
+This initiates the job and comes with several useful commands and outputs.
+
+"""
+qstat - gives various progress diagnostics for any running job
+qdel <job_id> - cancel current job
+"""
+
+We can also check the active progress or errors of each job using text files generated in the current working directory
+
+"""
+for ipython console
+nano arc_ukf.sh.o<job_id>.<task_id>
+for any errors that occur
+nano arc_ukf.sh.e<job_id>.<task_id>
+"""

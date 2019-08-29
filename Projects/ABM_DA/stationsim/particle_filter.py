@@ -115,7 +115,7 @@ class ParticleFilter(Filter):
         for i in range(num_iter):
             model.step()
 
-        noise = np.random.normal(0, particle_std ** 2, size=particle_shape))
+        noise = np.random.normal(0, particle_std ** 2, size=particle_shape)
         state = model.get_state(sensor='location') + noise
         model.set_state(state, sensor='location')
         return model, state

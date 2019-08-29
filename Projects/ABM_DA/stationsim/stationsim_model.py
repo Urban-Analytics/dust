@@ -379,10 +379,10 @@ class Model:
     # TODO: Deprecated, update PF
     def agents2state(self, do_ravel=True):
         warnings.warn("Replace 'state = agents2state()' with 'state = get_state(sensor='location')'", DeprecationWarning)
-        return get_state(sensor='location')
+        return self.get_state(sensor='location')
     def state2agents(self, state):
         warnings.warn("Replace 'state2agents(state)' with 'set_state(state, sensor='location')'", DeprecationWarning)
-        return set_state(state, sensor='location')
+        return self.set_state(state, sensor='location')
 
     # Analytics
     def get_analytics(self, sig_fig=None):

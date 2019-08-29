@@ -44,9 +44,9 @@ def l2_parser(instance,prop):
     a_u,b_u,plot_range = plts.plot_data_parser(actual,preds,False)
     a_o,b_o,plot_range = plts.plot_data_parser(actual,preds,True)    
 
-    distances_obs,oindex,agent_means,t_mean_obs = plts.RMSEs(a_o,b_o)
+    distances_obs,oindex,agent_means,t_mean_obs = plts.AEDs(a_o,b_o)
     if prop<1:
-        distances_uobs,uindex,agent_means,t_mean_uobs = plts.RMSEs(a_u,b_u)
+        distances_uobs,uindex,agent_means,t_mean_uobs = plts.AEDs(a_u,b_u)
     else:
         distances_uobs = []
     matplotlib.use("module://ipykernel.pylab.backend_inline")    
@@ -56,9 +56,9 @@ def l2_parser(instance,prop):
 
 
 
-def grand_RMSE_matrix(n,prop,n_step):
-    o_RMSE = np.ones((len(n),len(prop)))*np.nan
-    u_RMSE = np.ones((len(n),len(prop)))*np.nan
+def grand_AED_matrix(n,prop,n_step):
+    o_AED = np.ones((len(n),len(prop)))*np.nan
+    u_AED = np.ones((len(n),len(prop)))*np.nan
     
 
     for i in n:
@@ -68,22 +68,22 @@ def grand_RMSE_matrix(n,prop,n_step):
             files[j.round(2)] = glob.glob(f"ukf_results/ukf_agents_{i}_prop_{j.round(2)}*")
 
         for _ in files.keys():
-            o_RMSE2=[]
-            u_RMSE2 = []
+            o_AED2=[]
+            u_AED2 = []
             for file in files[_]:
                 f = open(file,"rb")
                 u = pickle.load(f)
                 f.close()
                 actual,pred,do,du = l2_parser(u,float(_))#
-                o_RMSE2.append(np.nanmean(do))
-                u_RMSE2.append(np.nanmean(du))
+                o_AED2.append(np.nanmean(do))
+                u_AED2.append(np.nanmean(du))
         
-            o_RMSE[i_index,int(_*len(prop))-1]=np.nanmean(o_RMSE2)
-            u_RMSE[i_index,int(_*len(prop))-1]=np.nanmean(u_RMSE2)
+            o_AED[i_index,int(_*len(prop))-1]=np.nanmean(o_AED2)
+            u_AED[i_index,int(_*len(prop))-1]=np.nanmean(u_AED2)
             
-    return o_RMSE,u_RMSE
+    return o_AED,u_AED
 
-def grand_RMSE_plot(data,n,prop,n_step,p_step,observed,save):
+def grand_AED_plot(data,n,prop,n_step,p_step,observed,save):
 
     
     data = np.rot90(data,k=1) #rotate frame 90 degrees so right way up for plots
@@ -102,7 +102,7 @@ def grand_RMSE_plot(data,n,prop,n_step,p_step,observed,save):
     ax.set_yticklabels(prop.round(2))
     ax.set_xlabel("Number of Agents")
     ax.set_ylabel("Proportion of Agents Observed")
-    plt.title("Grand RMSEs Over Varying Agents and Percentage Observed")
+    plt.title("Grand AEDs Over Varying Agents and Percentage Observed")
     b = im.get_extent()
     ax.set_xlim([b[0]-len(n)/40,b[1]+len(n)/40])
     ax.set_ylim([b[2]-len(prop)/40,b[3]+len(prop)/40])
@@ -111,18 +111,18 @@ def grand_RMSE_plot(data,n,prop,n_step,p_step,observed,save):
     cax = divider.append_axes("right",size="5%",pad=0.05)
     cbar=plt.colorbar(im,cax,cax)
     if observed:
-        cbar.set_label("Observed RMSE")
-        ax.set_title("Observed Agent RMSEs")
+        cbar.set_label("Observed AEDs")
+        ax.set_title("Observed Agent AEDs")
         ax.set_ylabel("Proportion of Agents Observed (x100%)")
         if save:
-            plt.savefig("Observed_Grand_RMSES.pdf")
+            plt.savefig("Observed_Grand_AEDS.pdf")
 
     else:
-        cbar.set_label("Unobserved RMSE")
-        ax.set_title("Unobserved Agent RMSEs")
+        cbar.set_label("Unobserved AED")
+        ax.set_title("Unobserved Agent AEDs")
         ax.set_ylabel("Proportion of Agents Observed (x100%)")
         if save:
-            plt.savefig("Unobserved_Grand_RMSES.pdf")
+            plt.savefig("Unobserved_Grand_AEDS.pdf")
  
 if __name__ == "__main__":
     
@@ -136,8 +136,8 @@ if __name__ == "__main__":
     n= np.arange(n_min,n_max+n_step,n_step)
     prop = np.arange(p_min,p_max+p_step,p_step)
     
-    O,U = grand_RMSE_matrix(n,prop,n_step)
+    O,U = grand_AED_matrix(n,prop,n_step)
     save=True
-    grand_RMSE_plot(O,n,prop,n_step,p_step,True,save)
-    grand_RMSE_plot(U,n,prop,n_step,p_step,False,save)
+    grand_AED_plot(O,n,prop,n_step,p_step,True,save)
+    grand_AED_plot(U,n,prop,n_step,p_step,False,save)
    

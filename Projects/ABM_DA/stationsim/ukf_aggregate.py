@@ -42,7 +42,7 @@ from shapely.prepared import prep
 import geopandas as gpd
 
 #for dark plots. purely an aesthetic choice.
-plt.style.use("dark_background")
+#plt.style.use("dark_background")
 
 """
 suppress repeat printing in F_x from new stationsim
@@ -272,9 +272,11 @@ class agg_ukf_ss:
         self.index2[1::2] = (2*self.index)+1
         
         self.ukf_histories = []
-   
+        self.agg_ukf_preds=[]
+        self.full_Ps = []
+        
         self.time1 =  datetime.datetime.now()#timer
-
+        self.time2 = 0
     def fx(self,x,**fx_args):
         """
         Transition function for the state space giving where it is predicted to be
@@ -317,8 +319,25 @@ class agg_ukf_ss:
         out: 
             vector of aggregates from measuring how many agents in each polygon in poly_list 
         """
-        counts = poly_count(poly_list,state)
+        counts = self.poly_count(self.poly_list,state)
         
+        return counts
+    
+    def poly_count(self,poly_list,points):
+        """
+        counts how many agents in each polygon
+        
+        in: 
+            1D vector of points from agents2state()/get_state(sensor=location),
+        out: 
+            counts of agents in each polygon in poly_list
+        """
+        counts = []
+        points = np.array([points[::2],points[1::2]]).T
+        points =MultiPoint(points)
+        for poly in self.poly_list:
+            poly = prep(poly)
+            counts.append(int(len(list(filter(poly.contains,points)))))
         return counts
     
     def init_ukf(self,ukf_params):
@@ -361,7 +380,7 @@ class agg_ukf_ss:
         #seeding if  wanted else hash it
 
         self.init_ukf(self.ukf_params) 
-        for _ in range(self.number_of_iterations-1):
+        for _ in range(self.number_of_iterations):
             #if _%100 ==0: #progress bar
             #    print(f"iterations: {_}")
                 
@@ -376,22 +395,29 @@ class agg_ukf_ss:
             self.base_model.step() #jump stationsim agents forwards
             
 
-            if self.base_model.step_id%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
+            if (self.base_model.step_id-1)%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
                 
-                state =poly_count(poly_list,self.base_model.agents2state()) #observed agents states
+                state = self.poly_count(self.poly_list,self.base_model.get_state(sensor="location")) #observed agents states
                 self.ukf.update(z=state) #update UKF
                 self.ukf_histories.append(self.ukf.x) #append histories
+                self.agg_ukf_preds.append(self.ukf.x)
+                self.full_Ps.append(self.ukf.P)
                 
                 x = self.ukf.x
                 if np.sum(np.isnan(x))==x.shape[0]:
-                    print("math error. try larger values of alpha else check fx and hx.")
+                    print("math error. try larger values of alpha else check fx and hx. Could also be random rounding errors.")
                     break
                 ""
+            else:
+                "update full preds that arent assimilated"
+                self.agg_ukf_preds.append(self.ukf.x)
+                self.full_Ps.append(self.ukf.P)
+                
             if self.base_model.pop_finished == self.pop_total: #break condition
                 break
         
-        time2 = datetime.datetime.now()#timer
-        print(time2-self.time1)
+        self.time2 = datetime.datetime.now()#timer
+        print(self.time2-self.time1)
         
     def data_parser(self,do_fill):
         """
@@ -433,7 +459,11 @@ class agg_ukf_ss:
             
         "all agent observations"
         
-        return a,b
+        if sample_rate>1:
+            c= np.vstack(self.agg_ukf_preds)
+            return a,b,c
+        else:
+            return a,b
 
 def grid_poly(width,length,bin_size):
     """
@@ -462,22 +492,7 @@ def grid_poly(width,length,bin_size):
     #    plt.plot(*poly.exterior.xy)
     return polys
        
-def poly_count(poly_list,points):
-    """
-    counts how many agents in each polygon
-    
-    in: 
-        1D vector of points from agents2state()/get_state(sensor=location),
-    out: 
-        counts of agents in each polygon in poly_list
-    """
-    counts = []
-    points = np.array([points[::2],points[1::2]]).T
-    points =MultiPoint(points)
-    for poly in poly_list:
-        poly = prep(poly)
-        counts.append(int(len(list(filter(poly.contains,points)))))
-    return counts
+
 
 
 class DivergingNorm(col.Normalize):
@@ -665,7 +680,7 @@ class agg_plots:
             locs = a[i,:]
             
              
-            counts = poly_count(poly_list,locs)
+            counts = self.filter_class.poly_count(poly_list,locs)
             counts = np.array(counts)/np.nansum(counts)
             #counts[np.where(counts==0)]=np.nan
             frame =gpd.GeoDataFrame([counts,poly_list]).T
@@ -708,7 +723,7 @@ class agg_plots:
             
             "set up cbar. colouration proportional to number of agents"
             #ticks = np.array([0.001,0.01,0.025,0.05,0.075,0.1,0.5,1.0])
-            cbar = plt.colorbar(sm,cax=cax)
+            cbar = plt.colorbar(cax=cax)
             cbar.set_label("Agent Density (x100%)")
             cbar.set_alpha(1)
             cbar.draw_all()
@@ -736,12 +751,12 @@ class agg_plots:
         
         animations.animate(self,"output_heatmap",f"heatmap_{filter_class.pop_total}_")
         
-    def RMSEs(self,a,b):
+    def AEDs(self,a,b):
         """
-        RMSE (root mean squared error) metric. 
+        AED (average euclidean distance) error metric. 
         finds mean average euclidean error at each time step and per each agent
         provides whole array of distances per agent and time
-        and RMSEs per agent and time. 
+        and AEDs per agent and time. 
         """
         c = np.ones((a.shape[0],int(a.shape[1]/2)))*np.nan
         
@@ -784,7 +799,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 25,
+			'pop_total': 10,
 
 			'width': 200,
 			'height': 100,
@@ -828,7 +843,7 @@ if __name__ == "__main__":
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 50,
+            'sample_rate': 100,
             "do_restrict": True, 
             "do_animate": False,
             "do_wiggle_animate": False,
@@ -863,17 +878,17 @@ if __name__ == "__main__":
     poly_list = grid_poly(model_params["width"],model_params["height"],filter_params["bin_size"]) #generic square grid over corridor
     u = agg_ukf_ss(model_params,filter_params,ukf_params,poly_list,base_model)
     u.main()
-    actual,preds= u.data_parser(True)
+    actual,preds,full_preds= u.data_parser(True)
+    actual = actual[1:,:]
     "additional step for aggregate"
-    preds[np.isnan(actual)]=np.nan 
+    #preds[np.isnan(actual)]=np.nan 
     """plots"""
     plts = plots(u)
 
-    if filter_params["prop"]<1:
-        distances,t_mean = plts.diagnostic_plots(actual,preds,False,False)
-    distances2,t_mean2 = plts.diagnostic_plots(actual,preds,True,False)
+
+    distances,t_mean = plts.diagnostic_plots(actual,preds,True,False)
     
     #plts.trajectories(actual)
-    #plts.pair_frames(actual,preds)
+    #plts.pair_frames(actual,full_preds)
     #plts.heatmap(actual)
     

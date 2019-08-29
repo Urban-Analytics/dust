@@ -49,7 +49,7 @@ class ParticleFilter(Filter):
         self.number_of_iterations = model_params['batch_iterations']
         self.base_model = ModelClass(**model_params) # (Model does not need a unique id)
         self.models = list([deepcopy(self.base_model) for _ in range(self.number_of_particles)])  
-        self.dimensions = len(self.base_model.agents2state())
+        self.dimensions = len(self.base_model.get_state(sensor='location'))
         self.states = np.zeros((self.number_of_particles, self.dimensions))
         self.weights = np.ones(self.number_of_particles)
         self.indexes = np.zeros(self.number_of_particles, 'i')
@@ -70,7 +70,7 @@ class ParticleFilter(Filter):
         self.animation = [] # Keep a record of each plot created if animating so the individual ones can be viewed later
 
         #print("Creating initial states ... ")
-        base_model_state = self.base_model.agents2state()
+        base_model_state = self.base_model.get_state(sensor='location')
         self.states = np.array([ self.initial_state(i, base_model_state) for i in range(self.number_of_particles )])
         #print("\t ... finished")
         print("Running filter with {} particles and {} runs (on {} cores) with {} agents.".format(
@@ -95,7 +95,7 @@ class ParticleFilter(Filter):
         :param model: The model to assign the state to
         :type model: Return the model after having the agents assigned according to the state.
         """
-        model.state2agents(state)
+        model.set_state(state, sensor='location')
         return model
 
     @classmethod
@@ -115,9 +115,9 @@ class ParticleFilter(Filter):
         for i in range(num_iter):
             model.step()
 
-        state = (model.agents2state() +
-                 np.random.normal(0, particle_std ** 2, size=particle_shape))
-        model.state2agents(state)
+        noise = np.random.normal(0, particle_std ** 2, size=particle_shape)
+        state = model.get_state(sensor='location') + noise
+        model.set_state(state, sensor='location')
         return model, state
 
     def step(self):
@@ -283,7 +283,7 @@ class ParticleFilter(Filter):
         state and then calculate the new particle weights as 1/distance.
         Add a small term to avoid dividing by 0. Normalise the weights.
         '''
-        measured_state = (self.base_model.agents2state()
+        measured_state = (self.base_model.get_state(sensor='location')
                           + np.random.normal(0, self.model_std ** 2, size=self.states.shape))
         distance = np.linalg.norm(self.states - measured_state, axis=1)
         self.weights = 1 / (distance + 1e-9) ** 2

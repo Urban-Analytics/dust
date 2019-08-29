@@ -6,7 +6,7 @@ category: announce
 tags: [abm, probabilistic programming, pyro, keanu]
 ---
 
-Usually in computer programming, variables are usually assigned to specific values (e.g. a virtual person in a computer simulation might have an 'age' variable which stores a number). Probabilistic programming, on the other hand, allows you to represent _random variables_. These are variables whose values we do not know precisely, so can be represented by a probability distribution rather than a single value.
+Usually in computer programming, variables are assigned to specific values (e.g. a virtual person in a computer simulation might have an 'age' variable which stores a number). Probabilistic programming, on the other hand, allows you to represent _random variables_. These are variables whose values we do not know precisely, so can be represented by a probability distribution rather than a single value.
 
 This is potentially a very elegant way of capturing uncertainty in our models. However, using the probabilistic programming approach for agent-based modelling raises a number of questions. In the following slides, LIDA data science intern Luke Archer introduces his recent work that explores the use of probabilistic programming libraries for building agent-based models.
 

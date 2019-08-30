@@ -45,7 +45,7 @@ pip install shapely
 pip install geopandas
 ```
 
-We now have a fully equipped environment for our experiments. We will now run an example experiment in which we run a basic experiment in arc_ukf.py. We will run the UKF 10 times for 5 and 10 agents at 0.5 and 1.0 proportion observed. First we define the parameters we wish to run in ['arc_ukf.py'].
+We now have a fully equipped environment for our experiments. We will now run an example experiment in which we run a basic experiment in arc_ukf.py. We will run the UKF 10 times for 5 and 10 agents at 0.5 and 1.0 proportion observed. First we define the parameters we wish to run in 'arc_ukf.py'.
 
 ```
 nano arc_ukf.py #open text editor
@@ -63,10 +63,10 @@ new desired parameters:
 67    run_id = np.arange(0,10,1) #10 runs
 ```
 
-With our new parameters defined we calculate the total number of experiments. This is simply multiplying the length of each parameter list together N = 2x2x20 = 80. We must update ["arc_ukf.sh"] with this number such that it runs every experiment or does not run blank experiments.
+With our new parameters defined we calculate the total number of experiments. This is simply multiplying the length of each parameter list together N = 2x2x20 = 80. We must update `arc_ukf.sh` with this number such that it runs every experiment or does not run blank experiments.
 
 ```
-nano arc_ukf.py #open text editor
+nano arc_ukf.sh #open text editor
 
 #$ -t 1-3
 

@@ -18,7 +18,7 @@ The pickled class instances for each experiment will end up in the [`ukf_results
 
 ## Usage Guide
 
-To use the experiment files here in arc we require initial set up. In a linux bash terminal run the following with <USERNAME> replaced as necessary:
+To use the experiment files here in arc we require initial set up. In a linux bash terminal run the following with `<USERNAME>` replaced as necessary:
 
 ```
 ssh <USERNAME>@arc3.leeds.ac.uk

@@ -11,6 +11,10 @@ Translates results from base ukf experiments into plot.
 plot indicates which performs best of noisy observations,
 stationsim predictions and UKF predictions.
 
+
+import data from arc with following in linux terminal
+scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
+change medrclaa to relevant username
 """
 
 
@@ -98,8 +102,9 @@ if __name__ == "__main__":
     im = ax.imshow(best_array,origin="lower",cmap = cmap,norm=norm)
     """alternative continous contour plot for more "real" mapping"""
     #grid = np.meshgrid(noises,rates)
-    #im = plt.contourf(grid[0],grid[1],best_array,levels=[0,1,2],cmap=cmap,norm=norm)
-    cbar = plt.colorbar(im,cax=cax,ticks=np.arange(0,len(bounds)-1,1)+0.5,boundaries = [0,1,2,3])
+    #im = plt.contourf(grid[0],grid[1],best_array,cmap=cmap,levels=[0,1,2,3])
+    plt.ylim([0,2])
+    cbar = plt.colorbar(im,cax=cax,ticks=np.arange(0,len(bounds)-1,1)+0.5,boundaries = [0,1,2])
     cbar.set_label("Best Error")
     cbar.set_alpha(1)
     cbar.draw_all()
@@ -116,4 +121,4 @@ if __name__ == "__main__":
     ax.set_xlabel("noise")
     ax.set_ylabel("sampling rate")
     ax.set_title("base ukf configuration experiment")
-    plt.savefig("base_config_test.pdf")
+    plt.savefig(f"{n}_base_config_test.pdf")

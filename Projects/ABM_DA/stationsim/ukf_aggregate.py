@@ -393,7 +393,13 @@ class agg_ukf_ss:
             
             self.ukf.predict() #predict where agents will jump
             self.base_model.step() #jump stationsim agents forwards
-            
+            if self.filter_params["bring_noise"]:
+                noise_array=np.ones(self.pop_total*2)
+                noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
+                noise_array*=np.random.normal(0,self.filter_params["noise"],self.pop_total*2)
+                state = self.base_model.get_state(sensor="location") #observed agents states
+                state+=noise_array
+                self.base_model.set_state(state=state,sensor="location")
 
             if (self.base_model.step_id-1)%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
                 
@@ -673,8 +679,15 @@ class agg_plots:
         height = filter_class.model_params["height"]
         os.mkdir("output_heatmap")
         
-        cmap = cm.Spectral
-        cmap.set_bad(color="black")
+        
+        "cmap set up. defining bottom value (0) to be black"
+        cmap = cm.cividis
+        cmaplist = [cmap(i) for i in range(cmap.N)]
+        cmaplist[0] = (0.0,0.0,0.0,1.0)
+        cmap = col.LinearSegmentedColormap("custom_cmap",cmaplist,N=cmap.N)
+        cmap = cmap.from_list("custom",cmaplist)
+        "split norm for better vis"
+        norm =DivergingNorm(0.1,0.3,0.1,0.9,1e-8,1)
 
         for i in range(a.shape[0]):
             locs = a[i,:]
@@ -685,9 +698,7 @@ class agg_plots:
             #counts[np.where(counts==0)]=np.nan
             frame =gpd.GeoDataFrame([counts,poly_list]).T
             frame.columns= ["counts","geometry"]
-            
-            norm =col.DivergingNorm(0.2)
- 
+            #norm =col.DivergingNorm(0.2)
             
             f = plt.figure(figsize=(12,8))
             ax = f.add_subplot(111)
@@ -698,9 +709,11 @@ class agg_plots:
                 #ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
                 ax.set_ylim(0,height)
                 ax.set_xlim(0,width)
-                frame.plot(column="counts",ax=ax,cax=cax,cmap=cmap,
-                                     norm=norm)
-                
+                column = frame["counts"].astype(float)
+                im = frame.plot(column=column,
+                                ax=ax,cax=cax,cmap=cmap,norm=norm,vmin=0,vmax=1)
+           
+
             else:
                 """
                 dummy frame if no locations present e.g. at the start. 
@@ -716,29 +729,27 @@ class agg_plots:
                 hist = np.flip(hist,axis=0)
         
                 extent = [0,width,0,height]
-                plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
+                im = plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
                            ,cmap = cm.Spectral ,extent=extent
-                           ,norm=DivergingNorm(vmin=1/filter_class.pop_total,
-                                               vcenter=5/filter_class.pop_total,vmax=1))
+                           ,norm=norm)
             
             "set up cbar. colouration proportional to number of agents"
             #ticks = np.array([0.001,0.01,0.025,0.05,0.075,0.1,0.5,1.0])
-            cbar = plt.colorbar(cax=cax)
+            sm = cm.ScalarMappable(norm = norm,cmap=cmap)
+            cbar = plt.colorbar(sm,cax=cax)
             cbar.set_label("Agent Density (x100%)")
             cbar.set_alpha(1)
-            cbar.draw_all()
-               
+            #cbar.draw_all()
+            
             "set legend to bottom centre outside of plot"
             box = ax.get_position()
             ax.set_position([box.x0, box.y0 + box.height * 0.1,
                              box.width, box.height * 0.9])
             
-            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18),
-                      ncol=2)
             "labels"
-            plt.xlabel("Corridor width")
-            plt.ylabel("Corridor height")
-            plt.title("Agent Densities vs True Positions")
+            ax.set_xlabel("Corridor width")
+            ax.set_ylabel("Corridor height")
+            ax.set_title("Agent Densities vs True Positions")
             cbar.set_label("Agent Density (x100%)")
             """
             frame number and saving. padded zeroes to keep frames in order.
@@ -799,7 +810,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 10,
+			'pop_total': 25,
 
 			'width': 200,
 			'height': 100,
@@ -837,6 +848,8 @@ if __name__ == "__main__":
     heatmap_rate - after how many updates to record a frame
     bin_size - square sizes for aggregate plots,
     do_batch - do batch processing on some pre-recorded truth data.
+    bring_noise - add noise to measurements?
+    noise - variance of added noise
     """
     
     filter_params = {      
@@ -852,6 +865,8 @@ if __name__ == "__main__":
             "prop": 1,
             "heatmap_rate": 1,
             "bin_size":25,
+            "bring_noise":True,
+            "noise":0.5,
             "do_batch":False,
             }
     
@@ -884,11 +899,11 @@ if __name__ == "__main__":
     #preds[np.isnan(actual)]=np.nan 
     """plots"""
     plts = plots(u)
-
-
+    agg_plts = agg_plots(u)
+    
     distances,t_mean = plts.diagnostic_plots(actual,preds,True,False)
     
-    #plts.trajectories(actual)
-    #plts.pair_frames(actual,full_preds)
-    #plts.heatmap(actual)
+    agg_plts.pair_frames(actual,full_preds)
+    agg_plts.heatmap(actual,poly_list)
+    plts.trajectories(actual)
     

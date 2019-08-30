@@ -618,7 +618,7 @@ class plots:
         plt.title(f"{obs_text} Worst Agent")
 
         j = plt.figure(figsize=(12,8))
-        plt.hist(agent_means,density=True)
+        plt.hist(agent_means,density=True,bins = int(max(agent_means)))
         plt.xlabel("Agent AED")
         plt.ylabel("Density ([0,1])")
         plt.title(obs_text+" Histogram of agent AEDs")
@@ -654,12 +654,12 @@ class plots:
             plt.ylim([0,height])
             
             "plot true agents and dummies for legend"
-            ax.scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o")
-            ax.scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
-            ax.scatter(-1,-1,color="orangered",label = "KF_Observed",marker="o")
-            ax.scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^")
+            ax.scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o",edgecolors="k")
+            ax.scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o",edgecolors="k")
+            ax.scatter(-1,-1,color="orangered",label = "KF_Observed",marker="P",edgecolors="k")
+            ax.scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^",edgecolors="k")
 
-            markers = ["o","^"]
+            markers = ["P","^"]
             colours = ["orangered","yellow"]
             for j in range(len(a_s)):
 
@@ -673,7 +673,7 @@ class plots:
                             x = [a2[0],b2[0]]
                             y = [a2[1],b2[1]]
                             ax.plot(x,y,color="k")
-                            ax.scatter(b2[0],b2[1],color=colours[j],marker = markers[j])
+                            ax.scatter(b2[0],b2[1],color=colours[j],marker = markers[j],edgecolors="k")
             
             box = ax.get_position()
             ax.set_position([box.x0, box.y0 + box.height * 0.1,
@@ -689,7 +689,7 @@ class plots:
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
+        animations.animate(self,"output_pairs",f"pairwise_gif_{self.filter_class.pop_total}")
 
     def pair_frames_stack(self,a,b):
         "pairwise with error plots"
@@ -719,13 +719,13 @@ class plots:
             axes[2].set_ylim([0,np.nanmax(time_means2)*1.05])         
             
             "plot true agents and dummies for legend"
-            axes[0].scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o")
-            axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
-            axes[0].scatter(-1,-1,color="orangered",label = "KF_Observed",marker="o")
-            axes[0].scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^")
+            axes[0].scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o",edgecolors="k")
+            axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o",edgecolors="k")
+            axes[0].scatter(-1,-1,color="orangered",label = "KF_Observed",marker="P",edgecolors="k")
+            axes[0].scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^",edgecolors="k")
 
             
-            markers = ["o","^"]
+            markers = ["P","^"]
             colours = ["orangered","yellow"]
             for j in range(len(a_s)):
 
@@ -739,7 +739,7 @@ class plots:
                             x = [a2[0],b2[0]]
                             y = [a2[1],b2[1]]
                             axes[0].plot(x,y,color="k")
-                            axes[0].scatter(b2[0],b2[1],color=colours[j],marker = markers[j])
+                            axes[0].scatter(b2[0],b2[1],color=colours[j],marker = markers[j],edgecolors="k")
             
             #box = axes[1].get_position()
             #axes[1].set_position([box.x0, box.y0 + box.height * 0.1,
@@ -765,7 +765,7 @@ class plots:
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
+        animations.animate(self,"output_pairs",f"pairwise_gif_{self.filter_class.pop_total}")
         
     def pair_frames_stack_ellipse(self,a,b):
         "pairwise,AEDs and covariances. This takes FOREVER to render so I made it seperate"
@@ -801,13 +801,13 @@ class plots:
             #axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")
             
             "placeholders for a consistent legend. make sure theyre outside the domain of plotting"
-            axes[0].scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o")
-            axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o")            
-            axes[0].scatter(-1,-1,color="orangered",label = "KF_Observed",marker="o")
-            axes[0].scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^")
+            axes[0].scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o",edgecolors="k")
+            axes[0].scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o",edgecolors="k")            
+            axes[0].scatter(-1,-1,color="orangered",label = "KF_Observed",marker="P",edgecolors="k")
+            axes[0].scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^",edgecolors="k")
 
             
-            markers = ["o","^"]
+            markers = ["P","^"]
             colours = ["orangered","yellow"]
             for j in range(len(a_s)):
                 a1 = a_s[j]
@@ -820,7 +820,7 @@ class plots:
                             x = [a2[0],b2[0]]
                             y = [a2[1],b2[1]]
                             axes[0].plot(x,y,color="k")
-                            axes[0].scatter(b2[0],b2[1],color=colours[j],marker = markers[j])
+                            axes[0].scatter(b2[0],b2[1],color=colours[j],marker = markers[j],edgecolors="k")
                             plot_covariance((x[1],y[1]),agent_covs[k],ax=axes[0],edgecolor="skyblue",alpha=0.6,show_center=False)
             #box = axes[1].get_position()
             #axes[1].set_position([box.x0, box.y0 + box.height * 0.1,
@@ -895,6 +895,11 @@ def _std_tuple_of(var=None, std=None, interval=None):
     return np.sqrt(var) 
 
 
+"""
+used to convert covariance matrix into covariance ellipse.
+shamelessly comandeered from filterpy
+"""
+
 def plot_covariance(
         mean, cov=None, variance=1.0, std=None, interval=None,
         ellipse=None, title=None, axis_equal=False,
@@ -964,7 +969,7 @@ class animations:
         
 #%%
 if __name__ == "__main__":
-    #np.random.seed(seed = 8)
+    np.random.seed(seed = 8) #hash is not needed. this is a good seed to demonstrate a "stuck" agent
     """
         width - corridor width
         height - corridor height
@@ -1032,10 +1037,10 @@ if __name__ == "__main__":
             'sample_rate': 10,
             "do_restrict": True, 
             "do_animate": False,
-            "prop": 1,
+            "prop": 0.5,
             "heatmap_rate": 1,
             "bin_size":10,
-            "bring_noise":False,
+            "bring_noise":True,
             "noise":0.5,
             "do_batch":False,
 
@@ -1052,7 +1057,7 @@ if __name__ == "__main__":
     
     ukf_params = {
             
-            "a":.1,
+            "a":1,
             "b":2,
             "k":0,
 
@@ -1067,6 +1072,7 @@ if __name__ == "__main__":
     else:
         actual,preds,full_preds= u.data_parser(True)
 
+    actual = actual[1:,:] #cut off wierd n/a start from StationSim
     """plots"""
     plts = plots(u)
 
@@ -1083,6 +1089,6 @@ if __name__ == "__main__":
         plts.pair_frames_stack_ellipse(actual,preds)
 
     else:
-      #  plts.pair_frames(actual,full_preds)
-        plts.pair_frames_stack_ellipse(actual,full_preds)
+        plts.pair_frames(actual,full_preds)
+        #plts.pair_frames_stack_ellipse(actual,full_preds)
         #plts.heatmap(actual)

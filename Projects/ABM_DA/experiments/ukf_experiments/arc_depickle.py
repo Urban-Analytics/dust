@@ -1,10 +1,21 @@
+"""
+detailed diagnostics using multiple runs of a fixed number of agents for both 
+arc_ukf.py and arc_ukf_agg.py. At each time point we sample the 
+mean agent errors from each run as a population of means.
+The mean and variance of this sample are plotted to demonstrate
+the average error and uncertainty of the UKF over time. 
+If the population is fully observed (as always with the aggregate case)
+then only one plot is produced. 
+Otherwise both observed and unobserved plots are produced.
+"""
+
 import pickle
 import sys
 import os
 sys.path.append("../../stationsim")
 sys.path.append("../..")
 
-from stationsim.ukf import ukf,ukf_ss,plots
+from stationsim.ukf import plots as plots
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,7 +25,6 @@ import glob
 import seaborn as sns
 import warnings
 
-matplotlib.style.use("classic")
 plt.rcParams.update({'font.size':20})
 """
 function to take instanced clases output from arc ukf scripts and produce grand mean plots.
@@ -23,7 +33,7 @@ function to take instanced clases output from arc ukf scripts and produce grand 
 
 
 class HiddenPrints:
-    "suppress repeat printing"
+    "suppress repeat printing of random plots"
     def __enter__(self):
         self._original_stdout = sys.stdout
         sys.stdout = open(os.devnull, 'w')
@@ -33,7 +43,7 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
         
 def l2_parser(instance,prop):
-    "extract arrays of real paths, predicted paths, l2 distances between them."
+    "extract arrays of real paths, predicted paths, AEDs between them."
     "HiddenPrints suppresses plots class from spam printing figures"
     matplotlib.use("Agg")
     actual,preds,full_preds = instance.data_parser(False)
@@ -46,12 +56,10 @@ def l2_parser(instance,prop):
         distances_uobs,uindex,agent_means,t_mean_uobs = plts.AEDs(a_u,b_u)
     else:
         distances_uobs = []
-    matplotlib.use("module://ipykernel.pylab.backend_inline")    
-    preds[np.isnan(actual)]=np.nan
     
     return actual,preds,distances_obs,distances_uobs
 
-def grand_mean_plot(data,f_name,instance):
+def grand_mean_plot(data,f_name,instance,save):
     """
     take list of AED dataframes and produces confidence plot for given number
     of agents and proportion over time.
@@ -83,11 +91,12 @@ def grand_mean_plot(data,f_name,instance):
     plt.xlabel("Time (steps)")
     plt.ylabel("AED Distribution over Time")
     plt.title("AEDs over time")
-    plt.savefig(f_name)
+    if save:
+        plt.savefig(f_name)
     
 if __name__ == "__main__":
     
-    n=25
+    n=10
     prop = 0.6
     actuals = []
     preds = []
@@ -110,13 +119,13 @@ if __name__ == "__main__":
         if prop<1:
             d_uobs.append(d2)
     #plts = plots(u)
-    
+    save_plots =False
     if len(files)>1:
         #observed grand AED
-        grand_mean_plot(d_obs,f"AED_obs_{n}_{prop}.pdf",u)
+        grand_mean_plot(d_obs,f"AED_obs_{n}_{prop}.pdf",u,save_plots)
         if prop<1:
             #unobserved grand AED
-            grand_mean_plot(d_uobs,f"AED_uobs_{n}_{prop}.pdf",u)
+            grand_mean_plot(d_uobs,f"AED_uobs_{n}_{prop}.pdf",u,save_plots)
             #plts.trajectories(actual)
             #plts.pair_frames(actual,preds)
     else:

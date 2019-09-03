@@ -2,20 +2,21 @@ import numpy as np
 import torch
 import pyro
 import pyro.distributions as dist
+from torch import tensor
+
 
 
 class Sensor:
 	def __init__(self, freq=1, n_samples=1):
 		self.observation_freq = freq
 		self.n_samples = n_samples
-		self.scale = 0.
+		self.scale = 1.
 		self.noise = 0.
-		self.observations = None
+		self.obs = None
 
 	def observe(self, t=1, agent=None):
 		if (t % self.observation_freq) == 0:
 			self.activate_sensor()
-			print('Observing!')
 			obs = pyro.sample('my_obs', dist.Normal(loc=torch.tensor([[np.median(agent.xy[0]) for _ in range(self.n_samples)],
 																   [np.median(agent.xy[1]) for _ in range(self.n_samples)]]),
 												 scale=torch.tensor([[self.scale], [self.scale]])))
@@ -24,13 +25,23 @@ class Sensor:
 																	   [0. for _ in range(self.n_samples)]]),
 													 scale=self.noise))
 
-			self.observations.append(obs + n)
-			self.print_detail(obs)
+			self.obs.append(obs + n)
 
-	def print_detail(self, obs):
-		print('Observation X Mean: {} Scale: {}'.format(np.mean(list(obs[0])), self.scale))
-		print('Observation Y Mean: {} Scale: {}'.format(np.mean(list(obs[1])), self.scale))
+	def aggregate_obs(self, step):
+		if self.obs is not None:
+			obs_median = tensor([[np.median(list(self.obs[step][0]))], [np.median(list(self.obs[step][1]))]])
+			return obs_median
+
+	def print_detail(self, t):
+		print('Observation\n '
+			  'X Median: {}\n '
+			  'STD: {}\n '
+			  'Y Median: {}\n '
+			  'STD: {}\n'.format(np.median(list(self.obs[t][0])),
+								 np.std(list(self.obs[t][0])),
+								 np.median(list(self.obs[t][1])),
+								 np.std(list(self.obs[t][1]))))
 
 	def activate_sensor(self):
-		if self.observations is None:
-			self.observations = []
+		if self.obs is None:
+			self.obs = []

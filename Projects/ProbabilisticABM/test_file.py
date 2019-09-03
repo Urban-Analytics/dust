@@ -18,39 +18,47 @@ environment.doors = [Door(id=0, xy=(1000 - width / 2, (500 * 1.33) - height / 2)
 						 Door(id=1, xy=(1000 - width / 2, (500 * 0.66) - height / 2),
 							  width=width, height=height, fill=True)]
 
-def main():
 
+def main():
+	posterior = None
 	sensor = build_observations()
 	agent = Agent(x=0., y=500.)
 	agent.pick_destination(doors=environment.doors)
 	visualiser = Visualiser(environment=environment, agent=agent)
+	infer = Importance(model=agent.step, num_samples=10)
 
-	infer = Importance(model=agent.step, num_samples=1000)
-	posterior = pyro.infer.EmpiricalMarginal(infer.run(obs=sensor.observations), sites='xy')
+	for step in range(350):
+		if (step % 100) == 0 and (step != 0):
+			obs = sensor.aggregate_obs(step)
+			print('Assimilating_Observation at Step {}'.format(step))
+			sensor.print_detail(step)
+			posterior = pyro.infer.EmpiricalMarginal(infer.run(posterior=posterior().mean(), obs=obs), sites=['xy'])
+		else:
+			obs = None
+			posterior = pyro.infer.EmpiricalMarginal(infer.run(obs=obs), sites=['xy'])
 
-	print('xy: {}, {}'.format(agent.xy[0].item(), agent.xy[1].item()))
-	print('Posterior X Mean: {} STD: {}'.format(posterior.mean[0].item(), posterior.stddev[0].item()))
-	print('Posterior Y Mean: {} STD: {}'.format(posterior.mean[1].item(), posterior.stddev[1].item()))
+		print('xy: {}, {}'.format(agent.xy[0].item(), agent.xy[1].item()))
+	# print('Posterior X Mean: {} STD: {}'.format(posterior.mean[0].item(), posterior.stddev[0].item()))
+	# print('Posterior Y Mean: {} STD: {}'.format(posterior.mean[1].item(), posterior.stddev[1].item()))
+
 	visualiser.plot_agent()
 	visualiser.plot_environment()
 	visualiser.save_plt()
 	visualiser.clear_frame()
 
 
-def build_observations(n_samples=1, steps=400):
+def build_observations(n_samples=1, steps=350):
 	n_samples = n_samples
 	steps = steps
-	agent = Agent(x=0., y=500., n_samples=n_samples)
-	sensor = Sensor(freq=50, n_samples=n_samples)
+	agent = Agent(x=0., y=500., bias=0.0, n_samples=n_samples)
+	sensor = Sensor(freq=1, n_samples=n_samples)
 	agent.pick_destination(doors=environment.doors)
 	renderer.clear_output_folder()
 	for t in range(steps):
 		if t != 0:
 			sensor.observe(t, agent)
 
-		agent.step(pred=agent.xy)
-
-		agent.print_median_agent_loc(t)
+		agent.step(posterior=agent.xy)
 	return sensor
 
 

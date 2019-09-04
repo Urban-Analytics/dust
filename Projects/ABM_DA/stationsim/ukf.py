@@ -40,24 +40,26 @@ import imageio
 from scipy.stats import norm
 from shutil import rmtree
 from filterpy.stats import covariance_ellipse #needed solely for pairwise_frames_stack_ellipse for covariance ellipse plotting
+
+plt.rcParams.update({'font.size':20})
+
 """
-As of 3.6 only imageio (and ffmpeg dependency) and scipy.spatial are additional installs
+As of 01/09/19 only dependencies are
 pip install imageio
 pip install ffmpeg
 pip install scipy
+pip install filterpy
 
-
-suppress repeat printing in F_x from new stationsim
+note:
+now suppressing repeat printing of iterations in F_x from new stationsim
 E.g. 
 with HiddenPrints():
     everything done here prints nothing
 
 everything here prints again
+
 https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
 """
-
-"for dark plots. purely an aesthetic choice. plt.style.available() for other styles"
-#plt.style.use("dark_background")
 
 #%%
 class HiddenPrints:
@@ -146,10 +148,10 @@ class ukf:
         #calculate NL projection of sigmas
         sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.P)) #calculate current sigmas using state x and UT element S
         "numpy apply along axis or multiprocessing options"
-        #nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
-        p = multiprocessing.Pool()
-        nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
-        p.close()
+        nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
+        #p = multiprocessing.Pool()
+        #nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
+        #p.close()
         wnl_sigmas = nl_sigmas*self.wm
             
         xhat = np.sum(wnl_sigmas,axis=1)#unscented mean for predicitons
@@ -190,10 +192,10 @@ class ukf:
         posterior sigmas using above unscented interim estimates for x and P
         """
         sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.P)) #update using Sxx and unscented mean
-        nl_sigmas = np.apply_along_axis(self.hx,0,sigmas)
-        #p = multiprocessing.Pool()
-        #nl_sigmas = np.vstack(p.map(self.hx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
-        #p.close()
+        #nl_sigmas = np.apply_along_axis(self.hx,0,sigmas)
+        p = multiprocessing.Pool()
+        nl_sigmas = np.vstack(p.map(self.hx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
+        p.close()
         wnl_sigmas = nl_sigmas*self.wm
 
         """
@@ -515,12 +517,12 @@ class plots:
         return a,b,plot_range
 
         
-    def AEDs(self,a,b):
+    def L2s(self,a,b):
         """
-        AED (average euclidean distance) error metric. 
-        finds mean average euclidean error at each time step and per each agent
+        L2 distance error metric. 
+        finds mean L2 (euclidean) distance at each time step and per each agent
         provides whole array of distances per agent and time
-        and AEDs per agent and time. 
+        and L2s per agent and time. 
         """
         sample_rate =self.filter_class.filter_params["sample_rate"]
         c = np.ones(((a.shape[0]//sample_rate),int(a.shape[1]/2)))*np.nan
@@ -533,7 +535,7 @@ class plots:
                 a2 = np.array([a[sample_rate*i,0::2],a[sample_rate*i,1::2]]).T
                 b2 = np.array([b[sample_rate*i,0::2],b[sample_rate*i,1::2]]).T
                 res = a2-b2
-                c[i,:]=np.apply_along_axis(np.linalg.norm,1,res)
+                c[i,:]=np.apply_along_axis(np.linalg.norm,1,res) # take L2 norm of rows to output vector of scalars
                     
         agent_means = np.nanmean(c,axis=0)
         time_means = np.nanmean(c,axis=1)
@@ -582,22 +584,19 @@ class plots:
             plt.ylabel("Corridor Height")
             plt.title(f"{obs_text} KF Predictions")
             
-        """
-        AED metric. 
-        finds mean average euclidean error at each time step and per each agent
-        """
-        c,c_index,agent_means,time_means = self.AEDs(a,b)
+      
+        c,c_index,agent_means,time_means = self.L2s(a,b)
         
         h = plt.figure(figsize=(12,8))
         time_means[np.isnan(time_means)]=0
         plt.plot(c_index,time_means,lw=3)
         plt.axhline(y=0,color="k",ls="--",alpha=0.5)
         plt.xlabel("Time (steps)")
-        plt.ylabel("AED Over Time")
+        plt.ylabel("L2 Over Time")
         plt.title(obs_text+" ")
-        plt.title(f"{obs_text} AEDs Over Time")
+        plt.title(f"{obs_text} L2s Over Time")
      
-        """find agent with highest AED and plot it.
+        """find agent with highest L2 and plot it.
         mainly done to check something odd isnt happening"""
         
         index = np.where(agent_means == np.nanmax(agent_means))[0][0]
@@ -619,16 +618,16 @@ class plots:
 
         j = plt.figure(figsize=(12,8))
         plt.hist(agent_means,density=True,bins = int(max(agent_means)))
-        plt.xlabel("Agent AED")
+        plt.xlabel("Agent L2")
         plt.ylabel("Density ([0,1])")
-        plt.title(obs_text+" Histogram of agent AEDs")
+        plt.title(obs_text+" Histogram of agent L2s")
         kdeplot(agent_means,color="red",cut=0,lw=4)
-        plt.title(f"{obs_text} Agent AED Histogram")
+        plt.title(f"{obs_text} Agent L2 Histogram")
   
         if save:
             f.savefig(f"{obs_text}_actual.pdf")
             g.savefig(f"{obs_text}_kf.pdf")
-            h.savefig(f"{obs_text}_aed.pdf")
+            h.savefig(f"{obs_text}_l2.pdf")
             i.savefig(f"{obs_text}_worst.pdf")
             j.savefig(f"{obs_text}_agent_hist.pdf")
             
@@ -698,8 +697,8 @@ class plots:
         height = filter_class.model_params["height"]
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
-        c,c_index,agent_means,time_means = self.AEDs(a_o,b_o) #mses
-        c2,c_index2,agent_means2,time_means2 = self.AEDs(a_u,b_u) #mses
+        c,c_index,agent_means,time_means = self.L2s(a_o,b_o) #mses
+        c2,c_index2,agent_means2,time_means2 = self.L2s(a_u,b_u) #mses
         time_means[np.isnan(time_means)]=0
         time_means2[np.isnan(time_means)]=0
         
@@ -752,9 +751,9 @@ class plots:
                       ncol=3,prop={'size':7})
             axes[0].set_xlabel("corridor width")
             axes[0].set_ylabel("corridor height")
-            axes[1].set_ylabel("Observed AED")
+            axes[1].set_ylabel("Observed L2")
             axes[1].set_xlabel("Time (steps)")
-            axes[2].set_ylabel("Unobserved AED")
+            axes[2].set_ylabel("Unobserved L2")
             axes[2].set_xlabel("Time (steps)")
             #axes[0].title("True Positions vs UKF Predictions")
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
@@ -768,7 +767,7 @@ class plots:
         animations.animate(self,"output_pairs",f"pairwise_gif_{self.filter_class.pop_total}")
         
     def pair_frames_stack_ellipse(self,a,b):
-        "pairwise,AEDs and covariances. This takes FOREVER to render so I made it seperate"
+        "pairwise,L2s and covariances. This takes FOREVER to render so I made it seperate"
         "paired side by side preds/truth"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
@@ -776,8 +775,8 @@ class plots:
         sample_rate=self.filter_class.filter_params["sample_rate"]
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
-        c,c_index,agent_means,time_means = self.AEDs(a_o,b_o) #obs AEDs
-        c2,c_index2,agent_means2,time_means2 = self.AEDs(a_u,b_u) #uobs AEDs
+        c,c_index,agent_means,time_means = self.L2s(a_o,b_o) #obs L2s
+        c2,c_index2,agent_means2,time_means2 = self.L2s(a_u,b_u) #uobs L2s
         time_means[np.isnan(time_means)]=0
         time_means2[np.isnan(time_means)]=0
 
@@ -830,13 +829,13 @@ class plots:
             axes[2].plot(c_index2[:(1+i//sample_rate)],time_means2[:(1+i//sample_rate)],label="unobserved")
             axes[2].set_xlim([0,a.shape[0]])
             axes[2].set_ylim([0,np.nanmax(time_means2)*1.05])  
-            axes[2].set_ylabel("Unobserved AED")
+            axes[2].set_ylabel("Unobserved L2")
             axes[2].set_xlabel("Time (steps)")
 
 
             axes[1].set_xlim([0,a_u.shape[0]])
             axes[1].set_ylim([0,np.nanmax(time_means)*1.05])
-            axes[1].set_ylabel("Observed AED")
+            axes[1].set_ylabel("Observed L2")
             axes[1].set_xlabel("Time (steps)")
             axes[1].plot(c_index[:(1+i//sample_rate)],time_means[:(1+i//sample_rate)],label="observed")
             

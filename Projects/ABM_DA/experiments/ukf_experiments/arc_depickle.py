@@ -43,17 +43,18 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
         
 def l2_parser(instance,prop):
-    "extract arrays of real paths, predicted paths, AEDs between them."
+    "extract arrays of real paths, predicted paths, L2s between them."
     "HiddenPrints suppresses plots class from spam printing figures"
     matplotlib.use("Agg")
     actual,preds,full_preds = instance.data_parser(False)
+    actual = actual[1:,:]
     plts = plots(instance)
     a_u,b_u,plot_range = plts.plot_data_parser(actual,preds,False)
     a_o,b_o,plot_range = plts.plot_data_parser(actual,preds,True)    
 
-    distances_obs,oindex,agent_means,t_mean_obs = plts.AEDs(a_o,b_o)
+    distances_obs,oindex,agent_means,t_mean_obs = plts.L2s(a_o,b_o)
     if prop<1:
-        distances_uobs,uindex,agent_means,t_mean_uobs = plts.AEDs(a_u,b_u)
+        distances_uobs,uindex,agent_means,t_mean_uobs = plts.L2s(a_u,b_u)
     else:
         distances_uobs = []
     
@@ -61,7 +62,7 @@ def l2_parser(instance,prop):
 
 def grand_mean_plot(data,f_name,instance,save):
     """
-    take list of AED dataframes and produces confidence plot for given number
+    take list of L2 dataframes and produces confidence plot for given number
     of agents and proportion over time.
     
     This function is a bit odd as it essentially 
@@ -86,16 +87,21 @@ def grand_mean_plot(data,f_name,instance,save):
         reg_frames.append(mean_frame)
     
     grand_frame = np.vstack(reg_frames)
+    """
+    plots using regression style line plot from seaborn
+    easiest way to build confidence intervals 
+    for mean and variance of average agent error at each time point
+    """
     f = plt.figure()
     sns.lineplot(grand_frame[:,0],grand_frame[:,1],lw=3)
     plt.xlabel("Time (steps)")
-    plt.ylabel("AED Distribution over Time")
-    plt.title("AEDs over time")
+    plt.ylabel("L2 Distribution over Time")
+    plt.title("L2s over time")
     if save:
         plt.savefig(f_name)
     
 if __name__ == "__main__":
-    
+    "parameters for which number of agents and proportion observed to plot for"
     n=10
     prop = 0.6
     actuals = []
@@ -121,18 +127,19 @@ if __name__ == "__main__":
     #plts = plots(u)
     save_plots =False
     if len(files)>1:
-        #observed grand AED
-        grand_mean_plot(d_obs,f"AED_obs_{n}_{prop}.pdf",u,save_plots)
+        #observed grand L2
+        grand_mean_plot(d_obs,f"L2_obs_{n}_{prop}.pdf",u,save_plots)
         if prop<1:
-            #unobserved grand AED
-            grand_mean_plot(d_uobs,f"AED_uobs_{n}_{prop}.pdf",u,save_plots)
+            #unobserved grand L2
+            grand_mean_plot(d_uobs,f"L2_uobs_{n}_{prop}.pdf",u,save_plots)
             #plts.trajectories(actual)
             #plts.pair_frames(actual,preds)
     else:
         actual,pred,full_preds=u.data_parser(False)
+        actual = actual[1:,:]
         plts=plots(u)
         "single test diagnostics"
-        save_plots=True
+        save_plots=False
         if prop<1:
             "unobserved agents then observed agents"
             distances,t_mean = plts.diagnostic_plots(actual,pred,False,save_plots)

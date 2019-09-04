@@ -1,3 +1,11 @@
+"""
+ produces a more generalised diagnostic over multiple runs using multiple
+ numbers of agents for arc_ukf.py only. 
+ This produces a chloropleth style map showing the grand mean error
+ over both time and agents for various fixed numbers of agents 
+ and proportions observed.
+
+"""
 import pickle
 import sys
 import os
@@ -17,6 +25,7 @@ import glob
 import seaborn as sns
 import warnings
 
+plt.rcParams.update({'font.size':20})
 
 """
 function to take instanced clases output from arc ukf scripts and produce grand mean plots.
@@ -44,9 +53,9 @@ def l2_parser(instance,prop):
     a_u,b_u,plot_range = plts.plot_data_parser(actual,preds,False)
     a_o,b_o,plot_range = plts.plot_data_parser(actual,preds,True)    
 
-    distances_obs,oindex,agent_means,t_mean_obs = plts.AEDs(a_o,b_o)
+    distances_obs,oindex,agent_means,t_mean_obs = plts.L2s(a_o,b_o)
     if prop<1:
-        distances_uobs,uindex,agent_means,t_mean_uobs = plts.AEDs(a_u,b_u)
+        distances_uobs,uindex,agent_means,t_mean_uobs = plts.L2s(a_u,b_u)
     else:
         distances_uobs = []
     matplotlib.use("module://ipykernel.pylab.backend_inline")    
@@ -56,9 +65,9 @@ def l2_parser(instance,prop):
 
 
 
-def grand_AED_matrix(n,prop,n_step):
-    o_AED = np.ones((len(n),len(prop)))*np.nan
-    u_AED = np.ones((len(n),len(prop)))*np.nan
+def grand_L2_matrix(n,prop,n_step):
+    o_L2 = np.ones((len(n),len(prop)))*np.nan
+    u_L2 = np.ones((len(n),len(prop)))*np.nan
     
 
     for i in n:
@@ -68,22 +77,22 @@ def grand_AED_matrix(n,prop,n_step):
             files[j.round(2)] = glob.glob(f"ukf_results/ukf_agents_{i}_prop_{j.round(2)}*")
 
         for _ in files.keys():
-            o_AED2=[]
-            u_AED2 = []
+            o_L2_2=[]
+            u_L2_2 = []
             for file in files[_]:
                 f = open(file,"rb")
                 u = pickle.load(f)
                 f.close()
                 actual,pred,do,du = l2_parser(u,float(_))#
-                o_AED2.append(np.nanmean(do))
-                u_AED2.append(np.nanmean(du))
+                o_L2_2.append(np.nanmean(do))
+                u_L2_2.append(np.nanmean(du))
         
-            o_AED[i_index,int(_*len(prop))-1]=np.nanmean(o_AED2)
-            u_AED[i_index,int(_*len(prop))-1]=np.nanmean(u_AED2)
+            o_L2[i_index,int(_*len(prop))-1]=np.nanmean(o_L2_2)
+            u_L2[i_index,int(_*len(prop))-1]=np.nanmean(u_L2_2)
             
-    return o_AED,u_AED
+    return o_L2,u_L2
 
-def grand_AED_plot(data,n,prop,n_step,p_step,observed,save):
+def grand_L2_plot(data,n,prop,n_step,p_step,observed,save):
 
     
     data = np.rot90(data,k=1) #rotate frame 90 degrees so right way up for plots
@@ -102,7 +111,7 @@ def grand_AED_plot(data,n,prop,n_step,p_step,observed,save):
     ax.set_yticklabels(prop.round(2))
     ax.set_xlabel("Number of Agents")
     ax.set_ylabel("Proportion of Agents Observed")
-    plt.title("Grand AEDs Over Varying Agents and Percentage Observed")
+    plt.title("Grand L2s Over Varying Agents and Percentage Observed")
     b = im.get_extent()
     ax.set_xlim([b[0]-len(n)/40,b[1]+len(n)/40])
     ax.set_ylim([b[2]-len(prop)/40,b[3]+len(prop)/40])
@@ -111,18 +120,18 @@ def grand_AED_plot(data,n,prop,n_step,p_step,observed,save):
     cax = divider.append_axes("right",size="5%",pad=0.05)
     cbar=plt.colorbar(im,cax,cax)
     if observed:
-        cbar.set_label("Observed AEDs")
-        ax.set_title("Observed Agent AEDs")
+        cbar.set_label("Observed L2s")
+        ax.set_title("Observed Agent L2s")
         ax.set_ylabel("Proportion of Agents Observed (x100%)")
         if save:
-            plt.savefig("Observed_Grand_AEDS.pdf")
+            plt.savefig("Observed_Grand_L2s.pdf")
 
     else:
-        cbar.set_label("Unobserved AED")
-        ax.set_title("Unobserved Agent AEDs")
+        cbar.set_label("Unobserved L2")
+        ax.set_title("Unobserved Agent L2s")
         ax.set_ylabel("Proportion of Agents Observed (x100%)")
         if save:
-            plt.savefig("Unobserved_Grand_AEDS.pdf")
+            plt.savefig("Unobserved_Grand_L2s.pdf")
  
 if __name__ == "__main__":
     
@@ -136,8 +145,8 @@ if __name__ == "__main__":
     n= np.arange(n_min,n_max+n_step,n_step)
     prop = np.arange(p_min,p_max+p_step,p_step)
     
-    O,U = grand_AED_matrix(n,prop,n_step)
+    O,U = grand_L2_matrix(n,prop,n_step)
     save=True
-    grand_AED_plot(O,n,prop,n_step,p_step,True,save)
-    grand_AED_plot(U,n,prop,n_step,p_step,False,save)
+    grand_L2_plot(O,n,prop,n_step,p_step,True,save)
+    grand_L2_plot(U,n,prop,n_step,p_step,False,save)
    

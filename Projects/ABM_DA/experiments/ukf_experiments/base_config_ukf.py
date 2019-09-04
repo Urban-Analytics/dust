@@ -462,7 +462,7 @@ class ukf_ss:
 
 #%%
 if __name__ == "__main__":
-    np.random.seed(seed = 8)
+    #np.random.seed(seed = 8)
     """
         width - corridor width
         height - corridor height

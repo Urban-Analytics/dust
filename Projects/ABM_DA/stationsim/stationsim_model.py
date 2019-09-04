@@ -19,6 +19,7 @@ Todo:
 
 import warnings
 import numpy as np
+import os
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -259,6 +260,9 @@ class Model:
 
             'do_history': True,
             'do_print': True,
+
+            'random_seed': int.from_bytes(os.urandom(4), byteorder='little')
+
         }
         if len(kwargs) == 0:
             warnings.warn(
@@ -267,6 +271,8 @@ class Model:
             )
         self.params, self.params_changed = Model._init_kwargs(params, kwargs)
         [setattr(self, key, value) for key, value in self.params.items()]
+        # Set the random seed
+        np.random.seed(self.random_seed)
         # Constants
         self.speed_step = (self.speed_mean - self.speed_min) / self.speed_steps
         self.boundaries = np.array([[0, 0], [self.width, self.height]])
@@ -512,6 +518,14 @@ class Model:
         frames = self.step_id
         ani = FuncAnimation(fig, func, frames, init, interval=100, blit=True)
         return ani
+
+    @classmethod
+    def set_random_seed(cls, seed=None):
+        """Set a new numpy random seed
+        :param seed: the optional seed value (if None then get one from os.urandom)
+        """
+        new_seed = int.from_bytes(os.urandom(4), byteorder='little') if seed == None else seed
+        np.random.seed(new_seed)
 
 if __name__ == '__main__':
     warnings.warn("The stationsim_model.py code should not be run directly. Create a separate script and use that "

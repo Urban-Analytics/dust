@@ -115,6 +115,9 @@ class ParticleFilter(Filter):
         :param particle_std: the particle noise standard deviation
         :param particle_shape: the shape of the particle array
         """
+        # Force the model to re-seed its random number generator (otherwise each child process
+        # has the same generator https://stackoverflow.com/questions/14504866/python-multiprocessing-numpy-random
+        model.set_random_seed()
         for i in range(num_iter):
             model.step()
 

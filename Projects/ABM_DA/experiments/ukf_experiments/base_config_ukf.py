@@ -141,10 +141,10 @@ class ukf:
         #calculate NL projection of sigmas
         sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.P)) #calculate current sigmas using state x and UT element S
         "numpy apply along axis or multiprocessing options"
-        #nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
-        p = multiprocessing.Pool()
-        nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
-        p.close()
+        nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
+        #p = multiprocessing.Pool()
+        #nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
+        #p.close()
         wnl_sigmas = nl_sigmas*self.wm
             
         xhat = np.sum(wnl_sigmas,axis=1)#unscented mean for predicitons

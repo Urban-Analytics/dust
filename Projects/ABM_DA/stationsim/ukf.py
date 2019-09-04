@@ -272,7 +272,7 @@ class ukf_ss:
         self.number_of_iterations = model_params['step_limit']
         self.sample_rate = self.filter_params["sample_rate"]
         #how many agents being observed
-        if self.filter_params["do_restrict"]==True: 
+        if self.filter_params["prop"]<1: 
             self.sample_size= floor(self.pop_total*self.filter_params["prop"])
         else:
             self.sample_size = self.pop_total
@@ -539,7 +539,6 @@ class plots:
                     
         agent_means = np.nanmean(c,axis=0)
         time_means = np.nanmean(c,axis=1)
-        time_means[np.isnan(time_means)]=0
         
         return c,index,agent_means,time_means
         
@@ -589,13 +588,16 @@ class plots:
         
         h = plt.figure(figsize=(12,8))
         time_means[np.isnan(time_means)]=0
-        plt.plot(c_index,time_means,lw=3)
+        plt.plot(c_index,time_means,lw=5,color="k",label="Mean Agent L2")
+        for i in range(c.shape[1]):
+            plt.plot(c_index,c[:,i],linestyle="-.",lw=3)
+            
         plt.axhline(y=0,color="k",ls="--",alpha=0.5)
         plt.xlabel("Time (steps)")
-        plt.ylabel("L2 Over Time")
+        plt.ylabel("L2 Error")
         plt.title(obs_text+" ")
         plt.title(f"{obs_text} L2s Over Time")
-     
+        plt.legend()
         """find agent with highest L2 and plot it.
         mainly done to check something odd isnt happening"""
         
@@ -624,6 +626,7 @@ class plots:
         kdeplot(agent_means,color="red",cut=0,lw=4)
         plt.title(f"{obs_text} Agent L2 Histogram")
   
+
         if save:
             f.savefig(f"{obs_text}_actual.pdf")
             g.savefig(f"{obs_text}_kf.pdf")
@@ -968,7 +971,9 @@ class animations:
         
 #%%
 if __name__ == "__main__":
-    np.random.seed(seed = 8) #hash is not needed. this is a good seed to demonstrate a "stuck" agent
+    #np.random.seed(seed = 8) #hash is not needed. this is a good seed to demonstrate a "stuck" agent
+    # this seed (8) is a good example of an agent getting stuck for 10 agents
+
     """
         width - corridor width
         height - corridor height
@@ -987,7 +992,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 25,
+			'pop_total': 10,
 
 			'width': 200,
 			'height': 100,
@@ -1014,16 +1019,10 @@ if __name__ == "__main__":
     Sensor_Noise - how reliable are measurements H_x. lower value implies more reliable
     Process_Noise - how reliable is prediction fx lower value implies more reliable
     sample_rate - how often to update kalman filter. higher number gives smoother predictions
-    do_restrict - restrict to a proportion prop of the agents being observed
-    do_animate - bools for doing animations of agent/wiggle aggregates
-    do_wiggle_animate
-    do_density_animate
-    do_pair_animate
+
     prop - proportion of agents observed. this is a floor function that rounds the proportion 
         DOWN to the nearest intiger number of agents. 1 is all <1/pop_total is none
     
-    heatmap_rate - after how many updates to record a frame
-    bin_size - square sizes for aggregate plots,
     bring_noise: add noise to true ukf paths
     noise: variance of said noise (0 mean)
     do_batch - do batch processing on some pre-recorded truth data.
@@ -1034,11 +1033,7 @@ if __name__ == "__main__":
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
             'sample_rate': 10,
-            "do_restrict": True, 
-            "do_animate": False,
             "prop": 0.5,
-            "heatmap_rate": 1,
-            "bin_size":10,
             "bring_noise":True,
             "noise":0.5,
             "do_batch":False,

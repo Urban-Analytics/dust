@@ -62,9 +62,9 @@ if __name__ == '__main__':
     #num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
     #num_age = np.arange(5,105,5)
     #props = np.arange(0.1,1.1,0.1)
-    num_age = np.arange(5,55,5) # 5 to 50 by 5
-    props = np.arange(0.2,1.2,0.2) #.2 to 1 by .2
-    run_id = np.arange(0,20,1) #20 runs
+    num_age = [10,20,30]# 5 to 50 by 5
+    props = [0.25,0.5,0.75,1] #.2 to 1 by .2
+    run_id = np.arange(0,30,1) #20 runs
     #noise = [1.0, 2.0]
 
     # List of all particle-agent combinations. ARC task
@@ -106,15 +106,15 @@ if __name__ == '__main__':
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 100,
+            'sample_rate': 5,
             "do_restrict": True, 
             "do_animate": False,
             "prop": param_list[int(sys.argv[1])-1][1],
             "run_id":param_list[int(sys.argv[1])-1][2],
             "heatmap_rate": 1,
             "bin_size":25,
-            "bring_noise":False,
-            "noise":0.25,
+            "bring_noise":True,
+            "noise":0.5,
             "do_batch":False,
             }
     

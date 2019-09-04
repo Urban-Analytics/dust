@@ -21,7 +21,7 @@ change medrclaa to relevant username
 if __name__ == "__main__":
     
     "parameters"
-    n=30
+    n=10
     rates = [1,2,5,10,20,50,100] #.2 to 1 by .2
     noises = [0,0.25,0.5,1,2,5]
     run_id = np.arange(0,30,1) #20 runs

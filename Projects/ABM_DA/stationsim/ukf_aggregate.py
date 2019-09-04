@@ -806,7 +806,7 @@ class agg_plots:
             "plot true agents and dummies for legend"
             ax.scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o",edgecolors="k")
             ax.scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o",edgecolors="k")
-            ax.scatter(-1,-1,color="yellow",label = "UKF",marker="^",edgecolors="k")
+            ax.scatter(-1,-1,color="orangered",label = "UKF",marker="P",edgecolors="k")
 
             markers = ["P","^"]
             colours = ["orangered","yellow"]
@@ -842,7 +842,8 @@ class agg_plots:
 
 #%%
 if __name__ == "__main__":
-    np.random.seed(seed = 8) #seeded example hash if want random
+    #np.random.seed(seed = 8) #seeded example hash if want random
+    # this seed (8) is a good example of an agent getting stuck for 10 agents
     """
         width - corridor width
         height - corridor height
@@ -861,7 +862,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 25,
+			'pop_total': 10,
 
 			'width': 200,
 			'height': 100,
@@ -896,7 +897,6 @@ if __name__ == "__main__":
     prop - proportion of agents observed. this is a floor function that rounds the proportion 
         DOWN to the nearest intiger number of agents. 1 is all <1/pop_total is none
     
-    heatmap_rate - after how many updates to record a frame
     bin_size - square sizes for aggregate plots,
     do_batch - do batch processing on some pre-recorded truth data.
     bring_noise - add noise to measurements?
@@ -907,14 +907,13 @@ if __name__ == "__main__":
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 100,
+            'sample_rate': 10,
             "do_restrict": True, 
             "do_animate": False,
             "do_wiggle_animate": False,
             "do_density_animate":True,
             "do_pair_animate":False,
             "prop": 1,
-            "heatmap_rate": 1,
             "bin_size":25,
             "bring_noise":True,
             "noise":0.5,

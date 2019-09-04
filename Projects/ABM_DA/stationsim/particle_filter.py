@@ -57,6 +57,9 @@ class ParticleFilter(Filter):
         # Pool object needed for multiprocessing
         if numcores == None:
             numcores = multiprocessing.cpu_count()
+        ## We get problems when there are more processes than particles (larger particle variance for some reason)
+        #if numcores > self.number_of_particles:
+        #    numcores = self.number_of_particles
         self.pool = multiprocessing.Pool(processes=numcores)
         if self.do_save or self.p_save:
             self.active_agents = []

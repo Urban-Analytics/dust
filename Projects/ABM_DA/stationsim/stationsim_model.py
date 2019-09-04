@@ -409,14 +409,19 @@ class Model:
             }
         return analytics
 
-    def get_trails(self):
+    def get_trails(self, plot_axis=False, plot_legend=True):
         fig = plt.figure(figsize=self._figsize, dpi=self._dpi)
         plt.axis(np.ravel(self.boundaries, 'f'))
-        plt.axis('off')
+        if not plot_axis:
+            plt.axis('off')
+        else:
+            plt.ylabel("Y position")
+            plt.xlabel("X position")
         plt.plot([], 'b')
         plt.plot([], 'g')
         plt.title('Agent Trails')
-        plt.legend(['Active', 'Finished'])
+        if plot_legend:
+            plt.legend(['Active', 'Finished'])
         plt.tight_layout(pad=0)
         for agent in self.agents:
             if agent.status == 1:
@@ -475,7 +480,7 @@ class Model:
         """For making a map of collisions and wiggles. Just calls get_wiggle_map()"""
         self.get_wiggle_map(*args, **kwargs)
 
-    def get_location_map(self, do_kdeplot=True, title="Location Map"):
+    def get_location_map(self, do_kdeplot=True, title="Location Map", color_bar = False, plot_axis=False):
         """
         Create a density plot of the agents' locations
 
@@ -491,9 +496,12 @@ class Model:
         history_locs = np.array(history_locs).T
         fig, ax = plt.subplots(1, figsize=self._figsize, dpi=self._dpi)
         fig.tight_layout(pad=0)
-        self._heightmap(history_locs, ax=ax, kdeplot=do_kdeplot, cmap='gray_r')
-        ax.set(frame_on=False, aspect='equal', xlim=self.boundaries[:,0], xticks=[],
+        self._heightmap(data=history_locs, ax=ax, kdeplot=do_kdeplot, cmap='gray_r', cbar=color_bar)
+        ax.set(frame_on=plot_axis, aspect='equal', xlim=self.boundaries[:,0], xticks=[],
                ylim=self.boundaries[:,1], yticks=[], title=title)
+        if plot_axis:
+            ax.set_ylabel("Y position")
+            ax.set_xlabel("X position")
         return fig
 
     def get_ani(self, agents=None, colour='k', alpha=.5, show_separation=False, wiggle_map=False):

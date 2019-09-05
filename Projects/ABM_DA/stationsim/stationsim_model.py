@@ -23,7 +23,11 @@ import os
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from seaborn import kdeplot as sns_kdeplot
+# Dont automatically load seaborn as it isn't needed on the HPC
+try: 
+    from seaborn import kdeplot as sns_kdeplot
+except ImportError as e:
+    warnings.warn("The seaborn module is not available. If you try to create kde plots for this model (i.e. a wiggle map or density map) then it will fail.")
 
 
 class Agent:
@@ -455,6 +459,7 @@ class Model:
     @staticmethod
     def _heightmap(data, ax=None, kdeplot=True, cmap=None, alpha=.7, cbar=False):
         if kdeplot:
+            from seaborn import kdeplot as sns_kdeplot
             sns_kdeplot(*data, ax=ax, cmap=cmap, alpha=alpha, shade=True, shade_lowest=False, cbar=cbar)
         else:
             hdata, binx, biny = np.histogram2d(*data, (20, 10))

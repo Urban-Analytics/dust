@@ -7,5 +7,5 @@
 for i in {1..272}
 do
  printf " \n\n ********************* \n\n  *** EXPERIMENT $i *** \n\n ********************* \n\n"
- python3 ../../stationsim/particle_filter.py $i
+ python3 ./run_pf.py $i
 done 

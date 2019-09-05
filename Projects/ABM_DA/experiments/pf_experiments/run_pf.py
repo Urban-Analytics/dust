@@ -123,9 +123,7 @@ if __name__ == '__main__':
                 for before in [0, 1]:
                     f.write(str(result[before])[1:-1].replace(" ", "") + "," + str(before) + "\n")  # (slice to get rid of the brackets aruond the tuple)
 
-        print("Run: {}, particles: {}, agents: {}, took: {}(s), result: {}".format(
-            i, filter_params['number_of_particles'], model_params['pop_total'], round(time.time() - start_time),
-            result), flush=True)
+        print("Run: {}, particles: {}, agents: {}, took: {}(s), result: {}".format(i, filter_params['number_of_particles'], model_params['pop_total'], round(time.time() - start_time), result), flush=True)
 
     print("Finished single run")
 

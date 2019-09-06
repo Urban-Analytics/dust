@@ -30,8 +30,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Lists of particles, agent numbers, and particle noise levels
-    num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
-    num_age = [2, 5, 10, 15, 20, 30, 40, 50]
+    num_par = list([1, 10, 50, 100, 500, 1000, 2000, 3000, 5000, 7500, 10000])
+    num_age = [2, 10, 20, 30, 40, 50]
     noise = [1.0, 2.0]
 
     # List of all particle-agent combinations. ARC task

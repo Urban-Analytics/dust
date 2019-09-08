@@ -29,6 +29,6 @@
 #$ -pe smp 5
 # Tell computer this is an array job with tasks from 1 to N
 # This number is determined by the length of the param_list list. 
-#$ -t 1-272
+#$ -t 1-132
 #Run the executable pf.py
 python3 ./run_pf.py $SGE_TASK_ID

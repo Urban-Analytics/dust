@@ -287,7 +287,7 @@ class ukf_ss:
         self.ukf_preds=[]
         self.ukf_histories = [] #actual assimilated ukf value
         self.full_Ps=[]
-
+        self.truths = []
     
         self.time1 =  datetime.datetime.now()#timer
         self.time2 = None
@@ -381,8 +381,6 @@ class ukf_ss:
             -agents trajectories and UKF predictions of said trajectories
         """
         
-        #seeding if  wanted else hash it
-
         self.init_ukf(self.ukf_params) 
         for _ in range(self.number_of_iterations-1):
 
@@ -394,21 +392,22 @@ class ukf_ss:
             
             self.ukf.predict() #predict where agents will jump
             self.base_model.step() #jump stationsim agents forwards
+            self.truths.append(self.base_model.get_state(sensor="location"))
             
-            "apply noise to active agents"
-            if self.filter_params["bring_noise"]:
-                noise_array=np.ones(self.pop_total*2)
-                noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
-                noise_array*=np.random.normal(0,self.filter_params["noise"],self.pop_total*2)
-                state = self.base_model.get_state(sensor="location") #observed agents states
-                state+=noise_array
-                self.base_model.set_state(state=state,sensor="location")
+
                 
             "DA update step and data logging"
             "data logged for full preds and only assimilated preds (just predict step or predict and update)"
             if _%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
                 
                 state = self.base_model.get_state(sensor="location") #observed agents states
+                "apply noise to active agents"
+                if self.filter_params["bring_noise"]:
+                    noise_array=np.ones(self.pop_total*2)
+                    noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
+                    noise_array*=np.random.normal(0,self.filter_params["noise"],self.pop_total*2)
+                    state+=noise_array
+                    
                 self.ukf.update(z=state[self.index2]) #update UKF
                 
                 self.ukf_histories.append(self.ukf.x) #append histories
@@ -444,6 +443,9 @@ class ukf_ss:
         out:
             a - actual agents positions
             b - ukf predictions of said agent positions
+            c - if sampling rate >1 fills inbetween predictions with pure stationsim prediciton
+                this is solely for smoother animations later
+            d- true agent positions
         """
         sample_rate = self.sample_rate
 
@@ -457,7 +459,7 @@ class ukf_ss:
         
         a= np.zeros((max_iter,self.pop_total*2))*np.nan
         b= np.zeros((max_iter,b2.shape[1]))*np.nan
-
+        d = a.copy()
   
         for i in range(int(a.shape[1]/2)):
             a3 = np.vstack(list(a2.values())[i])
@@ -469,18 +471,21 @@ class ukf_ss:
         
         for j in range(int(b.shape[0]//sample_rate)):
             b[j*sample_rate,:] = b2[j,:]
-          
+         
+        d = np.vstack(self.truths)
+
         if sample_rate>1:
             c= np.vstack(self.ukf_preds)
 
-    
+        
             
             "all agent observations"
         
-            return a,b,c
+            return a,b,c,d
         else:
-            return a,b
+            return a,b,d
 
+#%%
 class plots:
     """
     class for all plots using in UKF
@@ -619,7 +624,7 @@ class plots:
         plt.title(f"{obs_text} Worst Agent")
 
         j = plt.figure(figsize=(12,8))
-        plt.hist(agent_means,density=True,bins = int(max(agent_means)))
+        plt.hist(agent_means,density=True,bins = self.filter_class.model_params["pop_total"])
         plt.xlabel("Agent L2")
         plt.ylabel("Density ([0,1])")
         plt.title(obs_text+" Histogram of agent L2s")
@@ -1062,9 +1067,9 @@ if __name__ == "__main__":
     u = ukf_ss(model_params,filter_params,ukf_params,base_model)
     u.main()
     if filter_params["sample_rate"]>1:
-        actual,preds,full_preds= u.data_parser(True)
-    else:
-        actual,preds,full_preds= u.data_parser(True)
+        print("partial observations. using interpolated predictions (full_preds) for animations.")
+        print("ONLY USE preds FOR ANY ERROR METRICS")
+    actual,preds,full_preds,truth= u.data_parser(True)
 
     actual = actual[1:,:] #cut off wierd n/a start from StationSim
     """plots"""
@@ -1073,8 +1078,8 @@ if __name__ == "__main__":
 
     plot_save=False
     if filter_params["prop"]<1:
-        distances,t_mean = plts.diagnostic_plots(actual,preds,False,plot_save)
-    distances2,t_mean2 = plts.diagnostic_plots(actual,preds,True,plot_save)
+        distances,t_mean = plts.diagnostic_plots(truth,preds,False,plot_save)
+    distances2,t_mean2 = plts.diagnostic_plots(truth,preds,True,plot_save)
     
     
     if filter_params["sample_rate"]==1:

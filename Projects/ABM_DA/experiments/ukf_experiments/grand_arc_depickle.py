@@ -135,11 +135,11 @@ def grand_L2_plot(data,n,prop,n_step,p_step,observed,save):
  
 if __name__ == "__main__":
     
-    n_step=5
+    n_step=10
     n_min = 10
-    n_max = 50
-    p_step=0.2
-    p_min = 0.2
+    n_max = 30
+    p_step=0.25
+    p_min = 0.25
     p_max = 1.0
     
     n= np.arange(n_min,n_max+n_step,n_step)

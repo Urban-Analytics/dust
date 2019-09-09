@@ -7,6 +7,9 @@ the average error and uncertainty of the UKF over time.
 If the population is fully observed (as always with the aggregate case)
 then only one plot is produced. 
 Otherwise both observed and unobserved plots are produced.
+
+download all class instances from arc
+scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/ukf* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
 """
 
 import pickle
@@ -103,7 +106,7 @@ def grand_mean_plot(data,f_name,instance,save):
 if __name__ == "__main__":
     "parameters for which number of agents and proportion observed to plot for"
     n=10
-    prop = 0.6
+    prop = 0.25
     actuals = []
     preds = []
     d_obs = []
@@ -146,8 +149,8 @@ if __name__ == "__main__":
         
         "all observed just one plot"
         distances2,t_mean2 = plts.diagnostic_plots(actual,pred,True,save_plots)
-        #plts.pair_frames(actual,full_preds)
-        #plts.pair_frames_stack_ellipse(actual,full_preds)
+        #plts.pair_frames(actual,full_preds) #basic animation
+        #plts.pair_frames_stack_ellipse(actual,full_preds) #covariance and l2 trajectories. TAKES FOREVER
 
 
 

@@ -33,7 +33,7 @@ scp username@leeds.ac.uk:source_in_arc/* destination_in_linux/.
 e.g.
 
 from linux terminal 
-scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
+scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agents* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
 """
 
 
@@ -162,9 +162,9 @@ if __name__ == '__main__':
     true,actual,preds,histories= u.data_parser(True)
     plts=plots(u)
     errors = {}
-    errors["actual"] = plts.AEDs(true,actual)
-    errors["preds"] = plts.AEDs(true[1:,:],preds)
-    errors["ukf"] = plts.AEDs(true[1:,:],histories)
+    errors["actual"] = plts.L2s(true,actual)
+    errors["preds"] = plts.L2s(true[1:,:],preds)
+    errors["ukf"] = plts.L2s(true[1:,:],histories)
     
     means = []
     for key in errors.keys():

@@ -41,8 +41,6 @@ from shapely.geometry import Polygon,MultiPoint
 from shapely.prepared import prep
 import geopandas as gpd
 
-#for dark plots. purely an aesthetic choice.
-#plt.style.use("dark_background")
 
 """
 suppress repeat printing in F_x from new stationsim
@@ -136,10 +134,10 @@ class agg_ukf:
         #calculate NL projection of sigmas
         sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.P)) #calculate current sigmas using state x and UT element S
         "numpy apply along axis or multiprocessing options"
-        #nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
-        p = multiprocessing.Pool()
-        nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
-        p.close()
+        nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
+        #p = multiprocessing.Pool()
+        #nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
+        #p.close()
         wnl_sigmas = nl_sigmas*self.wm
             
         xhat = np.sum(wnl_sigmas,axis=1)#unscented mean for predicitons
@@ -762,12 +760,12 @@ class agg_plots:
         
         animations.animate(self,"output_heatmap",f"heatmap_{filter_class.pop_total}_")
         
-    def AEDs(self,a,b):
+    def L2s(self,a,b):
         """
-        AED (average euclidean distance) error metric. 
-        finds mean average euclidean error at each time step and per each agent
+        L2 distance error metric. 
+        finds mean L2 (euclidean) distance at each time step and per each agent
         provides whole array of distances per agent and time
-        and AEDs per agent and time. 
+        and L2s per agent and time. 
         """
         c = np.ones((a.shape[0],int(a.shape[1]/2)))*np.nan
         
@@ -788,10 +786,64 @@ class agg_plots:
         time_means = np.nanmean(c,axis=1)
         return c,agent_means,time_means
 
+    def pair_frames(self,a,b):
+        "pairwise animation"
+        filter_class = self.filter_class
+        width = filter_class.model_params["width"]
+        height = filter_class.model_params["height"]
+        a_u,b_u,plot_range = self.plot_data_parser(a,b,False)
+        a_o,b_o,plot_range = self.plot_data_parser(a,b,True)
+        
+        os.mkdir("output_pairs")
+        for i in range(a.shape[0]):
+            a_s = [a_o[i,:],a_u[i,:]]
+            b_s = [b_o[i,:], b_u[i,:]]
+            f = plt.figure(figsize=(12,8))
+            ax = plt.subplot(111)
+            plt.xlim([0,width])
+            plt.ylim([0,height])
+            
+            "plot true agents and dummies for legend"
+            ax.scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o",edgecolors="k")
+            ax.scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o",edgecolors="k")
+            ax.scatter(-1,-1,color="orangered",label = "UKF",marker="P",edgecolors="k")
+
+            markers = ["P","^"]
+            colours = ["orangered","yellow"]
+            for j in range(len(a_s)):
+
+                a1 = a_s[j]
+                b1 = b_s[j]
+                if np.abs(np.nansum(a1-b1))>1e-4: #check for perfect conditions (initial)
+                    for k in range(int(a1.shape[0]/2)):
+                        a2 = a1[(2*k):(2*k)+2]
+                        b2 = b1[(2*k):(2*k)+2]          
+                        if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
+                            x = [a2[0],b2[0]]
+                            y = [a2[1],b2[1]]
+                            ax.plot(x,y,color="k")
+                            ax.scatter(b2[0],b2[1],color=colours[j],marker = markers[j],edgecolors="k")
+            
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                             box.width, box.height * 0.9])
+            
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18),
+                      ncol=2)
+            plt.xlabel("corridor width")
+            plt.ylabel("corridor height")
+            plt.title("True Positions vs UKF Predictions")
+            number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
+            file = f"output_pairs/pairs{number}"
+            f.savefig(file)
+            plt.close()
+        
+        animations.animate(self,"output_pairs",f"aggregate_pairwise_{self.filter_class.pop_total}")
 
 #%%
 if __name__ == "__main__":
-    np.random.seed(seed = 8)
+    #np.random.seed(seed = 8) #seeded example hash if want random
+    # this seed (8) is a good example of an agent getting stuck for 10 agents
     """
         width - corridor width
         height - corridor height
@@ -810,7 +862,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 25,
+			'pop_total': 10,
 
 			'width': 200,
 			'height': 100,
@@ -845,7 +897,6 @@ if __name__ == "__main__":
     prop - proportion of agents observed. this is a floor function that rounds the proportion 
         DOWN to the nearest intiger number of agents. 1 is all <1/pop_total is none
     
-    heatmap_rate - after how many updates to record a frame
     bin_size - square sizes for aggregate plots,
     do_batch - do batch processing on some pre-recorded truth data.
     bring_noise - add noise to measurements?
@@ -856,14 +907,13 @@ if __name__ == "__main__":
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 100,
+            'sample_rate': 10,
             "do_restrict": True, 
             "do_animate": False,
             "do_wiggle_animate": False,
             "do_density_animate":True,
             "do_pair_animate":False,
             "prop": 1,
-            "heatmap_rate": 1,
             "bin_size":25,
             "bring_noise":True,
             "noise":0.5,
@@ -905,5 +955,4 @@ if __name__ == "__main__":
     
     agg_plts.pair_frames(actual,full_preds)
     agg_plts.heatmap(actual,poly_list)
-    plts.trajectories(actual)
     

@@ -14,7 +14,7 @@ The code that actually does the filtering is in the [`stationsim`](../../station
 
 ## Results
 
-The pickled class instances for each experiment will end up in the [`ukf_results`](./results) folder. The script to read all the results is [`arc_depickle_test.py`] which depickles the classes and plots various metrics. 
+The pickled class instances for each experiment will end up in the [`ukf_results`](./results) folder. The script to read all the results is [`arc_depickle.py`] which depickles the classes and plots various metrics. 
 
 ## Usage Guide
 

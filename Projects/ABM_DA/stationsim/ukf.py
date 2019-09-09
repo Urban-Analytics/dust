@@ -40,24 +40,26 @@ import imageio
 from scipy.stats import norm
 from shutil import rmtree
 from filterpy.stats import covariance_ellipse #needed solely for pairwise_frames_stack_ellipse for covariance ellipse plotting
+
+plt.rcParams.update({'font.size':20})
+
 """
-As of 3.6 only imageio (and ffmpeg dependency) and scipy.spatial are additional installs
+As of 01/09/19 only dependencies are
 pip install imageio
 pip install ffmpeg
 pip install scipy
+pip install filterpy
 
-
-suppress repeat printing in F_x from new stationsim
+note:
+now suppressing repeat printing of iterations in F_x from new stationsim
 E.g. 
 with HiddenPrints():
     everything done here prints nothing
 
 everything here prints again
+
 https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
 """
-
-"for dark plots. purely an aesthetic choice. plt.style.available() for other styles"
-#plt.style.use("dark_background")
 
 #%%
 class HiddenPrints:
@@ -146,10 +148,10 @@ class ukf:
         #calculate NL projection of sigmas
         sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.P)) #calculate current sigmas using state x and UT element S
         "numpy apply along axis or multiprocessing options"
-        #nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
-        p = multiprocessing.Pool()
-        nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
-        p.close()
+        nl_sigmas = np.apply_along_axis(self.fx,0,sigmas)
+        #p = multiprocessing.Pool()
+        #nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
+        #p.close()
         wnl_sigmas = nl_sigmas*self.wm
             
         xhat = np.sum(wnl_sigmas,axis=1)#unscented mean for predicitons
@@ -190,10 +192,10 @@ class ukf:
         posterior sigmas using above unscented interim estimates for x and P
         """
         sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.P)) #update using Sxx and unscented mean
-        nl_sigmas = np.apply_along_axis(self.hx,0,sigmas)
-        #p = multiprocessing.Pool()
-        #nl_sigmas = np.vstack(p.map(self.hx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
-        #p.close()
+        #nl_sigmas = np.apply_along_axis(self.hx,0,sigmas)
+        p = multiprocessing.Pool()
+        nl_sigmas = np.vstack(p.map(self.hx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
+        p.close()
         wnl_sigmas = nl_sigmas*self.wm
 
         """
@@ -270,7 +272,7 @@ class ukf_ss:
         self.number_of_iterations = model_params['step_limit']
         self.sample_rate = self.filter_params["sample_rate"]
         #how many agents being observed
-        if self.filter_params["do_restrict"]==True: 
+        if self.filter_params["prop"]<1: 
             self.sample_size= floor(self.pop_total*self.filter_params["prop"])
         else:
             self.sample_size = self.pop_total
@@ -285,7 +287,7 @@ class ukf_ss:
         self.ukf_preds=[]
         self.ukf_histories = [] #actual assimilated ukf value
         self.full_Ps=[]
-
+        self.truths = []
     
         self.time1 =  datetime.datetime.now()#timer
         self.time2 = None
@@ -379,8 +381,6 @@ class ukf_ss:
             -agents trajectories and UKF predictions of said trajectories
         """
         
-        #seeding if  wanted else hash it
-
         self.init_ukf(self.ukf_params) 
         for _ in range(self.number_of_iterations-1):
 
@@ -392,21 +392,22 @@ class ukf_ss:
             
             self.ukf.predict() #predict where agents will jump
             self.base_model.step() #jump stationsim agents forwards
+            self.truths.append(self.base_model.get_state(sensor="location"))
             
-            "apply noise to active agents"
-            if self.filter_params["bring_noise"]:
-                noise_array=np.ones(self.pop_total*2)
-                noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
-                noise_array*=np.random.normal(0,self.filter_params["noise"],self.pop_total*2)
-                state = self.base_model.get_state(sensor="location") #observed agents states
-                state+=noise_array
-                self.base_model.set_state(state=state,sensor="location")
+
                 
             "DA update step and data logging"
             "data logged for full preds and only assimilated preds (just predict step or predict and update)"
             if _%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
                 
                 state = self.base_model.get_state(sensor="location") #observed agents states
+                "apply noise to active agents"
+                if self.filter_params["bring_noise"]:
+                    noise_array=np.ones(self.pop_total*2)
+                    noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
+                    noise_array*=np.random.normal(0,self.filter_params["noise"],self.pop_total*2)
+                    state+=noise_array
+                    
                 self.ukf.update(z=state[self.index2]) #update UKF
                 
                 self.ukf_histories.append(self.ukf.x) #append histories
@@ -442,6 +443,9 @@ class ukf_ss:
         out:
             a - actual agents positions
             b - ukf predictions of said agent positions
+            c - if sampling rate >1 fills inbetween predictions with pure stationsim prediciton
+                this is solely for smoother animations later
+            d- true agent positions
         """
         sample_rate = self.sample_rate
 
@@ -455,7 +459,7 @@ class ukf_ss:
         
         a= np.zeros((max_iter,self.pop_total*2))*np.nan
         b= np.zeros((max_iter,b2.shape[1]))*np.nan
-
+        d = a.copy()
   
         for i in range(int(a.shape[1]/2)):
             a3 = np.vstack(list(a2.values())[i])
@@ -467,18 +471,21 @@ class ukf_ss:
         
         for j in range(int(b.shape[0]//sample_rate)):
             b[j*sample_rate,:] = b2[j,:]
-          
+         
+        d = np.vstack(self.truths)
+
         if sample_rate>1:
             c= np.vstack(self.ukf_preds)
 
-    
+        
             
             "all agent observations"
         
-            return a,b,c
+            return a,b,c,d
         else:
-            return a,b
+            return a,b,d
 
+#%%
 class plots:
     """
     class for all plots using in UKF
@@ -515,12 +522,12 @@ class plots:
         return a,b,plot_range
 
         
-    def AEDs(self,a,b):
+    def L2s(self,a,b):
         """
-        AED (average euclidean distance) error metric. 
-        finds mean average euclidean error at each time step and per each agent
+        L2 distance error metric. 
+        finds mean L2 (euclidean) distance at each time step and per each agent
         provides whole array of distances per agent and time
-        and AEDs per agent and time. 
+        and L2s per agent and time. 
         """
         sample_rate =self.filter_class.filter_params["sample_rate"]
         c = np.ones(((a.shape[0]//sample_rate),int(a.shape[1]/2)))*np.nan
@@ -533,11 +540,10 @@ class plots:
                 a2 = np.array([a[sample_rate*i,0::2],a[sample_rate*i,1::2]]).T
                 b2 = np.array([b[sample_rate*i,0::2],b[sample_rate*i,1::2]]).T
                 res = a2-b2
-                c[i,:]=np.apply_along_axis(np.linalg.norm,1,res)
+                c[i,:]=np.apply_along_axis(np.linalg.norm,1,res) # take L2 norm of rows to output vector of scalars
                     
         agent_means = np.nanmean(c,axis=0)
         time_means = np.nanmean(c,axis=1)
-        time_means[np.isnan(time_means)]=0
         
         return c,index,agent_means,time_means
         
@@ -582,22 +588,22 @@ class plots:
             plt.ylabel("Corridor Height")
             plt.title(f"{obs_text} KF Predictions")
             
-        """
-        AED metric. 
-        finds mean average euclidean error at each time step and per each agent
-        """
-        c,c_index,agent_means,time_means = self.AEDs(a,b)
+      
+        c,c_index,agent_means,time_means = self.L2s(a,b)
         
         h = plt.figure(figsize=(12,8))
         time_means[np.isnan(time_means)]=0
-        plt.plot(c_index,time_means,lw=3)
+        plt.plot(c_index,time_means,lw=5,color="k",label="Mean Agent L2")
+        for i in range(c.shape[1]):
+            plt.plot(c_index,c[:,i],linestyle="-.",lw=3)
+            
         plt.axhline(y=0,color="k",ls="--",alpha=0.5)
         plt.xlabel("Time (steps)")
-        plt.ylabel("AED Over Time")
+        plt.ylabel("L2 Error")
         plt.title(obs_text+" ")
-        plt.title(f"{obs_text} AEDs Over Time")
-     
-        """find agent with highest AED and plot it.
+        plt.title(f"{obs_text} L2s Over Time")
+        plt.legend()
+        """find agent with highest L2 and plot it.
         mainly done to check something odd isnt happening"""
         
         index = np.where(agent_means == np.nanmax(agent_means))[0][0]
@@ -618,17 +624,18 @@ class plots:
         plt.title(f"{obs_text} Worst Agent")
 
         j = plt.figure(figsize=(12,8))
-        plt.hist(agent_means,density=True,bins = int(max(agent_means)))
-        plt.xlabel("Agent AED")
+        plt.hist(agent_means,density=True,bins = self.filter_class.model_params["pop_total"])
+        plt.xlabel("Agent L2")
         plt.ylabel("Density ([0,1])")
-        plt.title(obs_text+" Histogram of agent AEDs")
+        plt.title(obs_text+" Histogram of agent L2s")
         kdeplot(agent_means,color="red",cut=0,lw=4)
-        plt.title(f"{obs_text} Agent AED Histogram")
+        plt.title(f"{obs_text} Agent L2 Histogram")
   
+
         if save:
             f.savefig(f"{obs_text}_actual.pdf")
             g.savefig(f"{obs_text}_kf.pdf")
-            h.savefig(f"{obs_text}_aed.pdf")
+            h.savefig(f"{obs_text}_l2.pdf")
             i.savefig(f"{obs_text}_worst.pdf")
             j.savefig(f"{obs_text}_agent_hist.pdf")
             
@@ -698,8 +705,8 @@ class plots:
         height = filter_class.model_params["height"]
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
-        c,c_index,agent_means,time_means = self.AEDs(a_o,b_o) #mses
-        c2,c_index2,agent_means2,time_means2 = self.AEDs(a_u,b_u) #mses
+        c,c_index,agent_means,time_means = self.L2s(a_o,b_o) #mses
+        c2,c_index2,agent_means2,time_means2 = self.L2s(a_u,b_u) #mses
         time_means[np.isnan(time_means)]=0
         time_means2[np.isnan(time_means)]=0
         
@@ -752,9 +759,9 @@ class plots:
                       ncol=3,prop={'size':7})
             axes[0].set_xlabel("corridor width")
             axes[0].set_ylabel("corridor height")
-            axes[1].set_ylabel("Observed AED")
+            axes[1].set_ylabel("Observed L2")
             axes[1].set_xlabel("Time (steps)")
-            axes[2].set_ylabel("Unobserved AED")
+            axes[2].set_ylabel("Unobserved L2")
             axes[2].set_xlabel("Time (steps)")
             #axes[0].title("True Positions vs UKF Predictions")
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
@@ -768,7 +775,7 @@ class plots:
         animations.animate(self,"output_pairs",f"pairwise_gif_{self.filter_class.pop_total}")
         
     def pair_frames_stack_ellipse(self,a,b):
-        "pairwise,AEDs and covariances. This takes FOREVER to render so I made it seperate"
+        "pairwise,L2s and covariances. This takes FOREVER to render so I made it seperate"
         "paired side by side preds/truth"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
@@ -776,8 +783,8 @@ class plots:
         sample_rate=self.filter_class.filter_params["sample_rate"]
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)#obs
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)#uobs
-        c,c_index,agent_means,time_means = self.AEDs(a_o,b_o) #obs AEDs
-        c2,c_index2,agent_means2,time_means2 = self.AEDs(a_u,b_u) #uobs AEDs
+        c,c_index,agent_means,time_means = self.L2s(a_o,b_o) #obs L2s
+        c2,c_index2,agent_means2,time_means2 = self.L2s(a_u,b_u) #uobs L2s
         time_means[np.isnan(time_means)]=0
         time_means2[np.isnan(time_means)]=0
 
@@ -830,13 +837,13 @@ class plots:
             axes[2].plot(c_index2[:(1+i//sample_rate)],time_means2[:(1+i//sample_rate)],label="unobserved")
             axes[2].set_xlim([0,a.shape[0]])
             axes[2].set_ylim([0,np.nanmax(time_means2)*1.05])  
-            axes[2].set_ylabel("Unobserved AED")
+            axes[2].set_ylabel("Unobserved L2")
             axes[2].set_xlabel("Time (steps)")
 
 
             axes[1].set_xlim([0,a_u.shape[0]])
             axes[1].set_ylim([0,np.nanmax(time_means)*1.05])
-            axes[1].set_ylabel("Observed AED")
+            axes[1].set_ylabel("Observed L2")
             axes[1].set_xlabel("Time (steps)")
             axes[1].plot(c_index[:(1+i//sample_rate)],time_means[:(1+i//sample_rate)],label="observed")
             
@@ -969,7 +976,9 @@ class animations:
         
 #%%
 if __name__ == "__main__":
-    np.random.seed(seed = 8) #hash is not needed. this is a good seed to demonstrate a "stuck" agent
+    #np.random.seed(seed = 8) #hash is not needed. this is a good seed to demonstrate a "stuck" agent
+    # this seed (8) is a good example of an agent getting stuck for 10 agents
+
     """
         width - corridor width
         height - corridor height
@@ -988,7 +997,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 25,
+			'pop_total': 10,
 
 			'width': 200,
 			'height': 100,
@@ -1015,16 +1024,10 @@ if __name__ == "__main__":
     Sensor_Noise - how reliable are measurements H_x. lower value implies more reliable
     Process_Noise - how reliable is prediction fx lower value implies more reliable
     sample_rate - how often to update kalman filter. higher number gives smoother predictions
-    do_restrict - restrict to a proportion prop of the agents being observed
-    do_animate - bools for doing animations of agent/wiggle aggregates
-    do_wiggle_animate
-    do_density_animate
-    do_pair_animate
+
     prop - proportion of agents observed. this is a floor function that rounds the proportion 
         DOWN to the nearest intiger number of agents. 1 is all <1/pop_total is none
     
-    heatmap_rate - after how many updates to record a frame
-    bin_size - square sizes for aggregate plots,
     bring_noise: add noise to true ukf paths
     noise: variance of said noise (0 mean)
     do_batch - do batch processing on some pre-recorded truth data.
@@ -1035,11 +1038,7 @@ if __name__ == "__main__":
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
             'sample_rate': 10,
-            "do_restrict": True, 
-            "do_animate": False,
             "prop": 0.5,
-            "heatmap_rate": 1,
-            "bin_size":10,
             "bring_noise":True,
             "noise":0.5,
             "do_batch":False,
@@ -1068,9 +1067,9 @@ if __name__ == "__main__":
     u = ukf_ss(model_params,filter_params,ukf_params,base_model)
     u.main()
     if filter_params["sample_rate"]>1:
-        actual,preds,full_preds= u.data_parser(True)
-    else:
-        actual,preds,full_preds= u.data_parser(True)
+        print("partial observations. using interpolated predictions (full_preds) for animations.")
+        print("ONLY USE preds FOR ANY ERROR METRICS")
+    actual,preds,full_preds,truth= u.data_parser(True)
 
     actual = actual[1:,:] #cut off wierd n/a start from StationSim
     """plots"""
@@ -1079,8 +1078,8 @@ if __name__ == "__main__":
 
     plot_save=False
     if filter_params["prop"]<1:
-        distances,t_mean = plts.diagnostic_plots(actual,preds,False,plot_save)
-    distances2,t_mean2 = plts.diagnostic_plots(actual,preds,True,plot_save)
+        distances,t_mean = plts.diagnostic_plots(truth,preds,False,plot_save)
+    distances2,t_mean2 = plts.diagnostic_plots(truth,preds,True,plot_save)
     
     
     if filter_params["sample_rate"]==1:

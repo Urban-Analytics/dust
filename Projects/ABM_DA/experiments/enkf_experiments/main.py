@@ -431,14 +431,56 @@ def process_batch():
                'obsevation': observation}
 
         output.append(row)
-    
+ 
     data = pd.DataFrame(output)
-    print(data['assimilation_period'].unique())
-    print(data['ensemble_size'].unique())
-    print(data['population_size'].unique())
-    print(data['std'].unique())
+    make_all_heatmaps(data)
 
-    print(data.head())
+
+def make_all_heatmaps(data):
+    plot_heatmap(data, 'assimilation_period', 'ensemble_size')
+    plot_heatmap(data, 'assimilation_period', 'population_size')
+    plot_heatmap(data, 'assimilation_period', 'std')
+    plot_heatmap(data, 'ensemble_size', 'population_size')
+    plot_heatmap(data, 'ensemble_size', 'std')
+    plot_heatmap(data, 'population_size', 'std')
+
+def plot_heatmap(data, var1, var2):
+    d = extract_array(data, var1, var2)
+    plt.pcolormesh(d)
+    plt.xticks(np.arange(0.5, len(d.columns), 1), d.columns)
+    plt.yticks(np.arange(0.5, len(d.index), 1), d.index)
+    plt.xlabel(var1)
+    plt.ylabel(var2)
+    plt.colorbar()
+    plt.show()
+
+def extract_array(df, var1, var2):
+    # Define variables to fix and filter
+    fixed_values = {'assimilation_period': 10,
+                    'ensemble_size': 10,
+                    'population_size': 15,
+                    'std': 1}
+
+    var1_vals = sorted(df[var1].unique())
+    var2_vals = sorted(df[var2].unique())
+    fix_vars = [x for x in fixed_values.keys() if x not in [var1, var2]]
+
+    # Filtering down to specific fixed values
+    cond1 = df[fix_vars[0]] == fixed_values[fix_vars[0]]
+    cond2 = df[fix_vars[1]] == fixed_values[fix_vars[1]]
+    tdf = df[cond1 & cond2]
+
+    # Reformat to array
+    a = np.zeros(shape=(len(var1_vals), len(var2_vals)))
+    for i, u in enumerate(var1_vals):
+        for j, v in enumerate(var2_vals):
+            var1_cond = tdf[var1]==u
+            var2_cond = tdf[var2]==v
+            d = tdf[var1_cond & var2_cond]
+            a[i, j] = d['analysis'].values[0]
+
+    output = pd.DataFrame(a, index=var2_vals, columns=var1_vals)
+    return output
 
 def testing():
     with open('results/data.json') as json_file:

@@ -48,16 +48,16 @@ class HiddenPrints:
 def l2_parser(instance,prop):
     "extract arrays of real paths, predicted paths, L2s between them."
     "HiddenPrints suppresses plots class from spam printing figures"
-    matplotlib.use("Agg")
-    actual,preds,full_preds = instance.data_parser(False)
-    actual = actual[1:,:]
+    actual,preds,full_preds,truth = instance.data_parser(False)
     plts = plots(instance)
-    a_u,b_u,plot_range = plts.plot_data_parser(actual,preds,False)
-    a_o,b_o,plot_range = plts.plot_data_parser(actual,preds,True)    
+    truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+    
+    true_o,b_o,plot_range = plts.plot_data_parser(truth,preds,True)    
+    true_u,b_u,plot_range= plts.plot_data_parser(truth,preds,False)
 
-    distances_obs,oindex,agent_means,t_mean_obs = plts.L2s(a_o,b_o)
+    distances_obs,oindex,agent_means,t_mean_obs = plts.L2s(true_o,b_o)
     if prop<1:
-        distances_uobs,uindex,agent_means,t_mean_uobs = plts.L2s(a_u,b_u)
+        distances_uobs,uindex,agent_means,t_mean_uobs = plts.L2s(true_u,b_u)
     else:
         distances_uobs = []
     
@@ -138,17 +138,19 @@ if __name__ == "__main__":
             #plts.trajectories(actual)
             #plts.pair_frames(actual,preds)
     else:
-        actual,pred,full_preds=u.data_parser(False)
-        actual = actual[1:,:]
+        actual,pred,full_preds,truth=u.data_parser(False)
+        
+        truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+
         plts=plots(u)
         "single test diagnostics"
         save_plots=False
         if prop<1:
             "unobserved agents then observed agents"
-            distances,t_mean = plts.diagnostic_plots(actual,pred,False,save_plots)
+            distances,t_mean = plts.diagnostic_plots(truth,pred,False,save_plots)
         
         "all observed just one plot"
-        distances2,t_mean2 = plts.diagnostic_plots(actual,pred,True,save_plots)
+        distances2,t_mean2 = plts.diagnostic_plots(truth,pred,True,save_plots)
         #plts.pair_frames(actual,full_preds) #basic animation
         #plts.pair_frames_stack_ellipse(actual,full_preds) #covariance and l2 trajectories. TAKES FOREVER
 

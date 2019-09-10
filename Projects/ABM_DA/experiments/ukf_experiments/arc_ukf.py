@@ -31,7 +31,7 @@ scp username@leeds.ac.uk:source_in_arc/* destination_in_linux/.
 e.g.
 
 from linux terminal 
-scp medrclaa@arc3.leeds.ac.uk:/home/home02/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
+scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/ukf* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
 """
 
 
@@ -57,18 +57,15 @@ if __name__ == '__main__':
                  "Usage: python run_pf <N>")
         sys.exit(1)
 
-    # Lists of particles, agent numbers, and particle noise levels
+    # Lists of agent numbers, and noise levels and run ids
     
-    #num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
-    #num_age = np.arange(5,105,5)
-    #props = np.arange(0.1,1.1,0.1)
-    num_age = [10,20,30]# 5 to 50 by 5
-    props = [0.25,0.5,0.75,1] #.2 to 1 by .2
-    run_id = np.arange(0,30,1) #20 runs
-    #noise = [1.0, 2.0]
+    num_age = [10,20,30]# 10 to 30 by 10
+    props = [0.25,0.5,0.75,1] #.25 to 1 by .25
+    run_id = np.arange(0,30,1) #30 runs
 
     # List of all particle-agent combinations. ARC task
     # array variable loops through this list
+    
     param_list = [(x, y,z) for x in num_age for y in props for z in run_id]
 
     # Use below to update param_list if some runs abort

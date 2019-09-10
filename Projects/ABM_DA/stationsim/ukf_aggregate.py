@@ -272,6 +272,7 @@ class agg_ukf_ss:
         self.ukf_histories = []
         self.agg_ukf_preds=[]
         self.full_Ps = []
+        self.truths = []
         
         self.time1 =  datetime.datetime.now()#timer
         self.time2 = 0
@@ -391,17 +392,17 @@ class agg_ukf_ss:
             
             self.ukf.predict() #predict where agents will jump
             self.base_model.step() #jump stationsim agents forwards
-            if self.filter_params["bring_noise"]:
-                noise_array=np.ones(self.pop_total*2)
-                noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
-                noise_array*=np.random.normal(0,self.filter_params["noise"],self.pop_total*2)
-                state = self.base_model.get_state(sensor="location") #observed agents states
-                state+=noise_array
-                self.base_model.set_state(state=state,sensor="location")
+            self.truths.append(self.base_model.get_state(sensor="location"))
+         
 
             if (self.base_model.step_id-1)%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
-                
                 state = self.poly_count(self.poly_list,self.base_model.get_state(sensor="location")) #observed agents states
+                if self.filter_params["bring_noise"]:
+                    noise_array=np.ones(self.pop_total*2)
+                    noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
+                    noise_array*=np.random.normal(0,self.filter_params["noise"],self.pop_total*2)
+                    state+=noise_array
+                    
                 self.ukf.update(z=state) #update UKF
                 self.ukf_histories.append(self.ukf.x) #append histories
                 self.agg_ukf_preds.append(self.ukf.x)

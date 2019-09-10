@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import colors
+import matplotlib.patheffects as pe
 
 """
 Translates results from base ukf experiments into plot.
@@ -21,13 +22,13 @@ change medrclaa to relevant username
 if __name__ == "__main__":
     
     "parameters"
-    n=30
-    rates = [1,2,5,10,20,50,100] #.2 to 1 by .2
+    n=10
+    rates = [1,2,5,10,20,50] #.2 to 1 by .2
     noises = [0,0.25,0.5,1,2,5]
     run_id = np.arange(0,30,1) #20 runs
-    plot_1 =True
-    plot_2 = True
-    save =False
+    plot_1 =True #do plot 1
+    plot_2 = True # do plot2
+    save =True # save plots
     
     errors = []
     rates2 = []
@@ -128,8 +129,8 @@ if __name__ == "__main__":
         ax.set_xticks(np.arange(-.5,len(noises),1),minor=True)
         ax.set_yticks(np.arange(-.5,len(rates),1),minor=True)
         ax.grid(which="minor",color="k",linestyle="-",linewidth=2)
-        ax.set_xlabel("noise (std)")
-        ax.set_ylabel("sampling rate")
+        ax.set_xlabel("Noise (std)")
+        ax.set_ylabel("Sampling Frequency")
         ax.set_title("base ukf configuration experiment")
         if save:
             plt.savefig(f"{n}_base_config_test.pdf")
@@ -144,38 +145,62 @@ if __name__ == "__main__":
     for each rate every noise is also plotted in list order
     """
     if plot_2:
-        g = plt.figure(figsize=(12,12))
-        colours = ["black","orangered","teal"]
+        g = plt.figure(figsize=(10,6))
+        colours = ["yellow","orangered","skyblue"]
         ax1 = g.add_subplot(111)
         "line plots"
-        plt.plot(data2["actual"],label="actual",color = colours[0],linewidth = 4)
-        plt.plot(data2["prediction"],label="prediction",linestyle="-.",color=colours[1],linewidth = 4)
-        plt.plot(data2["ukf"],label = "ukf",linestyle="--",color=colours[2],linewidth = 4)
-        plt.legend()
+        l1=plt.plot(data2["actual"],label="actual",
+                 color = colours[0],linewidth = 4,path_effects=[pe.Stroke(linewidth=6, foreground='k'), pe.Normal()])
+        l2=plt.plot(data2["prediction"],label="prediction",linestyle=(0,(1,1)),
+                 color=colours[1],linewidth = 4,path_effects=[pe.Stroke(linewidth=6, foreground='k'), pe.Normal()])
+        l3=plt.plot(data2["ukf"],label = "ukf",linestyle=(0,(0.5,1,2,1)),
+                 color=colours[2],linewidth = 4,path_effects=[pe.Stroke(linewidth=6, foreground='k'), pe.Normal()])
+        plt.legend(fontsize="large")
+        
         "base line"
         ax1.axhline(y=0,color="grey",alpha=0.5,linestyle=":")
+        
         "which estimate performs best vertical lines"
         for i in range(len(data2["best"])):
             best = data2["best"][i]
             if best ==0:
-                plt.plot(np.array([i,i]),np.array([0,data2["actual"][i]]),color=colours[0])
+                plt.plot(np.array([i,i]),np.array([0,data2["actual"][i]]),
+                         color=colours[0],linewidth = 3,
+                         path_effects=[pe.Stroke(linewidth=6, foreground='k'), pe.Normal()])
             elif best==1:
-                ax1.plot(np.array([i,i]),np.array([0,data2["prediction"][i]]),color=colours[1],linestyle="-.")
+                ax1.plot(np.array([i,i]),np.array([0,data2["prediction"][i]]),
+                         color=colours[1],linestyle=":",linewidth = 3,
+                         path_effects=[pe.Stroke(linewidth=6, foreground='k'), pe.Normal()])
             elif best==2:
-                ax1.plot(np.array([i,i]),np.array([0,data2["ukf"][i]]),color=colours[2],linestyle="--")
+                ax1.plot(np.array([i,i]),np.array([0,data2["ukf"][i]]),
+                         color=colours[2],linestyle=(0,(0.5,1,2,1)),linewidth = 3,
+                         path_effects=[pe.Stroke(linewidth=6, foreground='k'), pe.Normal()])
+          
+        "lines from max estimate to noise label"
+        for j in range(2*len(noises)):
+            maxim = np.nanmax((data2[["actual","prediction","ukf"]].loc[[j]]).to_numpy())
+            noise = j%len(noises)
+            plt.plot(np.array([j,j]),np.array([maxim,((maxim/(maxim+0.5))*5)+1]),
+                     color="grey",linestyle="-")
+            plt.text(j-0.1,((maxim/(maxim+0.5))*5)+1,str(noises[noise]),fontsize=18)
+        
+        plt.text(1,6,"Noises",fontsize=18)
+        
         "labelling"
-        plt.ylabel("mean L2 over 30 runs")
+        ax1.tick_params(labelsize=28)
+        plt.ylabel("mean L2 over 30 runs",fontsize=28)
         "split x axis labels into two"
-        ax2 = ax1.twiny()
+        #ax2 = ax1.twiny()
         "noise labels"
-        ax2.set_xticks(np.arange(0,data2.shape[0],1))
-        ax2.set_xticklabels(noises*len(rates),fontsize=16)
-        plt.setp(ax2.get_xticklabels(),rotation=90)
-        ax2.set_xlabel("noise")
+        #ax2.set_xticks(np.arange(0,data2.shape[0],1))
+        #ax2.set_xticklabels(noises*len(rates),fontsize=16)
+        #plt.setp(ax2.get_xticklabels(),rotation=90)
+        #ax2.set_xlabel("Noise (std)")
         "rate labels"
-        ax1.set_xlabel("sampling rate")
+        ax1.set_xlabel("Sampling Frequency",fontsize=28)
         ax1.set_xticks(np.arange(0,len(rates)*len(noises),len(noises)))
-        ax1.set_xticklabels(rates)
+        ax1.set_xticklabels(rates,fontsize=28)
+        
         plt.tight_layout()
         if save:
             plt.savefig(f"{n}_error_trajectories.pdf")

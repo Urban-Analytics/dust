@@ -682,15 +682,18 @@ class plots:
                             ax.plot(x,y,color="k")
                             ax.scatter(b2[0],b2[1],color=colours[j],marker = markers[j],edgecolors="k")
             
+            "put legend outside of plot"
             box = ax.get_position()
             ax.set_position([box.x0, box.y0 + box.height * 0.1,
                              box.width, box.height * 0.9])
             
             ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18),
-                      ncol=2)
+                      ncol=3)
+            "labelling"
             plt.xlabel("corridor width")
             plt.ylabel("corridor height")
             plt.title("True Positions vs UKF Predictions")
+            "save frame and close plot else struggle for RAM"
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
             file = f"output_pairs/pairs{number}"
             f.savefig(file)
@@ -699,7 +702,7 @@ class plots:
         animations.animate(self,"output_pairs",f"pairwise_gif_{self.filter_class.pop_total}")
 
     def pair_frames_stack(self,a,b):
-        "pairwise with error plots"
+        "pairwise animation with  l2 error plots underneath"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
@@ -997,7 +1000,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 10,
+			'pop_total': 30,
 
 			'width': 200,
 			'height': 100,
@@ -1037,7 +1040,7 @@ if __name__ == "__main__":
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 10,
+            'sample_rate': 5,
             "prop": 0.5,
             "bring_noise":True,
             "noise":0.5,
@@ -1070,8 +1073,8 @@ if __name__ == "__main__":
         print("partial observations. using interpolated predictions (full_preds) for animations.")
         print("ONLY USE preds FOR ANY ERROR METRICS")
     actual,preds,full_preds,truth= u.data_parser(True)
-
-    actual = actual[1:,:] #cut off wierd n/a start from StationSim
+    truth[np.isnan(actual)]=np.nan
+    #actual = actual[1:,:] #cut off wierd n/a start from StationSim
     """plots"""
     plts = plots(u)
 
@@ -1083,9 +1086,9 @@ if __name__ == "__main__":
     
     
     if filter_params["sample_rate"]==1:
-        #plts.pair_frames(actual,preds)
+        plts.pair_frames(actual,preds)
         #plts.heatmap(actual)
-        plts.pair_frames_stack_ellipse(actual,preds)
+        #plts.pair_frames_stack_ellipse(actual,preds)
 
     else:
         plts.pair_frames(actual,full_preds)

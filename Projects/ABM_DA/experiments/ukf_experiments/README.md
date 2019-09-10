@@ -29,7 +29,7 @@ virtualenv mypython
 source mypython/bin/activate
 ```
 
-This logs the user onto the arc3 system setting up a python3 virtual environment to run the experiments in. Now we can pip in the desired packages as necessary depending on the desired experiment. We have two sets of packages:
+This logs the user onto the arc3 system setting up a python3 virtual environment to run the experiments in. Now we can pip in packages as necessary depending on the desired experiment. We have two sets of packages:
 
 ```
 for arc_base_config.py and arc_ukf.py
@@ -45,25 +45,25 @@ pip install shapely
 pip install geopandas
 ```
 
-We now have a fully equipped environment for our experiments. We will now run an example experiment in which we run a basic experiment in arc_ukf.py. We will run the UKF 10 times for 5 and 10 agents at 0.5 and 1.0 proportion observed. First we define the parameters we wish to run in 'arc_ukf.py'.
+In this environment we run an example experiment for the basic ukf using `arc_ukf.py`. We will run the UKF 20 times for 5 and 10 agents at 0.5 and 1.0 proportion observed. First we define the parameters we wish to run in `arc_ukf.py`.
 
 ```
 nano arc_ukf.py #open text editor
 
 default experiment parameters:
 
-65    num_age = np.arange(5,55,5) # 5 to 50 by 5
-66    props = np.arange(0.2,1.2,0.2) #.2 to 1 by .2
-67    run_id = np.arange(0,20,1) #20 runs
+62    num_age = [10,20,30]# 5 to 50 by 5
+63    props = [0.25,0.5,0.75,1] #.2 to 1 by .2
+64    run_id = np.arange(0,30,1) #20 runs
 
 new desired parameters:
 
-65    num_age = [5,10] # 5 to 10 by 5
-66    props = [0.5,1.0] #.5 to 1 by .5
-67    run_id = np.arange(0,10,1) #10 runs
+62    num_age = [5,10] # 5 to 10 by 5
+63    props = [0.5,1.0] #.5 to 1 by .5
+64    run_id = np.arange(0,20,1) #20 runs
 ```
 
-With our new parameters defined we calculate the total number of experiments. This is simply multiplying the length of each parameter list together N = 2x2x20 = 80. We must update `arc_ukf.sh` with this number such that it runs every experiment or does not run blank experiments.
+With our new parameters defined we calculate the total number of experiments. This is simply multiplying the length of each parameter list together N = 2x2x20 = 80. We must update `arc_ukf.sh` with this number such that it runs every experiment and does not run blank experiments.
 
 ```
 nano arc_ukf.sh #open text editor

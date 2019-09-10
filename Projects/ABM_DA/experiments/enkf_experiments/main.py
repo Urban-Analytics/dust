@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from numpy.random import normal
+from os import listdir
 sys.path.append('../../stationsim/')
 
 from stationsim_model import Model
@@ -146,7 +147,8 @@ def run_repeat(a=50, e=10, p=20, s=1, N=10, write_json=False):
         errors.append(enkf.rmse)
 
     if write_json:
-        with open('data.json', 'w', encoding='utf-8') as f:
+        fname = 'data_{0}__{1}__{2}__{3}'.format(a, e, p, s).replace('.', '_')
+        with open('results/repeats/{0}.json'.format(fname), 'w', encoding='utf-8') as f:
             json.dump(errors, f, ensure_ascii=False, indent=4)
     return errors
 
@@ -356,7 +358,7 @@ def plot_with_errors(forecast, analysis, observation):
 
 def run_repeat_combos(resume=True):
     if resume:
-        with open('combos.json') as json_file:
+        with open('results/combos.json') as json_file:
             combos = json.load(json_file)
     else:
         ap = [2, 5, 10, 20, 50]
@@ -377,10 +379,11 @@ def run_repeat_combos(resume=True):
     while combos:
         c = combos.pop()
         print('running for {0}'.format(str(c)))
+        run_repeat(*c, write_json=True)
         if i % 5 == 0:
-            with open('combos.json', 'w', encoding='utf-8') as f:
+            with open('results/combos.json', 'w', encoding='utf-8') as f:
                 json.dump(combos, f, ensure_ascii=False, indent=4)
-        if i == 20:
+        if i == 100:
             break
         i += 1
         
@@ -389,12 +392,61 @@ def run_repeat_combos(resume=True):
 # run_combos()
 # run_repeat()
 
+def process_batch():
+    # Set up link to directory
+    results_path = './results/repeats/'
+    results_list = listdir(results_path)
+    output = list()
+
+    for r in results_list:
+        # Derive parameters from filename
+        components = r.split('__')
+
+        ap = int(components[0].split('_')[-1])
+        es = int(components[1])
+        pop_size = int(components[2])
+        pre_sigma = components[3].split('.')[0]
+        sigma = float(pre_sigma.replace('_', '.'))
+
+        # Read in set of results:
+        p = './results/repeats/{0}'.format(r)
+        with open(p) as f:
+            d = json.load(f)
+        
+        # Reduce to means for forecast, analysis and obs
+        forecasts, analyses, observations = process_repeat_results(d)
+
+        # Take mean over time
+        forecast = forecasts['mean'].mean()
+        analysis = analyses['mean'].mean()
+        observation = observations['mean'].mean()
+        
+        # Add to output list
+        row = {'assimilation_period': ap,
+               'ensemble_size': es,
+               'population_size': pop_size,
+               'std': sigma,
+               'forecast': forecast,
+               'analysis': analysis,
+               'obsevation': observation}
+
+        output.append(row)
+    
+    data = pd.DataFrame(output)
+    print(data['assimilation_period'].unique())
+    print(data['ensemble_size'].unique())
+    print(data['population_size'].unique())
+    print(data['std'].unique())
+
+    print(data.head())
+
 def testing():
-    with open('data.json') as json_file:
+    with open('results/data.json') as json_file:
         data = json.load(json_file)
     forecasts, analyses, observations = process_repeat_results(data)
     plot_all_results(forecasts, analyses, observations)
     plot_with_errors(forecasts, analyses, observations)
-    # run_repeat_combos()
+    # run_repeat_combos(resume=True)
 
-testing()
+# testing()
+process_batch()

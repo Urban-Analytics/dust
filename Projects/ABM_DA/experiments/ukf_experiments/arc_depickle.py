@@ -35,19 +35,10 @@ function to take instanced clases output from arc ukf scripts and produce grand 
 """
 
 
-class HiddenPrints:
-    "suppress repeat printing of random plots"
-    def __enter__(self):
-        self._original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        sys.stdout.close()
-        sys.stdout = self._original_stdout
         
 def l2_parser(instance,prop):
     "extract arrays of real paths, predicted paths, L2s between them."
-    "HiddenPrints suppresses plots class from spam printing figures"
     actual,preds,full_preds,truth = instance.data_parser(False)
     plts = plots(instance)
     truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots

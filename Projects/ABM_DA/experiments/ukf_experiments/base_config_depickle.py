@@ -22,7 +22,7 @@ change medrclaa to relevant username
 if __name__ == "__main__":
     
     "parameters"
-    n=10
+    n=30
     rates = [1,2,5,10,20,50] #.2 to 1 by .2
     noises = [0,0.25,0.5,1,2,5]
     run_id = np.arange(0,30,1) #20 runs
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         
         "imshow plot and colourbar"
         im = ax.imshow(best_array,origin="lower",cmap = cmap,norm=norm)
-        """alternative continous contour plot for more "real" mapping"""
+        #"""alternative continous contour plot idea for more "spatially real" mapping"""
         #grid = np.meshgrid(noises,rates)
         #im = plt.contourf(grid[0],grid[1],best_array,cmap=cmap,levels=[0,1,2,3])
         plt.ylim([0,2])

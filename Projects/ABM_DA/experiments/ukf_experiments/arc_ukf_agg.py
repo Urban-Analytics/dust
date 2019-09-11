@@ -74,12 +74,10 @@ if __name__ == '__main__':
     
     #num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
     
-    num_age = np.arange(5,55,5) # number of agents 5 to 50 by 5
-    bins = np.arange(5,35,5) # bin 
-    run_id = np.arange(0,20,1) #20 runs
+    num_age = [10,20,30] # number of agents 5 to 50 by 5
+    bins = [5,10,25,50,100] #bin widths 
+    run_id = np.arange(0,30,1) #30 runs
     
-    #noise = [1.0, 2.0]
-
     # List of all particle-agent combinations. ARC task
     # array variable loops through this list
     param_list = [(x,y,z) for x in num_age for y in bins for z in run_id]

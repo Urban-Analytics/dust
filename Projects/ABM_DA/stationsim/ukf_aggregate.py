@@ -24,22 +24,28 @@ import sys #for print suppression#
 #sys.path.append('../../stationsim')
 sys.path.append('..')
 from stationsim.stationsim_model import Model
-from ukf import plots,animations
 import numpy as np
 from math import floor
-import matplotlib.pyplot as plt
 import datetime
 import multiprocessing
 from copy import deepcopy
 import os #for animations folder handling
-from math import ceil,log10
 
+"plotting"
+import matplotlib.pyplot as plt
+from math import ceil,log10
+from seaborn import kdeplot
 import matplotlib.cm as cm
 import matplotlib.colors as col
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+"for polygon (square or otherwise) use"
 from shapely.geometry import Polygon,MultiPoint
 from shapely.prepared import prep
-import geopandas as gpd
+from geopandas import GeoDataFrame
+
+"import other useful things from main ukf file"
+from ukf import plots,animations
 
 
 """
@@ -257,10 +263,9 @@ class agg_ukf_ss:
         self.number_of_iterations = model_params['step_limit']
         self.sample_rate = self.filter_params["sample_rate"]
         #how many agents being observed
-        if self.filter_params["do_restrict"]==True: 
-            self.sample_size= floor(self.pop_total*self.filter_params["prop"])
-        else:
-            self.sample_size = self.pop_total
+        
+        self.sample_size= floor(self.pop_total*self.filter_params["prop"])
+        
             
         #random sample of agents to be observed
         self.index = np.sort(np.random.choice(self.model_params["pop_total"],
@@ -395,14 +400,16 @@ class agg_ukf_ss:
             self.truths.append(self.base_model.get_state(sensor="location"))
          
 
-            if (self.base_model.step_id-1)%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
-                state = self.poly_count(self.poly_list,self.base_model.get_state(sensor="location")) #observed agents states
+            if _%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
                 if self.filter_params["bring_noise"]:
                     noise_array=np.ones(self.pop_total*2)
-                    noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
+                    noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0 #no noise for finished agents
                     noise_array*=np.random.normal(0,self.filter_params["noise"],self.pop_total*2)
-                    state+=noise_array
                     
+               
+                state = self.poly_count(self.poly_list,
+                                        self.base_model.get_state(sensor="location")+noise_array) #observed agents states
+
                 self.ukf.update(z=state) #update UKF
                 self.ukf_histories.append(self.ukf.x) #append histories
                 self.agg_ukf_preds.append(self.ukf.x)
@@ -427,7 +434,6 @@ class agg_ukf_ss:
     def data_parser(self,do_fill):
         """
         extracts data into numpy arrays
-        
         in:
             do_fill - If false when an agent is finished its true position values go to nan.
             If true each agents final positions are repeated in the truthframe 
@@ -438,6 +444,9 @@ class agg_ukf_ss:
         out:
             a - actual agents positions
             b - ukf predictions of said agent positions
+            c - if sampling rate >1 fills inbetween predictions with pure stationsim prediciton
+                this is solely for smoother animations later
+            d- true agent positions
         """
         sample_rate = self.sample_rate
 
@@ -447,29 +456,36 @@ class agg_ukf_ss:
             a2[k] =  agent.history_locations
         max_iter = max([len(value) for value in a2.values()])
         b2 = np.vstack(self.ukf_histories)
+
         
         a= np.zeros((max_iter,self.pop_total*2))*np.nan
         b= np.zeros((max_iter,b2.shape[1]))*np.nan
-        
+        d = a.copy()
   
         for i in range(int(a.shape[1]/2)):
             a3 = np.vstack(list(a2.values())[i])
             a[:a3.shape[0],(2*i):(2*i)+2] = a3
+            
             if do_fill:
                 a[a3.shape[0]:,(2*i):(2*i)+2] = a3[-1,:]
 
         
         for j in range(int(b.shape[0]//sample_rate)):
             b[j*sample_rate,:] = b2[j,:]
-            
-        "all agent observations"
-        
+         
+        d = np.vstack(self.truths)
+
         if sample_rate>1:
             c= np.vstack(self.agg_ukf_preds)
-            return a,b,c
-        else:
-            return a,b
 
+        
+            
+            "all agent observations"
+        
+            return a,b,c,d
+        else:
+            return a,b,d
+        
 def grid_poly(width,length,bin_size):
     """
     generates grid of aggregate square polygons for corridor in station sim.
@@ -590,31 +606,6 @@ class agg_plots:
         "define which class to plot from"
         self.filter_class=filter_class
         
-    def plot_data_parser(self,a,b,observed):
-        """
-        takes data from ukf_ss data parser and preps it for plotting
-        in: 
-            ukf_ss class
-        out: 
-            split data depending on plotting observed or unobserved agents
-            
-        """
-
-        filter_class = self.filter_class
-        if observed:
-                a = a[:,filter_class.index2]
-                if len(filter_class.index2)<b.shape[1]:
-                    b = b[:,filter_class.index2]
-                plot_range =filter_class.model_params["pop_total"]*(filter_class.filter_params["prop"])
-
-        else:      
-                mask = np.ones(a.shape[1])
-                mask[filter_class.index2]=False
-                a = a[:,np.where(mask!=0)][:,0,:]
-                b = b[:,np.where(mask!=0)][:,0,:]
-                plot_range = filter_class.model_params["pop_total"]*(1-filter_class.filter_params["prop"])
-        return a,b,plot_range
-
 
     def trajectories(self,a,poly_list):
         "provide density of agents positions as a 2.5d histogram"
@@ -695,7 +686,7 @@ class agg_plots:
             counts = self.filter_class.poly_count(poly_list,locs)
             counts = np.array(counts)/np.nansum(counts)
             #counts[np.where(counts==0)]=np.nan
-            frame =gpd.GeoDataFrame([counts,poly_list]).T
+            frame = GeoDataFrame([counts,poly_list]).T
             frame.columns= ["counts","geometry"]
             #norm =col.DivergingNorm(0.2)
             
@@ -768,32 +759,114 @@ class agg_plots:
         provides whole array of distances per agent and time
         and L2s per agent and time. 
         """
-        c = np.ones((a.shape[0],int(a.shape[1]/2)))*np.nan
+        sample_rate =self.filter_class.filter_params["sample_rate"]
+        c = np.ones(((a.shape[0]//sample_rate),int(a.shape[1]/2)))*np.nan
         
-        "!!theres probably a faster way of doing this with apply over axis"
-        #loop over each agent
-        a = a[::self.filter_class.sample_rate,:]
-        b = b[::self.filter_class.sample_rate,:]
 
+        index = np.arange(0,c.shape[0])*sample_rate
 
         #loop over each time per agent
-        for i in range(a.shape[0]):
-                a2 = np.array([a[i,0::2],a[i,1::2]]).T
-                b2 = np.array([b[i,0::2],b[i,1::2]]).T
+        for i in range(len(index)):
+                a2 = np.array([a[sample_rate*i,0::2],a[sample_rate*i,1::2]]).T
+                b2 = np.array([b[sample_rate*i,0::2],b[sample_rate*i,1::2]]).T
                 res = a2-b2
-                c[i,:]=np.apply_along_axis(np.linalg.norm,1,res)
+                c[i,:]=np.apply_along_axis(np.linalg.norm,1,res) # take L2 norm of rows to output vector of scalars
                     
         agent_means = np.nanmean(c,axis=0)
         time_means = np.nanmean(c,axis=1)
-        return c,agent_means,time_means
+        
+        return c,index,agent_means,time_means
+    
+    def agg_diagnostic_plots(self,a,b,save):
+            """
+            self - UKf class for various information
+            
+            a-observed agents
+            
+            b-UKF predictions of a
+            
+            observed- bool for plotting observed or unobserved agents
+            if True observed else unobserved
+            
+            save- bool for saving plots in current directory. saves if true
+            
+            
+            """
+            
+                
+            sample_rate =self.filter_class.filter_params["sample_rate"]
+            
+            f=plt.figure(figsize=(12,8))
+            for j in range(int(a.shape[1]/2)):
+                plt.plot(a[:,(2*j)],a[:,(2*j)+1],lw=3)  
+                plt.xlim([0,self.filter_class.model_params["width"]])
+                plt.ylim([0,self.filter_class.model_params["height"]])
+                plt.xlabel("Corridor Width")
+                plt.ylabel("Corridor Height")
+                plt.title(f"Agent True Positions")
+    
+            g = plt.figure(figsize=(12,8))
+            for j in range(int(a.shape[1]/2)):
+                plt.plot(b[::sample_rate,2*j],b[::sample_rate,(2*j)+1],lw=3) 
+                plt.xlim([0,self.filter_class.model_params["width"]])
+                plt.ylim([0,self.filter_class.model_params["height"]])
+                plt.xlabel("Corridor Width")
+                plt.ylabel("Corridor Height")
+                plt.title(f"Aggregate KF Predictions")
+            
+          
+            c,c_index,agent_means,time_means = self.L2s(a,b)
+            
+            h = plt.figure(figsize=(12,8))
+            time_means[np.isnan(time_means)]=0
+            plt.plot(c_index,time_means,lw=5,color="k",label="Mean Agent L2")
+            for i in range(c.shape[1]):
+                plt.plot(c_index,c[:,i],linestyle="-.",lw=3)
+                
+            plt.axhline(y=0,color="k",ls="--",alpha=0.5)
+            plt.xlabel("Time (steps)")
+            plt.ylabel("L2 Error")
+            plt.legend()
+            """find agent with highest L2 and plot it.
+            mainly done to check something odd isnt happening"""
+            
+            index = np.where(agent_means == np.nanmax(agent_means))[0][0]
+            print(index)
+            a1 = a[:,(2*index):(2*index)+2]
+            b1 = b[:,(2*index):(2*index)+2]
+            
+            i = plt.figure(figsize=(12,8))
+            plt.plot(a1[:,0],a1[:,1],label= "True Path",lw=3)
+            plt.plot(b1[::self.filter_class.sample_rate,0],b1[::self.filter_class.sample_rate,1],label = "KF Prediction",lw=3)
+            plt.legend()
+            plt.xlim([0,self.filter_class.model_params["width"]])
+            plt.ylim([0,self.filter_class.model_params["height"]])
+            plt.xlabel("Corridor Width")
+            plt.ylabel("Corridor Height")
+    
+            j = plt.figure(figsize=(12,8))
+            plt.hist(agent_means,density=True,bins = self.filter_class.model_params["pop_total"])
+            plt.xlabel("Agent L2")
+            plt.ylabel("Density ([0,1])")
+            kdeplot(agent_means,color="red",cut=0,lw=4)
+  
 
+            if save:
+                f.savefig(f"Aggregate_actual.pdf")
+                g.savefig(f"Aggregate_kf.pdf")
+                h.savefig(f"Aggregate_l2.pdf")
+                i.savefig(f"Aggregate_worst.pdf")
+                j.savefig(f"Aggregate_agent_hist.pdf")
+                
+            return c,time_means
+    
     def pair_frames(self,a,b):
         "pairwise animation"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
-        a_u,b_u,plot_range = self.plot_data_parser(a,b,False)
-        a_o,b_o,plot_range = self.plot_data_parser(a,b,True)
+        a_u,b_u,plot_range = self.agg_plot_data_parser(a,b,False)
+        a_o,b_o,plot_range = self.agg_plot_data_parser(a,b,True)
         
         os.mkdir("output_pairs")
         for i in range(a.shape[0]):
@@ -833,7 +906,6 @@ class agg_plots:
                       ncol=2)
             plt.xlabel("corridor width")
             plt.ylabel("corridor height")
-            plt.title("True Positions vs UKF Predictions")
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
             file = f"output_pairs/pairs{number}"
             f.savefig(file)
@@ -843,7 +915,7 @@ class agg_plots:
 
 #%%
 if __name__ == "__main__":
-    #np.random.seed(seed = 8) #seeded example hash if want random
+    np.random.seed(seed = 8) #seeded example hash if want random
     # this seed (8) is a good example of an agent getting stuck for 10 agents
     """
         width - corridor width
@@ -863,7 +935,7 @@ if __name__ == "__main__":
         3 do_ bools for saving plotting and animating data. 
     """
     model_params = {
-			'pop_total': 10,
+			'pop_total': 20,
 
 			'width': 200,
 			'height': 100,
@@ -890,14 +962,8 @@ if __name__ == "__main__":
     Sensor_Noise - how reliable are measurements H_x. lower value implies more reliable
     Process_Noise - how reliable is prediction fx lower value implies more reliable
     sample_rate - how often to update kalman filter. higher number gives smoother predictions
-    do_restrict - restrict to a proportion prop of the agents being observed
-    do_animate - bools for doing animations of agent/wiggle aggregates
-    do_wiggle_animate
-    do_density_animate
-    do_pair_animate
     prop - proportion of agents observed. this is a floor function that rounds the proportion 
         DOWN to the nearest intiger number of agents. 1 is all <1/pop_total is none
-    
     bin_size - square sizes for aggregate plots,
     do_batch - do batch processing on some pre-recorded truth data.
     bring_noise - add noise to measurements?
@@ -908,12 +974,8 @@ if __name__ == "__main__":
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 10,
+            'sample_rate': 5,
             "do_restrict": True, 
-            "do_animate": False,
-            "do_wiggle_animate": False,
-            "do_density_animate":True,
-            "do_pair_animate":False,
             "prop": 1,
             "bin_size":25,
             "bring_noise":True,
@@ -931,28 +993,27 @@ if __name__ == "__main__":
     """
     
     ukf_params = {
-            
             "a":1,
             "b":2,
             "k":0,
-            "d_rate" : 10, #data assimilotion rate every "d_rate model steps recalibrate UKF positions with truth
-
             }
+    
+    
     
     """run and extract data"""
     base_model = Model(**model_params)
     poly_list = grid_poly(model_params["width"],model_params["height"],filter_params["bin_size"]) #generic square grid over corridor
     u = agg_ukf_ss(model_params,filter_params,ukf_params,poly_list,base_model)
     u.main()
-    actual,preds,full_preds= u.data_parser(True)
-    actual = actual[1:,:]
+    actual,preds,full_preds,truth= u.data_parser(True)
+    truth[np.isnan(actual)]=np.nan
+
     "additional step for aggregate"
-    #preds[np.isnan(actual)]=np.nan 
+    preds[np.isnan(actual)]=np.nan 
     """plots"""
-    plts = plots(u)
     agg_plts = agg_plots(u)
     
-    distances,t_mean = plts.diagnostic_plots(actual,preds,True,False)
+    distances,t_mean = agg_plts.agg_diagnostic_plots(truth,preds,False)
     
     agg_plts.pair_frames(actual,full_preds)
     agg_plts.heatmap(actual,poly_list)

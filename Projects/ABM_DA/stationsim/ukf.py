@@ -979,8 +979,8 @@ class animations:
         
 #%%
 if __name__ == "__main__":
-    #np.random.seed(seed = 8) #hash is not needed. this is a good seed to demonstrate a "stuck" agent
-    # this seed (8) is a good example of an agent getting stuck for 10 agents
+    np.random.seed(seed = 8) #hash if not needed.
+    # this seed (8) is a good example of an agent getting stuck given 10 agents
 
     """
         width - corridor width

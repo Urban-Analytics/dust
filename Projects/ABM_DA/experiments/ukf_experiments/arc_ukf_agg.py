@@ -41,9 +41,7 @@ scp username@leeds.ac.uk:source_in_arc/* destination_in_linux/.
 
 e.g.
  
-scp medrclaa@arc3.leeds.ac.uk:/home/home02/medrclaa/dust/Projects/ABM_DA/experiments
-/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments
-/ukf_experiments/ukf_results/.
+scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
 
 """
 
@@ -117,7 +115,7 @@ if __name__ == '__main__':
            
             "Sensor_Noise":  1, 
             "Process_Noise": 1, 
-            'sample_rate': 1,
+            'sample_rate': 5,
             "do_restrict": True, 
             "do_animate": False,
             "prop":1,
@@ -125,8 +123,8 @@ if __name__ == '__main__':
             "run_id":param_list[int(sys.argv[1])-1][2],
             "heatmap_rate": 1,
             "bin_size":param_list[int(sys.argv[1])-1][1],
-            "bring_noise":False,
-            "noise":0.25,
+            "bring_noise":True,
+            "noise":0.5,
             "do_batch":False,
             "d_rate" : 10, 
 
@@ -174,9 +172,9 @@ if __name__ == '__main__':
     u.main()
     
     #store final class instance via pickle
-    f_name = "ukf_results/agg_ukf_agents_{}_prop_{}-{}".format(      
+    f_name = "ukf_results/agg_ukf_agents_{}_bin_{}-{}".format(      
     str(int(model_params['pop_total'])),
-    str(filter_params['prop']),
+    str(filter_params['bin_size']),
     str(filter_params["run_id"]))
     f = open(f_name,"wb")
     pickle.dump(u,f)

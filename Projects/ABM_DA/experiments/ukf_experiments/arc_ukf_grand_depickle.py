@@ -216,11 +216,11 @@ def boxplot_plots(n,prop,frame,separate,observed,save):
             y_name = "unobserved L2 agent errors"
             f_name = f"Unobserved_boxplot.pdf"
 
-        f = plt.figure(figsize=(12,12))
+        f = plt.figure()
         sns.catplot(x="proportion observed (x100%)",y=y_name,col="n",kind="box", data=frame)
         plt.tight_layout()
         if save:
-            f.savefig(f_name)
+            plt.savefig(f_name)
     
  
 if __name__ == "__main__":

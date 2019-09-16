@@ -3,8 +3,8 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <meta name="author" content="Nick Malleson">
-        <meta name="keywords" content="ABM, dynamic data assimilation, probabilistic programming">
+        <meta name="author" content="Alison Heppenstall">
+        <meta name="keywords" content="ABM, dynamic data assimilation, city simulation">
 
 		<title>Simulating the City</title>
 
@@ -115,6 +115,7 @@
                    
                 </section>
                 
+              <!--
                 <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
                          data-background-video-loop="loop" id="City time-scales">
                  
@@ -125,6 +126,7 @@
                     </figure>  
                     </div>
                 </section>
+            -->
                 
                 <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
                          data-background-video-loop="loop" id="City time-scales">
@@ -146,7 +148,7 @@
                 
                  <section id="SPENSER" data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
                     
-                    <div class="whitebackground fragment">
+                    <div class="whitebackground2 fragment">
                         <h2>SPENSER</h2>
                         <p>Synthetic population estimation and scenario projection model</p>
                         <p class="l2">Creates dynamic and high resolution household populations</p>
@@ -198,7 +200,7 @@
                 
                 <section id="SocCity" data-background-image="../figures/shutterstock_788457058-small.jpg">
                     
-                    <div class="whitebackground fragment">
+                    <div class="whitebackground2 fragment">
                         <h2>Bringing the Social to the Smart City</h2>
                         <p>Understanding urban flows</p>
                         <p class="l2">Smart (OD) and Social (media) data</p>
@@ -212,19 +214,39 @@
                     <img style="width:1600px;" data-src="../figures/alisondata.png" alt="Diagram of OS data" />
                 </section>
                 
-                 <section id="Social Media Data" data-background-image="../figures/shutterstock_788457058-small.jpg">
-                    <img data-src="../figures/weibo_shenzhan.png" alt="Weibo data" />
+                 <section id="Shenzhan" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                     <img data-src="../figures/shenzhan_maps.png" alt="Shenzhan_maps" />
+                     
+                     <!--<table style="width:100%">
+
+  <tr>
+    <td><img style="float:left;" src="../figures/shenzhan_static2.jpeg" alt="Shenzhan_map1"/></td>
+    <td><img style="float:right;" src="../figures/shenzhan_1.mp4" alt="Shenzhan_map3"/></td> 
+    
+  </tr>
+  <tr>
+    <td><img style="float:left;" src="../figures/shenzhan_static1.jpeg" alt="Shenzhan_map2"/></td>
+    <td> <img style="float:right;" src="../figures/shenzhan_2.mp4" alt="Shenzhan_map4"/></td> 
+    
+  </tr>
+</table> -->
+                   <!--
+                     <img style="float:left;" src="../figures/shenzhan_static2.jpeg" alt="Shenzhan_map1"/>
+                     <img style="float:left;" src="../figures/shenzhan_static1.jpeg" alt="Shenzhan_map2"/>
+                     <img style="float:right;" src="../figures/shenzhan_1.mp4" alt="Shenzhan_map3"/>
+                     <img style="float:right;" src="../figures/shenzhan_2.mp4" alt="Shenzhan_map4"/>
+                     -->
+                     
                 </section>
                 
-                
-                 <section id="Shenzhan" data-background-image="../figures/shutterstock_788457058-small.jpg">
-                    <img data-src="../figures/shenzhan_maps.png" alt="Shenzhan_maps" />
+                 <section id="Social Media Data" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                    <img data-src="../figures/weibo_shenzhan.png" alt="Weibo data" />
                 </section>
                 
                 <section id="Results" data-background-image="../figures/shutterstock_788457058-small.jpg">
                     <img data-src="../figures/shenzhan_students.png" alt="Shenzhan_results_students" />
                
-                <div class="whitebackground fragment">
+                <div class="whitebackground2 fragment">
                     <h9> Yang Y, Heppenstall A, Turner A, Comber A. 2019.<b> Who, Where, Why and When? Using Smart Card and Social Media Data to Understand Urban Mobility.</b> ISPRS International Journal of Geo-Information. 8.6 </h9>
                     </div>
                 </section>
@@ -232,7 +254,7 @@
                 
                   <section id="Network_disruption" data-background-image="../figures/shutterstock_788457058-small.jpg">
                     <img data-src="../figures/metro_disruption.png" alt="Metro_disruption" />
-                       <div class="whitebackground fragment">
+                       <div class="whitebackground2 fragment">
                          <h9> Yang Y, Heppenstall A, Turner A, Comber A. 2019. <b>A spatiotemporal and graph-based analysis of dockless bike sharing patterns to understand urban flows over the last mile.</b> Computers, Environment and Urban Systems. 77  </h9>
                     </div>
                 </section>
@@ -296,6 +318,12 @@
                     <img data-src="../figures/paper_figures/dda.jpg" alt="Diagram of dynamic data assimilation and an ABM" />
                 </section>
                 
+                 <section id="stationsim-video1">
+                    <video controls width="80%" height="auto">
+                        <source src="../videos/StationSim-Videos/stationsim-no_crowding.mp4" type="video/mp4"/>
+                         Your browser does not support the video tag.
+                    </video>
+                </section>
                 
                 
                 <!-- ************************************************************
@@ -400,14 +428,16 @@
               -->
               <section id="Final_slide" data-background-image="../figures/virtual_city.jpeg">
                     
-                    <div class="whitebackground fragment">
+                    <img style="float:right;width:200px; height:300px;" src="../figures/abm_book_cover.png"/>
+                    <div class="whitebackground2 fragment">
                         <h2>Finally</h2>
                         <p>Urban analytics @ established and growing</p>
-                        <p class="l2">Work on uncertainty and DDA</p>
-                        <p class="l2">New members of staff: Dr Jiaqi Ge and Prof Ed Manley</p>
+                        <p class="l2">Work on uncertainty and probabilistic programming</p>
+                        <p class="l2"><b>New members of staff:</b> Dr Jiaqi Ge and Prof Ed Manley</p>
                         <p class="l2">Large scale ABM, engagement with policy makers</p>
                         <p class="l2">Applied ML approaches: Reinforcement Learning</p>
                     </div>
+                
                 </section> 
                 
                 

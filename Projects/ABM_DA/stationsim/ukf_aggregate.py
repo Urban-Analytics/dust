@@ -25,11 +25,12 @@ import sys #for print suppression#
 sys.path.append('..')
 from stationsim.stationsim_model import Model
 import numpy as np
-from math import floor
+from math import floor,ceil
 import datetime
 import multiprocessing
 from copy import deepcopy
 import os #for animations folder handling
+import pickle
 
 "plotting"
 import matplotlib.pyplot as plt
@@ -442,7 +443,7 @@ class agg_ukf_ss:
             Especially if using average error metrics as finished agents have practically 0 
             error and massively skew results.
         out:
-            a - actual agents positions
+            a - noisy observed agents positions
             b - ukf predictions of said agent positions
             c - if sampling rate >1 fills inbetween predictions with pure stationsim prediciton
                 this is solely for smoother animations later
@@ -659,7 +660,7 @@ class agg_plots:
             
         
     def heatmap(self,a,poly_list):
-        "provide density of agents positions as a 2.5d histogram"
+        "provide density of agents positions as a heatmap"
         "!! add poly list not working yet"
         #sample_agents = [self.base_model.agents[j] for j in self.index]
         #swap if restricting observed agents
@@ -677,17 +678,21 @@ class agg_plots:
         cmap = col.LinearSegmentedColormap("custom_cmap",cmaplist,N=cmap.N)
         cmap = cmap.from_list("custom",cmaplist)
         "split norm for better vis"
-        norm =DivergingNorm(0.1,0.3,0.1,0.9,1e-8,1)
+        n = self.filter_class.model_params["pop_total"]
+        norm =DivergingNorm(1/n,bin_size/n,0.1,0.9,1e-8,1)
 
         for i in range(a.shape[0]):
             locs = a[i,:]
             
              
             counts = self.filter_class.poly_count(poly_list,locs)
-            counts = np.array(counts)/np.nansum(counts)
+            if np.nansum(counts)!=0:
+                densities = np.array(counts)/np.nansum(counts) #density
+            else:
+                densities = np.array(counts)
             #counts[np.where(counts==0)]=np.nan
-            frame = GeoDataFrame([counts,poly_list]).T
-            frame.columns= ["counts","geometry"]
+            frame = GeoDataFrame([densities,counts,poly_list]).T
+            frame.columns= ["densities","counts","geometry"]
             #norm =col.DivergingNorm(0.2)
             
             f = plt.figure(figsize=(12,8))
@@ -695,38 +700,37 @@ class agg_plots:
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right",size="5%",pad=0.05)
             "plot density histogram and locations scatter plot assuming at least one agent available"
-            if np.abs(np.nansum(locs))>0:
+            if np.nansum(counts)!=0:
                 #ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
                 ax.set_ylim(0,height)
                 ax.set_xlim(0,width)
-                column = frame["counts"].astype(float)
+                column = frame["densities"].astype(float)
                 im = frame.plot(column=column,
                                 ax=ax,cax=cax,cmap=cmap,norm=norm,vmin=0,vmax=1)
            
-
+                for k,count in enumerate(counts):
+                    if count>0:
+                        ax.annotate(s=count, xy=poly_list[k].centroid.coords[0], 
+                                    ha='center',va="center",color="w")
+            
             else:
                 """
                 dummy frame if no locations present e.g. at the start. 
                 prevents divide by zero error in hist2d
                 """
-                fake_locs = np.array([-1,-1])
-                ax.scatter(fake_locs[0::2],fake_locs[1::2],color="cyan",label="True Positions")
-                hist,xb,yb = np.histogram2d(fake_locs[0::2],fake_locs[1::2],
-                                            range = [[0,width],[0,height]],
-                                            bins = [int(width/bin_size),int(height/bin_size)],density=True)
-                hist *= bin_size**2
-                hist= hist.T
-                hist = np.flip(hist,axis=0)
-        
-                extent = [0,width,0,height]
-                im = plt.imshow(np.ma.masked_where(hist==0,hist),interpolation="none"
-                           ,cmap = cm.Spectral ,extent=extent
-                           ,norm=norm)
+                ax.set_ylim(0,height)
+                ax.set_xlim(0,width)
+                column = frame["densities"].astype(float)
+                im = frame.plot(column=column,
+                                ax=ax,cax=cax,cmap=cmap,norm=norm,vmin=0,vmax=1)
+           
             
             "set up cbar. colouration proportional to number of agents"
             #ticks = np.array([0.001,0.01,0.025,0.05,0.075,0.1,0.5,1.0])
+            ax.text(0,101,s="Total Agents: " + str(np.sum(counts)),color="k")
+            
             sm = cm.ScalarMappable(norm = norm,cmap=cmap)
-            cbar = plt.colorbar(sm,cax=cax)
+            cbar = plt.colorbar(sm,cax=cax,spacing="proportional")
             cbar.set_label("Agent Density (x100%)")
             cbar.set_alpha(1)
             #cbar.draw_all()
@@ -739,7 +743,7 @@ class agg_plots:
             "labels"
             ax.set_xlabel("Corridor width")
             ax.set_ylabel("Corridor height")
-            ax.set_title("Agent Densities vs True Positions")
+            #ax.set_title("Agent Densities vs True Positions")
             cbar.set_label("Agent Density (x100%)")
             """
             frame number and saving. padded zeroes to keep frames in order.
@@ -837,7 +841,8 @@ class agg_plots:
             
             i = plt.figure(figsize=(12,8))
             plt.plot(a1[:,0],a1[:,1],label= "True Path",lw=3)
-            plt.plot(b1[::self.filter_class.sample_rate,0],b1[::self.filter_class.sample_rate,1],label = "KF Prediction",lw=3)
+            plt.plot(b1[::self.filter_class.sample_rate,0],
+                     b1[::self.filter_class.sample_rate,1],label = "KF Prediction",lw=3)
             plt.legend()
             plt.xlim([0,self.filter_class.model_params["width"]])
             plt.ylim([0,self.filter_class.model_params["height"]])
@@ -845,14 +850,14 @@ class agg_plots:
             plt.ylabel("Corridor Height")
     
             j = plt.figure(figsize=(12,8))
-            plt.hist(agent_means,density=True,bins = self.filter_class.model_params["pop_total"])
+            plt.hist(agent_means,density=False,
+                     bins = self.filter_class.model_params["pop_total"],edgecolor="k")
             plt.xlabel("Agent L2")
-            plt.ylabel("Density ([0,1])")
-            kdeplot(agent_means,color="red",cut=0,lw=4)
+            plt.ylabel(f" {self.filter_class.sample_size} Aggregated Agent Counts")
+           # kdeplot(agent_means,color="red",cut=0,lw=4)
   
-
             if save:
-                f.savefig(f"Aggregate_actual.pdf")
+                f.savefig(f"Aggregate_obs.pdf")
                 g.savefig(f"Aggregate_kf.pdf")
                 h.savefig(f"Aggregate_l2.pdf")
                 i.savefig(f"Aggregate_worst.pdf")
@@ -860,44 +865,45 @@ class agg_plots:
                 
             return c,time_means
     
-    def pair_frames(self,a,b):
+    def pair_frames(self):
         "pairwise animation"
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
-        a_u,b_u,plot_range = self.agg_plot_data_parser(a,b,False)
-        a_o,b_o,plot_range = self.agg_plot_data_parser(a,b,True)
+        obs,preds,full_preds,truth = self.filter_class.data_parser(False)
+        a= truth
+        if self.filter_class.sample_rate==1:
+            b = preds
+        else:
+            b=full_preds
         
+        b[np.isnan(obs)]=np.nan #remove wierd tail behaviour
         os.mkdir("output_pairs")
         for i in range(a.shape[0]):
-            a_s = [a_o[i,:],a_u[i,:]]
-            b_s = [b_o[i,:], b_u[i,:]]
+            
             f = plt.figure(figsize=(12,8))
             ax = plt.subplot(111)
             plt.xlim([0,width])
             plt.ylim([0,height])
             
             "plot true agents and dummies for legend"
-            ax.scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o",edgecolors="k")
-            ax.scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o",edgecolors="k")
-            ax.scatter(-1,-1,color="orangered",label = "UKF",marker="P",edgecolors="k")
+            ax.scatter(a[i,0::2],a[i,1::2],color="skyblue",
+                       label = "Truth",marker = "o",edgecolors="k")
+            ax.scatter(a[i,0::2],a[i,1::2],color="skyblue",
+                       marker = "o",edgecolors="k")
+            ax.scatter(-1,-1,color="orangered",label = "Aggregate UKF Predictions",
+                       marker="P",edgecolors="k")
 
-            markers = ["P","^"]
-            colours = ["orangered","yellow"]
-            for j in range(len(a_s)):
 
-                a1 = a_s[j]
-                b1 = b_s[j]
-                if np.abs(np.nansum(a1-b1))>1e-4: #check for perfect conditions (initial)
-                    for k in range(int(a1.shape[0]/2)):
-                        a2 = a1[(2*k):(2*k)+2]
-                        b2 = b1[(2*k):(2*k)+2]          
-                        if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
-                            x = [a2[0],b2[0]]
-                            y = [a2[1],b2[1]]
-                            ax.plot(x,y,color="k")
-                            ax.scatter(b2[0],b2[1],color=colours[j],marker = markers[j],edgecolors="k")
-            
+            for k in range(int(a.shape[1]/2)):
+                a2 = a[i,(2*k):(2*k)+2]
+                b2 = b[i,(2*k):(2*k)+2]          
+                if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
+                    x = [a2[0],b2[0]]
+                    y = [a2[1],b2[1]]
+                    ax.plot(x,y,color="k")
+                    ax.scatter(b2[0],b2[1],color="orangered",marker = "P",edgecolors="k")
+    
             box = ax.get_position()
             ax.set_position([box.x0, box.y0 + box.height * 0.1,
                              box.width, box.height * 0.9])
@@ -917,104 +923,138 @@ class agg_plots:
 if __name__ == "__main__":
     np.random.seed(seed = 8) #seeded example hash if want random
     # this seed (8) is a good example of an agent getting stuck for 10 agents
-    """
-        width - corridor width
-        height - corridor height
-        pop_total -population total
-        entrances - how many entrances
-        entrance speed- mean entry speed for agents
-        exits - how many exits
-        exit_space- how wide are exits 
-        speed_min - minimum agents speed to prevent ridiculuous iteration numbers
-        speed_mean - desired mean of normal distribution of speed of agents
-        speed_std - as above but standard deviation
-        speed_steps - how many levels of speed between min and max for each agent
-        separation - agent radius to determine collisions
-        wiggle - wiggle distance
-        batch_iterations - how many model steps to do as a maximum
-        3 do_ bools for saving plotting and animating data. 
-    """
-    model_params = {
-			'pop_total': 20,
-
-			'width': 200,
-			'height': 100,
-
-			'gates_in': 3,
-			'gates_out': 2,
-			'gates_space': 1,
-			'gates_speed': 1,
-
-			'speed_min': .2,
-			'speed_mean': 1,
-			'speed_std': 1,
-			'speed_steps': 3,
-
-			'separation': 5,
-			'max_wiggle': 1,
-
-			'step_limit': 3600,
-
-			'do_history': True,
-			'do_print': True,
-		}
-    """
-    Sensor_Noise - how reliable are measurements H_x. lower value implies more reliable
-    Process_Noise - how reliable is prediction fx lower value implies more reliable
-    sample_rate - how often to update kalman filter. higher number gives smoother predictions
-    prop - proportion of agents observed. this is a floor function that rounds the proportion 
-        DOWN to the nearest intiger number of agents. 1 is all <1/pop_total is none
-    bin_size - square sizes for aggregate plots,
-    do_batch - do batch processing on some pre-recorded truth data.
-    bring_noise - add noise to measurements?
-    noise - variance of added noise
-    """
     
-    filter_params = {      
-           
-            "Sensor_Noise":  1, 
-            "Process_Noise": 1, 
-            'sample_rate': 5,
-            "do_restrict": True, 
-            "prop": 1,
-            "bin_size":25,
-            "bring_noise":True,
-            "noise":0.5,
-            "do_batch":False,
-            }
+    recall = True #recall previous run
+    do_pickle = True #pickle new run
+    if not recall:
+        """
+            width - corridor width
+            height - corridor height
+            pop_total -population total
+            entrances - how many entrances
+            entrance speed- mean entry speed for agents
+            exits - how many exits
+            exit_space- how wide are exits 
+            speed_min - minimum agents speed to prevent ridiculuous iteration numbers
+            speed_mean - desired mean of normal distribution of speed of agents
+            speed_std - as above but standard deviation
+            speed_steps - how many levels of speed between min and max for each agent
+            separation - agent radius to determine collisions
+            wiggle - wiggle distance
+            batch_iterations - how many model steps to do as a maximum
+            3 do_ bools for saving plotting and animating data. 
+        """
+        model_params = {
+    			'pop_total': 30,
     
-    """
-    a - alpha between 1 and 1e-4 typically determines spread of sigma points.
-        however for large dimensions may need to be even higher
-    b - beta set to 2 for gaussian. determines trust in prior distribution.
-    k - kappa usually 0 for state estimation and 3-dim(state) for parameters.
-        not 100% sure what kappa does. think its a bias parameter.
-    !! might be worth making an interactive notebook that varies these. for fun
-    """
+    			'width': 200,
+    			'height': 100,
     
-    ukf_params = {
-            "a":1,
-            "b":2,
-            "k":0,
-            }
+    			'gates_in': 3,
+    			'gates_out': 2,
+    			'gates_space': 1,
+    			'gates_speed': 1,
     
+    			'speed_min': .2,
+    			'speed_mean': 1,
+    			'speed_std': 1,
+    			'speed_steps': 3,
     
+    			'separation': 5,
+    			'max_wiggle': 1,
     
-    """run and extract data"""
-    base_model = Model(**model_params)
-    poly_list = grid_poly(model_params["width"],model_params["height"],filter_params["bin_size"]) #generic square grid over corridor
-    u = agg_ukf_ss(model_params,filter_params,ukf_params,poly_list,base_model)
-    u.main()
-    actual,preds,full_preds,truth= u.data_parser(True)
-    truth[np.isnan(actual)]=np.nan
+    			'step_limit': 3600,
+    
+    			'do_history': True,
+    			'do_print': True,
+    		}
+        """
+        Sensor_Noise - how reliable are measurements H_x. lower value implies more reliable
+        Process_Noise - how reliable is prediction fx lower value implies more reliable
+        sample_rate - how often to update kalman filter. higher number gives smoother predictions
+        prop - proportion of agents observed. this is a floor function that rounds the proportion 
+            DOWN to the nearest intiger number of agents. 1 is all <1/pop_total is none
+        bin_size - square sizes for aggregate plots,
+        do_batch - do batch processing on some pre-recorded truth data.
+        bring_noise - add noise to measurements?
+        noise - variance of added noise
+        """
+        
+        filter_params = {      
+               
+                "Sensor_Noise":  1, 
+                "Process_Noise": 1, 
+                'sample_rate': 5,
+                "do_restrict": True, 
+                "prop": 1,
+                "bin_size":25,
+                "bring_noise":True,
+                "noise":0.5,
+                "do_batch":False,
+                }
+        
+        """
+        a - alpha between 1 and 1e-4 typically determines spread of sigma points.
+            however for large dimensions may need to be even higher
+        b - beta set to 2 for gaussian. determines trust in prior distribution.
+        k - kappa usually 0 for state estimation and 3-dim(state) for parameters.
+            not 100% sure what kappa does. think its a bias parameter.
+        !! might be worth making an interactive notebook that varies these. for fun
+        """
+        
+        ukf_params = {
+                "a":1,
+                "b":2,
+                "k":0,
+                }
+        
+        
+        
+        """run and extract data"""
+        base_model = Model(**model_params)
+        poly_list = grid_poly(model_params["width"],model_params["height"],filter_params["bin_size"]) #generic square grid over corridor
+        u = agg_ukf_ss(model_params,filter_params,ukf_params,poly_list,base_model)
+        u.main()
+        
+        n = model_params["pop_total"]
+        bin_size = filter_params["bin_size"]
+        noise = filter_params["noise"]
+        if do_pickle:
+            f_name = f"test_agg_ukf_pickle_{n}_{bin_size}_{noise}"
+            f = open(f_name,"wb")
+            pickle.dump(u,f)
+            f.close()
+        
+    else:
+        "file name to recall from certain parameters or enter own"
+        n = 30
+        noise= 0.5 
+        bin_size = 25
+
+
+        file_name = f"test_agg_ukf_pickle_{n}_{bin_size}_{noise}"
+        f = open(file_name,"rb")
+        u = pickle.load(f)
+        f.close()
+    
+        poly_list =u.poly_list #generic square grid over corridor
+
+    plot_save = True
+    
+    obs,preds,full_preds,truth= u.data_parser(True)
+    truth[np.isnan(obs)]=np.nan
 
     "additional step for aggregate"
-    preds[np.isnan(actual)]=np.nan 
+    preds[np.isnan(obs)]=np.nan 
+    full_preds[np.isnan(obs)]=np.nan 
+
     """plots"""
     agg_plts = agg_plots(u)
     
-    distances,t_mean = agg_plts.agg_diagnostic_plots(truth,preds,False)
+    distances,t_mean = agg_plts.agg_diagnostic_plots(truth,preds,plot_save)
     
-    agg_plts.pair_frames(actual,full_preds)
-    agg_plts.heatmap(actual,poly_list)
-    
+    animate = False
+    if animate:
+        agg_plts.pair_frames()
+        agg_plts.heatmap(obs,poly_list)
+        

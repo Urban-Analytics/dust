@@ -27,6 +27,7 @@ import multiprocessing
 from copy import deepcopy
 import os 
 import sys 
+import pickle 
 
 #due to import errors from other directories
 sys.path.append("..")
@@ -284,10 +285,11 @@ class ukf_ss:
         self.index2[0::2] = 2*self.index
         self.index2[1::2] = (2*self.index)+1
         
-        self.ukf_preds=[]
-        self.ukf_histories = [] #actual assimilated ukf value
-        self.full_Ps=[]
-        self.truths = []
+        self.ukf_preds=[] # fills in blanks between assimlations with pure stationsim. 
+                          # good for animation. not good for error metrics use ukf_histories
+        self.ukf_histories = [] # assimilated ukf positions
+        self.full_Ps=[] #full covariances. again used for animations and not error metrics
+        self.truths = [] # noiseless observations
     
         self.time1 =  datetime.datetime.now()#timer
         self.time2 = None
@@ -441,7 +443,7 @@ class ukf_ss:
             Especially if using average error metrics as finished agents have practically 0 
             error and massively skew results.
         out:
-            a - actual agents positions
+            a - noisy observations of agents positions
             b - ukf predictions of said agent positions
             c - if sampling rate >1 fills inbetween predictions with pure stationsim prediciton
                 this is solely for smoother animations later
@@ -623,17 +625,22 @@ class plots:
         plt.title("Worst agent")
         plt.title(f"{obs_text} Worst Agent")
 
+
+        if observed:
+                density_number = self.filter_class.sample_size
+        else:
+            density_number = self.filter_class.model_params["pop_total"]-self.filter_class.sample_size
+
         j = plt.figure(figsize=(12,8))
-        plt.hist(agent_means,density=True,bins = self.filter_class.model_params["pop_total"])
-        plt.xlabel("Agent L2")
-        plt.ylabel("Density ([0,1])")
-        plt.title(obs_text+" Histogram of agent L2s")
-        kdeplot(agent_means,color="red",cut=0,lw=4)
-        plt.title(f"{obs_text} Agent L2 Histogram")
-  
+        plt.hist(agent_means,density=False,edgecolor="k")
+        plt.xlabel("L2 Error")
+        plt.ylabel(str(density_number)+ " " + obs_text+ " Agent Counts")
+        #plt.title(obs_text+" Histogram of agent L2s")
+        #kdeplot(agent_means,color="red",cut=0,lw=4,label="kde estimate")
+        #plt.legend()
 
         if save:
-            f.savefig(f"{obs_text}_actual.pdf")
+            f.savefig(f"{obs_text}_obs.pdf")
             g.savefig(f"{obs_text}_kf.pdf")
             h.savefig(f"{obs_text}_l2.pdf")
             i.savefig(f"{obs_text}_worst.pdf")
@@ -663,8 +670,8 @@ class plots:
             "plot true agents and dummies for legend"
             ax.scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o",edgecolors="k")
             ax.scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o",edgecolors="k")
-            ax.scatter(-1,-1,color="orangered",label = "KF_Observed",marker="P",edgecolors="k")
-            ax.scatter(-1,-1,color="yellow",label = "KF_Unobserved",marker="^",edgecolors="k")
+            ax.scatter(-1,-1,color="orangered",label = "Observed Predictions",marker="P",edgecolors="k")
+            ax.scatter(-1,-1,color="yellow",label = "Unobserved Predictions",marker="^",edgecolors="k")
 
             markers = ["P","^"]
             colours = ["orangered","yellow"]
@@ -687,12 +694,12 @@ class plots:
             ax.set_position([box.x0, box.y0 + box.height * 0.1,
                              box.width, box.height * 0.9])
             
-            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18),
-                      ncol=3)
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12),
+                      ncol=2)
             "labelling"
             plt.xlabel("corridor width")
             plt.ylabel("corridor height")
-            plt.title("True Positions vs UKF Predictions")
+            #plt.title("True Positions vs UKF Predictions")
             "save frame and close plot else struggle for RAM"
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
             file = f"output_pairs/pairs{number}"
@@ -981,116 +988,148 @@ class animations:
 if __name__ == "__main__":
     np.random.seed(seed = 8) #hash if not needed.
     # this seed (8) is a good example of an agent getting stuck given 10 agents
+    recall =True # recalling a pickled run or starting from scratch?
+    do_pickle =True # if not recalling do you want to pickle this run so you can recall it?
 
-    """
-        width - corridor width
-        height - corridor height
-        pop_total -population total
-        entrances - how many entrances
-        entrance speed- mean entry speed for agents
-        exits - how many exits
-        exit_space- how wide are exits 
-        speed_min - minimum agents speed to prevent ridiculuous iteration numbers
-        speed_mean - desired mean of normal distribution of speed of agents
-        speed_std - as above but standard deviation
-        speed_steps - how many levels of speed between min and max for each agent
-        separation - agent radius to determine collisions
-        wiggle - wiggle distance
-        batch_iterations - how many model steps to do as a maximum
-        3 do_ bools for saving plotting and animating data. 
-    """
-    model_params = {
-			'pop_total': 30,
-
-			'width': 200,
-			'height': 100,
-
-			'gates_in': 3,
-			'gates_out': 2,
-			'gates_space': 1,
-			'gates_speed': 1,
-
-			'speed_min': .2,
-			'speed_mean': 1,
-			'speed_std': 1,
-			'speed_steps': 3,
-
-			'separation': 5,
-			'max_wiggle': 1,
-
-			'step_limit': 3600,
-
-			'do_history': True,
-			'do_print': True,
-		}
-    """
-    Sensor_Noise - how reliable are measurements H_x. lower value implies more reliable
-    Process_Noise - how reliable is prediction fx lower value implies more reliable
-    sample_rate - how often to update kalman filter. higher number gives smoother predictions
-
-    prop - proportion of agents observed. this is a floor function that rounds the proportion 
-        DOWN to the nearest intiger number of agents. 1 is all <1/pop_total is none
+    if not recall:
+        """
+            width - corridor width
+            height - corridor height
+            pop_total -population total
+            entrances - how many entrances
+            entrance speed- mean entry speed for agents
+            exits - how many exits
+            exit_space- how wide are exits 
+            speed_min - minimum agents speed to prevent ridiculuous iteration numbers
+            speed_mean - desired mean of normal distribution of speed of agents
+            speed_std - as above but standard deviation
+            speed_steps - how many levels of speed between min and max for each agent
+            separation - agent radius to determine collisions
+            wiggle - wiggle distance
+            batch_iterations - how many model steps to do as a maximum
+            3 do_ bools for saving plotting and animating data. 
+        """
+        model_params = {
+    			'pop_total': 30,
     
-    bring_noise: add noise to true ukf paths
-    noise: variance of said noise (0 mean)
-    do_batch - do batch processing on some pre-recorded truth data.
-    """
+    			'width': 200,
+    			'height': 100,
     
-    filter_params = {      
-           
-            "Sensor_Noise":  1, 
-            "Process_Noise": 1, 
-            'sample_rate': 5,
-            "prop": 0.5,
-            "bring_noise":True,
-            "noise":0.5,
-            "do_batch":False,
-
-            }
+    			'gates_in': 3,
+    			'gates_out': 2,
+    			'gates_space': 1,
+    			'gates_speed': 1,
     
-    """
-    a - alpha between 1 and 1e-4 typically determines spread of sigma points.
-        however for large dimensions may need to be even higher
-    b - beta set to 2 for gaussian. determines trust in prior distribution.
-    k - kappa usually 0 for state estimation and 3-dim(state) for parameters.
-        not 100% sure what kappa does. think its a bias parameter.
-    !! might be worth making an interactive notebook that varies these. for fun
-    """
+    			'speed_min': .2,
+    			'speed_mean': 1,
+    			'speed_std': 1,
+    			'speed_steps': 3,
     
-    ukf_params = {
+    			'separation': 5,
+    			'max_wiggle': 1,
+    
+    			'step_limit': 3600,
+    
+    			'do_history': True,
+    			'do_print': True,
+    		}
+        """
+        Sensor_Noise - how reliable are measurements H_x. lower value implies more reliable
+        Process_Noise - how reliable is prediction fx lower value implies more reliable
+        sample_rate - how often to update kalman filter. higher number gives smoother predictions
+    
+        prop - proportion of agents observed. this is a floor function that rounds the proportion 
+            DOWN to the nearest intiger number of agents. 1 is all <1/pop_total is none
+        
+        bring_noise: add noise to true ukf paths
+        noise: variance of said noise (0 mean)
+        do_batch - do batch processing on some pre-recorded truth data.
+        """
+        
+        filter_params = {      
+               
+                "Sensor_Noise":  1, 
+                "Process_Noise": 1, 
+                'sample_rate': 5,
+                "prop": 0.5,
+                "bring_noise":True,
+                "noise":0.5,
+                "do_batch":False,
+    
+                }
+        
+        """
+        a - alpha between 1 and 1e-4 typically determines spread of sigma points.
+            however for large dimensions may need to be even higher
+        b - beta set to 2 for gaussian. determines trust in prior distribution.
+        k - kappa usually 0 for state estimation and 3-dim(state) for parameters.
+            not 100% sure what kappa does. think its a bias parameter.
+        !! might be worth making an interactive notebook that varies these. for fun
+        """
+        
+        ukf_params = {
+                
+                "a":1,
+                "b":2,
+                "k":0,
+    
+                }
+        
+        """run and extract data"""
+        n = model_params["pop_total"]
+        prop = filter_params["prop"]
+        noise = filter_params["noise"]
+        
+        base_model = Model(**model_params)
+        u = ukf_ss(model_params,filter_params,ukf_params,base_model)
+        u.main()
+        if do_pickle:
+            f_name = f"test_ukf_pickle_{n}_{prop}_{noise}"
+            f = open(f_name,"wb")
+            pickle.dump(u,f)
+            f.close()
             
-            "a":1,
-            "b":2,
-            "k":0,
+            
+    else:
+        "file name to recall from certain parameters or enter own"
 
-            }
-    
-    """run and extract data"""
-    base_model = Model(**model_params)
-    u = ukf_ss(model_params,filter_params,ukf_params,base_model)
-    u.main()
+        n = 30
+        prop = 0.5 
+        noise = 0.5
+        
+        file_name = f"test_ukf_pickle_{n}_{prop}_{noise}"
+        f = open(file_name,"rb")
+        u = pickle.load(f)
+        f.close()
+        filter_params = u.filter_params
+        model_params = u.model_params
+        
     if filter_params["sample_rate"]>1:
         print("partial observations. using interpolated predictions (full_preds) for animations.")
         print("ONLY USE preds FOR ANY ERROR METRICS")
-    actual,preds,full_preds,truth= u.data_parser(True)
-    truth[np.isnan(actual)]=np.nan
-    #actual = actual[1:,:] #cut off wierd n/a start from StationSim
+    obs,preds,full_preds,truth= u.data_parser(True)
+    truth[np.isnan(obs)]=np.nan #keep finished agents from skewing mean down
+    preds[np.isnan(obs)]=np.nan #kill wierd tails of finished agents (remove this and see what happens)
+
     """plots"""
     plts = plots(u)
 
 
-    plot_save=False
+    plot_save=True
     if filter_params["prop"]<1:
         distances,t_mean = plts.diagnostic_plots(truth,preds,False,plot_save)
     distances2,t_mean2 = plts.diagnostic_plots(truth,preds,True,plot_save)
     
+    animate = False
+    "animate into pairwise plots gifs?"
+    if animate:
+        if filter_params["sample_rate"]==1:
+            plts.pair_frames(reall,preds)
+            #plts.heatmap(real) #these probably dont work anymore. feel free to try
+            #plts.pair_frames_stack_ellipse(obs,preds)
     
-    if filter_params["sample_rate"]==1:
-        plts.pair_frames(actual,preds)
-        #plts.heatmap(actual)
-        #plts.pair_frames_stack_ellipse(actual,preds)
-
-    else:
-        plts.pair_frames(actual,full_preds)
-        #plts.pair_frames_stack_ellipse(actual,full_preds)
-        #plts.heatmap(actual)
+        else:
+            plts.pair_frames(real,full_preds)
+            #plts.pair_frames_stack_ellipse(obs,full_preds) #these probably dont work anymore. feel free to try
+            #plts.heatmap(obs)
+    

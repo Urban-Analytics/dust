@@ -29,7 +29,6 @@ import glob
 import seaborn as sns
 import warnings
 
-plt.rcParams.update({'font.size':20})
 """
 function to take instanced clases output from arc ukf scripts and produce grand mean plots.
 
@@ -38,16 +37,14 @@ function to take instanced clases output from arc ukf scripts and produce grand 
 #%%
 
         
-def l2_parser(instance,prop):
+def l2_parser(instance):
     "extract arrays of real paths, predicted paths, L2s between them."
     actual,preds,full_preds,truth = instance.data_parser(False)
     plts = plots(instance)
     truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
-    
-    true_o,b_o,plot_range = plts.plot_data_parser(truth,preds,True)    
-    true_u,b_u,plot_range= plts.plot_data_parser(truth,preds,False)
+    preds[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
 
-    distances_obs,oindex,agent_means,t_mean_obs = plts.L2s(true_o,b_o)
+    distances_obs,oindex,agent_means,t_mean_obs = plts.L2s(truth,preds)
 
     
     return distances_obs
@@ -84,22 +81,22 @@ def grand_mean_plot(data,f_name,instance,save):
     easiest way to build confidence intervals 
     for mean and variance of average agent error at each time point
     """
-    f = plt.figure()
+    f = plt.figure(figsize=(12,12))
     sns.lineplot(grand_frame[:,0],grand_frame[:,1],lw=3)
     plt.xlabel("Time (steps)")
-    plt.ylabel("L2 Distribution for Aggregated Agents over Time")
-    plt.title("L2s over time")
+    plt.ylabel("Aggregated Agents L2s over Time")
+    plt.tight_layout()
     if save:
         plt.savefig(f_name)
     
 if __name__ == "__main__":
     "parameters for which number of agents and proportion observed to plot for"
-    n=10
-    bin_size = 5
+    n=30
+    bin_size = 25
 
     distances = [] #l2 distance matrices for each run observed/unobserved
     instances=[]
-    files = glob.glob(f"ukf_results/agg_ukf_agents_{n}_bin_{bin_size}-1")
+    files = glob.glob(f"ukf_results/agg_ukf_agents_{n}_bin_{bin_size}-002")
     
     for file in files:
         
@@ -107,21 +104,16 @@ if __name__ == "__main__":
         u = pickle.load(f)
         f.close()
     
-        distance = l2_parser(u,prop)#
+        distance = l2_parser(u)#
         distances.append(distance)
         instances.append(u)
 
 
-    #plts = plots(u)
     save_plots =False
     if len(files)>1:
         #observed grand L2
-        grand_mean_plot(d_obs,f"L2_obs_{n}_{prop}.pdf",u,save_plots)
-        if prop<1:
-            #unobserved grand L2
-            grand_mean_plot(d_uobs,f"L2_uobs_{n}_{prop}.pdf",u,save_plots)
-            #plts.trajectories(actual)
-            #plts.pair_frames(actual,preds)
+        grand_mean_plot(distances,f"L2_obs_{n}_{bin_size}.pdf",u,save_plots)
+
     else:
         print("just one run for given params. giving single run diagnostics")
         actual,pred,full_preds,truth=u.data_parser(False)
@@ -129,15 +121,11 @@ if __name__ == "__main__":
         truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
         pred[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
 
-        plts=plots(u)
+        agg_plts=agg_plots(u)
         "single test diagnostics"
-        save_plots=False
 
         "all observed just one plot"
-        distances2,t_mean2 = plts.diagnostic_plots(truth,pred,True,save_plots)
-        #plts.pair_frames(actual,full_preds) #basic animation
-        #plts.pair_frames_stack_ellipse(actual,full_preds) #covariance and l2 trajectories. TAKES FOREVER
-
-
-
+        distances2,t_mean2 = agg_plts.agg_diagnostic_plots(truth,pred,save_plots)
+        
+        agg_plts.pair_frames(truth,pred)
 

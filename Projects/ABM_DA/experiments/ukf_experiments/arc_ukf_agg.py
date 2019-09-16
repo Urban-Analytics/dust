@@ -73,7 +73,7 @@ if __name__ == '__main__':
     #num_par = list([1] + list(range(10, 50, 10)) + list(range(100, 501, 100)) + list(range(1000, 2001, 500)) + [3000, 5000, 7500, 10000])
     
     num_age = [10,20,30] # number of agents 5 to 50 by 5
-    bins = [5,10,25,50,100] #bin widths 
+    bins = [5,10,25,50] #bin widths 
     run_id = np.arange(0,30,1) #30 runs
     
     # List of all particle-agent combinations. ARC task
@@ -119,7 +119,6 @@ if __name__ == '__main__':
             "do_restrict": True, 
             "do_animate": False,
             "prop":1,
-            #"run_id":param_list[int(sys.argv[2])-1][2],
             "run_id":param_list[int(sys.argv[1])-1][2],
             "heatmap_rate": 1,
             "bin_size":param_list[int(sys.argv[1])-1][1],
@@ -175,7 +174,7 @@ if __name__ == '__main__':
     f_name = "ukf_results/agg_ukf_agents_{}_bin_{}-{}".format(      
     str(int(model_params['pop_total'])),
     str(filter_params['bin_size']),
-    str(filter_params["run_id"]))
+    str(filter_params["run_id"]).zfill(3))
     f = open(f_name,"wb")
     pickle.dump(u,f)
     f.close()

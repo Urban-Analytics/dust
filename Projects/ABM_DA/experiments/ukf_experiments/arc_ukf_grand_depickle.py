@@ -36,7 +36,8 @@ def l2_parser(instance,prop):
     
     actual,preds,full_preds,truth = instance.data_parser(False)
     truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
-    
+    preds[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+
     plts = plots(instance)
     true_u,b_u,plot_range = plts.plot_data_parser(truth,preds,False)
     true_o,b_o,plot_range = plts.plot_data_parser(truth,preds,True)    
@@ -46,7 +47,6 @@ def l2_parser(instance,prop):
         distances_uobs,uindex,agent_means,t_mean_uobs = plts.L2s(true_u,b_u)
     else:
         distances_uobs = []
-    matplotlib.use("module://ipykernel.pylab.backend_inline")    
     preds[np.isnan(actual)]=np.nan
     
     return actual,preds,distances_obs,distances_uobs
@@ -59,17 +59,16 @@ def grand_L2_matrix(n,prop,n_step):
     u_L2 = np.ones((len(n),len(prop)))*np.nan
     
     "cycle over number of agents and proportions. taking grand (mean of means) L2 mean for each pair"
-    for i in n:
-        i_index = (i-n.min())//n_step  
+    for i,num in enumerate(n):
         files={}
         for j in prop:
             if j ==1:
-                files[j] = glob.glob(f"ukf_results/ukf_agents_{i}_prop_{1}*") 
+                files[j] = glob.glob(f"ukf_results/ukf_agents_{num}_prop_{1}*") 
                 #wierd special case with 1 and 1.0 discrepancy
             else:
-                files[j.round(2)] = glob.glob(f"ukf_results/ukf_agents_{i}_prop_{j.round(2)}*")
+                files[j.round(2)] = glob.glob(f"ukf_results/ukf_agents_{num}_prop_{j.round(2)}*")
 
-        for _ in files.keys():
+        for k,_ in enumerate(files.keys()):
             o_L2_2=[]
             u_L2_2 = []
             for file in files[_]:
@@ -77,11 +76,15 @@ def grand_L2_matrix(n,prop,n_step):
                 u = pickle.load(f)
                 f.close()
                 actual,pred,do,du = l2_parser(u,float(_))#
-                o_L2_2.append(np.nanmean(do))
-                u_L2_2.append(np.nanmean(du))
+                "grand means"
+                o_L2_2.append(np.nanmean(do,axis=0))
+                u_L2_2.append(np.nanmean(du,axis=0))
+                "grand medians"
+                o_L2_2.append(np.nanmean(do,axis=0))
+                u_L2_2.append(np.nanmean(du,axis=0))
         
-            o_L2[i_index,int(_*len(prop))-1]=np.nanmean(o_L2_2)
-            u_L2[i_index,int(_*len(prop))-1]=np.nanmean(u_L2_2)
+            o_L2[i,k]=np.nanmean(np.hstack(o_L2_2))
+            u_L2[i,k]=np.nanmean(np.hstack(u_L2_2))
             
     return o_L2,u_L2
     
@@ -177,8 +180,8 @@ def boxplot_parser(n,prop):
         for j in prop:
             obs = observed[i][j]
             uobs = unobserved[i][j]
-            obs_sub_frames.append(pd.DataFrame([[str(i)]*len(obs),[str(j)]*len(obs),obs]).T)
-            uobs_sub_frames.append(pd.DataFrame([[str(i)]*len(uobs),[str(j)]*len(uobs),uobs]).T)
+            obs_sub_frames.append(pd.DataFrame([[i]*len(obs),[j]*len(obs),obs]).T)
+            uobs_sub_frames.append(pd.DataFrame([[i]*len(uobs),[j]*len(uobs),uobs]).T)
 
     "stack into grand frames and label columns"
     obs_frame = pd.concat(obs_sub_frames)
@@ -195,12 +198,12 @@ def boxplot_plots(n,prop,frame,separate,observed,save):
             if observed:
                 f_name = f"Observed_boxplot_{i}.pdf"
                 y_name = "observed L2 agent errors"
-                n_subframe = obs_frame.loc[obs_frame["n"]==str(i)]
     
             else:
                 y_name = "unobserved L2 agent errors"
                 f_name = f"Unobserved_boxplot_{i}.pdf"
-                n_subframe = uobs_frame.loc[uobs_frame["n"]==str(i)]
+                
+            n_subframe = frame.loc[frame["n"]==str(i)]
     
             f = plt.figure()
             sns.boxplot(x="proportion observed (x100%)",y=y_name,data=n_subframe)
@@ -232,7 +235,7 @@ if __name__ == "__main__":
     p_min = 0.25
     p_max = 1.0
     
-    plot1 = False
+    plot1 = True
     plot2 = True
     n= np.arange(n_min,n_max+n_step,n_step)
     prop = np.arange(p_min,p_max+p_step,p_step)

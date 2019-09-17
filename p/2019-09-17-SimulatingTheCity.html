@@ -1,0 +1,489 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="author" content="Alison Heppenstall">
+        <meta name="keywords" content="ABM, dynamic data assimilation, city simulation">
+
+		<title>Simulating the City</title>
+
+		<link rel="stylesheet" href="reveal/css/reveal.css">
+		<link rel="stylesheet" href="reveal/css/theme/white.css">
+        
+        <!-- Some extra bits added by Nick -->
+        <link rel="stylesheet" href="reveal/css/nick.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+                
+                <!--
+                <section data-markdown id="index"
+                         data-background-image="http://surf.leeds.ac.uk/figures/cityscapes/chicago_bw.jpg">
+                -->
+                    
+                <section class="title"  id="index" data-background-image="../figures/virtual_city.jpeg">
+                    <div class="whitebackground2">
+                        
+                        <h5>LIDA Showcase 2019</h5>
+                   
+                        <h1 style="font-size: 45px;">Simulating the City</h1>
+                        <hr/>
+                        <h2 style="font-size: 35px;"><a href="https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall">Alison Heppenstall</a>, 
+                            Nick Malleson, Nik Lomax, Dan Birks, Minh Le Kieu, Yuanxuan Yang</h2>
+                        <h4>University of Leeds and The Alan Turing Institute, UK</h4>
+                          <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
+                        <hr/>
+                        <p style="text-align:center;font-size:25px">Slides available at: <a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+                        
+                        <a href="https://europa.eu/european-union/index_en">
+                            <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;" src="../figures/LOGO_EU.jpg"/>
+                        </a>
+
+                        <a href="http://www.leeds.ac.uk/">
+                            <img style="float:center;padding:10px;width:150px; height:auto;" src="../figures/uol_logo.gif"/>
+                        </a>
+                        
+                        <a href="http://www.turing.ac.uk/">
+                            <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_TURING.png"/>
+                        </a>
+                    </div>
+                 <!--     <aside class="notes">
+                        Abstract: This paper outlines a framework for state estimation and data assimilation in agent-based models, using a Bayesian probabilistic framework. It presents initial attempts to begin to quantify the type and volume of data that would be required to realistically model a crowd of people in real time. It contributes to the challenge set out in the work- shop theme in two ways. Firstly, by developing methods that support “trusted models that can be used by industry and governments to en- hance decision-making, and that can incorporate real (and real-time) data sets in a meaningful way”. Secondly, regarding the ‘humans and devices’ theme specifically, by beginning to estimate the volume of sen- sors that would be required in order to successfully model crowds in real time. Without a reliable means of incorporating real-time data into ur- ban models, their use will continue to be limited to scenario evaluation based on historical data rather than providing the most likely estimates of the current state of urban systems as well as short-term forecasts.
+                    </aside> 
+                -->
+                </section>
+
+   
+                
+                
+                <!-- ************************************************************
+                *********************** VISION **********************************
+                ************************************************************ -->
+
+                <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                         data-background-video-loop="loop"
+                         id="Context-UrbanFlows">                     
+                    <div class="whitebackground2 fragment">
+                        <h3>How many people are there in Trafalgar Square right now?</h3>
+                        
+                        <p>We need to better understand urban flows:</p>
+                        
+                        <p class="l2">Crime – how many possible victims?</p>
+                        <p class="l2">Pollution – who is being exposed? Where are the hotspots?</p>
+                        <p class="l2">Economy – can we attract more people to our city centre?</p>
+                        <p class="l2">Health - can we encourage more active travel?</p>
+                        
+                    </div>
+                </section>
+                
+                <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
+                         data-background-video-loop="loop">
+                    <div class="whitebackground2 fragment">
+                        <h3>City Simulation</h3>
+                        <p>Understanding <i>and predicting</i> the impact of short and long-term urban flows</p>
+                    </div>
+                    
+                </section>
+                
+                 <!-- ************************************************************
+                ************INTRO TO TURING URBAN ANALYTICS **********************
+                ************************************************************ -->
+                
+                 <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                         data-background-video-loop="loop" id="Turing Work Overview">
+                     
+                     <div>
+                      <figure class="centre">
+                        <img data-src="../figures/TuringLeedsUrbanAnalytics.png" alt="Urban Analytics at Leeds"/>
+                        <figcaption></figcaption>
+                    </figure>  
+                    </div>
+                   
+                </section>
+                
+              <!--
+                <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                         data-background-video-loop="loop" id="City time-scales">
+                 
+                     <div>
+                      <figure class="centre" >
+                        <img data-src="../figures/AllSPENSER.png" alt="TeamLeeds"/>
+                        <figcaption></figcaption>
+                    </figure>  
+                    </div>
+                </section>
+            -->
+                
+                <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                         data-background-video-loop="loop" id="City time-scales">
+                 
+                     <div>
+                      <figure class="centre" >
+                        <img data-src="../figures/ModellingUrbanDynamics.png" alt="City time-scales"/>
+                        <figcaption></figcaption>
+                    </figure>  
+                    </div>
+                </section>
+                
+                
+                
+              
+                 <!-- ************************************************************
+                ****************************** SPENSER ***********************
+                ************************************************************ -->
+                
+                 <section id="SPENSER" data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                    
+                    <div class="whitebackground2 fragment">
+                        <h2>SPENSER</h2>
+                        <p>Synthetic population estimation and scenario projection model</p>
+                        <p class="l2">Creates dynamic and high resolution household populations</p>
+                        <p class="l2">Customisable scenario projections</p>
+                        <p class="l2">Set assumptions for the future (economic, health, policy)</p>
+                        <p class="l2">Forecast the impacts of Brexit..!</p>
+                    </div>
+                </section> 
+                
+               
+                
+                <section data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                 
+                     <div>
+                      <figure class="centre" >
+                        <img data-src="../figures/SPENSER.png" alt="SPENSER"/>
+                        <figcaption></figcaption>
+                    </figure>  
+                    </div>
+                </section>
+                
+                <section id="related_projects_SPENSER" data-background-image="../figures/the-roaming-platypus-310824-unsplash-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Related Projects</h2>
+                        <a href="https://SPIHER/">
+                            <img class="right" style="width:200px;" data-src="../figures/sipher.png" alt="SIPHER Logo"/>
+                        </a>
+                        <h3>Systems Science in Public Health and Health Economic Research (SIPHER)</h3>
+                        <p><a href=" https://sipher.ac.uk/">sipher.ac.uk</a></p>
+                        <p>Modelling health interventions</p>
+                        
+                        
+                        <a href="www.turing.ac.uk">
+                            <img class="right" style="width:200px;" data-src="../figures/LOGO_TURING.png" alt="Turing logo"/>
+                        </a>
+                        <h3><b>QUIPP:</b>Quantifying Uncertainty and Individual Privacy Protection </h3>
+                        <p><a href="https://www.turing.ac.uk/research/research-projects/uncertainty-agent-based-models-smart-city-forecasts">turing.ac.uk</a></p>
+                        
+                        <p>Developing methods that track uncertainty and retain privacy in sensitive data sets</p>
+                    </div>
+                </section>
+                 <!-- ************************************************************
+                ****************************** ALISON ****************************
+                ************************************************************ -->
+                
+                <section id="Smart Soc City" data-background-image="../figures/smartsoccityTuring.png">
+
+                </section>
+                
+                <section id="SocCity" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                    
+                    <div class="whitebackground2 fragment">
+                        <h2>Bringing the Social to the Smart City</h2>
+                        <p>Understanding urban flows</p>
+                        <p class="l2">Smart (OD) and Social (media) data</p>
+                        <p class="l2">Analysing data using different methods</p>
+                        <p class="l2">Forecast the impacts of disruption</p>
+                        <p class="l2">Use new information to better parameterise individual-based models</p>
+                    </div>
+                </section> 
+                
+                  <section id="Data sources" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                    <img style="width:1600px;" data-src="../figures/alisondata.png" alt="Diagram of OS data" />
+                </section>
+                
+                 <section id="Shenzhan" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                     <img data-src="../figures/shenzhan_maps.png" alt="Shenzhan_maps" />
+                     
+                     <!--<table style="width:100%">
+
+  <tr>
+    <td><img style="float:left;" src="../figures/shenzhan_static2.jpeg" alt="Shenzhan_map1"/></td>
+    <td><img style="float:right;" src="../figures/shenzhan_1.mp4" alt="Shenzhan_map3"/></td> 
+    
+  </tr>
+  <tr>
+    <td><img style="float:left;" src="../figures/shenzhan_static1.jpeg" alt="Shenzhan_map2"/></td>
+    <td> <img style="float:right;" src="../figures/shenzhan_2.mp4" alt="Shenzhan_map4"/></td> 
+    
+  </tr>
+</table> -->
+                   <!--
+                     <img style="float:left;" src="../figures/shenzhan_static2.jpeg" alt="Shenzhan_map1"/>
+                     <img style="float:left;" src="../figures/shenzhan_static1.jpeg" alt="Shenzhan_map2"/>
+                     <img style="float:right;" src="../figures/shenzhan_1.mp4" alt="Shenzhan_map3"/>
+                     <img style="float:right;" src="../figures/shenzhan_2.mp4" alt="Shenzhan_map4"/>
+                     -->
+                     
+                </section>
+                
+                 <section id="Social Media Data" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                    <img data-src="../figures/weibo_shenzhan.png" alt="Weibo data" />
+                </section>
+                
+                <section id="Results" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                    <img data-src="../figures/shenzhan_students.png" alt="Shenzhan_results_students" />
+               
+                <div class="whitebackground2 fragment">
+                    <h9> Yang Y, Heppenstall A, Turner A, Comber A. 2019.<b> Who, Where, Why and When? Using Smart Card and Social Media Data to Understand Urban Mobility.</b> ISPRS International Journal of Geo-Information. 8.6 </h9>
+                    </div>
+                </section>
+                
+                
+                  <section id="Network_disruption" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                    <img data-src="../figures/metro_disruption.png" alt="Metro_disruption" />
+                       <div class="whitebackground2 fragment">
+                         <h9> Yang Y, Heppenstall A, Turner A, Comber A. 2019. <b>A spatiotemporal and graph-based analysis of dockless bike sharing patterns to understand urban flows over the last mile.</b> Computers, Environment and Urban Systems. 77  </h9>
+                    </div>
+                </section>
+                
+                <section id="Results_Network_disruption" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                    <img data-src="../figures/results_metro_disruption.png" alt="Results_Metro_disruption" />
+                    
+                </section>
+                
+                <!-- ************************************************************
+                ***************************** MALLESON **************************
+                ************************************************************ -->
+                
+                <section id="prob-divergence" 
+                         data-background-video="../videos/BBC_Swarm_Natures_Incredible_Invasions.mp4" 
+                         data-background-video-muted 
+                         data-background-video-loop="loop">
+                    
+                    <div class="whitebackground fragment">
+                        <h2>Problem: Models will Diverge</h2>
+                        <p>Uncertainty abounds</p>
+                        <p class="l2">Inputs (measurement noise)</p>
+                        <p class="l2">Parameter values</p>
+                        <p class="l2">Model structure</p>
+                        <p>Nonlinear models predict near future well, but diverge over time.</p>
+                    </div>
+                </section> 
+                
+                
+               <!-- <section id="abm-calibration">
+                    
+                    <figure class="right" style="width:30%">
+                        <img data-src="../figures/modelling_process.png" alt="The process of calibration"/>
+                        <figcaption>Typical model development process</figcaption>
+                    </figure>
+                    
+                    <h2>Divergence</h2>
+                    <p>Drawback with the 'typical' model development process</p>
+                    <p>Waterfall-style approach is common</p>
+                    <p>Calibrate until fitness is reasonable, then make predictions</p>
+                    <p>But we can do better:</p>
+                    <p class="l2">Better computers</p>
+                    <p class="l2">More (streaming) data</p>
+                    <p>Methodological gap</p>
+                    
+                </section> -->
+                
+                            
+                <section id="dda" data-background-image="../figures/weather2.jpg" >
+                    <div class="whitebackground fragment">
+                        <h2>Possible Solution: Dynamic Data Assimilation</h2>
+                        <p>Used in meteorology and hydrology to constrain models closer to reality.</p>
+                        <p>Try to improve estimates of the true system state by combining:</p>
+                        <p class="l2">Noisy, real-world observations</p>
+                        <p class="l2">Model estimates of the system state</p>
+                        <p>Should be more accurate than data / observations in isolation.</p>
+                    </div>
+                </section>
+                
+                <section id="abm-dda-overview">
+                    <img data-src="../figures/paper_figures/dda.jpg" alt="Diagram of dynamic data assimilation and an ABM" />
+                </section>
+                
+                 <section id="stationsim-video1">
+                    <video controls width="80%" height="auto">
+                        <source src="../videos/StationSim-Videos/stationsim-no_crowding.mp4" type="video/mp4"/>
+                         Your browser does not support the video tag.
+                    </video>
+                </section>
+                
+                
+                <!-- ************************************************************
+                ****************************** DUST & TURING *****************************
+                ************************************************************ -->
+                
+                <section id="related_projects" data-background-image="../figures/the-roaming-platypus-310824-unsplash-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Related Projects</h2>
+                        <a href="https://erc.europa.eu/">
+                            <img class="right" style="width:200px;" data-src="../figures/erc_logo.jpg" alt="ESRC Logo"/>
+                        </a>
+                        <h3>Data Assimilation for Agent-Based Models (DUST)</h3>
+                        <p><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></p>
+                        <p>Create new methods for dynamically assimilating data into agent-based models.</p>
+                        
+                        
+                        <a href="https://erc.europa.eu/">
+                            <img class="right" style="width:200px;" data-src="../figures/LOGO_TURING.png" alt="Turing logo"/>
+                        </a>
+                        <h3>Uncertainty in agent-based models for smart city forecasts </h3>
+                        <p><a href="https://www.turing.ac.uk/research/research-projects/uncertainty-agent-based-models-smart-city-forecasts">turing.ac.uk</a></p>
+                        
+                        <p>Developing methods that can be used to better understand uncertainty in individual-level models of cities</p>
+                    </div>
+                </section>
+                
+                
+                
+                
+                
+                <!-- ************************************************************
+                ***************** CURRENT QUESTION + PROGRESS *******************
+                ************************************************************ -->
+                
+                <!--   <section id="TrainStationCrowds">
+                    
+                    <h2>Current Question:</h2>
+                    <h3>How much data are needed to successfully model a (pedestrian) system?</h3>                    
+                    <img class="right" style="width:30%;" data-src="../figures/train_station_pedestrian.jpg" alt="people in a train station" />
+                    <p>Example: Crowds in a train station</p>
+                    <p>We want a real-time model to forecast short-term crowding</p>
+                    <p>How much data do we need?</p>
+                    <p class="l2">Counts of people entering?</p>
+                    <p class="l2">Counts at various points in the concourse (e.g. cameras)</p>
+                    <p class="l2">Full traces of all individuals?</p>
+                    
+                    
+                </section> -->
+                
+
+                <!-- ************************************************************
+                ************************** STATIONSIM  **************************
+                ************************************************************ -->
+                
+                <!-- <section id="stationsim-video1">
+                    <video controls width="80%" height="auto">
+                        <source src="../videos/StationSim-Videos/stationsim-no_crowding.mp4" type="video/mp4"/>
+                         Your browser does not support the video tag.
+                    </video>
+                </section>
+                -->
+
+                  <!--
+                <section id="stationsim-video2" data-background-video="../videos/StationSim-Videos/stationsim-no_crowding.mp4">
+                         
+                </section>
+                
+                                
+                <section id="stationsim1">
+                    <h2>Hypothetical Train Station ('StationSim')</h2>
+                    <img class="right" alt="A birds-eye view of the hypothetical train station"
+                         data-src="../figures/paper_figures/ABMUS2019/pedestrian_model_environment.png"/>
+                    <p>Crowding emerges from random choices of exit and maximum walking speed</p>
+                    <p class="l2">Very simple, not designed to be a competitive crowd model</p>
+                    <p>Markovian model</p>
+                    <p class="l2">Produces output from a set of inputs (the ‘state vector’) without any other information.</p>
+                    <p class="l2">
+                        <img style="width:300px;" data-src="../figures/paper_figures/ABMUS2019/eqn1.png" alt="The state vector is made up of all model variables" />
+                        <img style="width:300px;" data-src="../figures/paper_figures/ABMUS2019/eqn2.png" alt="Model variables are the positions of all agents" />
+                    </p>
+                    <aside class="notes">The state variable at a time t (St) is made up of all of the locations
+                    of all agents (i.e. their x and y coordinates at time t).</aside>
+                    
+                </section>
+                
+                <section id="stationsim2">
+                    <h2>Hypothetical Train Station ('StationSim')</h2>
+                    <p>
+                        <img style="width:300px;" data-src="../figures/paper_figures/ABMUS2019/eqn1.png" alt="The state vector is made up of all model variables" />
+                        <img style="width:300px;" data-src="../figures/paper_figures/ABMUS2019/eqn2.png" alt="Model variables are the positions of all agents" />
+                    </p>
+                    <p>Parameters  are fixed</p>
+                    <p class="l2">E.g. an agent's max speed and it's chosen destination</p>
+                    <p class="l2">This is easier for the DA algorithm</p>
+                    <p>Later work will include the parameters in the state vector and get the DA
+                    algorithm to find suitable values</p>
+                    
+                </section>
+                
+                
+              -->
+              <section id="Final_slide" data-background-image="../figures/virtual_city.jpeg">
+                    
+                    <img style="float:right;width:200px; height:300px;" src="../figures/abm_book_cover.png"/>
+                    <div class="whitebackground2 fragment">
+                        <h2>Finally</h2>
+                        <p>Urban analytics @ established and growing</p>
+                        <p class="l2">Work on uncertainty and probabilistic programming</p>
+                        <p class="l2"><b>New members of staff:</b> Dr Jiaqi Ge and Prof Ed Manley</p>
+                        <p class="l2">Large scale ABM, engagement with policy makers</p>
+                        <p class="l2">Applied ML approaches: Reinforcement Learning</p>
+                    </div>
+                
+                </section> 
+                
+                
+                <section class="title"  id="final" data-background-image="../figures/virtual_city.jpeg">
+                    <div class="whitebackground2">
+                        <a href="https://europa.eu/european-union/index_en">
+                            <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;" src="../figures/LOGO_TURING.png"/>
+                        </a>
+
+                        <a href="http://www.leeds.ac.uk/">
+                            <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/uol_logo.gif"/>
+                        </a>
+                        <h5>LIDA Showcase 2019</h5>
+                    
+                        <h1 style="font-size: 45px;">City Simulation</h1>
+                        <hr/>
+                        <h2 style="font-size: 35px;"><a href="https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall">Alison Heppenstall</a>, 
+                            Nick Malleson, Nik Lomax, Dan Birks, Minh Le Kieu, Yuanxuan Yang</h2>
+                        <h4>University of Leeds and The Alan Turing Institute, UK</h4>
+                        
+                        <hr/>
+                        <p style="text-align:center;font-size:25px">These slides: <a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+                    </div>
+                </section>
+
+
+                
+			</div>
+		</div>
+
+		<script src="reveal/lib/js/head.min.js"></script>
+		<script src="reveal/js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'reveal/plugin/markdown/marked.js' },
+					{ src: 'reveal/plugin/markdown/markdown.js' },
+					{ src: 'reveal/plugin/notes/notes.js', async: true },
+					{ src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>

@@ -9,7 +9,7 @@ tagline: Presentations about, or relating to, the surf project
 
  - 2019
 
-   - [Simulating the City]({{site.baseurl}}/p/2019-09-17-SimulatingTheCity.html). Presentation by [Alison Heppenstsall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) to the [Leeds Institute for Data Aanltyics](https://lida.leeds.ac.uk/) Showcase. University of Leeds, 17th September 2019.
+   - [Simulating the City]({{site.baseurl}}/p/2019-09-17-SimulatingTheCity.html). Presentation by [Alison Heppenstsall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) to the https://urban-analytics.github.io/dust/presentations.html ([LIDA](https://lida.leeds.ac.uk/)) research showcase. University of Leeds, 17th September 2019.
  
    - [Dynamic Simulation Models and Digital Twins of Urban Systems]({{site.baseurl}}/p/2019-06-18-URBAIN-AI_For_Cities.html). Presentation to the [Artificial Intelligence for Cities](https://cp.catapult.org.uk/events/artificial-intelligence-for-cities/) workshop. University of Leeds (Nexus), 18th June 2019.
    

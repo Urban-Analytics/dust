@@ -5,7 +5,6 @@ import pyro.distributions as dist
 from torch import tensor
 
 
-
 class Sensor:
 	def __init__(self, freq=1, n_samples=1):
 		self.observation_freq = freq
@@ -29,17 +28,17 @@ class Sensor:
 
 	def aggregate_obs(self, step):
 		if self.obs is not None:
-			obs_median = tensor([[np.median(list(self.obs[step][0]))], [np.median(list(self.obs[step][1]))]])
+			obs_median = tensor([[np.mean(list(self.obs[step][0]))], [np.mean(list(self.obs[step][1]))]])
 			return obs_median
 
 	def print_detail(self, t):
 		print('Observation\n '
-			  'X Median: {}\n '
+			  'X Mean: {}\n '
 			  'STD: {}\n '
-			  'Y Median: {}\n '
-			  'STD: {}\n'.format(np.median(list(self.obs[t][0])),
+			  'Y Mean: {}\n '
+			  'STD: {}\n'.format(np.mean(list(self.obs[t][0])),
 								 np.std(list(self.obs[t][0])),
-								 np.median(list(self.obs[t][1])),
+								 np.mean(list(self.obs[t][1])),
 								 np.std(list(self.obs[t][1]))))
 
 	def activate_sensor(self):

@@ -174,7 +174,7 @@
 
                     <img class="right" style="width:30%;" src="../figures/paper_figures/2018-ParticleFilterFigs/PF_ABM.png"
                          alt="Diagram of collisions in StationSim"/>
-                    <h2>Colisions in StationSim</h2>
+                    <h2>Collisions in StationSim</h2>
 
                     <p>Agents move from one side to the other</p>
                     <p>If a fast agent reaches a slow agent, the try to move round to the left or right</p>
@@ -188,6 +188,14 @@
 
                 </section>
                 
+                <section id="pf-results-wiggle-count">
+                    <h2>Particle Filter Results</h2>
+                    <h3>Exponential increase in complexity</h3>
+                    <img src="../figures/paper_figures/2018-ParticleFilterFigs/wiggle_count.png"
+                         style="width:80%;"
+                         alt="Number of collisions increases exponentially with number of agents" />
+                </section>
+                
                 
                 
                 <!-- ************************************************************
@@ -196,7 +204,7 @@
                 
 
                 <section id="dda-question" data-background-image="../figures/weather2.jpg" data-transition="fade">
-                    <div class="whitebackground">
+                    <div class="whitebackground fragment">
                         <h2>Problem</h2>
                         <p>How can we incorporate up-to-date data into our crowd model?</p>
                         <h2>Question</h2>
@@ -311,8 +319,8 @@
                 <section id="particle-filter">
                     <h2>Particle Filter</h2>
                     <p>A 'brute force' ensemble method</p>
-                    <p>Create N realisations of the model ('particles')</p>
-                    <p>Run each particle forward in time until you receive some new data</p>
+                    <p>Create <i>N</i> realisations of the model ('particles')</p>
+                    <p>Run all the particles forward in time until you receive some new data</p>
                     <p>Compare the particles to the observation and:</p>
                     <p class="l2">Weight each particle depending on how close it is to the observations</p>
                     <p class="l2">Resample the population of particles using the weights
@@ -323,6 +331,7 @@
 
                 <section id="pf-experiments">
                     <h2>Experimental Setup</h2>
+                    <p>'Identical twin' experiment</p>
                     <img src="../figures/paper_figures/2018-ParticleFilterFigs/PF_flowchart2.png"
                          alt="flowchart of the experimental design" />
                 
@@ -345,13 +354,7 @@
                 <!-- ************************************************************
                 ************************** PF Results ***************************
                 ************************************************************ -->
-                
-                <section id="pf-results-median_error">
-                    <img src="../figures/paper_figures/2018-ParticleFilterFigs/median_abs_error.png"
-                         alt="median absolute error change with number of agents and particles" />
-                
-                </section>
-                
+
                          
                 <section id="pf-results-10_agents_10_particles">
                     <h2>Particle Filter Results</h2>
@@ -369,15 +372,40 @@
                 </section>
                 
             
-                <section id="pf-results-wiggle-count">
-                    <h2>Particle Filter Results</h2>
-                    <h3>Exponential increase in complexity</h3>
-                    <img src="../figures/paper_figures/2018-ParticleFilterFigs/wiggle_count.png"
-                         style="width:80%;"
-                         alt="Number of collisions increases exponentially with number of agents" />
+                
+                <section id="pf-results-median_error">
+                    <img src="../figures/paper_figures/2018-ParticleFilterFigs/median_abs_error.png"
+                         alt="median absolute error change with number of agents and particles" />
+                
                 </section>
                 
-                
+                <section id="pf-results-summary">
+                    <h2>Particle Filter Results - Summary</h2>
+                    <!--<img class="right" src="../figures/train_station_pedestrian.jpg"
+                                 alt="Image of escalators in a train station" />-->
+                    <p>Real-time assimilation of data into a crowd model is possible. But:</p>
+                    <p>Very few model parameters &amp; variables are unknown (easy)</p>
+                    <p class="l2">It knows entrance gate and time, destination, max speed, etc...</p>
+                    <p>Assumes we can track individuals</p>
+                    <p class="l2">Unrealistic and unethical?</p>
+                    <p class="l2">Future work moving towards aggregated population counters</p>
+                    <p>High computational cost</p>
+                    <p class="l2">10,000 partilces for only 40 agents in a simple system, will need millions for
+                    more realistic scenarios</p>
+                    <p class="l2">Opportunities to make more efficient, e.g. 'component set resampling' (Wang &amp;Hu, 2015), 
+                    or through use of GPU clusters</p>
+                </section>
+
+                <section id="big_brother" >
+                    <h2>Ethical Implications</h2>
+                    <p>Data Bias</p>
+                    <p class="l2">Need to be very careful: biased data -> biased models</p>
+                    <p class="l2">The digital divide</p>
+                    <p>Tracking People</p>
+                    <p class="l2">Advantage with these methods is we <i>don't need to track people</i></p>
+                    <p class="l2">Models work with counts of flows</p>
+
+                </section>
                 
                 
                 
@@ -387,45 +415,40 @@
                 <!-- ************************************************************
                 ************************ BusSim Example *************************
                 ************************************************************ -->
-                
-                
-                
-                
-                
-								<section id="pf-bussim">
-								                    <h2>Example 2<br/>Bus Simulation with a Particle Filter</h2>
-								                    <p>Context: simulate bus routes <i>in real time</i></p>
-								                    <p>We have GPS bus positions, but to make good term forecasts we need to be able to infer other factors</p>
-								                    <p class="l2">Number of people waiting at bus stops</p>
-								                    <p class="l2">Number of people on the bus</p>
-								                    <p class="l2">Surrounding traffic levels</p>
-								                    <p class="l2">Etc.</p>
-								                    <p>Aim: test a <i>particle filter</i> as the means of assimilating real-time GPS positions into a model.</p>
-								                </section>
+                <section id="pf-bussim">
+                    <h2>One other example<br/>Bus Simulation with a Particle Filter</h2>
+                    <p>Context: simulate bus routes <i>in real time</i></p>
+                    <p>We have GPS bus positions, but to make good term forecasts we need to be able to infer other factors</p>
+                    <p class="l2">Number of people waiting at bus stops</p>
+                    <p class="l2">Number of people on the bus</p>
+                    <p class="l2">Surrounding traffic levels</p>
+                    <p class="l2">Etc.</p>
+                    <p>Aim: test a <i>particle filter</i> as the means of assimilating real-time GPS positions into a model.</p>
+                </section>
 
-																<section id="pf-bussim-video">
-											                     <h2>Bus Simulation</h2>
-											                     <video controls autoplay >
-											                         <source data-src="../videos/bussim-video.mp4" type="video/mp4"/>
-											                          Your browser does not support the video tag.
-											                     </video>
-											                 </section>
+                <section id="pf-bussim-video">
+                 <h2>Bus Simulation</h2>
+                 <video controls autoplay >
+                     <source data-src="../videos/bussim-video.mp4" type="video/mp4"/>
+                      Your browser does not support the video tag.
+                 </video>
+                 </section>
 
 
-											                 <section id="pf-bussim3">
-											                     <h2>Bus Simulation - No Data Assimilation</h2>
-											                     <img data-src="../figures/bussim-calibration_no_da.png"
-											                          alt="graph showing performance of model without data assimilation" />
-											                 </section>
+                 <section id="pf-bussim3">
+                     <h2>Bus Simulation - No Data Assimilation</h2>
+                     <img data-src="../figures/bussim-calibration_no_da.png"
+                          alt="graph showing performance of model without data assimilation" />
+                 </section>
 
 
-											                 <section id="pf-bussim-pf-video">
-											                     <h2>Bus Simulation with a Particle Filter</h2>
-											                     <video controls autoplay>
-											                         <source data-src="../videos/bussim-pf-video.mp4" type="video/mp4"/>
-											                          Your browser does not support the video tag.
-											                     </video>
-											                 </section>
+                 <section id="pf-bussim-pf-video">
+                     <h2>Bus Simulation with a Particle Filter</h2>
+                     <video controls autoplay>
+                         <source data-src="../videos/bussim-pf-video.mp4" type="video/mp4"/>
+                          Your browser does not support the video tag.
+                     </video>
+                 </section>
 
 
 
@@ -449,16 +472,7 @@
                 </section>
                     -->
 
-                <section id="big_brother" >
-                    <h2>Ethical Implications</h2>
-                    <p>Data Bias</p>
-                    <p class="l2">Need to be very careful: biased data -> biased models</p>
-                    <p class="l2">The digital divide</p>
-                    <p>Tracking People</p>
-                    <p class="l2">Advantage with these methods is we <i>don't need to track people</i></p>
-                    <p class="l2">Models work with counts of flows</p>
 
-                </section>
 
 
                 <section id="digital_twins" data-background-image="../figures/digital_twin_engineering.png">
@@ -574,12 +588,11 @@
 
                 <section id="dust_job" data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg" >
                     <div class="whitebackground2">
-                        <h2>Now Recruiting: <br/>Simulating Urban Systems</h2>
+                        <h2>Now (almost!) Recruiting: <br/>Research Fellow in Urban Analytics</h2>
 
-                        <p>Post-doctoral Research Fellow (grade 7)</p>
-                        <p>Full time, 3 years</p>
-                        <p>Application deadline: July 2019</p>
-                        <p><a href="http://jobs.leeds.ac.uk/ENVGE1092">http://jobs.leeds.ac.uk/ENVGE1092</a></p>
+                        <p>4* Post-doctoral Research Fellow (grade 7)</p>
+                        <p>Full time, 2 years +</p>
+                        <p>Advert is iminent!</p>
                     </div>
 
                 </section>
@@ -589,6 +602,28 @@
                     <p>XXXX</p>
                 </section>
 
+                <section class="title" id="thanks" data-background-image="../figures/shutterstock_615414464-small.jpg">
+                    <div class="whitebackground2">
+                        <a href="https://europa.eu/european-union/index_en">
+                            <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;" src="../figures/LOGO_EU.jpg"/>
+                        </a>
+
+                        <a href="http://www.leeds.ac.uk/">
+                            <img style="float:right;padding:10px;width:150px; height:auto;" data-src="../figures/uol_logo.gif"/>
+                        </a>
+                        <h5>Urban Modelling &amp; Complexity Science<br/>
+                            19-20 September 2019, CASA, London</h5>
+
+                        <hr/>
+                        <h2>Simulating Pedestrian Systems in Real Time using Agent-Based Models</h2>
+                        <hr/>
+                        <h3>Nick Malleson</h3>
+                        <h4>Professor of Spatial Science</h4>
+                        <h4>School of Geography, University of Leeds <br/> and Fellow of the Alan Turing Institute</h4>
+                        <hr/>
+                        <h4 style="text-align:center">These slides:<br/><a href="https://urban-analytics.github.io/dust/presentations.html">http://dust.leeds.ac.uk</a></h4>
+                    </div>
+                </section>
 
 
 

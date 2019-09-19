@@ -20,4 +20,4 @@ To run all the experiments in one go, there are two scripts that can be used:
 
 ## Analysing Results
 
-The results will end up in the [`results`](./results) folder. The easiest way to analyse and visualise the results is using the iPython Jupyter Notebook: [`pf_experiments_plots.ipynb`](pf_experiments_plots.ipynb). You will need to have [jupyter](https://jupyter.org/) installed to do that. 
+The results will end up in the [`results`](./results) folder. The easiest way to analyse and visualise the results is using the iPython Jupyter Notebook: [`pf_experiments_plots.ipynb`](pf_experiments_plots.ipynb). You will need to have [jupyter](https://jupyter.org/) installed to do that.

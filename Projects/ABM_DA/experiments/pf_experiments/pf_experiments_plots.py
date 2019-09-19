@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+DEPRICATED. I don't think this works any more. To analyse the results of the experiments you should
+use pf_experiments_plots.ipynb.
+
 Reads the out files that are created by station_sim/particle_filter.py
 
 This version accounts for two types of results being written for each 

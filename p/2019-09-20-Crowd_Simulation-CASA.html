@@ -108,7 +108,6 @@
                     <div class="whitebackground2 fragment" style=" position:relative">
                         <h3>What is happening in Kings Cross station right now?</h3>
 
-                        <p>Cities and buildings are becoming more crowded</p>
                         <p>Real-time simulations of crowds will allow us to:</p>
                         <p class="l2">Better understand what is happening <i>now</i></p>
                         <p class="l3">Improved day-to-day management of busy places</p>
@@ -313,6 +312,7 @@
                 <section id="particle-filter">
                     <h2>Particle Filter</h2>
                     <p>A 'brute force' ensemble method</p>
+                    <p>No Gaussian assumptions</p>
                     <p>Create <i>N</i> realisations of the model ('particles')</p>
                     <p>Run all the particles forward in time until you receive some new data</p>
                     <p>Compare the particles to the observation and:</p>
@@ -325,7 +325,7 @@
 
                 <section id="pf-experiments">
                     <h2>Experimental Setup</h2>
-                    <p>'Identical twin' experiment</p>
+                    <p>'Identical twin' experiment: known 'real world' conditions</p>
                     <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/PF_flowchart2.png"
                          alt="flowchart of the experimental design" />
                 
@@ -435,11 +435,12 @@
                  </section>
 
 
+                <!--
                  <section id="pf-bussim3">
                      <h2>Bus Simulation - No Data Assimilation</h2>
                      <img data-src="../figures/bussim-calibration_no_da.png"
                           alt="graph showing performance of model without data assimilation" />
-                 </section>
+                 </section> -->
 
 
                  <section id="pf-bussim-pf-video">

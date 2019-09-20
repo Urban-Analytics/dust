@@ -31,14 +31,66 @@ import pandas as pd
 
 #%%
 #plt.style.use("dark_background")
-        
+  
+
+def grand_depickle_ukf_agg_data_parser(instance):
+    """
+    extracts data into numpy arrays
+    in:
+        do_fill - If false when an agent is finished its true position values go to nan.
+        If true each agents final positions are repeated in the truthframe 
+        until the end of the whole model.
+        This is useful for various animating but is almost always kept False.
+        Especially if using average error metrics as finished agents have practically 0 
+        error and massively skew results.
+    out:
+        a - noisy observations of agents positions
+        b - ukf predictions of said agent positions
+        c - if sampling rate >1 fills inbetween predictions with pure stationsim prediciton
+            this is solely for smoother animations later
+        d- true agent positions
+    """
+    
+    sample_rate = instance.sample_rate
+    
+    nan_array = np.ones(shape=(max([len(agent.history_locations) for 
+                                    agent in instance.base_model.agents]),
+                                    2*instance.pop_total))*np.nan
+    for i in range(instance.pop_total):
+        agent = instance.base_model.agents[i]
+        array = np.array(agent.history_locations)
+        array[array==None] ==np.nan
+        nan_array[:len(agent.history_locations),2*i:(2*i)+2] = array
+    
+    nan_array = ~np.isnan(nan_array)
+    
+    b2 = np.vstack(instance.ukf_histories)
+    d = np.vstack(instance.truths)
+
+    
+    b= np.zeros((d.shape[0],b2.shape[1]))*np.nan
+  
+    for j in range(int(b.shape[0]//sample_rate)):
+        b[j*sample_rate,:] = b2[j,:]
+     
+    if sample_rate>1:
+        c= np.vstack(instance.agg_ukf_preds)
+
+        return b,c,d,nan_array
+    else:
+        return b,d,nan_array    
+    
 def l2_parser(instance):
     "extract arrays of real paths, predicted paths, L2s between them."
-    actual,preds,full_preds,truth = instance.data_parser(False)
-    plts = plots(instance)
-    truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
-    preds[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+    if instance.filter_params["sample_rate"]==1:
+            preds,truth,nan_array = grand_depickle_ukf_agg_data_parser(instance)
+    else:
+        preds,full_preds,truth,nan_array = grand_depickle_ukf_agg_data_parser(instance)
+        full_preds[~nan_array]=np.nan #make empty values to prevent mean skewing in diagnostic plots
 
+    truth[~nan_array]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+    preds[~nan_array]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+    plts = plots(instance)
     distances_obs,oindex,agent_means,t_mean_obs = plts.L2s(truth,preds)
 
     
@@ -60,11 +112,14 @@ def grand_L2_matrix(n,bin_size):
             L2_2=[]
             for file in files[_]:
                 f = open(file,"rb")
-                u = pickle.load(f)
+                uagg = pickle.load(f)
                 f.close()
-                distances = l2_parser(u)#
+                distances = l2_parser(uagg)#
+                "grand agent means"
                 L2_2.append(np.nanmean(distances,axis=0))
-        
+                "grand agent medians"
+                L2_2.append(np.nanmedian(distances,axis=0))
+
             L2[i,k]=np.nanmean(np.hstack(L2_2))
             
     return L2
@@ -94,7 +149,7 @@ def grand_L2_plot(data,n,bin_size,observed,save):
     ax.grid(which="minor",color="k",linestyle="-",linewidth=2)
     ax.set_xlabel("Number of Agents")
     ax.set_ylabel("Aggregate Grid Squre Size")
-    plt.title("Grand L2s Over Varying Agents and Percentage Observed")
+    #plt.title("Grand L2s Over Varying Agents and Percentage Observed")
 
 
     "labelling squares"
@@ -111,8 +166,8 @@ def grand_L2_plot(data,n,bin_size,observed,save):
     cbar.set_label("Grand Mean L2 Error")
     
     "further labelling and saving depending on observed/unobserved plot"
-    cbar.set_label("L2s")
-    ax.set_ylabel("Aggregate Grid Squre Size")
+    cbar.set_label("Aggregate Median L2s")
+    ax.set_ylabel("Aggregate Grid Squre Width")
     if save:
         plt.savefig("Aggregate_Grand_L2s.pdf")
 
@@ -126,7 +181,7 @@ def boxplot_parser(n,bin_size):
             for j in bin_size: 
                 files[j] = glob.glob(f"ukf_results/agg_ukf_agents_{i}_bin_{j}-*")
                 
-        L2[i] = {}
+        L2[i] = {} #sub dictionary for bin_size
         for _ in files.keys():
             L2_2=[]
             for file in files[_]:
@@ -149,7 +204,7 @@ def boxplot_parser(n,bin_size):
 
     "stack into grand frames and label columns"
     frame = pd.concat(sub_frames)
-    frame.columns = ["n","bin_size","L2 agent errors"]
+    frame.columns = ["n","square width","L2 agent errors"]
 
     
     return frame
@@ -163,7 +218,7 @@ def boxplot_plots(n,bin_size,frame,separate,save):
                 n_subframe = frame.loc[frame["n"]==str(i)]
     
             f = plt.figure()
-            sns.boxplot(x="bin_size",y=y_name,data=n_subframe)
+            sns.boxplot(x="square width",y=y_name,data=n_subframe)
             if save:
                 f.savefig(f_name)
     
@@ -172,12 +227,12 @@ def boxplot_plots(n,bin_size,frame,separate,save):
         y_name = "L2 agent errors"
 
         f = plt.figure()
-        sns.catplot(x="bin_size",y=y_name,col="n",kind="box", data=frame)
+        sns.catplot(x="square width",y=y_name,col="n",kind="box", data=frame)
         plt.tight_layout()
         if save:
             plt.savefig(f_name)
     
- 
+ #%%
 if __name__ == "__main__":
     
     

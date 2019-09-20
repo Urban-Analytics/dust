@@ -159,10 +159,10 @@ if __name__ == '__main__':
     base_model = Model(**model_params)
     u = ukf_ss(model_params,filter_params,ukf_params,base_model)
     u.main()
-    true,actual,preds,histories= u.data_parser(True)
+    true,obs,preds,histories= u.data_parser(True)
     plts=plots(u)
     errors = {}
-    errors["actual"] = plts.L2s(true,actual)
+    errors["obs"] = plts.L2s(true,obs)
     errors["preds"] = plts.L2s(true[1:,:],preds)
     errors["ukf"] = plts.L2s(true[1:,:],histories)
     

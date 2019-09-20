@@ -39,9 +39,9 @@ function to take instanced clases output from arc ukf scripts and produce grand 
         
 def l2_parser(instance,prop):
     "extract arrays of real paths, predicted paths, L2s between them."
-    actual,preds,full_preds,truth = instance.data_parser(False)
+    obs,preds,full_preds,truth = instance.data_parser(False)
     plts = plots(instance)
-    truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+    truth[np.isnan(obs)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
     
     true_o,b_o,plot_range = plts.plot_data_parser(truth,preds,True)    
     true_u,b_u,plot_range= plts.plot_data_parser(truth,preds,False)
@@ -52,7 +52,7 @@ def l2_parser(instance,prop):
     else:
         distances_uobs = []
     
-    return actual,preds,distances_obs,distances_uobs
+    return obs,preds,distances_obs,distances_uobs
 
 def grand_mean_plot(data,f_name,instance,save):
     """
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     "parameters for which number of agents and proportion observed to plot for"
     n=10
     prop = 0.25
-    actuals = []
+    observations = []
     preds = []
     d_obs = []
     d_uobs = []
@@ -111,8 +111,8 @@ if __name__ == "__main__":
         u = pickle.load(f)
         f.close()
     
-        actual,pred,d1,d2 = l2_parser(u,prop)#
-        actuals.append(actual)
+        obs,pred,d1,d2 = l2_parser(u,prop)#
+        observations.append(obs)
         preds.append(pred)
         d_obs.append(d1)
         instances.append(u)
@@ -126,12 +126,12 @@ if __name__ == "__main__":
         if prop<1:
             #unobserved grand L2
             grand_mean_plot(d_uobs,f"L2_uobs_{n}_{prop}.pdf",u,save_plots)
-            #plts.trajectories(actual)
-            #plts.pair_frames(actual,preds)
+            #plts.trajectories(obs)
+            #plts.pair_frames(obs,preds)
     else:
-        actual,pred,full_preds,truth=u.data_parser(False)
+        obs,pred,full_preds,truth=u.data_parser(False)
         
-        truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+        truth[np.isnan(obs)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
 
         plts=plots(u)
         "single test diagnostics"
@@ -142,8 +142,8 @@ if __name__ == "__main__":
         
         "all observed just one plot"
         distances2,t_mean2 = plts.diagnostic_plots(truth,pred,True,save_plots)
-        #plts.pair_frames(actual,full_preds) #basic animation
-        #plts.pair_frames_stack_ellipse(actual,full_preds) #covariance and l2 trajectories. TAKES FOREVER
+        #plts.pair_frames(obs,full_preds) #basic animation
+        #plts.pair_frames_stack_ellipse(obs,full_preds) #covariance and l2 trajectories. TAKES FOREVER
 
 
 

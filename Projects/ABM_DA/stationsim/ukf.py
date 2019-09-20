@@ -16,6 +16,11 @@ UKF filter using own function rather than filterpys
 
 based on
 citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
+
+ANTI CONFUSION NOTE: 'observation/obs' are observed stationsim data
+not to be confused with the 'observed' boolean 
+determining whether to look at observed/unobserved agent subset
+(maybe change the former the measurements etc.)
 """
 
 #for filter
@@ -287,10 +292,11 @@ class ukf_ss:
         
         self.ukf_preds=[] # fills in blanks between assimlations with pure stationsim. 
                           # good for animation. not good for error metrics use ukf_histories
-        self.ukf_histories = [] # assimilated ukf positions
+        self.ukf_histories = [] # assimilated ukf positions no filled in section (this is predictions vs full predicitons above)
         self.full_Ps=[] #full covariances. again used for animations and not error metrics
         self.truths = [] # noiseless observations
-    
+        self.obs = []
+        
         self.time1 =  datetime.datetime.now()#timer
         self.time2 = None
     def fx(self,x,**fx_args):
@@ -414,8 +420,11 @@ class ukf_ss:
                 
                 self.ukf_histories.append(self.ukf.x) #append histories
                 self.ukf_preds.append(self.ukf.x)
+                status = np.repeat(np.array([float(agent.status) for agent in base_model.agents]),2)
+                status[status!=1] = np.nan 
+                self.obs.append(state*status)
                 self.full_Ps.append(self.ukf.P)
-
+                
                 x = self.ukf.x
                 if np.sum(np.isnan(x))==x.shape[0]:
                     print("math error. try larger values of alpha else check fx and hx.")
@@ -450,31 +459,31 @@ class ukf_ss:
             d- true agent positions
         """
         sample_rate = self.sample_rate
-
-
-        a2 = {}
-        for k,agent in  enumerate(self.base_model.agents):
-            a2[k] =  agent.history_locations
-        max_iter = max([len(value) for value in a2.values()])
+        
+        nan_array = np.ones(shape=(max([len(agent.history_locations) for agent in self.base_model.agents]),2*self.pop_total))*np.nan
+        for i in range(self.pop_total):
+            agent = self.base_model.agents[i]
+            array = np.array(agent.history_locations)
+            array[array==None] ==np.nan
+            nan_array[:len(agent.history_locations),2*i:(2*i)+2] = array
+        
+        nan_array = ~np.isnan(nan_array)
+        
+            
+        a2 =  np.vstack(self.obs) 
         b2 = np.vstack(self.ukf_histories)
+        d = np.vstack(self.truths)
 
         
-        a= np.zeros((max_iter,self.pop_total*2))*np.nan
-        b= np.zeros((max_iter,b2.shape[1]))*np.nan
-        d = a.copy()
+        a= np.zeros((d.shape[0],self.pop_total*2))*np.nan
+        b= np.zeros((d.shape[0],b2.shape[1]))*np.nan
   
-        for i in range(int(a.shape[1]/2)):
-            a3 = np.vstack(list(a2.values())[i])
-            a[:a3.shape[0],(2*i):(2*i)+2] = a3
-            
-            if do_fill:
-                a[a3.shape[0]:,(2*i):(2*i)+2] = a3[-1,:]
 
         
         for j in range(int(b.shape[0]//sample_rate)):
+            a[j*sample_rate,:] = a2[j,:]
             b[j*sample_rate,:] = b2[j,:]
          
-        d = np.vstack(self.truths)
 
         if sample_rate>1:
             c= np.vstack(self.ukf_preds)
@@ -483,9 +492,9 @@ class ukf_ss:
             
             "all agent observations"
         
-            return a,b,c,d
+            return a,b,c,d,nan_array
         else:
-            return a,b,d
+            return a,b,d,nan_array
 
 #%%
 class plots:
@@ -513,7 +522,6 @@ class plots:
                 a = a[:,filter_class.index2]
                 if len(filter_class.index2)<b.shape[1]:
                     b = b[:,filter_class.index2]
-                plot_range =filter_class.model_params["pop_total"]*(filter_class.filter_params["prop"])
 
         else:      
                 mask = np.ones(a.shape[1])
@@ -570,60 +578,61 @@ class plots:
             obs_text="Unobserved"
             
         a,b,plot_range = self.plot_data_parser(a,b,observed)
+      
         sample_rate =self.filter_class.filter_params["sample_rate"]
         
-        f=plt.figure(figsize=(12,8))
-        for j in range(int(plot_range)):
-            plt.plot(a[:,(2*j)],a[:,(2*j)+1],lw=3)  
-            plt.xlim([0,self.filter_class.model_params["width"]])
-            plt.ylim([0,self.filter_class.model_params["height"]])
-            plt.xlabel("Corridor Width")
-            plt.ylabel("Corridor Height")
-            plt.title(f"{obs_text} True Positions")
+        #f=plt.figure(figsize=(12,8))
+        #for j in range(floor(int(plot_range))):
+        #    plt.plot(a[:,(2*j)],a[:,(2*j)+1],lw=3)  
+        #    plt.xlim([0,self.filter_class.model_params["width"]])
+        #    plt.ylim([0,self.filter_class.model_params["height"]])
+        #    plt.xlabel("Corridor Width")
+        #    plt.ylabel("Corridor Height")
+        #    plt.title(f"{obs_text} True Positions")
 
-        g = plt.figure(figsize=(12,8))
-        for j in range(int(plot_range)):
-            plt.plot(b[::sample_rate,2*j],b[::sample_rate,(2*j)+1],lw=3) 
-            plt.xlim([0,self.filter_class.model_params["width"]])
-            plt.ylim([0,self.filter_class.model_params["height"]])
-            plt.xlabel("Corridor Width")
-            plt.ylabel("Corridor Height")
-            plt.title(f"{obs_text} KF Predictions")
+        #g = plt.figure(figsize=(12,8))
+        #for j in range(int(plot_range)):
+        #    plt.plot(b[::sample_rate,2*j],b[::sample_rate,(2*j)+1],lw=3) 
+        #    plt.xlim([0,self.filter_class.model_params["width"]])
+        #    plt.ylim([0,self.filter_class.model_params["height"]])
+        #    plt.xlabel("Corridor Width")
+        #    plt.ylabel("Corridor Height")
+        #    plt.title(f"{obs_text} KF Predictions")
             
       
         c,c_index,agent_means,time_means = self.L2s(a,b)
         
-        h = plt.figure(figsize=(12,8))
-        time_means[np.isnan(time_means)]=0
-        plt.plot(c_index,time_means,lw=5,color="k",label="Mean Agent L2")
-        for i in range(c.shape[1]):
-            plt.plot(c_index,c[:,i],linestyle="-.",lw=3)
+        #h = plt.figure(figsize=(12,8))
+        #time_means[np.isnan(time_means)]=0
+        #plt.plot(c_index,time_means,lw=5,color="k",label="Mean Agent L2")
+        #for i in range(c.shape[1]):
+        #    plt.plot(c_index,c[:,i],linestyle="-.",lw=3)
             
-        plt.axhline(y=0,color="k",ls="--",alpha=0.5)
-        plt.xlabel("Time (steps)")
-        plt.ylabel("L2 Error")
-        plt.title(obs_text+" ")
-        plt.title(f"{obs_text} L2s Over Time")
-        plt.legend()
-        """find agent with highest L2 and plot it.
-        mainly done to check something odd isnt happening"""
+        #plt.axhline(y=0,color="k",ls="--",alpha=0.5)
+        #plt.xlabel("Time (steps)")
+        #plt.ylabel("L2 Error")
+        #plt.title(obs_text+" ")
+        #plt.title(f"{obs_text} L2s Over Time")
+        #plt.legend()
+        #"""find agent with highest L2 and plot it.
+        #mainly done to check something odd isnt happening"""
         
-        index = np.where(agent_means == np.nanmax(agent_means))[0][0]
-        print(index)
-        a1 = a[:,(2*index):(2*index)+2]
-        b1 = b[:,(2*index):(2*index)+2]
-        
-        i = plt.figure(figsize=(12,8))
-        plt.plot(a1[:,0],a1[:,1],label= "True Path",lw=3)
-        plt.plot(b1[::self.filter_class.sample_rate,0],b1[::self.filter_class.sample_rate,1],label = "KF Prediction",lw=3)
-        plt.legend()
-        plt.xlim([0,self.filter_class.model_params["width"]])
-        plt.ylim([0,self.filter_class.model_params["height"]])
-        plt.xlabel("Corridor Width")
-        plt.ylabel("Corridor Height")
-        plt.title(obs_text+" True Positions")
-        plt.title("Worst agent")
-        plt.title(f"{obs_text} Worst Agent")
+        #index = np.where(agent_means == np.nanmax(agent_means))[0][0]
+        #print(index)
+        #a1 = a[:,(2*index):(2*index)+2]
+        #b1 = b[:,(2*index):(2*index)+2]
+       # 
+       # i = plt.figure(figsize=(12,8))
+       # plt.plot(a1[::sample_rate,0],a1[::sample_rate,1],label= "True Path",lw=3)
+       # plt.plot(b1[::self.filter_class.sample_rate,0],b1[::self.filter_class.sample_rate,1],label = "KF Prediction",lw=3)
+       # plt.legend()
+       # plt.xlim([0,self.filter_class.model_params["width"]])
+       # plt.ylim([0,self.filter_class.model_params["height"]])
+       # plt.xlabel("Corridor Width")
+       # plt.ylabel("Corridor Height")
+       # plt.title(obs_text+" True Positions")
+       # plt.title("Worst agent")
+       # plt.title(f"{obs_text} Worst Agent")
 
 
         if observed:
@@ -640,10 +649,10 @@ class plots:
         #plt.legend()
 
         if save:
-            f.savefig(f"{obs_text}_obs.pdf")
-            g.savefig(f"{obs_text}_kf.pdf")
-            h.savefig(f"{obs_text}_l2.pdf")
-            i.savefig(f"{obs_text}_worst.pdf")
+            #f.savefig(f"{obs_text}_obs.pdf")
+            #g.savefig(f"{obs_text}_kf.pdf")
+            #h.savefig(f"{obs_text}_l2.pdf")
+           # i.savefig(f"{obs_text}_worst.pdf")
             j.savefig(f"{obs_text}_agent_hist.pdf")
             
         return c,time_means
@@ -706,7 +715,7 @@ class plots:
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,"output_pairs",f"pairwise_gif_{self.filter_class.pop_total}")
+        animations.animate(self,"output_pairs",f"pairwise_gif_{self.filter_class.pop_total}",24)
 
     def pair_frames_stack(self,a,b):
         "pairwise animation with  l2 error plots underneath"
@@ -782,7 +791,7 @@ class plots:
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,"output_pairs",f"pairwise_gif_{self.filter_class.pop_total}")
+        animations.animate(self,"output_pairs",f"pairwise_gif_{self.filter_class.pop_total}",24)
         
     def pair_frames_stack_ellipse(self,a,b):
         "pairwise,L2s and covariances. This takes FOREVER to render so I made it seperate"
@@ -876,9 +885,63 @@ class plots:
             f.savefig(file,bbox_inches="tight")
             plt.close()
         
-        animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}")
+        animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}",24)
                 
+    def pair_frames_single(self,a,b,frame_number):
+        "pairwise animation"
+        i=frame_number
+        filter_class = self.filter_class
+        width = filter_class.model_params["width"]
+        height = filter_class.model_params["height"]
+        a_u,b_u,plot_range = self.plot_data_parser(a,b,False)
+        a_o,b_o,plot_range = self.plot_data_parser(a,b,True)
+        
+        
+        a_s = [a_o[i,:],a_u[i,:]]
+        b_s = [b_o[i,:], b_u[i,:]]
+        f = plt.figure(figsize=(12,8))
+        ax = plt.subplot(111)
+        plt.xlim([0,width])
+        plt.ylim([0,height])
+        
+        "plot true agents and dummies for legend"
+        ax.scatter(a_s[0][0::2],a_s[0][1::2],color="skyblue",label = "Truth",marker = "o",edgecolors="k")
+        ax.scatter(a_s[1][0::2],a_s[1][1::2],color="skyblue",marker = "o",edgecolors="k")
+        ax.scatter(-1,-1,color="orangered",label = "Observed Predictions",marker="P",edgecolors="k")
+        ax.scatter(-1,-1,color="yellow",label = "Unobserved Predictions",marker="^",edgecolors="k")
 
+        markers = ["P","^"]
+        colours = ["orangered","yellow"]
+        for j in range(len(a_s)):
+
+            a1 = a_s[j]
+            b1 = b_s[j]
+            if np.abs(np.nansum(a1-b1))>1e-4: #check for perfect conditions (initial)
+                for k in range(int(a1.shape[0]/2)):
+                    a2 = a1[(2*k):(2*k)+2]
+                    b2 = b1[(2*k):(2*k)+2]          
+                    if not np.isnan(np.sum(a2+b2)): #check for finished agents that appear NaN
+                        x = [a2[0],b2[0]]
+                        y = [a2[1],b2[1]]
+                        ax.plot(x,y,color="k")
+                        ax.scatter(b2[0],b2[1],color=colours[j],marker = markers[j],edgecolors="k")
+        
+        "put legend outside of plot"
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                         box.width, box.height * 0.9])
+        
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12),
+                  ncol=2)
+        "labelling"
+        plt.xlabel("corridor width")
+        plt.ylabel("corridor height")
+        #plt.title("True Positions vs UKF Predictions")
+        "save frame and close plot else struggle for RAM"
+        number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
+        file = f"ukf_pairs{number}"
+        f.savefig(file)
+                
 def _std_tuple_of(var=None, std=None, interval=None):
     """
     Convienence function for plotting. Given one of var, standard
@@ -974,13 +1037,13 @@ def plot_covariance(
        
         
 class animations:
-    def animate(self,file,name):
+    def animate(self,file,name,fps):
         files = sorted(os.listdir(file))
         print('{} frames generated.'.format(len(files)))
         images = []
         for filename in files:
             images.append(imageio.imread(f'{file}/{filename}'))
-        imageio.mimsave(f'{name}GIF.mp4', images,fps=24)
+        imageio.mimsave(f'{name}GIF.mp4', images,fps=fps)
         rmtree(file)
         #animations.clear_output_folder(self,file)
         
@@ -1084,7 +1147,7 @@ if __name__ == "__main__":
         u = ukf_ss(model_params,filter_params,ukf_params,base_model)
         u.main()
         if do_pickle:
-            f_name = f"test_ukf_pickle_{n}_{prop}_{noise}"
+            f_name = f"../experiments/ukf_experiments/test_ukf_pickle_{n}_{prop}_{noise}"
             f = open(f_name,"wb")
             pickle.dump(u,f)
             f.close()
@@ -1098,7 +1161,7 @@ if __name__ == "__main__":
         noise = 0.5
         
         file_name = f"test_ukf_pickle_{n}_{prop}_{noise}"
-        f = open(file_name,"rb")
+        f = open("../experiments/ukf_experiments/"+file_name,"rb")
         u = pickle.load(f)
         f.close()
         filter_params = u.filter_params
@@ -1107,29 +1170,34 @@ if __name__ == "__main__":
     if filter_params["sample_rate"]>1:
         print("partial observations. using interpolated predictions (full_preds) for animations.")
         print("ONLY USE preds FOR ANY ERROR METRICS")
-    obs,preds,full_preds,truth= u.data_parser(True)
-    truth[np.isnan(obs)]=np.nan #keep finished agents from skewing mean down
-    preds[np.isnan(obs)]=np.nan #kill wierd tails of finished agents (remove this and see what happens)
-
+    
+    obs,preds,full_preds,truth,nan_array= u.data_parser(True)
+    #truth[np.isnan(obs)]=np.nan #keep finished agents from skewing mean down
+    preds[~nan_array]=np.nan #kill wierd tails of finished agents (remove this and see what happens)
+    full_preds[~nan_array]=np.nan #kill wierd tails of finished agents (remove this and see what happens)
+    truth[~nan_array]=np.nan
     """plots"""
     plts = plots(u)
 
-
+    
     plot_save=True
     if filter_params["prop"]<1:
         distances,t_mean = plts.diagnostic_plots(truth,preds,False,plot_save)
     distances2,t_mean2 = plts.diagnostic_plots(truth,preds,True,plot_save)
     
+    
+    plts.pair_frames_single(truth,full_preds,100)
+
     animate = False
     "animate into pairwise plots gifs?"
     if animate:
         if filter_params["sample_rate"]==1:
-            plts.pair_frames(reall,preds)
+            plts.pair_frames(truth,preds)
             #plts.heatmap(real) #these probably dont work anymore. feel free to try
             #plts.pair_frames_stack_ellipse(obs,preds)
     
         else:
-            plts.pair_frames(real,full_preds)
+            plts.pair_frames(truth,full_preds)
             #plts.pair_frames_stack_ellipse(obs,full_preds) #these probably dont work anymore. feel free to try
             #plts.heatmap(obs)
     

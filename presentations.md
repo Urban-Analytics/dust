@@ -9,6 +9,8 @@ tagline: Presentations about, or relating to, the surf project
 
  - 2019
 
+   - [Simulating Pedestrian Systems in Real Time using Agent-Based Models]({{site.baseurl}}/p/2019-09-20-Crowd_Simulation-CASA.html). Presentation to the the [MacArthur Workshop on Urban Modelling & Complexity Science](https://www.eventbrite.co.uk/e/the-macarthur-workshop-on-urban-modelling-complexity-science-tickets-69983794413), [Centre for Advanced Spatial Analysis](http://www.casa.ucl.ac.uk/), [UCL](http://www.casa.ucl.ac.uk/), 19-20 September 2019.
+
    - [Simulating the City]({{site.baseurl}}/p/2019-09-17-SimulatingTheCity.html). Presentation by [Alison Heppenstsall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) to the Leeds Institute for Data Analytics ([LIDA](https://lida.leeds.ac.uk/)) research showcase. University of Leeds, 17th September 2019.
  
    - [Dynamic Simulation Models and Digital Twins of Urban Systems]({{site.baseurl}}/p/2019-06-18-URBAIN-AI_For_Cities.html). Presentation to the [Artificial Intelligence for Cities](https://cp.catapult.org.uk/events/artificial-intelligence-for-cities/) workshop. University of Leeds (Nexus), 18th June 2019.

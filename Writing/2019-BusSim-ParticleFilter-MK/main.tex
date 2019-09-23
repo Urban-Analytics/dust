@@ -1,0 +1,147 @@
+\documentclass{article}
+
+
+\usepackage{arxiv}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{graphicx}
+%\usepackage{natbib}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools, nccmath}
+%\usepackage{subcaption}
+\usepackage{float}
+\DeclarePairedDelimiter{\nint}\lfloor\rceil
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+%%%%%%%%%%% Defining Enunciations  %%%%%%%%%%%
+\newtheorem{theorem}{\bf Theorem}[section]
+\newtheorem{condition}{\bf Condition}[section]
+\newtheorem{corollary}{\bf Corollary}[section]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\title{Dealing with uncertainty in agent-based models for short-term predictions}
+
+
+\author{
+  Le-Minh Kieu\thanks{Corresponding author} \\
+  School of Geography \& Leeds Institute of Data Analytics\\
+  University of Leeds\\
+  United Kingdom \\
+  \texttt{m.l.kieu@leeds.ac.uk} \\
+  %% examples of more authors
+   \And
+ Nicolas Malleson \\
+  School of Geography\\
+  University of Leeds and Alan Turing Institute\\
+  United Kingdom \\
+  \texttt{n.s.malleson@leeds.ac.uk} \\
+  \And
+ Alison Heppenstall \\
+  School of Geography\\
+  University of Leeds and Alan Turing Institute\\
+  United Kingdom \\
+  \texttt{a.j.heppenstall@leeds.ac.uk} \\
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Agent-based models (ABM) are gaining traction as one of the most powerful modelling tools within the social sciences.
+They are particularly suited to simulating complex systems. Despite many methodological advances within ABM, one of the major drawbacks is their inability to 
+incorporate real-time data to make accurate short-term predictions. This paper presents an approach that allows ABMs to be dynamically optimised. Through a combination of parameter calibration and data assimilation (DA), the accuracy of model-based predictions using ABM in real time is increased.  We use the exemplar of a bus route system to explore these methods.  
+%Within this paper we construct an ABM that simulates the main interactions and key processes within this system. We develop an numerical experiment to quantify the impacts of calibration and DA in dealing the with stochastic and dynamic nature of the system under study. 
+The bus route ABMs developed in this research are examples of ABMs that can be dynamically optimised by a combination of parameter calibration and DA. The proposed model and framework can also be used in an passenger information system, or in an Intelligent Transport Systems to provide forecasts of bus locations and arrival times. 
+\end{abstract}
+
+
+% keywords can be removed
+\keywords{First keyword \and Second keyword \and More}
+
+
+\section{Introduction} 
+\label{s:Intro}
+
+Agent-based modelling (ABM) \citep{bonabeau_agent_2002} is a field that excels in its ability to simulate
+complex systems. Instead of deriving aggregated equations of system
+dynamics, ABM encapsulates system-wide characteristics from the
+behaviours and interactions of individual agents e.g. human, animals
+or vehicles. ABM has emerged as an important tool for many 
+applications ranging from urban traffic simulation
+\citep{balmer2009matsim}, humanitarian assistance
+\citep{crooks_gis_2013} to emergency evacuations
+\citep{schoenharl_design_2011}.
+
+Despite the many advances and applications of ABM, the field suffers from a serious drawback: models are currently  unable to incorporate up-to-date data to make accurate real-time predictions \citep{lloyd_exploring_2016, wang_data_2015,
+ward_dynamic_2016}. Models are typically calibrated once, using historical data, then projected forward in time to make a prediction. Here, calibration is ideal for one point in time, but as the simulation progresses, the prediction rapidly diverges from reality  due to underlying uncertainties \citep{ward_dynamic_2016}. These uncertainties come from \textit{dynamic} (changing over space and time), \textit{stochastic} (containing inherent randomness) and \textit{unobserved} (unseen from the data) conditions of the real system under study. An example of such a system can be found in bus routes. Each time a bus reaches a bus stop, the number of alighting passengers is uncertain and the number of waiting passengers downstream is unobserved. The bus route's conditions also change over time, e.g. traffic varies over the route and with at off-peak to peak periods. 
+%\end{fmtext}
+There are methods to incorporate streaming data into models,
+such as \textit{data assimilation} (DA) routines
+\citep{lewis_dynamic_2006, wang2000data}. Broadly, DA refers to a suite of techniques that allow
+observational data to be incorporated into models
+\citep{wang2000data} to provide an optimal estimate of the
+evolving state of the system. Performing DA increases the
+probability of having an accurate representation of the current state of
+the system, thereby reducing the uncertainty of future predictions. This is a technique that has been widely applied
+in fields such as meteorology, hydrology and oceanography \citep{kalnay_atmospheric_2003}.
+
+There are, however, two methodological challenges that must be overcome to apply DA in ABM. First, DA methods are often intrinsic to their underlying models which are typically systems of partial differential equations with functions linearised mathematically.  Hence DA methods typically rely on linearising the underlying model \citep{harvey1990forecasting}. One of the most appealing aspects of agent-based models is that they are inherently non-linear, so it is not clear whether the assumptions of traditional DA methods will hold. Second, it is still unknown how much uncertainty DA can effectively deal with when implemented within ABM. Assimilation of real-time data into ABMs has only been attempted a few times and these examples are limited by their simplicity \citep{lloyd_exploring_2016, wang_data_2015,
+ward_dynamic_2016}.
+
+This paper is part of a wider programme of work\footnote{\url{http://dust.leeds.ac.uk/}} that is focused on developing DA methods to be readily used in ABM. This paper focuses on one particular model that aims  to make predictions of bus locations in real time. Bus route operation has been chosen due to its inherent uncertainties -- for example a model will need to account for uncertain factors affecting how buses travel on the roads \citep{khosravi2011prediction} -- but also for its tractability -- there are many fewer interactions than present in, say, a model of a crowd.  We also focus on one particular DA algorithm -- the Particle Filter (PF). This method is chosen due to its ability to incorporate data into non-linear models such as ABMs \citep{carpenter1999improved}.
+
+The objectives of this paper are to: (1) perform dynamic state estimation to reduce the
+uncertainty in the model's estimate of the \textit{current} system state; (2) improve the accuracy of short term forecasts.
+
+All the numerical experiments in this paper will be tightly controlled, following an `identical twin' experimental framework \citep[for example see][]{wang_data_2015}. We will first develop a complex ABM of a bus route to generate fine-grained synthetic GPS data of buses, that are reasonably similar to real GPS data, for use as synthetic `ground truth' data. We call this model the `BusSim-truth' model. The next step
+is to develop companion ABMs that are of simpler nature than BusSim-truth that will not know the parameters of BusSim-truth and will not have the dynamic and stochastic features of BusSim-truth. We will calibrate and evaluate these companion ABMs against the data generated from BusSim-truth. This experiment is designed to be similar to the real-time monitoring and predictions of bus locations, where models are often a simpler version of reality, that are calibrated to be as close as possible to reality. The prediction of bus location and arrival times are essential for bus operators and a topical research challenge \citep{bin2006bus}. The methods developed here can easily be applied to simulation and forecasting for \textit{real} bus systems and could, therefore, offer considerable potential impact. This is particularly pertinent in rapidly developing cities where daily bus schedules can be extremely erratic. In these cases accurate, up-to-date estimates of current waiting times will be highly beneficial to citizens who use (or would like to use) public transport. 
+
+The contributions of this paper are threefold. First, several ABMs of bus routes are constructed that account for the interactions between the bus and passengers, the bus and the surrounding traffic, and between multiple buses are considered. While model development is not the sole focus of this paper, these bus route ABMs are novel and have utility for other studies. Second, this paper introduces a combination of parameter calibration and DA techniques that can dynamically optimise an ABM to enable accurate estimation of the bus system in real time. Third, this paper shows and quantifies the impacts of calibration and DA in dealing the with stochastic and dynamic nature of the system under study.
+
+This paper is structured as follows. Section~\ref{s:problem} describes
+the research problem and the related works in the literature.
+Section~\ref{s:method} outlines the methodology. Section~\ref{s:experiments} describes
+the numerical experiments that are conducted and discusses these
+results. Finally, Section~\ref{s:conclusion} concludes the study and
+considers the opportunities for future work. 
+
+% Other sections are in their own file
+
+\input{research_approach}
+
+\input{method}
+
+\input{experiments}
+
+\input{implications}
+
+\input{conclusion}
+
+\section*{Data Availability} This paper does not use any real data. Synthetic data has been generated from one of its models (BusSim-truth model). The source code for all the models, and the used synthetic data are available from \url{https://github.com/leminhkieu/Bus-Simulation-model}. 
+
+\section*{Competing interests} We declare we have no competing interests
+
+\section*{Acknowledgements} This project has received funding from the
+European Research Council (ERC) under the European Union Horizon 2020 research and innovation programme (grant agreement No. 757455), a UK Economic and Social Research Council (ESRC) Future Research Leaders grant (ES/L009900/1) and a ESRC/Alan Turing Joint Fellowship
+(ES/R007918/1).
+
+\appendix \input{AppendixA}
+\appendix \input{AppendixB}
+%\section*{References}
+
+\bibliographystyle{plain} 
+\bibliography{2018-pf-bussim}
+
+\end{document}

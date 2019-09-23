@@ -1,0 +1,42 @@
+\section*{Appendix B: Cross Entropy Method for Parameter Calibration}
+
+This Appendix describes the pseudocode for the Cross Entropy Method for Normal distribution \citep{rubinstein1999cross}. 
+
+\begin{algorithm} [H]	
+	%\scriptsize
+	\SetAlgoLined
+	Set $p=(\mu_1,\sigma_1,\mu_2,\sigma_2,...,\mu_K,\sigma_K)$ \quad \%Initial distribution parameters 
+	
+	Set $M$ \quad     \%Number of stops
+	
+	Set $T$  \quad  \% Maximum iteration number
+	
+	Set $I$  \quad  \% Maximum iteration number 
+	
+	Set $\rho$  \quad \% Set selection ratio
+	
+	\For {$t$ from 1 to $T$} { \  \%Main CEM loop
+	
+	    \For {$i$ from 1 to $I$} {
+	
+	Draw $y^{(i)}$ from $\mathcal{N}(\mu,\sigma)$  \quad  \%Draw $I$ samples
+	
+	Compute $f^i:=f(y^{(i)}$}
+	
+	Sort $f^i$-values \quad  \%Order by decreasing magnitude
+	
+	$\gamma \leftarrow f_{\rho.I}$ \quad  \%Set threshold 
+	
+	$L_\gamma \leftarrow \{ y^{(i)} | f(y^{(i)}) \leq \gamma$  \quad  \%Collect elite samples 
+	
+	$\mu'_j = \frac{1}{L_\gamma} \sum_{i=1}^{L_\gamma} \mu_{i,j}$  \quad  \%Update $\mu$
+
+	$\sigma'_j = \frac{1}{L_\gamma} \sum_{i=1}^{L_\gamma} \sigma_{i,j}$   \quad  \%Update $\sigma$
+	
+	$\mu_j \leftarrow \alpha \mu'_j + (1 - \alpha)  \mu_j$ \quad \%Update with step size $\alpha$
+	
+	$\sigma_j \leftarrow \alpha \sigma'_j + (1 - \alpha)  \sigma_j$ \quad \%Update with step size $\alpha$
+	}
+	\caption{Cross-Entropy Method for Normal distribution}
+	\label{algo:CEM}
+\end{algorithm}

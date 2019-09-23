@@ -1,0 +1,56 @@
+% !TEX root = BusSim.tex
+\section*{Appendix A: The BusSim model \label{appendix:BusSim}}
+
+Figure 2 illustrates the workflow for BusSim-truth. At each current time step $t$, each Bus agent checks whether the next time step would be larger than the vehicle's scheduled dispatch time $\delta_j$. If $t>\delta_j$, we then check whether the bus is on the road (Status equals $MOVING$), or at a stop for passenger dwelling (Status equals $DWELLING$), or has finished its service (Status equals $FINISHED$), otherwise the bus remains $IDLE$. 
+
+If the status is $MOVING$, we first check whether the bus is at a bus stop, by comparing the $GeoFence$ area of each bus stop agent with the bus' location. If the bus is not approaching a bus stop, its current speed $v_j$ will be compared with the surrounding traffic speed $V$. If $v_j<V$, we assume that the bus will speed up with an acceleration rate $a_j$, thus we have: 
+\begin{equation}
+v_j^{t} = v_j^{t-dt} + a_j \cdot dt
+\end{equation}
+
+Therefore for the next time step, the bus will cover a distance of: 
+\begin{equation}
+S_j^t = S_j^{t-dt} + v_j^t \cdot dt
+\end{equation}
+
+If the speed already matches the traffic speed $V$, the bus will maintain the same speed. Or else if the bus is approaching a bus stop, the system will first check if the stop is the last stop. If it is the last stop, then the bus' status will be changed to $FINISHED$ and bus speed is changed to zero. If it is not the last stop, the system will change the status of agent Bus $j$ to $DWELLING$ and its speed to zero. The number of boarding and alighting passengers from the bus $j$, and the time that it will leave the stop are estimated as follows.  
+
+The number of boarding passenger is proportional to the time gap between the current time (when Bus $j$ approaches the bus stop $m$) and the last time any bus visits the bus stop $m$:     
+\begin{equation}
+B_{j,m} = \nint{Po(Arr_m \cdot (t^a_{j+1,m}-t^a_{j,m}) } \quad | \quad B_{j,m}\in\mathbb{N}
+\label{eq:Boarding_est}
+\end{equation}
+
+Equation \ref{eq:Boarding_est} shows that the number of boarding passengers is estimated using a stochastic Poisson process. A Poisson process is widely adopted in literature to estimate the count of passengers waiting at a public transport stop \citep{toledo2010mesoscopic,cats2010mesoscopic}. Extensions of this stochastic process have been introduced, such as non-homogeneous Poisson process \citep{kieu2018stochastic}, where the arrival rate is time-dependent, but for simplicity we adopt a homogeneous Poisson process for this paper. Equation \ref{eq:Boarding_est} makes the BusSim-truth model stochastic, because there is randomness in the way the Poisson process generates a number. For more details on the number generation process using stochastic Poisson process (e.g. thinning algorithm), interested readers may refer to \citep{lewis1979simulation}. The number of boarding passengers is also limited by the available capacity of the bus:
+\begin{equation}
+B_{j,m} = \text{max} \big( B_{j,m}, C - Occ_m )   \big)
+\label{eq:Boarding_limit}
+\end{equation}
+
+The number of alighting passengers is proportional to the number of passenger on board (bus occupancy) and the departure rate at the stop $m$.  For simplicity, we assume that $A_{j,m}$ is the product between the departure rate from bus stop $m$ and the current bus occupancy (the number of passenger on board leaving the last stop): 
+\begin{equation}
+A_{j,m} = \nint{Dep_m \cdot Occ_{j,m-1}} \quad | \quad A_{j,m}\in\mathbb{N}
+\end{equation}
+
+To estimate the amount of time that bus will have to stay at the bus stop $m$ for passenger boarding and alighting, a.k.a. \textit{dwell time} $D_{j,m}$, we adopt the approach in \citep{bertini2004modeling} and the Transit Capacity and Quality of Service Manual (TCQSM) \citep{kfh2013transit}:
+\begin{equation}
+D_{j,m} = \theta_1 + \theta_2 \times B_{j,m} + \theta_3 \times A_{j,m} 
+\label{eq:dwell_time}
+\end{equation}
+The parameter set [$\theta_1,\theta_2,\theta_3$] represents the time spent for passenger boarding, alighting, and a fixed value for vehicle stopping and starting, respectively. Equation \ref{eq:dwell_time} is the formulation for a single-door bus system, where boarding and alighting occurs sequentially. 
+
+The departure time of bus $j$ from stop $m$ is calculated from the arrival time $t^a_{j,m}$ plus the time spent at stops for passenger boarding and alighting, or in other words the dwell time $D_m$:
+\begin{equation}
+t^d_{j,m} = t^a_{j,m} + D_{j,m}
+\end{equation}
+In BusSim, the bus $j$ is only allowed to leave the bus $m$ at time $t^d_{j,m}$, so this is also called the $Leave\_stop\_time$, as can be seen in the Figure 2. 
+
+If the status of bus $j$ is $DWELLING$, it is at a stop for passenger boarding and alighting. We then check if the next time step would be larger or equal to the leave stop time $t^d_{j,m}$. If it would, then the bus would start accelerate to leave the stop, otherwise it would stay for at least another time interval. Finally, if the status of the bus is $FINISHED$, then we would do nothing. The modelling process then moves to the next Bus agent until the last Bus, then the whole model moves to the next time step until the last time step. 
+
+BusSim-truth also assumes that parameters dynamically change over time by introducing an additional parameter $\xi$ to represent the change in passenger demand or surrounding traffic speed. For simplicity, we assume that a single, deterministic parameter $\xi$ can model these dynamic changes. In practice, it is possible, and more desirable, to use a time-dependent value of $\xi$ such that dynamic change is better captured, and multiple $\xi$ to model different changes. $\xi>0$ represents an increase in passenger demand and traffic speed, and $\xi<0$ represents otherwise. In this paper, the change in passenger demand or traffic speed is modelled as: 
+\begin{align}
+V = V \cdot \big( 1 - \frac{t}{T} \cdot \frac{100}{\xi} \big) \\
+Arr_m = Arr_m \cdot (1 - \frac{t}{T} \cdot \frac{100}{\xi}
+\label{eq:dynamic_bussim}
+\end{align}
+A positive value of $\xi$ in Equation \ref{eq:dynamic_bussim} gradually reduces the surrounding traffic speed $V$ and increases the arrival rate $Arr_m$, which would lead to more bus delays and congestion. 

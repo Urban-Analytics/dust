@@ -1,0 +1,9 @@
+% !TEX root = BusSim.tex
+\section{Implications\label{s:implications}}
+
+This paper presents an integrated framework to reduce uncertainty in ABMs when making predictions in real time, by combining parameter calibration and data assimilation. As discussed in Section \ref{s:Intro} and \ref{s:problem}, an `identical twin' approach has been adopted instead of real noisy data to facilitate an effective evaluation of the proposed methods against the synthetic `ground truth'. The numerical experiment shows that the framework yields more accurate predictions than (i) a benchmark scenario (without parameter calibration), and (ii) a scenario with parameter calibration but without data assimilation. 
+
+In its current form, the framework can provide \textit{real time} bus locations and arrival times for passenger information systems. The forecasted bus location and arrival information provides key intelligence for waiting passengers \cite{fan2016waiting}. This is beneficial for all public transport passengers, but can be of particular benefit in countries, for example in the Global South \cite{kumar2017bus} where  there are frequent delays due to transport systems being complex, heterogeneous or heavily congested. The prediction of bus arrival times is also critical for real-time trip planners. These planning systems propose optimal alternative routes for passengers, or update information on a connecting service that may be unreachable due to delayed buses. 
+
+Many advanced Intelligent Transport System applications heavily rely on predictions of bus location and arrival times, for  example  bus control studies such as \cite{daganzo2009headway}.  A model-based prediction of bus location and arrival time, such as the framework in this paper, would allow bus operators the ability to evaluate and update their transportation infrastructures in real time.
+

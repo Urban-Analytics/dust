@@ -1,0 +1,8 @@
+% !TEX root = BusSim.tex
+\section{Conclusion\label{s:conclusion}}
+
+This paper proposes parameter calibration and data assimilation frameworks to enhance the prediction accuracy in agent-based models (ABM) when the system under study has a \textit{stochastic} and \textit{dynamic} nature. This is done in a 'identical twin' approach. We first develop a stochastic and dynamic ABM of bus route, referred to as \textit{BusSim-truth}. This model is employed to generate synthetic `historical' and `real-time' GPS data of bus locations. The `historical' data is used to train two simpler models of bus route, referred to as \textit{BusSim-deterministic} and \textit{BusSim-stochastic}, and evaluate against the 'real-time' data. 
+
+Similar to the practice, when any simulation model is a simplification of the reality, BusSim-deterministic and BusSim-stochastic are simpler than BusSim-truth, and thus may not be able to produce a prediction similar to the synthetic `real-time' GPS data under limited data. We propose a solution for this issue by parameter calibration using Cross-Entropy Method (Scenario 2), by a combination of parameter calibration and Particle Filtering (Scenario 3), and show that they outperform the no calibration scenario (Scenario 1) and only Particle Filtering scenario (Scenario 4), at various levels of uncertainty. 
+
+This paper shows the need for parameter calibration and data assimilation, and particularly the combination of them, to improve the accuracy of model-based prediction using ABMs in real time. Future research direction includes fitting the proposed framework with real data instead of synthetic data. 

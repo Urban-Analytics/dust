@@ -293,7 +293,9 @@ def plot_all_results(forecast, analysis, observation):
     observation : pandas dataframe
         pandas dataframe of observation data.
     """
-    f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, sharey=True)
+    f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, sharey=True,
+                                      figsize=(8, 12))
+    # f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, sharey=True)
 
     no_plot = ['sd', 'up_diff', 'down_diff']
 
@@ -325,10 +327,13 @@ def plot_all_results(forecast, analysis, observation):
     ax3.set_xlabel('time')
     ax3.set_ylabel('RMSE')
 
+    plt.savefig('results/figures/all_results.pdf')
+
     plt.show()
 
 def plot_with_errors(forecast, analysis, observation):
-    f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, sharey=True)
+    f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, sharey=True,
+                                      figsize=(8, 12))
 
     ax1.plot(forecast['mean'], 'b-', label='forecast mean')
     ax1.fill_between(forecast.index,
@@ -353,6 +358,8 @@ def plot_with_errors(forecast, analysis, observation):
                      alpha=0.25)
     ax3.legend(loc='upper left')
     ax3.set_ylabel('RMSE')
+
+    plt.savefig('results/figures/all_with_errors.pdf')
 
     plt.show()
 
@@ -392,78 +399,102 @@ def run_repeat_combos(resume=True):
 # run_combos()
 # run_repeat()
 
-def process_batch():
-    # Set up link to directory
-    results_path = './results/repeats/'
-    results_list = listdir(results_path)
-    output = list()
+def process_batch(read_time=False, write_time=True):
+    if read_time:
+        with open('results/map_data.json') as f:
+            output = json.load(f)
+    else:
+        # Set up link to directory
+        results_path = './results/repeats/'
+        results_list = listdir(results_path)
+        output = list()
 
-    for r in results_list:
-        # Derive parameters from filename
-        components = r.split('__')
+        for r in results_list:
+            # Derive parameters from filename
+            components = r.split('__')
 
-        ap = int(components[0].split('_')[-1])
-        es = int(components[1])
-        pop_size = int(components[2])
-        pre_sigma = components[3].split('.')[0]
-        sigma = float(pre_sigma.replace('_', '.'))
+            ap = int(components[0].split('_')[-1])
+            es = int(components[1])
+            pop_size = int(components[2])
+            pre_sigma = components[3].split('.')[0]
+            sigma = float(pre_sigma.replace('_', '.'))
 
-        # Read in set of results:
-        p = './results/repeats/{0}'.format(r)
-        with open(p) as f:
-            d = json.load(f)
-        
-        # Reduce to means for forecast, analysis and obs
-        forecasts, analyses, observations = process_repeat_results(d)
+            # Read in set of results:
+            p = './results/repeats/{0}'.format(r)
+            with open(p) as f:
+                d = json.load(f)
+            
+            # Reduce to means for forecast, analysis and obs
+            forecasts, analyses, observations = process_repeat_results(d)
 
-        # Take mean over time
-        forecast = forecasts['mean'].mean()
-        analysis = analyses['mean'].mean()
-        observation = observations['mean'].mean()
-        
-        # Add to output list
-        row = {'assimilation_period': ap,
-               'ensemble_size': es,
-               'population_size': pop_size,
-               'std': sigma,
-               'forecast': forecast,
-               'analysis': analysis,
-               'obsevation': observation}
+            # Take mean over time
+            forecast = forecasts['mean'].mean()
+            analysis = analyses['mean'].mean()
+            observation = observations['mean'].mean()
+            
+            # Add to output list
+            row = {'assimilation_period': ap,
+                   'ensemble_size': es,
+                   'population_size': pop_size,
+                   'std': sigma,
+                   'forecast': forecast,
+                   'analysis': analysis,
+                   'obsevation': observation}
 
-        output.append(row)
- 
+            output.append(row)
+
+        if write_time:
+            with open('results/map_data.json', 'w', encoding='utf-8') as f:
+                json.dump(output, f, ensure_ascii=False, indent=4)
+
     data = pd.DataFrame(output)
     make_all_heatmaps(data)
 
 
 def make_all_heatmaps(data):
-    plot_heatmap(data, 'assimilation_period', 'ensemble_size')
+    # plot_heatmap(data, 'assimilation_period', 'ensemble_size')
     plot_heatmap(data, 'assimilation_period', 'population_size')
-    plot_heatmap(data, 'assimilation_period', 'std')
+    # plot_heatmap(data, 'assimilation_period', 'std')
     plot_heatmap(data, 'ensemble_size', 'population_size')
-    plot_heatmap(data, 'ensemble_size', 'std')
-    plot_heatmap(data, 'population_size', 'std')
+    # plot_heatmap(data, 'ensemble_size', 'std')
+    plot_heatmap(data, 'std', 'population_size')
 
 def plot_heatmap(data, var1, var2):
+    label_dict = {'assimilation_period': 'Assimilation Period',
+                  'ensemble_size': 'Ensemble Size',
+                  'population_size': 'Population Size',
+                  'std': 'Observation Error Standard Deviation'}
+    # d, rows, cols = extract_array(data, var1, var2)
+    # print(d)
+    # print(rows)
+    # print(cols)
+    # plt.contourf(rows, cols, d)
     d = extract_array(data, var1, var2)
-    plt.pcolormesh(d)
-    plt.xticks(np.arange(0.5, len(d.columns), 1), d.columns)
-    plt.yticks(np.arange(0.5, len(d.index), 1), d.index)
-    plt.xlabel(var1)
-    plt.ylabel(var2)
+    print(d)
+    plt.contourf(d, levels=10, cmap='PuBu')
+    plt.yticks(np.arange(0, len(d.index), 1), d.index)
+    plt.xticks(np.arange(0, len(d.columns), 1), d.columns)
+    # plt.xticks(np.arange(0, len(cols), 1), cols)
+    # plt.yticks(np.arange(0, len(rows), 1), rows)
+    plt.xlabel(label_dict[var1])
+    plt.ylabel(label_dict[var2])
     plt.colorbar()
+    plt.tight_layout()
+    plt.savefig('./results/figures/{0}_{1}.pdf'.format(var1, var2))
     plt.show()
 
 def extract_array(df, var1, var2):
     # Define variables to fix and filter
-    fixed_values = {'assimilation_period': 10,
-                    'ensemble_size': 10,
+    fixed_values = {'assimilation_period': 20,
+                    'ensemble_size': 20,
                     'population_size': 15,
-                    'std': 1}
+                    'std': 1.5}
 
     var1_vals = sorted(df[var1].unique())
     var2_vals = sorted(df[var2].unique())
     fix_vars = [x for x in fixed_values.keys() if x not in [var1, var2]]
+    print(var1, var1_vals)
+    print(var2, var2_vals)
 
     # Filtering down to specific fixed values
     cond1 = df[fix_vars[0]] == fixed_values[fix_vars[0]]
@@ -477,10 +508,12 @@ def extract_array(df, var1, var2):
             var1_cond = tdf[var1]==u
             var2_cond = tdf[var2]==v
             d = tdf[var1_cond & var2_cond]
-            a[i, j] = d['analysis'].values[0]
+            a[i][j] = d['analysis'].values[0]
 
-    output = pd.DataFrame(a, index=var2_vals, columns=var1_vals)
-    return output
+    output = pd.DataFrame(a, index=var1_vals, columns=var2_vals)
+    # output = pd.DataFrame(a.T, index=var2_vals, columns=var1_vals)
+    # return a.T, var2_vals, var1_vals
+    return output.T
 
 def testing():
     with open('results/data.json') as json_file:
@@ -491,4 +524,4 @@ def testing():
     # run_repeat_combos(resume=True)
 
 # testing()
-process_batch()
+process_batch(read_time=True)

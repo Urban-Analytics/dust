@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "New Paper: Dealing with uncertainty in agent-based models for short-term predictions"
+title: "New Preprint: Dealing with uncertainty in agent-based models for short-term predictions"
 tagline: ""
 category: announce
 tags: [abm, data assimilation, particle filter]

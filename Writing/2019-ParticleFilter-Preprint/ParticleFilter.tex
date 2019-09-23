@@ -1,0 +1,107 @@
+\documentclass{article}
+
+\usepackage{arxiv}
+
+
+\usepackage{graphicx}
+%\usepackage{subfig}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{amsmath}
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{appendix}
+\usepackage{subcaption} % for sub figures
+
+% For todo notes (workaround for 2-column using marginnote from: https://tex.stackexchange.com/questions/52680/how-can-i-make-todo-comments-when-using-the-multicol-package)
+%\usepackage[textsize=tiny, textwidth=2.0cm]{todonotes}
+
+% The aim of the paper (so that if it changes slightly this is reflected everywhere)
+% Call simply by using '\aim'
+\newcommand{\aim}{quantify the conditions under which a typical particle filter is able to reliably estimate the `true' state of an underlying pedestrian system through the combination of a modelled state estimate, produced using an agent-based model, and observational data}
+
+
+%
+\title{Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter
+\thanks{This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No. 757455), through a UK Economic and Social Research Council (ESRC) Future Research Leaders grant [number ES/L009900/1], and through an internship funded by the UK Leeds Institute for Data Analytics (LIDA).}}
+
+\author{
+  Nick Malleson\thanks{Corresponding author}\\
+  School of Geography\\
+  University of Leeds\\
+  Leeds, LS2 9JT, UK\\
+  \textit{n.s.malleson@leeds.ac.uk}\\
+ \And 
+ Kevin Minors\\
+  Leeds Institute for Data Analytics\\
+  University of Leeds\\
+  Leeds, LS2 9JT, UK \\
+   \And 
+ Le-Minh Kieu\\
+  Leeds Institute for Data Analytics\\
+  University of Leeds\\
+  Leeds, LS2 9JT, UK \\
+   \And 
+ Jonathan A. Ward\\
+  School of Mathematics\\
+  University of Leeds\\
+  Leeds, LS2 9JT, UK \\
+   \And 
+ Andrew A. West\\
+  School of Geography\\
+  University of Leeds\\
+  Leeds, LS2 9JT, UK \\
+   \And 
+ Alison Heppenstall\\
+  %School of Geography\\
+  %University of Leeds\\
+  %Leeds, LS2 9JT, UK \\
+  Alan Turing Institute\\
+  British Library\\
+  London NW1 2DB \\
+ } 
+
+%\institute{
+%School of Geography, University of Leeds, LS2 9JT, UK \\
+%\url{http://geog.leeds.ac.uk/} \\
+%\email{n.s.malleson@leeds.ac.uk} 
+% \and
+%School of Mathematics, University of Leeds, LS2 9JT, UK \\
+%\url{http://maths.leeds.ac.uk} 
+%\and
+%Leeds Institute for Data Analytics (LIDA), University of Leeds, LS2 9JT, UK \\
+%\url{http://lida.leeds.ac.uk} \and
+%Improbable, 30 Farringdon Road, London, EC1M 3HE, UK \\
+%\url{http://www.improbable.io}
+%}
+%
+
+\begin{document}
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+Agent-based modelling is a valuable approach for systems whose behaviour is driven by the interactions between distinct entities. They have shown particular promise as a means of modelling crowds of people in streets, public transport terminals, stadiums, etc. However, the methodology faces a fundamental difficulty: there are no established mechanisms for dynamically incorporating \textit{real-time} data into models. This limits simulations that are inherently dynamic, such as pedestrian movements, to scenario testing of, for example, the potential impacts of new architectural configurations on movements. This paper begins to address this fundamental gap by demonstrating how a particle filter could be used to incorporate real data into an agent-based model of pedestrian movements at run time. The experiments show that it is indeed possible to use a particle filter to perform online (real time) model optimisation.  However, as the number of agents increases, the number of individual particles (and hence the computational complexity) required increases exponentially. By laying the groundwork for the real-time simulation of crowd movements, this paper has implications for the management of complex environments (both nationally and internationally) such as transportation hubs, hospitals, shopping centres, etc.
+
+\end{abstract}
+
+\keywords{Agent-based modelling \and Particle Filter \and Data assimilation \and Crowd simulation}
+
+\input{introduction}
+\input{background}
+\input{method}
+\input{experiments}
+\input{discussion}
+
+
+%\bibliographystyle{splncs04}
+%\bibliographystyle{chicago}
+\bibliographystyle{unsrt}
+\bibliography{2018-ParticleFilter}
+
+\begin{appendices}
+    \include{appendix_code_instructions}
+\end{appendices}
+
+\end{document}

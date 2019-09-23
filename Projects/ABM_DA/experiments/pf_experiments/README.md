@@ -1,6 +1,12 @@
 # README
 
-This folder contains the codes used to run experiments with a particle filter. The particle filter code itself is available in the [stationsim](../../stationsim) package, called [particle_filter.py](../../stationsim/particle_filter.py).
+This folder contains the codes used to run experiments with a particle filter. The particle filter code itself is available in the [stationsim](../../stationsim) package, called [particle_filter.py](../../stationsim/particle_filter.py). The work has been published in arXiv as a preprint prior to submission to a peer-reviewed journal:
+
+ - Malleson, Nick, Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew A. West, Alison Heppenstall
+(2019) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. _Preprint_:
+[arXiv:1909.09397 [cs.MA]](https://arxiv.org/abs/1909.09397).
+
+(Full source of the article available in [Writing/2019-ParticleFilter-Preprint/](../../Writing/2019-ParticleFilter-Preprint/)).
 
 
 ## Running Experiments

@@ -39,10 +39,10 @@ function to take instanced clases output from arc ukf scripts and produce grand 
         
 def l2_parser(instance):
     "extract arrays of real paths, predicted paths, L2s between them."
-    actual,preds,full_preds,truth = instance.data_parser(False)
+    obs,preds,full_preds,truth = instance.data_parser(False)
     plts = plots(instance)
-    truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
-    preds[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+    truth[np.isnan(obs)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+    preds[np.isnan(obs)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
 
     distances_obs,oindex,agent_means,t_mean_obs = plts.L2s(truth,preds)
 
@@ -116,10 +116,10 @@ if __name__ == "__main__":
 
     else:
         print("just one run for given params. giving single run diagnostics")
-        actual,pred,full_preds,truth=u.data_parser(False)
+        obs,pred,full_preds,truth=u.data_parser(False)
         
-        truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
-        pred[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+        truth[np.isnan(obs)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+        pred[np.isnan(obs)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
 
         agg_plts=agg_plots(u)
         "single test diagnostics"

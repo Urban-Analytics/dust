@@ -18,18 +18,7 @@ scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiment
 change medrclaa to relevant username
 """
 
-
-if __name__ == "__main__":
-    
-    "parameters"
-    n=30
-    rates = [1,2,5,10,20,50] #.2 to 1 by .2
-    noises = [0,0.25,0.5,1,2,5]
-    run_id = np.arange(0,30,1) #20 runs
-    plot_1 =True #do plot 1
-    plot_2 = True # do plot2
-    save =True # save plots
-    
+def base_data_parser(n,rates,noises,run_id):
     errors = []
     rates2 = []
     noises2 = []
@@ -37,7 +26,7 @@ if __name__ == "__main__":
     
     """
     pull data from pickles into columns.
-    each row has a rate, noise, run_id (out of 30) 
+    each row has a rate, noise, run_id (out of 10,30) 
     and mean L2 error for obs stationsim and ukf respectively
     """
     
@@ -66,14 +55,14 @@ if __name__ == "__main__":
     "convert to pandas for aggregation functions"
     "mean aggregate 30 runs for each noise and rate pair"
     data = pd.DataFrame(np.concatenate((run_id2,rates2,noises2,errors2),axis=1))
-    data.columns = ["run_id","rates","noise","actual","prediction","ukf"]
+    data.columns = ["run_id","rates","noise","obs","prediction","ukf"]
     data2 = data.groupby(["rates","noise"],as_index=False).agg("mean")
     
     "calculate best (minimum) obs, preds, or ukf L2 error for each rate/noise pair"
     " assign 0,1, or 2 to represent obs, preds, or ukf performing best respectively"
     best = []
     for i in range(len(data2.index)):
-        row = np.array([data2["actual"][i],data2["prediction"][i],data2["ukf"][i]])
+        row = np.array([data2["obs"][i],data2["prediction"][i],data2["ukf"][i]])
         best.append(np.where(row==np.nanmin(row))[0][0])
     
     
@@ -92,11 +81,10 @@ if __name__ == "__main__":
             rate_noise_row = rate_rows.loc[rate_rows["noise"]==noise]
             if len(rate_noise_row.values) != 0:
                 best_array[i,j]= rate_noise_row["best"]
-            
-#%%    
-    
-    "plot 1 gives visualisation of best_array"
-    if plot_1:
+
+    return data2,best_array
+
+def plot_1(data2,best_array,b,rates,noises,save):
         f,ax = plt.subplots(figsize=(8,8))
         "cbar axis"
         divider = make_axes_locatable(ax)
@@ -135,27 +123,27 @@ if __name__ == "__main__":
         if save:
             plt.savefig(f"{n}_base_config_test.pdf")
     
+
+"""
+plot 2 - plots errors for all 3 estimates simultaneously indicating
+which is best (minimum) for each noise pair.
+modular x axis allows for pandas style double indexing.
+each sampling rate is plotted first on the x axis
+for each rate every noise is also plotted in list order
+"""
     
-#%%
-    """
-    plot 2 - plots errors for all 3 estimates simultaneously indicating
-    which is best (minimum) for each noise pair.
-    modular x axis allows for pandas style double indexing.
-    each sampling rate is plotted first on the x axis
-    for each rate every noise is also plotted in list order
-    """
-    if plot_2:
-        g = plt.figure(figsize=(10,6))
+def plot_2(data2,best_array,n,rates,noises,save):
+        g = plt.figure(figsize=(10,8))
         colours = ["yellow","orangered","skyblue"]
         ax1 = g.add_subplot(111)
         "line plots"
-        l1=plt.plot(data2["actual"],label="actual",
+        l1=plt.plot(data2["obs"],label="obs",
                  color = colours[0],linewidth = 4,path_effects=[pe.Stroke(linewidth=6, foreground='k'), pe.Normal()])
         l2=plt.plot(data2["prediction"],label="prediction",linestyle=(0,(1,1)),
                  color=colours[1],linewidth = 4,path_effects=[pe.Stroke(linewidth=6, foreground='k'), pe.Normal()])
         l3=plt.plot(data2["ukf"],label = "ukf",linestyle=(0,(0.5,1,2,1)),
                  color=colours[2],linewidth = 4,path_effects=[pe.Stroke(linewidth=6, foreground='k'), pe.Normal()])
-        plt.legend(fontsize="large")
+        plt.legend()
         
         "base line"
         ax1.axhline(y=0,color="grey",alpha=0.5,linestyle=":")
@@ -164,7 +152,7 @@ if __name__ == "__main__":
         for i in range(len(data2["best"])):
             best = data2["best"][i]
             if best ==0:
-                plt.plot(np.array([i,i]),np.array([0,data2["actual"][i]]),
+                plt.plot(np.array([i,i]),np.array([0,data2["obs"][i]]),
                          color=colours[0],linewidth = 3,
                          path_effects=[pe.Stroke(linewidth=6, foreground='k'), pe.Normal()])
             elif best==1:
@@ -178,17 +166,17 @@ if __name__ == "__main__":
           
         "lines from max estimate to noise label"
         for j in range(2*len(noises)):
-            maxim = np.nanmax((data2[["actual","prediction","ukf"]].loc[[j]]).to_numpy())
+            maxim = np.nanmax((data2[["obs","prediction","ukf"]].loc[[j]]).to_numpy())
             noise = j%len(noises)
             plt.plot(np.array([j,j]),np.array([maxim,((maxim/(maxim+0.5))*5)+1]),
                      color="grey",linestyle="-")
             plt.text(j-0.1,((maxim/(maxim+0.5))*5)+1,str(noises[noise]),fontsize=18)
         
-        plt.text(1,6,"Noises",fontsize=18)
+        plt.text(1,4,"Noises",fontsize=18)
         
         "labelling"
         ax1.tick_params(labelsize=28)
-        plt.ylabel("mean L2 over 30 runs",fontsize=28)
+        plt.ylabel(f"Mean Agent L2 over {n} runs",fontsize=24)
         "split x axis labels into two"
         #ax2 = ax1.twiny()
         "noise labels"
@@ -197,10 +185,32 @@ if __name__ == "__main__":
         #plt.setp(ax2.get_xticklabels(),rotation=90)
         #ax2.set_xlabel("Noise (std)")
         "rate labels"
-        ax1.set_xlabel("Sampling Frequency",fontsize=28)
+        ax1.set_xlabel("Sampling Frequency",fontsize=24)
         ax1.set_xticks(np.arange(0,len(rates)*len(noises),len(noises)))
         ax1.set_xticklabels(rates,fontsize=28)
         
         plt.tight_layout()
         if save:
             plt.savefig(f"{n}_error_trajectories.pdf")
+
+if __name__ == "__main__":
+    
+    "parameters"
+    n=30
+    #rates = [1,2,5,10,20,50] #.2 to 1 by .2
+    rates = [1,2,5,10] #.2 to 1 by .2
+    noises = [0,0.25,0.5,1,2,5]
+    run_id = np.arange(0,30,1) #20 runs
+    plot1 =True #do plot 1
+    plot2 = True # do plot2
+    save =True # save plots
+    
+    data2,best_array = base_data_parser(n,rates,noises,run_id)
+    
+    if plot_1:
+        plot_1(data2,best_array,n,rates,noises,save)
+    if plot_2:
+        plot_2(data2,best_array,n,rates,noises,save)
+            
+    
+    "plot 1 gives visualisation of best_array"

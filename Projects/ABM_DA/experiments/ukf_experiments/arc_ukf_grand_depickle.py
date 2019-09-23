@@ -31,12 +31,64 @@ plt.rcParams.update({'font.size':20})
 
 #plt.style.use("dark_background")
         
+
+def grand_depickle_ukf_data_parser(instance):
+    """
+    extracts data into numpy arrays
+    in:
+        do_fill - If false when an agent is finished its true position values go to nan.
+        If true each agents final positions are repeated in the truthframe 
+        until the end of the whole model.
+        This is useful for various animating but is almost always kept False.
+        Especially if using average error metrics as finished agents have practically 0 
+        error and massively skew results.
+    out:
+        a - noisy observations of agents positions
+        b - ukf predictions of said agent positions
+        c - if sampling rate >1 fills inbetween predictions with pure stationsim prediciton
+            this is solely for smoother animations later
+        d- true agent positions
+    """
+    
+    sample_rate = instance.sample_rate
+    
+    nan_array = np.ones(shape=(max([len(agent.history_locations) for 
+                                    agent in instance.base_model.agents]),
+                                    2*instance.pop_total))*np.nan
+    for i in range(instance.pop_total):
+        agent = instance.base_model.agents[i]
+        array = np.array(agent.history_locations)
+        array[array==None] ==np.nan
+        nan_array[:len(agent.history_locations),2*i:(2*i)+2] = array
+    
+    nan_array = ~np.isnan(nan_array)
+    
+    b2 = np.vstack(instance.ukf_histories)
+    d = np.vstack(instance.truths)
+
+    
+    b= np.zeros((d.shape[0],b2.shape[1]))*np.nan
+  
+    for j in range(int(b.shape[0]//sample_rate)):
+        b[j*sample_rate,:] = b2[j,:]
+     
+    if sample_rate>1:
+        c= np.vstack(instance.ukf_preds)
+
+        return b,c,d,nan_array
+    else:
+        return b,d,nan_array
+
 def l2_parser(instance,prop):
     "extract arrays of true paths, predicted paths and l2 distances between them."
-    
-    actual,preds,full_preds,truth = instance.data_parser(False)
-    truth[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
-    preds[np.isnan(actual)]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+    if instance.filter_params["sample_rate"]==1:
+            preds,truth,nan_array = grand_depickle_ukf_data_parser(instance)
+    else:
+        preds,full_preds,truth,nan_array = grand_depickle_ukf_data_parser(instance)
+        full_preds[~nan_array]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+
+    truth[~nan_array]=np.nan #make empty values to prevent mean skewing in diagnostic plots
+    preds[~nan_array]=np.nan #make empty values to prevent mean skewing in diagnostic plots
 
     plts = plots(instance)
     true_u,b_u,plot_range = plts.plot_data_parser(truth,preds,False)
@@ -47,13 +99,12 @@ def l2_parser(instance,prop):
         distances_uobs,uindex,agent_means,t_mean_uobs = plts.L2s(true_u,b_u)
     else:
         distances_uobs = []
-    preds[np.isnan(actual)]=np.nan
     
-    return actual,preds,distances_obs,distances_uobs
+    return preds,distances_obs,distances_uobs
 
 
 
-def grand_L2_matrix(n,prop,n_step): 
+def grand_L2_matrix(n,prop): 
     "empty frames"
     o_L2 = np.ones((len(n),len(prop)))*np.nan
     u_L2 = np.ones((len(n),len(prop)))*np.nan
@@ -66,7 +117,7 @@ def grand_L2_matrix(n,prop,n_step):
                 files[j] = glob.glob(f"ukf_results/ukf_agents_{num}_prop_{1}*") 
                 #wierd special case with 1 and 1.0 discrepancy
             else:
-                files[j.round(2)] = glob.glob(f"ukf_results/ukf_agents_{num}_prop_{j.round(2)}*")
+                files[round(j,2)] = glob.glob(f"ukf_results/ukf_agents_{num}_prop_{round(j,2)}*")
 
         for k,_ in enumerate(files.keys()):
             o_L2_2=[]
@@ -75,20 +126,20 @@ def grand_L2_matrix(n,prop,n_step):
                 f = open(file,"rb")
                 u = pickle.load(f)
                 f.close()
-                actual,pred,do,du = l2_parser(u,float(_))#
+                pred,do,du = l2_parser(u,float(_))#
                 "grand means"
-                o_L2_2.append(np.nanmean(do,axis=0))
-                u_L2_2.append(np.nanmean(du,axis=0))
+                #o_L2_2.append(np.nanmean(do,axis=0))
+                #u_L2_2.append(np.nanmean(du,axis=0))
                 "grand medians"
-                o_L2_2.append(np.nanmean(do,axis=0))
-                u_L2_2.append(np.nanmean(du,axis=0))
+                o_L2_2.append(np.nanmedian(do,axis=0))
+                u_L2_2.append(np.nanmedian(du,axis=0))
         
             o_L2[i,k]=np.nanmean(np.hstack(o_L2_2))
             u_L2[i,k]=np.nanmean(np.hstack(u_L2_2))
             
     return o_L2,u_L2
     
-def grand_L2_plot(data,n,prop,n_step,p_step,observed,save):
+def grand_L2_plot(data,n,prop,observed,save):
 
     
     data = np.rot90(data,k=1) #rotate frame 90 degrees so right way up for plots
@@ -107,13 +158,13 @@ def grand_L2_plot(data,n,prop,n_step,p_step,observed,save):
     ax.set_xticks(np.arange(len(n)))
     ax.set_yticks(np.arange(len(prop)))
     ax.set_xticklabels(n)
-    ax.set_yticklabels(prop.round(2))
+    ax.set_yticklabels(prop)
     ax.set_xticks(np.arange(-.5,len(n),1),minor=True)
     ax.set_yticks(np.arange(-.5,len(prop),1),minor=True)
     ax.grid(which="minor",color="k",linestyle="-",linewidth=2)
     ax.set_xlabel("Number of Agents")
     ax.set_ylabel("Proportion of Agents Observed")
-    plt.title("Grand L2s Over Varying Agents and Percentage Observed")
+    #plt.title("Grand L2s Over Varying Agents and Percentage Observed")
 
 
     "labelling squares"
@@ -121,7 +172,7 @@ def grand_L2_plot(data,n,prop,n_step,p_step,observed,save):
     for i in range(data.shape[0]):
         for j in range(data.shape[1]):
             plt.text(j,i,str(data[i,j].round(2)),ha="center",va="center",color="w",
-                     path_effects=[pe.Stroke(linewidth = 0.7,foreground='k')])
+                     path_effects=[pe.Stroke(linewidth = 0.4,foreground='k')])
             
     "colourbar alignment and labelling"
     divider = make_axes_locatable(ax)
@@ -131,15 +182,15 @@ def grand_L2_plot(data,n,prop,n_step,p_step,observed,save):
     
     "further labelling and saving depending on observed/unobserved plot"
     if observed:
-        cbar.set_label("Observed L2s")
-        ax.set_title("Observed Agent L2s")
+        cbar.set_label("Observed Median L2s")
+        #ax.set_title("Observed Agent L2s")
         ax.set_ylabel("Proportion of Agents Observed (x100%)")
         if save:
             plt.savefig("Observed_Grand_L2s.pdf")
 
     else:
-        cbar.set_label("Unobserved L2")
-        ax.set_title("Unobserved Agent L2s")
+        cbar.set_label("Unobserved Median L2s")
+        #ax.set_title("Unobserved Agent L2s")
         ax.set_ylabel("Proportion of Agents Observed (x100%)")
         if save:
             plt.savefig("Unobserved_Grand_L2s.pdf")
@@ -147,17 +198,16 @@ def grand_L2_plot(data,n,prop,n_step,p_step,observed,save):
 def boxplot_parser(n,prop):
     observed = {}
     unobserved ={}
-    for i in n:
-        i_index = (i-n.min())//n_step  
+    for i,pop in enumerate(n):
         files={}
         for j in prop:
             if j ==1:
-                files[j] = glob.glob(f"ukf_results/ukf_agents_{i}_prop_{1}*") 
+                files[j] = glob.glob(f"ukf_results/ukf_agents_{pop}_prop_{1}*") 
                 #wierd special case with 1 and 1.0 discrepancy
             else:
-                files[j.round(2)] = glob.glob(f"ukf_results/ukf_agents_{i}_prop_{j.round(2)}*")
-        observed[i] = {}
-        unobserved[i] = {}
+                files[round(j,2)] = glob.glob(f"ukf_results/ukf_agents_{pop}_prop_{round(j,2)}*")
+        observed[pop] = {}
+        unobserved[pop] = {}
         for _ in files.keys():
             o_L2_2=[]
             u_L2_2 = []
@@ -165,12 +215,12 @@ def boxplot_parser(n,prop):
                 f = open(file,"rb")
                 u = pickle.load(f)
                 f.close()
-                actual,pred,do,du = l2_parser(u,float(_))#
+                pred,do,du = l2_parser(u,float(_))#
                 
                 o_L2_2.append(np.apply_along_axis(np.nanmean,0,do))
                 u_L2_2.append(np.apply_along_axis(np.nanmean,0,du))
-            observed[i][_] = np.hstack(o_L2_2)
-            unobserved[i][_] = np.hstack(u_L2_2)
+            observed[pop][_] = np.hstack(o_L2_2)
+            unobserved[pop][_] = np.hstack(u_L2_2)
           
     "stack dictionaries into dataframe with corresponding n and prop next to each agent error"
     obs_sub_frames = []
@@ -225,26 +275,20 @@ def boxplot_plots(n,prop,frame,separate,observed,save):
         if save:
             plt.savefig(f_name)
     
- 
+#%% 
 if __name__ == "__main__":
     
-    n_step=10
-    n_min = 10
-    n_max = 30
-    p_step=0.25
-    p_min = 0.25
-    p_max = 1.0
-    
-    plot1 = True
+
+    plot1 = False
     plot2 = True
-    n= np.arange(n_min,n_max+n_step,n_step)
-    prop = np.arange(p_min,p_max+p_step,p_step)
+    n= [10,20,30]
+    prop = [0.25,0.5,0.75,1.0]
     
     save=True
     if plot1:
-        O,U = grand_L2_matrix(n,prop,n_step)
-        grand_L2_plot(O,n,prop,n_step,p_step,True,save)
-        grand_L2_plot(U,n,prop,n_step,p_step,False,save)
+        O,U = grand_L2_matrix(n,prop)
+        grand_L2_plot(O,n,prop,True,save)
+        grand_L2_plot(U,n,prop,False,save)
     if plot2:
         obs_frame ,uobs_frame = boxplot_parser(n,prop)
         boxplot_plots(n,prop,obs_frame,False,True,save)        

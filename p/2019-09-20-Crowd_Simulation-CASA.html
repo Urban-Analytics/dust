@@ -54,7 +54,8 @@
                         <h4>Professor of Spatial Science</h4>
                         <h4>School of Geography, University of Leeds <br/> and Fellow of the Alan Turing Institute</h4>
                         <hr/>
-                        <h4 style="text-align:center">These slides:<br/><a href="https://urban-analytics.github.io/dust/presentations.html">http://dust.leeds.ac.uk</a></h4>
+                        <h4 style="text-align:center">These slides: <a href="https://urban-analytics.github.io/dust/presentations.html">http://dust.leeds.ac.uk</a></h4>
+                        <h4 style="text-align:center">The paper: <a href="https://arxiv.org/abs/1909.09397">arxiv.org/abs/1909.09397</a></h4>
                     </div>
                 </section>
 
@@ -65,7 +66,7 @@
                     <p class="small"><strong>Results</strong>.<br/>The experiments show that it is indeed possible to use a particle filter to perform online (real time) model optimisation.  However, as the number of agents increases, the number of individual particles (and hence the computational complexity) required increases exponentially. </p>
                     <p class="small"><strong>Future</strong>.<br/>By laying the groundwork for the real-time simulation of crowd movements, this work has implications for the management of complex environments (both nationally and internationally) such as transportation hubs, hospitals, shopping centres, etc.</p>
                 </section>
-                
+
                 <section id="dust-intro" data-background-image="../figures/cityscapes/ny_night3.jpg">
                     <div class="whitebackground2">
                         <h2>Data Assimilation for Agent-Based Models (DUST)</h2>
@@ -76,12 +77,14 @@
                         <p>Funded by the European Research Council</p>
                         <p>Main aim: create new methods for dynamically assimilating data into agent-based models.</p>
                     </div>
-                
+
                 </section>
 
                 <section id="pf-paper">
+									<a href="https://arxiv.org/abs/1909.09397">
                     <img class="left" data-src="../figures/paper_figures/2018-ParticleFilterFigs/paper_front_page.png"
                          alt="Front page of the particle filter paper" />
+											 </a>
                     <p>Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter</p>
                     <p class="l2">Nick Malleson</p>
                     <p class="l2">Kevin Minors</p>
@@ -89,6 +92,7 @@
                     <p class="l2">Jonathan A. Ward</p>
                     <p class="l2">Andrew A. West</p>
                     <p class="l2">Alison Heppenstall</p>
+										<p>The paper: <a href="https://arxiv.org/abs/1909.09397">arxiv.org/abs/1909.09397</a><p>
                     <!--<p><a href="XXXX">XXXX LINK</a></p>-->
                 </section>
 
@@ -117,12 +121,12 @@
 
                     </div>
                 </section>
-                
+
                 <!-- ************************************************************
                 *********************** CROWD MODELLING *************************
                 ************************************************************ -->
 
-  
+
                 <section id="IntroToABM4" data-background-video="../videos/roller_coaster1.mp4"
                          data-background-video-loop="loop">
 
@@ -134,8 +138,8 @@
                         <p>We need a way to <i>assimilate</i> new data into our models</p>
                     </div>
                 </section>
-                
-                
+
+
                 <section id="real-time-crowd-modelling" >
 
                     <h2>Real Time Crowd Modelling</h2>
@@ -150,19 +154,19 @@
                     <p>Case study: a simple, hypothetical train station (<i>Station Sim</i>)</p>
                 </section>
 
-                
+
                 <!-- ************************************************************
                 *********************** StationSim ***********************
                 ************************************************************ -->
-                
-                
+
+
                 <section id="stationsim-video">
                     <video controls autoplay width="80%" height="auto" >
                         <source src="../videos/StationSim-Videos/stationsim-no_crowding.mp4" type="video/mp4"/>
                          Your browser does not support the video tag.
                     </video>
                 </section>
-                
+
                 <section id="stationsim-collisions1">
 
                     <img class="right" style="width:30%;" data-src="../figures/paper_figures/2018-ParticleFilterFigs/PF_ABM.png"
@@ -177,10 +181,10 @@
                          alt="Diagram of collisions in StationSim"/>
                     <img class="right" style="width:45%;" data-src="../figures/paper_figures/2018-ParticleFilterFigs/crowding-trails.png"
                          alt="Diagram of collisions in StationSim"/>
-                    
+
 
                 </section>
-                
+
                 <section id="pf-results-wiggle-count">
                     <h2>Particle Filter Results</h2>
                     <h3>Exponential increase in complexity</h3>
@@ -188,13 +192,13 @@
                          style="width:80%;"
                          alt="Number of collisions increases exponentially with number of agents" />
                 </section>
-                
-                
-                
+
+
+
                 <!-- ************************************************************
                 *********************** Data Assimilation ***********************
                 ************************************************************ -->
-                
+
 
                 <section id="dda-question" data-background-image="../figures/weather2.jpg" data-transition="fade">
                     <div class="whitebackground fragment">
@@ -263,7 +267,7 @@
 
 
 
-                
+
                 <section id="dda2">
                     <h2>Data Assimilation Methods</h2>
                     <p>Particle filters</p>
@@ -302,12 +306,12 @@
                         </figcaption>
                     </figure>
                 </section> -->
-                
-                
+
+
                 <!-- ************************************************************
                 *********************** Particle Filter *************************
                 ************************************************************ -->
-                
+
 
                 <section id="particle-filter">
                     <h2>Particle Filter</h2>
@@ -328,7 +332,7 @@
                     <p>'Identical twin' experiment: known 'real world' conditions</p>
                     <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/PF_flowchart2.png"
                          alt="flowchart of the experimental design" />
-                
+
                 </section>
 
 
@@ -344,35 +348,35 @@
                          alt="Animation of bus simulation with data assimilation" />
                 </section>
 
-                
+
                 <!-- ************************************************************
                 ************************** PF Results ***************************
                 ************************************************************ -->
 
-                         
+
                 <section id="pf-results-10_agents_10_particles">
                     <h2>Particle Filter Results</h2>
                     <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/ani-10agents-10particles-window100.png"
                          style="width:80%;"
                          alt="Predictions of the PF with 10 agents and 10 particles" />
                 </section>
-                
-                
+
+
                 <section id="pf-results-40_agents_10_particles">
                     <h2>Particle Filter Results</h2>
                     <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/ani-40agents-10particles-window100.png"
                          style="width:80%;"
                          alt="Predictions of the PF with 40 agents and 10 particles" />
                 </section>
-                
-            
-                
+
+
+
                 <section id="pf-results-median_error">
                     <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/median_abs_error.png"
                          alt="median absolute error change with number of agents and particles" />
-                
+
                 </section>
-                
+
                 <section id="pf-results-summary">
                     <h2>Particle Filter Results - Summary</h2>
                     <!--<img class="right" src="../figures/train_station_pedestrian.jpg"
@@ -386,14 +390,14 @@
                     <p>High computational cost</p>
                     <p class="l2">10,000 particles for only 40 agents in a simple system, will need millions for
                     more realistic scenarios</p>
-                    <p class="l2">Opportunities to make more efficient, e.g. 'component set resampling' (Wang &amp;Hu, 2015), 
+                    <p class="l2">Opportunities to make more efficient, e.g. 'component set resampling' (Wang &amp;Hu, 2015),
                     or through use of GPU clusters</p>
                 </section>
-                
+
                 <section id="ukf">
                     <h2>What about an Unscented Kalman Filter?</h2>
                     <img style="width:80%;" data-src="../figures/paper_figures/2019-UKF/stuck_example.png" />
-                    
+
                 </section>
 
                 <section id="big_brother" >
@@ -406,12 +410,12 @@
                     <p class="l2">Models work with counts of flows</p>
 
                 </section>
-                
-                
-                
-                
-                
-                
+
+
+
+
+
+
                 <!-- ************************************************************
                 ************************ BusSim Example *************************
                 ************************************************************ -->
@@ -558,7 +562,7 @@
                     </div>
 
                 </section>
-                
+
                 <!--
                 <section id="references">
                     <h2>References</h2>
@@ -584,7 +588,8 @@
                         <h4>Professor of Spatial Science</h4>
                         <h4>School of Geography, University of Leeds <br/> and Fellow of the Alan Turing Institute</h4>
                         <hr/>
-                        <h4 style="text-align:center">These slides:<br/><a href="https://urban-analytics.github.io/dust/presentations.html">http://dust.leeds.ac.uk</a></h4>
+                        <h4 style="text-align:center">These slides: <a href="https://urban-analytics.github.io/dust/presentations.html">http://dust.leeds.ac.uk</a></h4>
+                        <h4 style="text-align:center">The paper: <a href="https://arxiv.org/abs/1909.09397">arxiv.org/abs/1909.09397</a></h4>
                     </div>
                 </section>
 

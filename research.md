@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Research 
+title: Research and Publications
 tagline: 
 ---
 
@@ -9,9 +9,16 @@ tagline:
 </figure>
 
 
-The aim of DUST is to create new methods for dynamically assimilating data into agent-based models which will allow us to more reliably simulate the daily ebb abd flow of urban systems. This is a big challenge, so there are a number of different related research questions that DUST, and other effors, are working on.
+The aim of DUST is to create new methods for dynamically assimilating data into agent-based models which will allow us to more reliably simulate the daily ebb abd flow of urban systems. This is a big challenge, so there are a number of different related research questions that DUST, and other projects, are working on.
+
+## Publications
+
+**Malleson, N.**, Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew A. West, Alison Heppenstall (2019) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. _Preprint_: [arXiv:1909.09397 [cs.MA]](https://arxiv.org/abs/1909.09397).
+ 	
+Kieu, Le-Minh, **N. Malleson**, and A. Heppenstall (2019) Dealing with Uncertainty in Agent-Based Models for Short-Term Predictions’. _Preprint_ [arXiv:1908.08288 [cs.MA]](https://arxiv.org/abs/1908.08288).
 
 
+## Projects
 
 
 ### Uncertainty in agent-based models for smart city forecasts

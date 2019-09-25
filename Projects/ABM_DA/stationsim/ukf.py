@@ -420,7 +420,7 @@ class ukf_ss:
                 
                 self.ukf_histories.append(self.ukf.x) #append histories
                 self.ukf_preds.append(self.ukf.x)
-                status = np.repeat(np.array([float(agent.status) for agent in base_model.agents]),2)
+                status = np.repeat(np.array([float(agent.status) for agent in self.base_model.agents]),2)
                 status[status!=1] = np.nan 
                 self.obs.append(state*status)
                 self.full_Ps.append(self.ukf.P)
@@ -1051,7 +1051,7 @@ class animations:
 if __name__ == "__main__":
     np.random.seed(seed = 8) #hash if not needed.
     # this seed (8) is a good example of an agent getting stuck given 10 agents
-    recall =True # recalling a pickled run or starting from scratch?
+    recall =False # recalling a pickled run or starting from scratch?
     do_pickle =True # if not recalling do you want to pickle this run so you can recall it?
 
     if not recall:
@@ -1073,7 +1073,7 @@ if __name__ == "__main__":
             3 do_ bools for saving plotting and animating data. 
         """
         model_params = {
-    			'pop_total': 30,
+    			'pop_total': 5,
     
     			'width': 200,
     			'height': 100,
@@ -1147,7 +1147,7 @@ if __name__ == "__main__":
         u = ukf_ss(model_params,filter_params,ukf_params,base_model)
         u.main()
         if do_pickle:
-            f_name = f"../experiments/ukf_experiments/test_ukf_pickle_{n}_{prop}_{noise}"
+            f_name = f"../experiments/ukf_experiments/test_ukf_pickle_{n}_{prop}_{noise}.pkl"
             f = open(f_name,"wb")
             pickle.dump(u,f)
             f.close()

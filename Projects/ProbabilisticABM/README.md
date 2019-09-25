@@ -6,6 +6,13 @@ Civil emergencies such as flooding, terrorist attacks, fire, etc., can have deva
 
 To address this major shortcoming, this new research project will develop dynamic data assimilation methods for use in ABMs. These techniques have already revolutionised weather forecasts and could offer the same advantages for ABMs of social systems. There are serious methodological barriers that must be overcome, but this research has the potential to produce a step change in the ability of models to create accurate short-term forecasts of social systems.
 
+## Project aims
+ * To understand the utility of modern probabilistic programming languages (PPLs).
+ * Apply PPLs to model a simple singular agent.
+ * Perform data assimilation to calibrate and optimise inference on our agent’s behaviour.
+
+
+
 ## Installation
 
 This project is being developed using Anaconda Distribution with Python 3.7. All versions for software packages can be found in [Requirements_Pyro.txt](https://github.com/Urban-Analytics/dust/blob/ProbablisticABM/Projects/ProbablisticABM/super_simple_model/requirements_Pyro.txt) Though this is subject to change during development. Currenly, the easiest way to install run these commands in turn.

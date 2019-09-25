@@ -33,7 +33,7 @@ def base_data_parser(n,rates,noises,run_id):
     for i in rates:
         for j in noises:
             for k in run_id:
-                file = glob.glob(f"/ukf_results/agents_{n}_rate_{i}_noise_{j}_base_config_errors_{k}")
+                file = glob.glob(f"ukf_results/agents_{n}_rate_{i}_noise_{j}_base_config_errors_*{k}")
                 if file != []:
                     file=file[0]
                     rates2.append(i)

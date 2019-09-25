@@ -606,10 +606,10 @@ class agg_plots:
     """
     class for all plots using in UKF
     """
-    def __init__(self,filter_class):
+    def __init__(self,filter_class,save_dir):
         "define which class to plot from"
         self.filter_class=filter_class
-        
+        self.save_dir = save_dir
 
     def trajectories(self,a,poly_list):
         "provide density of agents positions as a 2.5d histogram"
@@ -619,7 +619,7 @@ class agg_plots:
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
-        os.mkdir("output_positions")
+        os.mkdir(self.save_dir+"output_positions")
         for i in range(a.shape[0]):
             locs = a[i,:]
             f = plt.figure(figsize=(12,8))
@@ -656,11 +656,11 @@ class agg_plots:
             padded to nearest upper order of 10 of number of iterations.
             """
             number = str(i).zfill(ceil(log10(a.shape[0])))
-            file = f"output_positions/{number}"
+            file = self.save_dir+ f"output_positions/{number}"
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,"output_positions",f"positions_{filter_class.pop_total}_",12)
+        animations.animate(self,self.save_dir+"output_positions",self.save_dir+f"positions_{filter_class.pop_total}_",12)
             
         
     def heatmap(self,a,poly_list):
@@ -672,7 +672,7 @@ class agg_plots:
         bin_size = filter_class.filter_params["bin_size"]
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
-        os.mkdir("output_heatmap")
+        os.mkdir(self.save_dir+"output_heatmap")
         
         
         "cmap set up. defining bottom value (0) to be black"
@@ -753,11 +753,11 @@ class agg_plots:
             padded to nearest upper order of 10 of number of iterations.
             """
             number = str(i).zfill(ceil(log10(a.shape[0])))
-            file = f"output_heatmap/{number}"
+            file = self.save_dir+f"output_heatmap/{number}"
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,"output_heatmap",f"heatmap_{filter_class.pop_total}_",12)
+        animations.animate(self,self.save_dir+"output_heatmap",self.save_dir+f"heatmap_{filter_class.pop_total}_",12)
         
     def L2s(self,a,b):
         """
@@ -801,7 +801,7 @@ class agg_plots:
             """
             
                 
-            sample_rate =self.filter_class.filter_params["sample_rate"]
+            #sample_rate =self.filter_class.filter_params["sample_rate"]
             
             #f=plt.figure(figsize=(12,8))
             #for j in range(int(a.shape[1]/2)):
@@ -861,11 +861,11 @@ class agg_plots:
            # kdeplot(agent_means,color="red",cut=0,lw=4)
   
             if save:
-                #f.savefig(f"Aggregate_obs.pdf")
-                #g.savefig(f"Aggregate_kf.pdf")
-                #h.savefig(f"Aggregate_l2.pdf")
-                #i.savefig(f"Aggregate_worst.pdf")
-                j.savefig(f"Aggregate_agent_hist.pdf")
+                #f.savefig(self.save_dir+f"Aggregate_obs.pdf")
+                #g.savefig(self.save_dir+f"Aggregate_kf.pdf")
+                #h.savefig(self.save_dir+f"Aggregate_l2.pdf")
+                #i.savefig(self.save_dir+f"Aggregate_worst.pdf")
+                j.savefig(self.save_dir+f"Aggregate_agent_hist.pdf")
                 
             return c,time_means
     
@@ -875,7 +875,7 @@ class agg_plots:
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
         
-        os.mkdir("output_pairs")
+        os.mkdir(self.save_dir+"output_pairs")
         for i in range(a.shape[0]):
             
             f = plt.figure(figsize=(12,8))
@@ -910,11 +910,11 @@ class agg_plots:
             plt.xlabel("corridor width")
             plt.ylabel("corridor height")
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
-            file = f"output_pairs/pairs{number}"
+            file = self.save_dir+f"output_pairs/pairs{number}"
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,"output_pairs",f"aggregate_pairwise_{self.filter_class.pop_total}",24)
+        animations.animate(self,self.save_dir+"output_pairs",self.save_dir+f"aggregate_pairwise_{self.filter_class.pop_total}",24)
 
     def pair_frames_single(self,a,b,frame_number):
         filter_class = self.filter_class
@@ -955,7 +955,7 @@ class agg_plots:
         plt.xlabel("corridor width")
         plt.ylabel("corridor height")
         number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
-        file = f"agg_pairs{number}"
+        file = self.save_dir+f"agg_pairs{number}"
         f.savefig(file)
             
     def heatmap_single(self,a,poly_list,frame_number):
@@ -1047,7 +1047,7 @@ class agg_plots:
         padded to nearest upper order of 10 of number of iterations.
         """
         number = str(i).zfill(ceil(log10(a.shape[0])))
-        file = f"heatmap_{number}"
+        file = self.save_dir+f"heatmap_{number}"
         f.savefig(file)
 
 #%%

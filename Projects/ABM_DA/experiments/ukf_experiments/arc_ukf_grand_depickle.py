@@ -90,7 +90,7 @@ def l2_parser(instance,prop):
     truth[~nan_array]=np.nan #make empty values to prevent mean skewing in diagnostic plots
     preds[~nan_array]=np.nan #make empty values to prevent mean skewing in diagnostic plots
 
-    plts = plots(instance)
+    plts = plots(instance,"ukf_results/")
     true_u,b_u,plot_range = plts.plot_data_parser(truth,preds,False)
     true_o,b_o,plot_range = plts.plot_data_parser(truth,preds,True)    
 

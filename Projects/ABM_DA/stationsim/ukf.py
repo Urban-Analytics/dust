@@ -4,7 +4,11 @@ Created on Thu May 23 11:13:26 2019
 
 @author: RC
 
-first attempt at a square root UKF class
+The Unscented Kalman Filter designed to be hyper efficient alternative to MC techniques
+
+based on
+citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
+
 class built into 5 steps
 -init
 -Prediction SP generation
@@ -12,15 +16,14 @@ class built into 5 steps
 -Update SP generation
 -Update
 
-UKF filter using own function rather than filterpys
 
-based on
-citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
 
-ANTI CONFUSION NOTE: 'observation/obs' are observed stationsim data
+ANTI-CONFUSION NOTE: 'observation/obs' are observed stationsim data
 not to be confused with the 'observed' boolean 
 determining whether to look at observed/unobserved agent subset
 (maybe change the former the measurements etc.)
+
+NOTE: __main__ here is now deprecated. use ukf notebook in experiments folder
 """
 
 #for filter
@@ -40,11 +43,11 @@ from stationsim.stationsim_model import Model
 
 #for plots
 
-from seaborn import kdeplot
-import matplotlib.gridspec as gridspec
-import imageio
-from scipy.stats import norm
-from shutil import rmtree
+#from seaborn import kdeplot#no longer used
+import matplotlib.gridspec as gridspec #for nested plots in matplotlib pair_frames_stack
+import imageio #for animations
+from scipy.stats import norm #easy l2 norming (dont think used as of 25/9/19)
+from shutil import rmtree #used to keep animatons frames in order
 from filterpy.stats import covariance_ellipse #needed solely for pairwise_frames_stack_ellipse for covariance ellipse plotting
 
 plt.rcParams.update({'font.size':20})
@@ -501,10 +504,10 @@ class plots:
     """
     class for all plots using in UKF
     """
-    def __init__(self,filter_class):
+    def __init__(self,filter_class,save_dir):
         "define which class to plot from"
         self.filter_class=filter_class
-        
+        self.save_dir = save_dir
     def plot_data_parser(self,a,b,observed):
         """
         takes data from ukf_ss data parser and preps it for plotting
@@ -649,11 +652,11 @@ class plots:
         #plt.legend()
 
         if save:
-            #f.savefig(f"{obs_text}_obs.pdf")
-            #g.savefig(f"{obs_text}_kf.pdf")
-            #h.savefig(f"{obs_text}_l2.pdf")
-           # i.savefig(f"{obs_text}_worst.pdf")
-            j.savefig(f"{obs_text}_agent_hist.pdf")
+            j.savefig(self.save_dir + f"{obs_text}_agent_hist.pdf")
+            #f.savefig(self.save_dir +f"{obs_text}_obs.pdf")
+            #g.savefig(self.save_dir +f"{obs_text}_kf.pdf")
+            #h.savefig(self.save_dir +f"{obs_text}_l2.pdf")
+            # i.savefig(self.save_dir +f"{obs_text}_worst.pdf")
             
         return c,time_means
     
@@ -667,7 +670,7 @@ class plots:
         a_u,b_u,plot_range = self.plot_data_parser(a,b,False)
         a_o,b_o,plot_range = self.plot_data_parser(a,b,True)
         
-        os.mkdir("output_pairs")
+        os.mkdir(self.save_dir +"output_pairs")
         for i in range(a.shape[0]):
             a_s = [a_o[i,:],a_u[i,:]]
             b_s = [b_o[i,:], b_u[i,:]]
@@ -711,11 +714,12 @@ class plots:
             #plt.title("True Positions vs UKF Predictions")
             "save frame and close plot else struggle for RAM"
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
-            file = f"output_pairs/pairs{number}"
+            file = self.save_dir+ f"output_pairs/pairs{number}"
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,"output_pairs",f"pairwise_gif_{self.filter_class.pop_total}",24)
+        animations.animate(self,self.save_dir +"output_pairs",
+                            self.save_dir +f"pairwise_gif_{self.filter_class.pop_total}",24)
 
     def pair_frames_stack(self,a,b):
         "pairwise animation with  l2 error plots underneath"
@@ -729,7 +733,7 @@ class plots:
         time_means[np.isnan(time_means)]=0
         time_means2[np.isnan(time_means)]=0
         
-        os.mkdir("output_pairs")
+        os.mkdir(self.save_dir +"output_pairs")
         for i in range(a.shape[0]):
             a_s = [a_o[i,:],a_u[i,:]]
             b_s = [b_o[i,:], b_u[i,:]]
@@ -786,12 +790,13 @@ class plots:
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
             axes[0].text(0,1.05*height,"Frame Number: "+str(i))
             
-            file = f"output_pairs/pairs{number}"
+            file = self.save_dir+f"output_pairs/pairs{number}"
             f.tight_layout()
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,"output_pairs",f"pairwise_gif_{self.filter_class.pop_total}",24)
+        animations.animate(self,self.save_dir +"output_pairs",
+                           self.save_dir +f"pairwise_gif_{self.filter_class.pop_total}",24)
         
     def pair_frames_stack_ellipse(self,a,b):
         "pairwise,L2s and covariances. This takes FOREVER to render so I made it seperate"
@@ -807,7 +812,7 @@ class plots:
         time_means[np.isnan(time_means)]=0
         time_means2[np.isnan(time_means)]=0
 
-        os.mkdir("output_pairs")
+        os.mkdir(self.save_dir +"output_pairs")
         for i in range(a.shape[0]):
             a_s = [a_o[i,:],a_u[i,:]]
             b_s = [b_o[i,:], b_u[i,:]]
@@ -879,15 +884,16 @@ class plots:
             number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
             axes[0].text(0,1.05*height,"Frame Number: "+str(i))
 
-            file = f"output_pairs/pairs{number}"
+            file = self.save_dir+f"output_pairs/pairs{number}"
             
             f.tight_layout()
             f.savefig(file,bbox_inches="tight")
             plt.close()
         
-        animations.animate(self,"output_pairs",f"pairwise_gif_{filter_class.pop_total}",24)
+        animations.animate(self,self.save_dir +"output_pairs",
+                           self.save_dir +f"pairwise_gif_{filter_class.pop_total}",24)
                 
-    def pair_frames_single(self,a,b,frame_number):
+    def pair_frames_single(self,a,b,frame_number,save):
         "pairwise animation"
         i=frame_number
         filter_class = self.filter_class
@@ -939,7 +945,7 @@ class plots:
         #plt.title("True Positions vs UKF Predictions")
         "save frame and close plot else struggle for RAM"
         number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
-        file = f"ukf_pairs{number}"
+        file = self.save_dir+f"ukf_pairs{number}"
         f.savefig(file)
                 
 def _std_tuple_of(var=None, std=None, interval=None):
@@ -1049,6 +1055,8 @@ class animations:
         
 #%%
 if __name__ == "__main__":
+    
+    
     np.random.seed(seed = 8) #hash if not needed.
     # this seed (8) is a good example of an agent getting stuck given 10 agents
     recall =False # recalling a pickled run or starting from scratch?

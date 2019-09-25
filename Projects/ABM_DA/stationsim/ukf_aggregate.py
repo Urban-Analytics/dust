@@ -416,7 +416,7 @@ class agg_ukf_ss:
                 self.ukf_histories.append(self.ukf.x) #append histories
                 self.agg_ukf_preds.append(self.ukf.x)
                 self.full_Ps.append(self.ukf.P)       
-                status = np.repeat(np.array([float(agent.status) for agent in base_model.agents]),2)
+                status = np.repeat(np.array([float(agent.status) for agent in self.base_model.agents]),2)
                 status[status!=1] = np.nan 
                 self.obs.append((self.base_model.get_state(sensor="location")+noise_array)*status)
                 x = self.ukf.x

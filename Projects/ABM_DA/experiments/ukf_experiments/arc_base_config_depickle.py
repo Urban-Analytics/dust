@@ -246,12 +246,15 @@ def plot_2_3d(data2,best_array,n,rates,noises,save):
     #first make list of plots
     colours = ["yellow","orangered","skyblue"]
 
+    "init and some labelling"
     fig = plt.figure(figsize=(14,6))
     ax = fig.add_subplot(111,projection='3d')
     ax.set_xlabel('Noise')
     ax.set_ylabel("Rate")
     ax.set_zlabel('Grand L2 Error')
     ax.view_init(45,225)
+    
+    "take each rate plot l2 error over each noise for preds obs and ukf"
     for i,rate in enumerate(rates):
         sub_data = data2.loc[data2["rates"]==rate]
         preds=list(sub_data["prediction"])
@@ -264,6 +267,7 @@ def plot_2_3d(data2,best_array,n,rates,noises,save):
         l3=ax.plot(xs=noises,ys=[i]*len(noises),zs=ukf,color=colours[2],linewidth=4,
                 path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=0.5), pe.Normal()],alpha=0.5)
              
+    "placeholder dummies for legend"
     s1=matplotlib.lines.Line2D([-1],[-1],color=colours[0],label="obs",linewidth=4,
                 path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=0.5), pe.Normal()])
     s2=matplotlib.lines.Line2D([-1],[-1],color=colours[1],label="preds",linewidth=4,
@@ -271,12 +275,14 @@ def plot_2_3d(data2,best_array,n,rates,noises,save):
     s3=matplotlib.lines.Line2D([-1],[-1],color=colours[2],label="ukf",
                 path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=0.5), pe.Normal()])
 
+    "rest of labelling"
     ax.set_xticks(np.arange(0,len(noises)))
     ax.set_xticklabels(noises)
     ax.set_yticks(np.arange(0,len(rates)))
     ax.set_yticklabels(rates)
     ax.legend([s1,s2,s3],["obs","preds","ukf"])
     plt.tight_layout()
+    "save?"
     if save:
         plt.savefig(f"3d_{n}_error_trajectories.pdf")
 
@@ -287,7 +293,7 @@ def plot_2_3d(data2,best_array,n,rates,noises,save):
 if __name__ == "__main__":
     
     "parameters"
-    n=10
+    ns=[10,30]
     #rates = [1,2,5,10,20,50] #.2 to 1 by .2
     rates = [1,2,5,10] #.2 to 1 by .2
     noises = [0,0.25,0.5,1,2,5]
@@ -297,13 +303,14 @@ if __name__ == "__main__":
     plot3=True
     save =True # save plots
     
-    data2,best_array = base_data_parser(n,rates,noises,run_id)
-    
-    if plot_1:
-        plot_1(data2,best_array,n,rates,noises,save)
-    if plot_2:
-        plot_2(data2,best_array,n,rates,noises,save)
-    if plot3:
-        plot_2_3d(data2,best_array,n,rates,noises,save)
-    
+    for n in ns:
+        data2,best_array = base_data_parser(n,rates,noises,run_id)
+        
+        if plot_1:
+            plot_1(data2,best_array,n,rates,noises,save)
+        if plot_2:
+            plot_2(data2,best_array,n,rates,noises,save)
+        if plot3:
+            plot_2_3d(data2,best_array,n,rates,noises,save)
+        
     "plot 1 gives visualisation of best_array"

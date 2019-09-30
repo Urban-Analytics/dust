@@ -9,6 +9,9 @@ tagline: Presentations about, or relating to, the surf project
 
  - 2019
 
+  - [Quantifying Uncertainty in Agent-Based Models for Smart City Forecasts](https://www.slideshare.net/NickMalleson/quantifying-uncertainty-in-agentbased-models-for-smart-city-forecasts). Presentation by Robert Clay to the [Alan Turing Institute](https://www.turing.ac.uk/), London, 24 September 2019.
+
+
    - [Simulating Pedestrian Systems in Real Time using Agent-Based Models]({{site.baseurl}}/p/2019-09-20-Crowd_Simulation-CASA.html). Presentation to the the [MacArthur Workshop on Urban Modelling & Complexity Science](https://www.eventbrite.co.uk/e/the-macarthur-workshop-on-urban-modelling-complexity-science-tickets-69983794413), [Centre for Advanced Spatial Analysis](http://www.casa.ucl.ac.uk/), [UCL](http://www.casa.ucl.ac.uk/), 19-20 September 2019.
 
    - [Simulating the City]({{site.baseurl}}/p/2019-09-17-SimulatingTheCity.html). Presentation by [Alison Heppenstsall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) to the Leeds Institute for Data Analytics ([LIDA](https://lida.leeds.ac.uk/)) research showcase. University of Leeds, 17th September 2019.

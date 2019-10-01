@@ -332,6 +332,24 @@ def plot_all_results(forecast, analysis, observation):
     plt.show()
 
 def plot_with_errors(forecast, analysis, observation):
+    """
+    Plot results with errors.
+
+    Plot forecast, analysis and observations in one plot.
+    Contains three subplots, each one pertaining to one of the datasets.
+    Subplots share x-axis and y-axis.
+    Each subplot contains a mean line, and a shaded area pertaining to the
+    range of the data at each point in model time.
+
+    Parameters
+    ----------
+    forecast : pandas dataframe
+        pandas dataframe of forecast data.
+    analysis : pandas dataframe
+        pandas dataframe of analysis data.
+    observation : pandas dataframe
+        pandas dataframe of observation data.
+    """
     f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, sharey=True,
                                       figsize=(8, 12))
 
@@ -364,6 +382,21 @@ def plot_with_errors(forecast, analysis, observation):
     plt.show()
 
 def run_repeat_combos(resume=True):
+    """
+    Repeatedly run model + enkf for a range of different parameter
+    combinations.
+
+    Run the model + enkf 10 times for each combination of parameter values.
+    If some combinations have already been run then the option to resume can be
+    used.
+    Write outputs to json every 5 combinations.
+
+    Parameters
+    ----------
+    resume : boolean
+        Boolean to choose whether to resume from previous point in the list of
+        combinations.
+    """
     if resume:
         with open('results/combos.json') as json_file:
             combos = json.load(json_file)
@@ -400,6 +433,31 @@ def run_repeat_combos(resume=True):
 # run_repeat()
 
 def process_batch(read_time=False, write_time=True):
+    """
+    Process the output data from a batch of runs.
+
+    Stage 1:
+    Consider each file in the results/repeats/ directory.
+    For each file:
+    1) Derive parameter values from the filename.
+    2) Read the results.
+    3) Find the means for the forecast, analytis and observations.
+    4) Average each over time.
+    5) Add to existing results.
+    6) If writing then output combined results to json.
+
+    Stage 2:
+    1) If reading then read in exsiting results, else follow stage 1.
+    2) Convert output data to dataframe.
+    3) Produce a collection of heatmaps to summarise results.
+
+    Parameters
+    ----------
+    read_time : boolean
+        Boolean to choose whether to read in existing json of results.
+    write_time : boolean
+        Boolean to choose whether to write out processed results to json.
+    """
     if read_time:
         with open('results/map_data.json') as f:
             output = json.load(f)
@@ -452,6 +510,19 @@ def process_batch(read_time=False, write_time=True):
 
 
 def make_all_heatmaps(data):
+    """
+    Make a collection of error heatmaps.
+
+    Use plot_heatmap() to produce heatmaps showing how the mean error varies
+    with respect to assimilation period and population size, ensemble size and
+    population size, and obsevation standard deviation and population size.
+
+    Parameters
+    ----------
+    data : pandas dataframe
+        A pandas dataframe containing mean errors and values for each of the
+        input parameters.
+    """
     # plot_heatmap(data, 'assimilation_period', 'ensemble_size')
     plot_heatmap(data, 'assimilation_period', 'population_size')
     # plot_heatmap(data, 'assimilation_period', 'std')
@@ -460,6 +531,27 @@ def make_all_heatmaps(data):
     plot_heatmap(data, 'std', 'population_size')
 
 def plot_heatmap(data, var1, var2):
+    """
+    Plotting a heat map of variation of errors with respect to two variables.
+
+    Extract the appropriate data array from the data.
+    Produce a matplotlib contour plot of the variation of the mean error with
+    respect to var1 and var2.
+    Save as a pdf figure with name based on the two variables.
+
+    Parameters
+    ----------
+    data : pandas dataframe
+        A pandas dataframe in which each row pertains to the error resulting
+        from an input set of parameters. Consequently, each row contains the
+        mean error, as well as the relevant parameter values.
+    var1 : string
+        The first variable against which we would like to measure the variation
+        of the mean error.
+    var2 : string
+        The second variable against which we would like to measure the
+        variation of the mean error.
+    """
     label_dict = {'assimilation_period': 'Assimilation Period',
                   'ensemble_size': 'Ensemble Size',
                   'population_size': 'Population Size',
@@ -484,6 +576,32 @@ def plot_heatmap(data, var1, var2):
     plt.show()
 
 def extract_array(df, var1, var2):
+    """
+    Function to extract data array pertaining to the variables that we are
+    interested in.
+
+    Extract an array of the mean errors with two parameters varying; other
+    parameters are kept fixed.
+    First define the default values for each of the four possible parameters
+    (assimilation period, ensemble size, population size and observation noise
+    standard deviation).
+    Get the sorted values that each of the chosen parameters take.
+    Create an array of the data that fits the above conditions, and convert
+    into an array with column indices taking the values of the first parameter
+    and the row indices taking the value of the second parameter.
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        A pandas dataframe containing all of the mean errors for each of the
+        parameter combinations.
+    var1 : string
+        Name of the first variable that we want to consider variation with
+        respect to.
+    var2 : string
+        Name of the second variable that we want to consider variation with
+        respect to.
+    """
     # Define variables to fix and filter
     fixed_values = {'assimilation_period': 20,
                     'ensemble_size': 20,
@@ -516,6 +634,12 @@ def extract_array(df, var1, var2):
     return output.T
 
 def testing():
+    """
+    Testing function
+
+    Overall function that wraps around what we want to run at any specific
+    time.
+    """
     with open('results/data.json') as json_file:
         data = json.load(json_file)
     forecasts, analyses, observations = process_repeat_results(data)

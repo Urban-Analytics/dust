@@ -23,7 +23,7 @@ class Filter:
             None
         """
         # Instantiate the base model
-        self.base_model = model(model_params)
+        self.base_model = model(**model_params)
         self.time = 0
 
         # Ensure that the model has the correct attributes
@@ -52,10 +52,13 @@ class Filter:
             boolean
         """
         methods = ['step', 'set_state', 'get_state']
-        attributes = ['state']
+        # attributes = ['state']
         has_methods = [cls.has_method(model, m) for m in methods]
-        has_attributes = [hasattr(model, a) for a in attributes]
-        b = all(has_methods) and all(has_attributes)
+        # has_attributes = [hasattr(model, a) for a in attributes]
+        # print(has_methods)
+        # print(has_attributes)
+        # b = all(has_methods) and all(has_attributes)
+        b = all(has_methods)
         return b
 
     @staticmethod

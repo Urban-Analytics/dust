@@ -193,9 +193,10 @@ class ParticleFilter(Filter):
                         if self.do_save or self.p_save:
                             self.save(before=True)
 
-                        self.reweight()
 
-                        self.resample()
+                        if self.do_resample: # Can turn off resampling for benchmarking
+                            self.reweight()
+                            self.resample()
 
                         # Store the model states before and after resampling
                         if self.do_save or self.p_save:

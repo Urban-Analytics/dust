@@ -25,11 +25,14 @@ class ParticleFilter(Filter):
             
         PARAMETERS
          - number_of_particles:     The number of particles used to simulate the model
-         - number_of_iterations:    The number of iterations to run the model/particle filter
+         - number_of_runs:          The number of times to run this particle filter (e.g. experiment)
          - resample_window:         The number of iterations between resampling particles
-         - agents_to_visualise:     The number of agents to plot particles for
+         - multi_step:              Whether to do all model iterations in between DA windows in one go
          - particle_std:            The standard deviation of the noise added to particle states
+         - model_std:               The standard deviation of the error added to observations
+         - agents_to_visualise:     The number of agents to plot particles for
          - model_std:               The standard deviation of the noise added to model observations
+         - do_resample:             Whether or not to resample (default true, this is mainly for benchmarking)
          - do_save:                 Boolean to determine if data should be saved and stats printed
          - do_ani:                  Boolean to determine if particle filter data should be animated
                                     and displayed
@@ -57,6 +60,15 @@ class ParticleFilter(Filter):
         # Pool object needed for multiprocessing
         if numcores == None:
             numcores = multiprocessing.cpu_count()
+
+        # Assume that we do want to do resampling
+        try:
+            self.do_resample # Don't assume that the do_resample parameter has been set in the first place
+        except AttributeError:
+            self.do_resample = True
+        if not self.do_resample:
+            print("**Warning**: Not resampling. This should only be used for benchmarking")
+
         ## We get problems when there are more processes than particles (larger particle variance for some reason)
         #if numcores > self.number_of_particles:
         #    numcores = self.number_of_particles

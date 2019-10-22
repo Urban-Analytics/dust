@@ -19,7 +19,7 @@ The main third-party libraries are [Graphhopper](https://github.com/graphhopper/
 
 ## 1. Download OSM data
 
-You need to download Open Street Map data first. 
+You need to download Open Street Map data first.
 
 The `DataReader` is quite flexible and should take: xml (.osm), a compressed xml (.osm.zip or .osm.gz) or a protobuf file (.pbf).
 
@@ -29,6 +29,5 @@ E.g. the following should work for Massachusetts data:
 
 ```
 cd map-data
-wget http://download.geofabrik.de/north-america/us/massachusetts-latest.osm.pbf 
+wget http://download.geofabrik.de/north-america/us/massachusetts-latest.osm.pbf
 ```
-

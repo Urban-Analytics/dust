@@ -1,8 +1,33 @@
 ---
 layout: page
-title: Project Documentation 
-tagline: An overview of the aims of DUST
+title: Project Publications and Documentation 
+tagline: Documentation produced by, or associated with, the DUST project
 ---
+
+_The following publications report on the current progress of the DUST project or on related activities_
+
+## Peer Reviewed Articles
+
+Kieu, Le-Minh, D. Ngoduy, **N Malleson**, and E. Chung (2019). A Stochastic Schedule-Following Simulation Model of Bus Routes. _Transportmetrica B: Transport Dynamics_ 7 (1): 1588–1610. DOI: [10.1080/21680566.2019.1670118](https://doi.org/10.1080/21680566.2019.1670118).
+
+Crols, T., and **N. Malleson** (2019) Quantifying the Ambient Population Using Hourly Population Footfall Data and an Agent-Based Model of Daily Mobility. _GeoInformatica_ (online first). DOI: [10.1007/s10707-019-00346-1](https://doi.org/10.1007/s10707-019-00346-1). [[Open access](https://doi.org/10.1007/s10707-019-00346-1)]. 
+
+## Preprints
+
+**Malleson, N.**, Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew A. West, Alison Heppenstall (2019) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. _Preprint_: [arXiv:1909.09397 [cs.MA]](https://arxiv.org/abs/1909.09397).
+ 	
+Kieu, Le-Minh, **N. Malleson**, and A. Heppenstall (2019) Dealing with Uncertainty in Agent-Based Models for Short-Term Predictions’. _Preprint_ [arXiv:1908.08288 [cs.MA]](https://arxiv.org/abs/1908.08288).
+
+## Conference proceedings
+
+_For a full list of conference presentations, see the [presentations](./presentations.html) page._
+
+**Malleson, N.**, Jonathan A. Ward, A. Heppenstall, M. Adcock, D. Tang, J. Coello, and T. Crols. (2018). Understanding Input Data Requirements and Quantifying Uncertainty for Successfully Modelling ‘Smart’ Cities. In _3rd International Workshop on Agent-Based Modelling of Urban Systems_ (ABMUS), of the International Conference on Autonomous Agents and Multiagent Systems ([AAMAS 2018](http://celweb.vuse.vanderbilt.edu/aamas18/home/)). 10-15 July, Stockholm, Sweden. [[Full abstract (pdf)](https://urban-analytics.github.io/dust/p/2018-07-15-abmus-da-abstract.pdf)]. [[Slides (html)](https://urban-analytics.github.io/dust/p/2018-07-15-abmus-da.html)].
+
+**Malleson, N.**, A. Tapper, J. Ward, A. Evans (2017). Forecasting Short-Term Urban Dynamics: Data Assimilation for Agent-Based Modelling. In proceedings of the _[Social Simulation Conference (SSC)](https://www.sim2017.com/about/)_ - the 13th Annual Conference of the European Social Simulation Association (ESSA). 25-29 September 2017, Dublin, Ireland. [[Slides](http://surf.leeds.ac.uk/p/2017-09-26-essa-da.html)] [[Abstract PDF](http://surf.leeds.ac.uk/p/2017-09-26-essa-da.pdf)]
+
+
+# Project Proposal Overview
 
 _The following is the original application that was submitted to the Eurpoean Research Council_
 
@@ -12,7 +37,7 @@ ability to reliably simulate urban systems and to forecast of the
 impacts of civil emergencies (and their management plans) on human
 populations. </p>
 
-# Abstract 
+## Abstract 
 
 Civil emergencies such as flooding, terrorist attacks, fire, etc., can
 have devastating impacts on people, infrastructure, and economies.
@@ -47,7 +72,7 @@ picture of the current situation.
 
 
 
-# What is the problem and why is it important?
+## What is the problem and why is it important?
 
 Civil emergencies such as flooding, terrorist attacks, fire, train/air
 crashes, earthquakes, severe short-term air quality deterioration, etc.,
@@ -95,7 +120,7 @@ efficacy of the approach through the development of a cutting-edge
 simulation of urban dynamics that will be used to improve emergency
 plans and responses in a case study area. []{#Q1-1-4}
 
-# What are the main gaps and challenges?
+## What are the main gaps and challenges?
 
 Due to its aofrementioned ability to model complex social systems, ABM
 is becoming increasingly important for modelling human systems and is an
@@ -180,7 +205,7 @@ can be optimised in response to new data (e.g. from social media) as
 they are created.</figcaption>
 </figure>
 
-What are the aims and objectives of the project?
+## What are the aims and objectives of the project?
 
 The overarching aim of the research is to **develop data assimilation
 methods for use in ABM that will underpin the next
@@ -225,7 +250,7 @@ The most ground-breaking and novel aspects of this project are:
     assimilating real-world streaming data that can be used as an
     emergency planning tool and for more general urban management.
 
-What do I plan to do? 
+## What do I plan to do? 
 
 This project will establish a team who will develop cutting-edge urban
 simulations that are capable of, for the first time, assimilating
@@ -426,7 +451,7 @@ the problem of predicting short-term population flows -- and will
 provide a valuable means of validating the research results.
 []{#Q1-1-13}
 
-# What are the main risks with the project?
+## What are the main risks with the project?
 
 This is a high risk, high reward project. It proposes novel, ambitious,
 and innovative methodological developments that, as with all
@@ -462,7 +487,7 @@ and emulators (activity 2) and the parts of the DUST model that do not
 assimilate data (activity 3) are all of significant value their own
 right.
 
-# References
+## References
 
 [1]    Axtell, R., Axelrod, R., Epstein, J. M., and Cohen, M. D. Aligning simulation models: A case study and results. Computational & Mathematical Organization Theory 1, 2 (Feb. 1996), 123–141.
 

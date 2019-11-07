@@ -413,7 +413,15 @@ class Model:
             }
         return analytics
 
-    def get_trails(self, plot_axis=False, plot_legend=True):
+    def get_trails(self, plot_axis=False, plot_legend=True, colours=('b','g','r')):
+        """
+
+        :param plot_axis:
+        :param plot_legend:
+        :param colours: Optional tuple with three values representing the colours of agents in states
+        1 (no started), 2 (active), 3 (finished). Default: ('b','g','r')
+        :return:
+        """
         fig = plt.figure(figsize=self._figsize, dpi=self._dpi)
         plt.axis(np.ravel(self.boundaries, 'f'))
         if not plot_axis:
@@ -430,13 +438,13 @@ class Model:
         for agent in self.agents:
             if agent.status == 1:
                 alpha = 1
-                colour = 'b'
+                colour = colours[0]
             elif agent.status == 2:
                 alpha = .5
-                colour = 'g'
+                colour = colours[1]
             else:
                 alpha = 1
-                colour = 'r'
+                colour = colours[2]
             locs = np.array(agent.history_locations).T
             plt.plot(*locs, color=colour, alpha=alpha, linewidth=.5)
         return fig

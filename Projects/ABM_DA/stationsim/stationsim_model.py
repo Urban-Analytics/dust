@@ -413,14 +413,17 @@ class Model:
             }
         return analytics
 
-    def get_trails(self, plot_axis=False, plot_legend=True, colours=('b','g','r')):
+    def get_trails(self, plot_axis=False, plot_legend=True, colours=('b','g','r'), xlim=None, ylim=None):
         """
+        Make a figure showing the trails of the agents.
 
-        :param plot_axis:
-        :param plot_legend:
+        :param plot_axis: Whether to show the axis (default False)
+        :param plot_legend: Whether to show the legend (default False)
         :param colours: Optional tuple with three values representing the colours of agents in states
         1 (no started), 2 (active), 3 (finished). Default: ('b','g','r')
-        :return:
+        :param xlim Optional x axis limits (usually a tuple of (xmin,xmax)).
+        :param ylim Optional y axis limits (usually a tuple of (ymin,ymax)).
+        :return: The matplotlib Figure object.
         """
         fig = plt.figure(figsize=self._figsize, dpi=self._dpi)
         plt.axis(np.ravel(self.boundaries, 'f'))
@@ -447,6 +450,10 @@ class Model:
                 colour = colours[2]
             locs = np.array(agent.history_locations).T
             plt.plot(*locs, color=colour, alpha=alpha, linewidth=.5)
+        if xlim != None: # Optionally set the x limits
+            plt.xlim(xlim)
+        if ylim != None:  # Optionally set the x limits
+            plt.xlim(ylim)
         return fig
 
     def get_histogram(self):

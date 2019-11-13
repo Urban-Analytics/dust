@@ -8,20 +8,17 @@
 """
 import pickle
 import sys
-import os
 sys.path.append("../../stationsim")
 sys.path.append("../..")
 
-from stationsim.ukf import ukf,ukf_ss,plots
+from stationsim.ukf import plots
+
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.cm as cm
-import matplotlib.colors as col
 import matplotlib.patheffects as pe
-import pickle 
 
 import glob
 import seaborn as sns
@@ -81,7 +78,7 @@ def grand_depickle_ukf_agg_data_parser(instance):
         return b,d,nan_array    
     
 def l2_parser(instance):
-    "extract arrays of real paths, predicted paths, L2s between them."
+    "extract arrays of real paths, predicted paths, L2s between them from main class using parser above."
     if instance.filter_params["sample_rate"]==1:
             preds,truth,nan_array = grand_depickle_ukf_agg_data_parser(instance)
     else:
@@ -101,7 +98,7 @@ def grand_L2_matrix(n,bin_size):
     "empty frames"
     L2 = np.ones((len(n),len(bin_size)))*np.nan
     
-    "cycle over number of agents and proportions. taking grand (mean of means) L2 mean for each pair"
+    "cycle over pairs of number of agents and proportions. taking grand (mean of medians) L2 mean for each pair"
     for i,num in enumerate(n):
         
         files={}
@@ -126,8 +123,8 @@ def grand_L2_matrix(n,bin_size):
     
 def grand_L2_plot(data,n,bin_size,observed,save):
 
-    
-    data = np.rot90(data,k=1) #rotate frame 90 degrees so right way up for plots
+    "rotate frame 90 degrees so origin in bottom left"
+    data = np.rot90(data,k=1)
     
     "initiate plot"
     f,ax=plt.subplots(figsize=(8,8))
@@ -206,7 +203,8 @@ def boxplot_parser(n,bin_size):
     frame = pd.concat(sub_frames)
     frame.columns = ["n","square width","L2 agent errors"]
 
-    
+            grand_L2_plot(L2,n,bin_size,True,save)
+
     return frame
 
 def boxplot_plots(n,bin_size,frame,separate,save):  
@@ -232,6 +230,56 @@ def boxplot_plots(n,bin_size,frame,separate,save):
         if save:
             plt.savefig(f_name)
     
+def boxplot_medians(n,binsize):
+    "empty frames"
+    L2 = {}
+    
+    "cycle over pairs of number of agents and proportions. taking grand (mean of medians) L2 mean for each pair"
+    for i,num in enumerate(n):
+        
+        files={}
+        for j in bin_size: 
+            files[j] = glob.glob(f"ukf_results/agg_ukf_agents_{num}_bin_{j}-*")
+
+        for k,_ in enumerate(files.keys()):
+            L2_2=[]
+            for file in files[_]:
+                f = open(file,"rb")
+                uagg = pickle.load(f)
+                f.close()
+                distances = l2_parser(uagg)#
+                #"grand agent means"
+                #L2_2.append(np.nanmean(distances,axis=0))
+                "grand agent medians"
+                L2_2.append(np.mean(np.nanmedian(distances,axis=0)))
+        
+            L2[num,_]=L2_2
+
+    L2_frame = pd.DataFrame(columns =["n","square width","grand_median"])        
+    
+    for i in n:
+        for j in bin_size:
+            data = L2[i,j]
+            ns = [i]*len(data)
+            bins = [j]*len(data)
+            L2_2_frame = pd.DataFrame(np.array([ns,bins,data]).T,columns =["n","square width","grand_median"])
+            L2_frame = pd.concat([L2_frame,L2_2_frame],axis=0)
+            
+    return L2_frame
+
+def median_boxplot(L2_frame):
+    "boxplot for mean of medians for each run (30 in for each pop and bin size. mainly to see if we can get clearer results"
+    
+    f_name = f"Aggregate_grand_median_boxplot.pdf"
+    y_name = "grand_median"
+    f = plt.figure()
+    sns.catplot(x="square width",y=y_name,col="n",kind="box", data=L2_frame)
+    plt.tight_layout()
+    if save:
+        plt.savefig(f_name)
+    
+
+            
  #%%
 if __name__ == "__main__":
     

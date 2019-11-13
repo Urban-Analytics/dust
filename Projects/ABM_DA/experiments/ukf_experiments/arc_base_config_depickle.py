@@ -16,7 +16,7 @@ stationsim predictions and UKF predictions.
 
 import data from arc with following in linux terminal
 scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
-change medrclaa to relevant username
+change to relevant directories
 """
 
 def base_data_parser(n,rates,noises,run_id):

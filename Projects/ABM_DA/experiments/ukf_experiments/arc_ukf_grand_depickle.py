@@ -4,7 +4,6 @@
  This produces a chloropleth style map showing the grand mean error
  over both time and agents for various fixed numbers of agents 
  and proportions observed.
-
 """
 import pickle
 import sys

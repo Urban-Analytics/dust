@@ -25,7 +25,7 @@ import sys #for print suppression#
 sys.path.append('..')
 from stationsim.stationsim_model import Model
 import numpy as np
-from math import floor,ceil
+from math import floor,ceil,log10
 import datetime
 import multiprocessing
 from copy import deepcopy
@@ -34,19 +34,19 @@ import pickle
 
 "plotting"
 import matplotlib.pyplot as plt
-from math import ceil,log10
 from seaborn import kdeplot
 import matplotlib.cm as cm
 import matplotlib.colors as col
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.patches as mpatches
+from matplotlib.collections import PatchCollection
 
 "for polygon (square or otherwise) use"
 from shapely.geometry import Polygon,MultiPoint
 from shapely.prepared import prep
-from geopandas import GeoDataFrame
 
-"import other useful things from main ukf file"
-from ukf import plots,animations
+"import other useful things from other ukf file"
+from ukf import animations
 
 
 """
@@ -685,18 +685,18 @@ class agg_plots:
         n = self.filter_class.model_params["pop_total"]
         norm =DivergingNorm(1,n/3,0.1,0.9,1e-8,n)
 
+        sm = cm.ScalarMappable(norm = norm,cmap=cmap)
+        sm.set_array([])  
         for i in range(a.shape[0]):
             locs = a[i,:]
             
              
             counts = self.filter_class.poly_count(poly_list,locs)
-            if np.nansum(counts)!=0:
-                densities = np.array(counts)/np.nansum(counts) #density
-            else:
-                densities = np.array(counts)
+            #if np.nansum(counts)!=0:
+            #    densities = np.array(counts)/np.nansum(counts) #density
+            #else:
+            #    densities = np.array(counts)
             #counts[np.where(counts==0)]=np.nan
-            frame = GeoDataFrame([densities,counts,poly_list]).T
-            frame.columns= ["densities","counts","geometry"]
             #norm =col.DivergingNorm(0.2)
             
             f = plt.figure(figsize=(12,8))
@@ -704,35 +704,37 @@ class agg_plots:
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right",size="5%",pad=0.05)
             "plot density histogram and locations scatter plot assuming at least one agent available"
+            #ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
+            ax.set_ylim(0,height)
+            ax.set_xlim(0,width)
+            
+            
+            
+            #column = frame["counts"].astype(float)
+            #im = frame.plot(column=column,
+            #                ax=ax,cmap=cmap,norm=norm,vmin=0,vmax = n)
+       
+            patches = []
+            for item in poly_list:
+               patches.append(mpatches.Polygon(np.array(item.exterior),closed=True))
+             
+            collection = PatchCollection(patches,cmap=cmap, norm=norm, alpha=1.0)
+            ax.add_collection(collection)
+            "if no agents in model for some reason just give a black frame"
             if np.nansum(counts)!=0:
-                #ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
-                ax.set_ylim(0,height)
-                ax.set_xlim(0,width)
-                column = frame["counts"].astype(float)
-                im = frame.plot(column=column,
-                                ax=ax,cax=cax,cmap=cmap,norm=norm,vmin=0,vmax = n)
-           
-                for k,count in enumerate(counts):
-                    if count>0:
-                        ax.annotate(s=count, xy=poly_list[k].centroid.coords[0], 
-                                    ha='center',va="center",color="w")
-            
+                collection.set_array(np.array(counts))
             else:
-                """
-                dummy frame if no locations present e.g. at the start. 
-                prevents divide by zero error in hist2d
-                """
-                ax.set_ylim(0,height)
-                ax.set_xlim(0,width)
-                column = frame["densities"].astype(float)
-                im = frame.plot(column=column,
-                                ax=ax,cax=cax,cmap=cmap,norm=norm,vmin=0,vmax=1)
-           
-            
+                collection.set_array(np.zeros(np.array(counts).shape))
+
+            for k,count in enumerate(counts):
+                plt.plot
+                ax.annotate(s=count, xy=poly_list[k].centroid.coords[0], 
+                            ha='center',va="center",color="w")
+                
             "set up cbar. colouration proportional to number of agents"
             ax.text(0,101,s="Total Agents: " + str(np.sum(counts)),color="k")
             
-            sm = cm.ScalarMappable(norm = norm,cmap=cmap)
+            
             cbar = plt.colorbar(sm,cax=cax,spacing="proportional")
             cbar.set_label("Agent Counts")
             cbar.set_alpha(1)
@@ -959,6 +961,9 @@ class agg_plots:
         f.savefig(file)
             
     def heatmap_single(self,a,poly_list,frame_number):
+        
+        
+
         "provide density of agents positions as a heatmap"
         "!! add poly list not working yet"
         #sample_agents = [self.base_model.agents[j] for j in self.index]
@@ -967,67 +972,65 @@ class agg_plots:
         bin_size = filter_class.filter_params["bin_size"]
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
+        n = filter_class.model_params["pop_total"]
         i =frame_number
         
         
         "cmap set up. defining bottom value (0) to be black"
-        cmap = cm.cividis
-        cmaplist = [cmap(i) for i in range(cmap.N)]
+        cmap = cm.cividis #colour scheme
+        cmaplist = [cmap(_) for _ in range(cmap.N)] #creating colourmap using cividis with black bad values (black background)
         cmaplist[0] = (0.0,0.0,0.0,1.0)
         cmap = col.LinearSegmentedColormap("custom_cmap",cmaplist,N=cmap.N)
         cmap = cmap.from_list("custom",cmaplist)
-        "split norm for better vis"
-        n = self.filter_class.model_params["pop_total"]
-        norm =DivergingNorm(1,n/3,0.1,0.9,1e-8,n)
+        """
+        How the colourbar is spread we have 
+        """
+        norm =DivergingNorm(1,n/5,0.1,0.9,1e-8,n)
+        "10% to 90% quantiles of the colour bar are between 1 and n/5 (e.g. 6 for n =30). colouration is between 1e-8 (not quite 0) and n"
 
         locs = a[i,:]
         
          
         counts = self.filter_class.poly_count(poly_list,locs)
-        if np.nansum(counts)!=0:
-            densities = np.array(counts)/np.nansum(counts) #density
-        else:
-            densities = np.array(counts)
-        #counts[np.where(counts==0)]=np.nan
-        frame = GeoDataFrame([densities,counts,poly_list]).T
-        frame.columns= ["densities","counts","geometry"]
-        #norm =col.DivergingNorm(0.2)
-        
+        #if np.nansum(counts)!=0:
+        #    densities = np.array(counts)/np.nansum(counts) #density
+        #else:
+        #    densities = np.array(counts)
+                
         f = plt.figure(figsize=(12,8))
         ax = f.add_subplot(111)
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right",size="5%",pad=0.05)
         "plot density histogram and locations scatter plot assuming at least one agent available"
-        if np.nansum(counts)!=0:
-            #ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
-            ax.set_ylim(0,height)
-            ax.set_xlim(0,width)
-            column = frame["counts"].astype(float)
-            im = frame.plot(column=column,
-                            ax=ax,cax=cax,cmap=cmap,norm=norm,vmin=0,vmax = n)
-       
-            for k,count in enumerate(counts):
-                if count>0:
-                    ax.annotate(s=count, xy=poly_list[k].centroid.coords[0], 
-                                ha='center',va="center",color="w")
+        #ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
+        ax.set_ylim(0,height)
+        ax.set_xlim(0,width)
         
-        else:
-            """
-            dummy frame if no locations present e.g. at the start. 
-            prevents divide by zero error in hist2d
-            """
-            ax.set_ylim(0,height)
-            ax.set_xlim(0,width)
-            column = frame["densities"].astype(float)
-            im = frame.plot(column=column,
-                            ax=ax,cax=cax,cmap=cmap,norm=norm,vmin=0,vmax=1)
+        
+        patches = []
+        for item in poly_list:
+           patches.append(mpatches.Polygon(np.array(item.exterior),closed=True))
+         
+        collection = PatchCollection(patches,cmap=cmap, norm=norm, alpha=1.0)
+        ax.add_collection(collection)
+        "if no agents in model for some reason just give a black frame"
+        if np.nansum(counts)!=0:
+            collection.set_array(np.array(counts))
+        for k,count in enumerate(counts):
+            plt.plot
+            ax.annotate(s=count, xy=poly_list[k].centroid.coords[0], 
+                        ha='center',va="center",color="w")
+    
+    
        
         
         "set up cbar. colouration proportional to number of agents"
         ax.text(0,101,s="Total Agents: " + str(np.sum(counts)),color="k")
         
         sm = cm.ScalarMappable(norm = norm,cmap=cmap)
-        cbar = plt.colorbar(sm,cax=cax,spacing="proportional")
+        sm.set_array([])  
+        cbar = f.colorbar(mappable=sm,cax=cax,spacing="proportional")
+
         cbar.set_label("Agent Counts")
         cbar.set_alpha(1)
         #cbar.draw_all()
@@ -1049,6 +1052,7 @@ class agg_plots:
         number = str(i).zfill(ceil(log10(a.shape[0])))
         file = self.save_dir+f"heatmap_{number}"
         f.savefig(file)
+
 
 #%%
 if __name__ == "__main__":
@@ -1163,7 +1167,7 @@ if __name__ == "__main__":
         bin_size = 25
 
 
-        file_name = f"test_agg_ukf_pickle_{n}_{bin_size}_{noise}"
+        file_name = f"ukf_agg_pickle_{n}_{bin_size}_{noise}.pkl"
         f = open("../experiments/ukf_experiments/"+file_name,"rb")
         u = pickle.load(f)
         f.close()
@@ -1183,7 +1187,7 @@ if __name__ == "__main__":
     full_preds[np.isnan(obs)]=np.nan 
 
     """plots"""
-    agg_plts = agg_plots(u)
+    agg_plts = agg_plots(u,"")
     
     distances,t_mean = agg_plts.agg_diagnostic_plots(truth,preds,plot_save)
     

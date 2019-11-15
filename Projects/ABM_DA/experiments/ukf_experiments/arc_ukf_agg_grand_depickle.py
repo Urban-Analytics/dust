@@ -5,6 +5,10 @@
  over both time and agents for various fixed numbers of agents 
  and proportions observed.
 
+
+import data from arc with following in bash terminal
+scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
+change to relevant directories
 """
 import pickle
 import sys
@@ -31,21 +35,20 @@ import pandas as pd
   
 
 def grand_depickle_ukf_agg_data_parser(instance):
-    """
-    extracts data into numpy arrays
-    in:
-        do_fill - If false when an agent is finished its true position values go to nan.
-        If true each agents final positions are repeated in the truthframe 
-        until the end of the whole model.
-        This is useful for various animating but is almost always kept False.
-        Especially if using average error metrics as finished agents have practically 0 
-        error and massively skew results.
-    out:
-        a - noisy observations of agents positions
-        b - ukf predictions of said agent positions
-        c - if sampling rate >1 fills inbetween predictions with pure stationsim prediciton
-            this is solely for smoother animations later
-        d- true agent positions
+    """PUll data from aggregate ukf class into nice arrays
+    Parameters
+    ------
+    instance : class
+    
+    Returns
+    ------
+    b,c,d,nan_array : array_like
+        `b` UKF predictions every sample rate time steps. All other elements nan
+        `c` Full UKF predictions. Say we assimilate every 5 time points then 4 
+            are just ABM forecasts and the 5th are assimilated values. Useful
+            for animations
+        `d` Full true agent positions for comparison
+        `nan_array` which elements are nan good for accurate plots/error metrics`
     """
     
     sample_rate = instance.sample_rate
@@ -78,7 +81,20 @@ def grand_depickle_ukf_agg_data_parser(instance):
         return b,d,nan_array    
     
 def l2_parser(instance):
-    "extract arrays of real paths, predicted paths, L2s between them from main class using parser above."
+    """gets real and UKF predicted data. Measures L2 distances between them
+    
+    Parameters
+    ------
+    instance : class
+    
+    Returns
+    ------
+    distance_obs : array_like
+        `distance_obs` numpy array of distance between agents true positions 
+        and their respective UKF predictions
+
+    """    
+      
     if instance.filter_params["sample_rate"]==1:
             preds,truth,nan_array = grand_depickle_ukf_agg_data_parser(instance)
     else:
@@ -95,6 +111,20 @@ def l2_parser(instance):
 
 
 def grand_L2_matrix(n,bin_size): 
+    """produces grand median matrix for all 30 ABM runs for choropleth plot
+    
+    Parameters
+    ------
+    n,bin_size : float
+        population `n` and square size `bin_size`
+    
+    Returns
+    ------
+    L2 : array_like
+        `L2` matrix of grand medians. each row is a pop each column is a bin size
+    
+
+    """    
     "empty frames"
     L2 = np.ones((len(n),len(bin_size)))*np.nan
     
@@ -121,19 +151,33 @@ def grand_L2_matrix(n,bin_size):
             
     return L2
     
-def grand_L2_plot(data,n,bin_size,observed,save):
-
-    "rotate frame 90 degrees so origin in bottom left"
-    data = np.rot90(data,k=1)
+def grand_L2_plot(data,n,bin_size,save):
+    """produces grand median matrix for all 30 ABM runs for choropleth plot
     
+    Parameters
+    ------
+    data : array_like
+        L2 `data` matrix from grand_L2_matrix
+    n,bin_size : float
+        population `n` and square size `bin_size`
+    save : bool
+        `save` plot?
+
+    """    
+    "rotate frame 90 degrees so population on x axis"
+    data = np.rot90(data,k=1) 
+
     "initiate plot"
     f,ax=plt.subplots(figsize=(8,8))
     "colourmap"
     cmap = cm.viridis
-    cmap.set_bad("white") #set nans for unobserved full prop to white
+    "set nans for 0 agents unobserved to white (not black because black text)"
+    cmap.set_bad("white") 
     
-    data2 = np.ma.masked_where(np.isnan(data),data) #needed to get bad white squares in imshow
-    data2=np.flip(data2,axis=0) #rotate so imshow right way up (origin bottom left)
+    " mask needed to get bad white squares in imshow"
+    data2 = np.ma.masked_where(np.isnan(data),data)
+    "rotate again so imshow right way up (origin bottom left i.e. lower)"
+    data2=np.flip(data2,axis=0) 
     im=ax.imshow(data2,interpolation="nearest",cmap=cmap,origin="lower")
     
     "labelling"
@@ -149,7 +193,7 @@ def grand_L2_plot(data,n,bin_size,observed,save):
     #plt.title("Grand L2s Over Varying Agents and Percentage Observed")
 
 
-    "labelling squares"
+    "text on top of squares for clarity"
     data = np.flip(data,axis=0)
     for i in range(data.shape[0]):
         for j in range(data.shape[1]):
@@ -162,7 +206,7 @@ def grand_L2_plot(data,n,bin_size,observed,save):
     cbar=plt.colorbar(im,cax,cax)
     cbar.set_label("Grand Mean L2 Error")
     
-    "further labelling and saving depending on observed/unobserved plot"
+    "further labelling and saving"
     cbar.set_label("Aggregate Median L2s")
     ax.set_ylabel("Aggregate Grid Squre Width")
     if save:
@@ -170,6 +214,23 @@ def grand_L2_plot(data,n,bin_size,observed,save):
 
             
 def boxplot_parser(n,bin_size):
+    """similar to grand_L2_matrix but creats a pandas frame for sns.catplot to read
+    
+    .. deprecated:: 
+        use median boxplots this is dumb
+    
+    Parameters
+    ------
+    n,bin_size : float
+        population `n` and square size `bin_size`
+    
+    Returns
+    ------
+    L2 : array_like
+        `L2` matrix of grand medians. Produces data frame with columns for pop,
+        bin_size, and median. This version gives a median for every AGENT rather
+        than a grand median for each run (I.E 30x12xpopulations rows vs 30x12 rows)
+    """    
     L2 = {}
     for i in n:
         files={}
@@ -177,8 +238,8 @@ def boxplot_parser(n,bin_size):
             files={}
             for j in bin_size: 
                 files[j] = glob.glob(f"ukf_results/agg_ukf_agents_{i}_bin_{j}-*")
-                
-        L2[i] = {} #sub dictionary for bin_size
+        "sub dictionary for each bin size"       
+        L2[i] = {} 
         for _ in files.keys():
             L2_2=[]
             for file in files[_]:
@@ -203,24 +264,37 @@ def boxplot_parser(n,bin_size):
     frame = pd.concat(sub_frames)
     frame.columns = ["n","square width","L2 agent errors"]
 
-            grand_L2_plot(L2,n,bin_size,True,save)
-
     return frame
 
 def boxplot_plots(n,bin_size,frame,separate,save):  
+    """produces grand median boxplot for all 30 ABM runs for choropleth plot
+    
+    ..deprecated:: 
+        use medians below
+    Parameters
+    ------
+    frame : array_like
+        L2 `data` matrix from grand_L2_matrix
+    n,bin_size : float
+        population `n` and square size `bin_size`
+    save,seperate : bool
+        `save` plot?
+        `seperate` box plots by population or have one big catplot?
+
+    """    
+    "seperate the plots by pop"
     if separate:
         for i in n:
-            if observed:
-                f_name = f"Aggregate_boxplot_{i}.pdf"
-                y_name = "L2 agent errors"
-                n_subframe = frame.loc[frame["n"]==str(i)]
-    
+            f_name = f"Aggregate_boxplot_{i}.pdf"
+            y_name = "L2 agent errors"
+            n_subframe = frame.loc[frame["n"]==str(i)]
+
             f = plt.figure()
             sns.boxplot(x="square width",y=y_name,data=n_subframe)
             if save:
                 f.savefig(f_name)
-    
     else:
+        "or one big catplot"
         f_name = f"Aggregate_boxplot.pdf"
         y_name = "L2 agent errors"
 
@@ -230,8 +304,25 @@ def boxplot_plots(n,bin_size,frame,separate,save):
         if save:
             plt.savefig(f_name)
     
-def boxplot_medians(n,binsize):
-    "empty frames"
+def boxplot_medians(n,bin_size):
+    """similar to grand_L2_matrix but creats a pandas frame for sns.catplot to read
+    
+   
+    Parameters
+    ------
+    n,bin_size : float
+        population `n` and square size `bin_size`
+    
+    Returns
+    ------
+    L2 : array_like
+        `L2` matrix of grand medians. Produces data frame with columns for pop,
+        bin_size, and median. This version gives a  grand (mean of) median 
+        each run (I.E 30x12 rows total.). This is independent of population size
+        and statistically makes a lot more sense vs the other boxplot.
+    
+
+    """    
     L2 = {}
     
     "cycle over pairs of number of agents and proportions. taking grand (mean of medians) L2 mean for each pair"
@@ -251,7 +342,7 @@ def boxplot_medians(n,binsize):
                 #"grand agent means"
                 #L2_2.append(np.nanmean(distances,axis=0))
                 "grand agent medians"
-                L2_2.append(np.mean(np.nanmedian(distances,axis=0)))
+                L2_2.append(np.nanmean(np.nanmedian(distances,axis=0)))
         
             L2[num,_]=L2_2
 
@@ -268,8 +359,20 @@ def boxplot_medians(n,binsize):
     return L2_frame
 
 def median_boxplot(L2_frame):
-    "boxplot for mean of medians for each run (30 in for each pop and bin size. mainly to see if we can get clearer results"
+    """produces grand median boxplot for all 30 ABM runs for choropleth plot
     
+   
+    Parameters
+    ------
+    frame : array_like
+        L2 `data` matrix from grand_L2_matrix
+    n,bin_size : float
+        population `n` and square size `bin_size`
+    save,seperate : bool
+        `save` plot?
+        `seperate` box plots by population or have one big catplot?
+
+    """       
     f_name = f"Aggregate_grand_median_boxplot.pdf"
     y_name = "grand_median"
     f = plt.figure()
@@ -283,17 +386,28 @@ def median_boxplot(L2_frame):
  #%%
 if __name__ == "__main__":
     
-    
+    """
+    plot1    : choropleth
+    plot2    : all agents boxplot (deprecated)
+    plot3    : grand median boxplot
+    n        : list of populations
+    bin_size :  list of grid square sizes
+    save     : save plots?
+    """
     plot1 = True
-    plot2 = True
-    
+    plot2 = False
+    plot3 = True
     n=[10,20,30]
     bin_size = [5,10,25,50]
     
     save=True
     if plot1:
         L2 = grand_L2_matrix(n,bin_size)
-        grand_L2_plot(L2,n,bin_size,True,save)
+        grand_L2_plot(L2,n,bin_size,save)
     if plot2:
         frame = boxplot_parser(n,bin_size)
         boxplot_plots(n,bin_size,frame,False,save)        
+
+    if plot3:
+        L2_frame = boxplot_medians(n,bin_size)
+        median_boxplot(L2_frame)

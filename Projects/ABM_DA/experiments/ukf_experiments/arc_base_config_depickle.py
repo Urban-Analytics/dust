@@ -20,6 +20,24 @@ change to relevant directories
 """
 
 def base_data_parser(n,rates,noises,run_id):
+    """pull data files into arrays
+    
+    Parameters
+    ------
+    
+    n,rates,noises,run_id : list
+        `lists of populaitons `n` sampling `rates` and sensor `noises` and
+        which run for each of the above parameters `run_id`
+    
+    Returns
+    ------
+    
+    data2, best_array : array_like
+        `data2` DataFrame for ll errors for observations, predictions 
+        and ukf assimilations
+        `best_array` matrix giving lowest error of the three above for all noise and rates
+        0,1,2 indicates obs preds and ukf lowest error respectively
+    """
     errors = []
     rates2 = []
     noises2 = []
@@ -85,44 +103,56 @@ def base_data_parser(n,rates,noises,run_id):
 
     return data2,best_array
 
-def plot_1(data2,best_array,b,rates,noises,save):
-        f,ax = plt.subplots(figsize=(8,8))
-        "cbar axis"
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right",size="5%",pad=0.05)
-        colours = ["yellow","orangered","skyblue"]
-        "custom discrete 3 colour map"
-        cmap = colors.ListedColormap(colours)
-        cmaplist = [cmap(i) for i in range(cmap.N)]
-        cmap = colors.LinearSegmentedColormap.from_list("custom_map",cmaplist,cmap.N)
-        bounds = [0,1,2,3]
-        norm = colors.BoundaryNorm(bounds,cmap.N)
-        
-        "imshow plot and colourbar"
-        im = ax.imshow(best_array,origin="lower",cmap = cmap,norm=norm)
-        #"""alternative continous contour plot idea for more "spatially real" mapping"""
-        #grid = np.meshgrid(noises,rates)
-        #im = plt.contourf(grid[0],grid[1],best_array,cmap=cmap,levels=[0,1,2,3])
-        plt.ylim([0,2])
-        cbar = plt.colorbar(im,cax=cax,ticks=np.arange(0,len(bounds)-1,1)+0.5,boundaries = [0,1,2,3])
-        cbar.set_label("Best Error")
-        cbar.set_alpha(1)
-        cbar.draw_all()
-        
-        "labelling"
-        cbar.set_ticklabels(("Obs","Preds","UKF"))
-        ax.set_xticks(np.arange(len(noises)))
-        ax.set_yticks(np.arange(len(rates)))
-        ax.set_xticklabels(noises)
-        ax.set_yticklabels(rates)
-        ax.set_xticks(np.arange(-.5,len(noises),1),minor=True)
-        ax.set_yticks(np.arange(-.5,len(rates),1),minor=True)
-        ax.grid(which="minor",color="k",linestyle="-",linewidth=2)
-        ax.set_xlabel("Noise (std)")
-        ax.set_ylabel("Sampling Frequency")
-        ax.set_title("base ukf configuration experiment")
-        if save:
-            plt.savefig(f"{n}_base_config_test.pdf")
+def plot_1(data2,best_array,n,rates,noises,save):
+    """plot choropleth style for which is best
+
+    Parameters
+    ------
+    data2,best_array : array_like
+        `data2` and `best_array` defined above
+    
+    n,rates,noises: list
+        `n` `rates` `list` lists of each parameter defined above
+    save : bool
+        `save` plot?
+    """
+    f,ax = plt.subplots(figsize=(8,8))
+    "cbar axis"
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right",size="5%",pad=0.05)
+    colours = ["yellow","orangered","skyblue"]
+    "custom discrete 3 colour map"
+    cmap = colors.ListedColormap(colours)
+    cmaplist = [cmap(i) for i in range(cmap.N)]
+    cmap = colors.LinearSegmentedColormap.from_list("custom_map",cmaplist,cmap.N)
+    bounds = [0,1,2,3]
+    norm = colors.BoundaryNorm(bounds,cmap.N)
+    
+    "imshow plot and colourbar"
+    im = ax.imshow(best_array,origin="lower",cmap = cmap,norm=norm)
+    #"""alternative continous contour plot idea for more "spatially real" mapping"""
+    #grid = np.meshgrid(noises,rates)
+    #im = plt.contourf(grid[0],grid[1],best_array,cmap=cmap,levels=[0,1,2,3])
+    plt.ylim([0,2])
+    cbar = plt.colorbar(im,cax=cax,ticks=np.arange(0,len(bounds)-1,1)+0.5,boundaries = [0,1,2,3])
+    cbar.set_label("Best Error")
+    cbar.set_alpha(1)
+    cbar.draw_all()
+    
+    "labelling"
+    cbar.set_ticklabels(("Obs","Preds","UKF"))
+    ax.set_xticks(np.arange(len(noises)))
+    ax.set_yticks(np.arange(len(rates)))
+    ax.set_xticklabels(noises)
+    ax.set_yticklabels(rates)
+    ax.set_xticks(np.arange(-.5,len(noises),1),minor=True)
+    ax.set_yticks(np.arange(-.5,len(rates),1),minor=True)
+    ax.grid(which="minor",color="k",linestyle="-",linewidth=2)
+    ax.set_xlabel("Noise (std)")
+    ax.set_ylabel("Sampling Frequency")
+    ax.set_title("base ukf configuration experiment")
+    if save:
+        plt.savefig(f"{n}_base_config_test.pdf")
     
 
 """
@@ -134,6 +164,19 @@ for each rate every noise is also plotted in list order
 """
     
 def plot_2(data2,best_array,n,rates,noises,save):
+        """plot lines for all error rather than just best
+    
+        Parameters
+        ------
+        data2,best_array : array_like
+            `data2` and `best_array` defined above
+        
+        n,rates,noises: list
+            `n` `rates` `list` lists of each parameter defined above
+        save : bool
+            `save` plot?
+        """
+        
         g = plt.figure(figsize=(10,8))
         colours = ["yellow","orangered","skyblue"]
         ax1 = g.add_subplot(111)
@@ -195,54 +238,19 @@ def plot_2(data2,best_array,n,rates,noises,save):
             plt.savefig(f"{n}_error_trajectories.pdf")
 
 
-def draw_3d_2lines(data1, data2,data3, ymin, ymax):
-    '''Given data1 as a list of plots, each plot being a list
-       of (x, y) vertices, generate a 3-d figure where each plot
-       is shown as a translucent polygon.
-       If line_at_zero, a line will be drawn through the zero point
-       of each plot, otherwise the baseline will be at the bottom of
-       the plot regardless of where the zero line is.
-       Give also data2 for the second plot
-    '''
-
-    # add_collection3d() wants a collection of closed polygons;
-    # each polygon needs a base and won't generate it automatically.
-    # So for each subplot, add a base at ymin.
-
-    for p in data1:
-        p.insert(0, (p[0], 0))
-        p.append((p[-1], 0))
-        p=np.array(p)
-    for p in data2:
-        p.insert(0, (p[0], 0))
-        p.append((p[-1], 0))
-        p=np.array(p)
-       
-    for p in data3:
-        p.insert(0, (p[0], 0))
-        p.append((p[-1], 0))
-        p=np.array(p)
-
-    
-
-    poly1 = PolyCollection(data1,lw=1.5,linestyle = '-', edgecolors=colours[0])
-
-    poly2 = PolyCollection(data2,lw=1.5,linestyle = '--', edgecolors=colours[1])
-
-    poly3 = PolyCollection(data2,lw=1.5,linestyle = '--', edgecolors=colours[2])
-
-    zs = range(len(data1))
-    plt.tight_layout(pad=2.0, w_pad=10.0, h_pad=3.0)
-    ax.add_collection3d(poly1, zs=zs, zdir='y')
-    ax.add_collection3d(poly2, zs=zs, zdir='y')
-    ax.add_collection3d(poly3, zs=zs, zdir='y')
-
- 
 def plot_2_3d(data2,best_array,n,rates,noises,save):
-    """
-    3d version of plot 2 given Minh's idea/code above
-    need to convert data into desire list of plots
-    """
+    """3d version of plots 2 based on Minh's code
+    
+        Parameters
+        ------
+        data2,best_array : array_like
+            `data2` and `best_array` defined above
+        
+        n,rates,noises: list
+            `n` `rates` `list` lists of each parameter defined above
+        save : bool
+            `save` plot?
+        """
     #first make list of plots
     colours = ["yellow","orangered","skyblue"]
 

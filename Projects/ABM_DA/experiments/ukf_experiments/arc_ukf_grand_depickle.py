@@ -32,21 +32,20 @@ plt.rcParams.update({'font.size':20})
         
 
 def grand_depickle_ukf_data_parser(instance):
-    """
-    extracts data into numpy arrays
-    in:
-        do_fill - If false when an agent is finished its true position values go to nan.
-        If true each agents final positions are repeated in the truthframe 
-        until the end of the whole model.
-        This is useful for various animating but is almost always kept False.
-        Especially if using average error metrics as finished agents have practically 0 
-        error and massively skew results.
-    out:
-        a - noisy observations of agents positions
-        b - ukf predictions of said agent positions
-        c - if sampling rate >1 fills inbetween predictions with pure stationsim prediciton
-            this is solely for smoother animations later
-        d- true agent positions
+    """PUll data from aggregate ukf class into nice arrays
+    Parameters
+    ------
+    instance : class
+    
+    Returns
+    ------
+    b,c,d,nan_array : array_like
+        `b` UKF predictions every sample rate time steps. All other elements nan
+        `c` Full UKF predictions. Say we assimilate every 5 time points then 4 
+            are just ABM forecasts and the 5th are assimilated values. Useful
+            for animations
+        `d` Full true agent positions for comparison
+        `nan_array` which elements are nan good for accurate plots/error metrics`
     """
     
     sample_rate = instance.sample_rate
@@ -79,7 +78,19 @@ def grand_depickle_ukf_data_parser(instance):
         return b,d,nan_array
 
 def l2_parser(instance,prop):
-    "extract arrays of true paths, predicted paths and l2 distances between them."
+    """gets real and UKF predicted data. Measures L2 distances between them
+        
+        Parameters
+        ------
+        instance : class
+        
+        Returns
+        ------
+        distance_obs : array_like
+            `distance_obs` numpy array of distance between agents true positions 
+            and their respective UKF predictions
+
+    """      
     if instance.filter_params["sample_rate"]==1:
             preds,truth,nan_array = grand_depickle_ukf_data_parser(instance)
     else:
@@ -104,6 +115,20 @@ def l2_parser(instance,prop):
 
 
 def grand_L2_matrix(n,prop): 
+    """produces grand median matrix for all 30 ABM runs for choropleth plot
+    
+    Parameters
+    ------
+    n,prop : float
+        population `n` and proportion `prop`
+    
+    Returns
+    ------
+    L2 : array_like
+        `L2` matrix of grand medians. each row is a population each column is a proportion
+    
+
+    """        
     "empty frames"
     o_L2 = np.ones((len(n),len(prop)))*np.nan
     u_L2 = np.ones((len(n),len(prop)))*np.nan
@@ -139,7 +164,18 @@ def grand_L2_matrix(n,prop):
     return o_L2,u_L2
     
 def grand_L2_plot(data,n,prop,observed,save):
+    """produces grand median matrix for all 30 ABM runs for choropleth plot
+    
+    Parameters
+    ------
+    data : array_like
+        L2 `data` matrix from grand_L2_matrix
+    n,prop : float
+        population `n` and square size `prop`
+    save : bool
+        `save` plot?
 
+    """ 
     
     data = np.rot90(data,k=1) #rotate frame 90 degrees so right way up for plots
     
@@ -195,18 +231,37 @@ def grand_L2_plot(data,n,prop,observed,save):
             plt.savefig("Unobserved_Grand_L2s.pdf")
             
 def boxplot_parser(n,prop):
+    """similar to grand_L2_matrix but creats a pandas frame for sns.catplot to read
+    
+    .. deprecated:: 
+        use median boxplots this is dumb
+    
+    Parameters
+    ------
+    n,prop : float
+        population `n` and proportion `prop`
+    
+    Returns
+    ------
+    L2 : array_like
+        `L2` matrix of grand medians. Produces data frame with columns for n,
+        prop, and median. This version gives a median for every AGENT rather
+        than a grand median for each run (I.E 30x12xpopulations rows vs 30x12 rows)
+    
+
+    """    
     observed = {}
     unobserved ={}
-    for i,pop in enumerate(n):
+    for i,num in enumerate(n):
         files={}
         for j in prop:
             if j ==1:
-                files[j] = glob.glob(f"ukf_results/ukf_agents_{pop}_prop_{1}*") 
+                files[j] = glob.glob(f"ukf_results/ukf_agents_{num}_prop_{1}*") 
                 #wierd special case with 1 and 1.0 discrepancy
             else:
-                files[round(j,2)] = glob.glob(f"ukf_results/ukf_agents_{pop}_prop_{round(j,2)}*")
-        observed[pop] = {}
-        unobserved[pop] = {}
+                files[round(j,2)] = glob.glob(f"ukf_results/ukf_agents_{num}_prop_{round(j,2)}*")
+        observed[num] = {}
+        unobserved[num] = {}
         for _ in files.keys():
             o_L2_2=[]
             u_L2_2 = []
@@ -218,8 +273,8 @@ def boxplot_parser(n,prop):
                 
                 o_L2_2.append(np.apply_along_axis(np.nanmean,0,do))
                 u_L2_2.append(np.apply_along_axis(np.nanmean,0,du))
-            observed[pop][_] = np.hstack(o_L2_2)
-            unobserved[pop][_] = np.hstack(u_L2_2)
+            observed[num][_] = np.hstack(o_L2_2)
+            unobserved[num][_] = np.hstack(u_L2_2)
           
     "stack dictionaries into dataframe with corresponding n and prop next to each agent error"
     obs_sub_frames = []
@@ -242,6 +297,21 @@ def boxplot_parser(n,prop):
     return obs_frame ,uobs_frame
 
 def boxplot_plots(n,prop,frame,separate,observed,save):  
+    """produces grand median boxplot for all 30 ABM runs for choropleth plot
+    
+    ..deprecated:: 
+        use medians below
+    Parameters
+    ------
+    frame : array_like
+        L2 `data` matrix from grand_L2_matrix
+    n,prop : float
+        population `n` and proportion 'prop'
+    save,seperate : bool
+        `save` plot?
+        `seperate` box plots by population or have one big catplot?
+
+    """    
     if separate:
         for i in n:
             if observed:
@@ -273,13 +343,133 @@ def boxplot_plots(n,prop,frame,separate,observed,save):
         plt.tight_layout()
         if save:
             plt.savefig(f_name)
+ 
+    
+def boxplot_medians(n,prop):
+    """similar to grand_L2_matrix but creats a pandas frame for sns.catplot to read
+    
+    .. deprecated:: 
+        use median boxplots this is dumb
+    
+    Parameters
+    ------
+    n,prop : float
+        population `n` and proportion `prop`
+    
+    Returns
+    ------
+    L2 : array_like
+        `L2` matrix of grand medians. Produces data frame with columns for n,
+        prop, and median. This version gives a median for every AGENT rather
+        than a grand median for each run (I.E 30x12xpopulations rows vs 30x12 rows)
+    
+
+    """    
+    observed = {}
+    unobserved ={}
+    for i,num in enumerate(n):
+        files={}
+        for j in prop:
+            if j ==1:
+                files[j] = glob.glob(f"ukf_results/ukf_agents_{num}_prop_{1}*") 
+                #wierd special case with 1 and 1.0 discrepancy
+            else:
+                files[round(j,2)] = glob.glob(f"ukf_results/ukf_agents_{num}_prop_{round(j,2)}*")
+        observed[num] = {}
+        unobserved[num] = {}
+        for _ in files.keys():
+            o_L2_2=[]
+            u_L2_2 = []
+            for file in files[_]:
+                f = open(file,"rb")
+                u = pickle.load(f)
+                f.close()
+                pred,do,du = l2_parser(u,float(_))#
+                
+                o_L2_2.append(np.nanmean(np.nanmedian(do,axis=0)))
+                u_L2_2.append(np.nanmean(np.nanmedian(du,axis=0)))
+            observed[num][_] = np.hstack(o_L2_2)
+            unobserved[num][_] = np.hstack(u_L2_2)
+          
+    "stack dictionaries into dataframe with corresponding n and prop next to each agent error"
+    obs_sub_frames = []
+    uobs_sub_frames = []
+    
+    for i in n:
+        for j in prop:
+            obs = observed[i][j]
+            uobs = unobserved[i][j]
+            obs_sub_frames.append(pd.DataFrame([[i]*len(obs),[j]*len(obs),obs]).T)
+            uobs_sub_frames.append(pd.DataFrame([[i]*len(uobs),[j]*len(uobs),uobs]).T)
+
+    "stack into grand frames and label columns"
+    obs_frame = pd.concat(obs_sub_frames)
+    obs_frame.columns = ["n","proportion observed (x100%)","observed L2 agent errors"]
+    uobs_frame = pd.concat(uobs_sub_frames)
+    uobs_frame.columns = ["n","proportion observed (x100%)","unobserved L2 agent errors"]
+
+    
+    return obs_frame ,uobs_frame
+
+def median_boxplot(n,prop,frame,separate,observed,save):
+    """produces grand median boxplot for all 30 ABM runs for choropleth plot
+    
+   
+    Parameters
+    ------
+    frame : array_like
+        L2 `data` matrix from grand_L2_matrix
+    
+    save,observed : bool
+        `save` plot?
+        `seperate` box plots by population or have one big catplot?
+
+    """       
+    if separate:
+        for i in n:
+            if observed:
+                f_name = f"Observed_boxplot_{i}.pdf"
+                y_name = "observed L2 agent errors"
+    
+            else:
+                y_name = "unobserved L2 agent errors"
+                f_name = f"Unobserved_boxplot_{i}.pdf"
+                
+            n_subframe = frame.loc[frame["n"]==str(i)]
+    
+            f = plt.figure()
+            sns.boxplot(x="proportion observed (x100%)",y=y_name,data=n_subframe)
+            if save:
+                f.savefig(f_name)
+    
+    else:
+        if observed:
+            f_name = f"MEdian_Observed_boxplot.pdf"
+            y_name = "observed L2 agent errors"
+
+        else:
+            y_name = "unobserved L2 agent errors"
+            f_name = f"Median Unobserved_boxplot.pdf"
+
+        f = plt.figure()
+        sns.catplot(x="proportion observed (x100%)",y=y_name,col="n",kind="box", data=frame)
+        plt.tight_layout()
+        if save:
+            plt.savefig(f_name)
     
 #%% 
 if __name__ == "__main__":
     
-
+    """
+    plot1 - plot choropleth results
+    plot2 - plot all agent median boxplots
+    plot3 - per run grand median boxplots
+    n - populations
+    prop - proportions observed
+    """
     plot1 = False
-    plot2 = True
+    plot2 = False
+    plot3 = True
     n= [10,20,30]
     prop = [0.25,0.5,0.75,1.0]
     
@@ -292,3 +482,7 @@ if __name__ == "__main__":
         obs_frame ,uobs_frame = boxplot_parser(n,prop)
         boxplot_plots(n,prop,obs_frame,False,True,save)        
         boxplot_plots(n,prop,uobs_frame,False,False,save)
+    if plot3:
+        obs_frame,uobs_frame= boxplot_medians(n,prop)
+        median_boxplot(n,prop,obs_frame,False,True,save)        
+        median_boxplot(n,prop,uobs_frame,False,False,save)

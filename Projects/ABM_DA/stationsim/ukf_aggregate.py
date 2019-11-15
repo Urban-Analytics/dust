@@ -61,6 +61,7 @@ https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
 
 #%%
 class HiddenPrints:
+    """supresses repeat print of "iterations:" by stationsim """
     def __enter__(self):
         self._original_stdout = sys.stdout
         sys.stdout = open(os.devnull, 'w')
@@ -71,7 +72,22 @@ class HiddenPrints:
 
 """general ukf class"""
 class agg_ukf:
+    """main ukf class with aggregated measurements
     
+    Parameters
+    ------
+    ukf_params : dict
+        dictionary of ukf parameters `ukf_params`
+    init_x : array_like
+        Initial ABM state `init_x`
+    poly_list : list
+        list of polygons `poly_list`
+    fx,hx: method
+        transitions and measurement functions `fx` `hx`
+    P,Q,R : array_like
+        Noise structures `P` `Q` `R`
+    
+    """
     def __init__(self,ukf_params,init_x,poly_list,fx,hx,P,Q,R):
         """
         x - state
@@ -79,8 +95,8 @@ class agg_ukf:
         P - state covariance
         fx - transition function
         hx - measurement function
-        lam - lambda paramter
-        g - gamma parameter
+        lam - lambda paramter function of tuning parameters a,b,k
+        g - gamma parameter function of tuning parameters a,b,k
         wm/wc - unscented weights for mean and covariances respectively.
         Q,R -noise structures for fx and hx
         xs,Ps - lists for storage
@@ -90,7 +106,7 @@ class agg_ukf:
         self.x = init_x #!!initialise some positions and covariances
         self.n = self.x.shape[0] #state space dimension
 
-        self.poly_list = poly_list
+        self.poly_list = poly_list #polygon list of aggregate grid squares. can generalise this to any closed polygon list
         
         self.P = P
         #self.P = np.linalg.cholesky(self.x)
@@ -102,11 +118,11 @@ class agg_ukf:
         self.g = np.sqrt(self.n+self.lam) #gamma parameter
 
         
-        #init weights based on paramters a through el
+        #init weights based on paramters lambda, n ,alpha,beta
         main_weight =  1/(2*(self.n+self.lam))
         self.wm = np.ones(((2*self.n)+1))*main_weight
-        self.wm[0] *= 2*self.lam
-        self.wc = self.wm.copy()
+        self.wm[0] *= 2*self.lam #wm all same apart from first weight
+        self.wc = self.wm.copy() #wc same as wm apart from first weight
         self.wc[0] += (1-ukf_params["a"]**2+ukf_params["b"])
 
     
@@ -117,27 +133,44 @@ class agg_ukf:
         self.xs = []
         self.Ps = []
 
-    def Sigmas(self,mean,S):
-        """sigma point calculations based on current mean x and  UT (upper triangular) 
-        decomposition S of covariance P"""
+    def Sigmas(self,mean,P):
+        """sigma point calculations based on current mean x and covariance P
         
-     
+        Parameters
+        ------
+        mean , S : array_like
+            mean `x` and covariance `P` numpy arrays
+            
+        Returns
+        ------
+        sigmas : array_like
+            sigma point matrix
+        
+        """
+        
         sigmas = np.ones((self.n,(2*self.n)+1)).T*mean
         sigmas=sigmas.T
-        sigmas[:,1:self.n+1] += self.g*S #'upper' confidence sigmas
-        sigmas[:,self.n+1:] -= self.g*S #'lower' confidence sigmas
+        sigmas[:,1:self.n+1] += self.g*P #'upper' confidence sigmas
+        sigmas[:,self.n+1:] -= self.g*P #'lower' confidence sigmas
         return sigmas 
 
     def predict(self,**fx_args):
+        """Transitions sigma points forwards using markovian transition function plus noise Q
+        
+        - calculate sigmas using prior mean and covariance P.
+        - forecast sigmas X- for next timestep using transition function Fx.
+        - unscented mean for foreacsting next state.
+        - calculate interim Px
+        - pass these onto next update function
+        
+        Parameters
+        ------
+        **fx_args
+            generic arguments for transition function f
+        
+        
         """
-        - calculate sigmas using prior mean and UT element of covariance S
-        - predict interim sigmas X for next timestep using transition function Fx
-        - predict unscented mean for next timestep
-        - calculate interim S using concatenation of all but first column of Xs
-            and square root of process noise
-        - cholesky update to nudge on unstable 0th row
-        - calculate futher interim sigmas using interim S and unscented mean
-        """
+        
         #calculate NL projection of sigmas
         sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.P)) #calculate current sigmas using state x and UT element S
         "numpy apply along axis or multiprocessing options"
@@ -145,15 +178,10 @@ class agg_ukf:
         #p = multiprocessing.Pool()
         #nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
         #p.close()
-        wnl_sigmas = nl_sigmas*self.wm
+        wnl_sigmas = nl_sigmas*self.wm #weightings based on MSSP weights
             
         xhat = np.sum(wnl_sigmas,axis=1)#unscented mean for predicitons
         
-        """
-        should be a faster way of doing this
-        covariance estimation for prior P as a sum of the outer products of 
-        (sigmas - unscented mean) weighted by wc
-        """
         
         Pxx = np.matmul(np.matmul((nl_sigmas.transpose()-xhat).T,np.diag(self.wc)),(nl_sigmas.transpose()-xhat))+self.Q
 
@@ -165,25 +193,26 @@ class agg_ukf:
         self.x = xhat #update xhat
     
     def update(self,z,**hx_args):     
-        """
+        """ update forecasts with measurements to get posterior assimilations
+        
         Does numerous things in the following order
-        - calculate interim sigmas using Sxx and unscented mean estimate
+        - nudges X- sigmas with calculated Px from predict
         - calculate measurement sigmas Y = h(X)
-        - calculate unscented mean of Ys
-        - calculate qr decomposition of concatenated columns of all but first Y scaled 
-            by w1c and square root of sensor noise to calculate interim S
-        - cholesky update to nudge interim S on potentially unstable 0th 
-            column of Y
-        - calculate sum of scaled cross covariances between Ys and Xs Pxy
-        - calculate kalman gain
+        - calculate unscented means of Y
+        -calculate Py Pxy,K using R
         - calculate x update
-        - calculate S update
+        - calculate P update
+        
+        Parameters
+        ------
+        z : array_like
+            measurements from sensors `z`
+        **hx_args
+            arbitrary arguments for measurement function
         """
         
-        """
-        posterior sigmas using above unscented interim estimates for x and P
-        """
-        sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.P)) #update using Sxx and unscented mean
+        #new sigmas using mean and covariance
+        sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.P)) 
         nl_sigmas = np.apply_along_axis(self.hx,0,sigmas)
         #p = multiprocessing.Pool()
         #nl_sigmas = np.vstack(p.map(self.hx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
@@ -233,8 +262,17 @@ class agg_ukf:
         return
 
 class agg_ukf_ss:
-    """
-    UKF for station sim using ukf filter class.
+    """UKF for station sim using ukf filter class.
+    
+    Parameters
+    ------
+    model_params,filter_params,ukf_params : dict
+        loads in parameters for the model, station sim filter and general UKF parameters
+        `model_params`,`filter_params`,`ukf_params`
+    poly_list : list
+        list of polygons `poly_list`
+    base_model : method
+        stationsim model `base_model`
     """
     def __init__(self,model_params,filter_params,ukf_params,poly_list,base_model):
         """
@@ -284,18 +322,24 @@ class agg_ukf_ss:
         self.time1 =  datetime.datetime.now()#timer
         self.time2 = 0
     def fx(self,x,**fx_args):
-        """
-        Transition function for the state space giving where it is predicted to be
-        at the next time step.
-
-        In this case it is a placeholder which receives a vector a base_model class
-        instance with specified agent locations and speed and predicts where
-        they will be at the next time step
+        """Transition function for the StationSim
         
-        in:
-            base_model class with current agent attributes
-        out:
-            base_model positions predicted for next time step
+        -Copies current base model
+        -Replaces position with sigma point
+        -Moves replaced model forwards one time point
+        -record new stationsim positions as forecasted sigmapoint
+        
+        Parameters
+        ------
+        x : array_like
+            Sigma point of measured state `x`
+        **fx_args
+            arbitrary arguments for transition function fx
+            
+        Returns
+        -----
+        state : array_like
+            predicted measured state for given sigma point
         """      
         #f = open(f"temp_pickle_model_ukf_{self.time1}","rb")
         #model = pickle.load(f)
@@ -309,34 +353,47 @@ class agg_ukf_ss:
         return state
    
     def hx(self,state,**hx_args):
-        """
-        Measurement function for aggregates.
-        This converts our state space with latent variables output by fx 
-        into one with the same state space as what we can observe.
-        For example, if we may use position and speed in our
-        transition function fx to predict the state at the next time interval.
-        If we can only measure position then this function may 
-        just simply omit the speed or use it to further estimate the position.
+        """Convert each sigma point from noisy gps positions into actual measurements
         
-        In this case this is used to convert our vector of latent agent positions
-        into a vector of counts of agent in each polygon in poly list
-        in:
-            full latent state space output by fx
-        out: 
-            vector of aggregates from measuring how many agents in each polygon in poly_list 
+        -   uses function poly_count to count how many agents in each closed 
+            polygon of poly_list
+        -   converts perfect data from ABM into forecasted 
+            observation data to be compared and assimilated 
+            using actual observation data
+        
+        Parameters
+        ------
+        state : array_like
+            desired `state` n-dimensional sigmapoint to be converted
+        
+        **hx_args
+            generic hx kwargs
+        Returns
+        ------
+        counts : array_like
+            forecasted `counts` of how many agents in each square to 
+            compare with actual counts
         """
         counts = self.poly_count(self.poly_list,state)
         
         return counts
     
     def poly_count(self,poly_list,points):
-        """
-        counts how many agents in each polygon
+        """ counts how many agents in each closed polygon of poly_list
         
-        in: 
-            1D vector of points from agents2state()/get_state(sensor=location),
-        out: 
-            counts of agents in each polygon in poly_list
+        -    use shapely polygon functions to count agents in each polygon
+        
+        Parameters
+        ------
+        poly_list : list
+            list of closed polygons over StationSim corridor `poly_list`
+        points : array_like
+            list of agent GPS positions to count
+        
+        Returns
+        ------
+        counts : array_like
+            `counts` how many agents in each polygon
         """
         counts = []
         points = np.array([points[::2],points[1::2]]).T
@@ -347,16 +404,14 @@ class agg_ukf_ss:
         return counts
     
     def init_ukf(self,ukf_params):
-        """
-        initialise ukf with initial state and covariance structures.
-        in:
-            base model
-            number of agents
-            some list of aggregate polygons
-            some transition f and measurement h functions
-            
-        out:
-            initalised ukf class object
+        """initialise ukf with initial state and covariance structures.
+        
+        
+        Parameters
+        ------
+        ukf_params : dict
+            dictionary of various ukf parameters `ukf_params`
+        
         """
         x = self.base_model.get_state(sensor="location")#initial state
         Q = np.eye(self.pop_total*2)#process noise
@@ -366,22 +421,15 @@ class agg_ukf_ss:
     
     
     def main(self):
-        """
-        main function for ukf station sim
-        -initiates ukf
-        while any agents are still active
-            -predict with ukf
-            -step true model
-            -update ukf with new model positions
-            -repeat until all agents finish or max iterations reached
-            
-        in: 
-            __init__ with various parameters including base model, parameters for
-            filter,ukf, and model, which agents (if any) are unobserved and
-            storage for data
+        """main function for applying ukf to aggregated StationSim
+        -    initiates ukf
+        -    while any agents are still active
+            -    predict with ukf
+            -    step true model
+            -    update ukf with new model positions
+            -    repeat until all agents finish or max iterations reached
+        -    if no agents then stop
         
-        out:
-            -agents trajectories and UKF predictions of said trajectories
         """
         #seeding if  wanted else hash it
 
@@ -435,22 +483,25 @@ class agg_ukf_ss:
         self.time2 = datetime.datetime.now()#timer
         print(self.time2-self.time1)
         
-    def data_parser(self,do_fill):
-        """
-        extracts data into numpy arrays
-        in:
-            do_fill - If false when an agent is finished its true position values go to nan.
-            If true each agents final positions are repeated in the truthframe 
-            until the end of the whole model.
-            This is useful for various animating but is almost always kept False.
-            Especially if using average error metrics as finished agents have practically 0 
-            error and massively skew results.
-        out:
-            a - noisy observations of agents positions
-            b - ukf predictions of said agent positions
-            c - if sampling rate >1 fills inbetween predictions with pure stationsim prediciton
+    def data_parser(self):
+        """extracts data into numpy arrays
+        
+        
+        Returns
+        ------
+            
+        a : array_like
+            `a` noisy observations of agents positions
+        b : array_like
+            `b` ukf predictions of said agent positions
+        c : array_like
+            `c` if sampling rate >1 fills inbetween predictions with pure stationsim prediciton
                 this is solely for smoother animations later
-            d- true agent positions
+        d : 
+            `d` true agent positions
+            
+        nan_array : array_like
+            `nan_array` which entries of b are nan. good for plotting/metrics            
         """
         sample_rate = self.sample_rate
         
@@ -491,17 +542,20 @@ class agg_ukf_ss:
             return a,b,d,nan_array
         
 def grid_poly(width,length,bin_size):
-    """
-    generates grid of aggregate square polygons for corridor in station sim.
-    UKF should work with any list of connected simple polys whose union 
-    lies within space of interest.
-    This is just an example poly that is nice but in theory works for any.
-    !!potentially add randomly generated polygons or camera circles/cones.
+    """generates complete grid of tesselating square polygons covering corridor in station sim.
+   
+    Parameters
+    -----
+    width,length : float
+        `width` and `length` of StationSim corridor. 
     
-    in:
-        corridor parameters and size of squares
-    out: 
-        grid of squares for aggregates
+    bin_size : float
+     size of grid squares. larger implies fewer squares `bin_size`
+     
+    Returns
+    ------
+    polys : list
+        list of closed square polygons `polys`
     """
     polys = []
     for i in range(int(width/bin_size)):
@@ -522,14 +576,26 @@ def grid_poly(width,length,bin_size):
 
 class DivergingNorm(col.Normalize):
     def __init__(self, vleft,vright,vlc,vrc, vmin=None, vmax=None):
-        """
-        Normalize data with a set center.Rebuilt to be left heavy with the colouration
-        given a skewed data set.
-
-        Useful when mapping data where most points are tightly clustered and the rest 
-        very sparsely spread. The large spread of sparse points dilutes the 
-        colouration in the tight area resulting in heavy information loss.
-        This Norm 
+        """RCs customised matplotlib diverging norm
+        
+        The original matplotlib version allowed the user to split their 
+        data about some middle point (e.g. 0) and use a nice symmetric colourbar. 
+        This is a slight generalisation of that.
+        
+        Basically, allows you change how the colour bar concentrates itself for skewed data. 
+        Say your data is very bottom heavy and you want more precision in the bottom 
+        of your data range. For example, if your data was between 5 and 10 and 
+        90% of it was <6. If we used parameters:
+            
+        vleft=5,vright=6,vlc=0,vrc=0.9,vmin=5,vmax=10
+        
+        Then the first 90% of the colour bar colours would put themselves between 
+        5 and 6 and the remaining 10% would do 6-10. 
+        This gives a bottom heavy colourbar that matches the data.
+        
+        This works for generally heavily skewed data and could probably 
+        be generalised further but starts to get very very messy
+        
         Parameters
         ----------
         vcenter : float
@@ -543,11 +609,11 @@ class DivergingNorm(col.Normalize):
         vlc/vrc: float between 0 and 1 
         
             value left/right colouration.
-            Two floats tat indicate how many colours of the colormap colouration
-            are within the tight band as a percentage.
-            If these numbers are 0 and 1 all 256 colours are in the tight band
+            Two floats that indicate how many colours of the  256 colormap colouration
+            are within the vleft/vright band as a percentage.
+            If these numbers are 0 and 1 all 256 colours are in the band
             If these numbers are 0.1 and 0,2 then the 
-            25th to the 51st colours of the colormap represent the tight band.
+            25th to the 51st colours of the colormap represent the band.
             
         
         vmin : float, optional
@@ -603,8 +669,16 @@ class DivergingNorm(col.Normalize):
 
 
 class agg_plots:
-    """
-    class for all plots using in UKF
+    """class for all plots used in aggregate UKF
+    
+    Parameters
+    ------
+    filter_class : class
+        `filter_class` some finished ABM with UKF fitted to it 
+    
+    save_dir: string
+        directory to save plots to. If using current directory "".
+        e.g ukf experiments from stationsim "../experiments/ukf_experiments"
     """
     def __init__(self,filter_class,save_dir):
         "define which class to plot from"
@@ -612,9 +686,16 @@ class agg_plots:
         self.save_dir = save_dir
 
     def trajectories(self,a,poly_list):
-        "provide density of agents positions as a 2.5d histogram"
-        #sample_agents = [self.base_model.agents[j] for j in self.index]
-        #swap if restricting observed agents
+        """GPS style animation
+        
+        Parameters
+        ------ 
+        a : array_like
+            `a` noisy measurements 
+        poly_list : list
+            `poly_list` list of polygons to plot
+        
+        """
         
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
@@ -664,8 +745,16 @@ class agg_plots:
             
         
     def heatmap(self,a,poly_list):
-        "provide density of agents positions as a heatmap"
-        "!! add poly list not working yet"
+        """ Aggregate grid square agent density map animation
+        
+        Parameters
+        ------ 
+        a : array_like
+            `a` noisy measurements 
+        poly_list : list
+            `poly_list` list of polygons to plot
+        
+        """
         #sample_agents = [self.base_model.agents[j] for j in self.index]
         #swap if restricting observed agents
         filter_class = self.filter_class
@@ -762,11 +851,30 @@ class agg_plots:
         animations.animate(self,self.save_dir+"output_heatmap",self.save_dir+f"heatmap_{filter_class.pop_total}_",12)
         
     def L2s(self,a,b):
-        """
-        L2 distance error metric. 
+        """L2 distance errors between measurements and ukf predictions
+        
         finds mean L2 (euclidean) distance at each time step and per each agent
         provides whole array of distances per agent and time
         and L2s per agent and time. 
+        
+        Parameters
+        ------
+        a,b: array_like
+            `a` measurements and `b` ukf arrays to compare
+            
+        Returns
+        ------
+        
+        c : array_like
+            `c` matrix of  L2 distances between a and b over time and agents.
+        index : array_like
+            for sampling rates >1 need to omit some empty nan rows.
+            this indicates which rows are kept. `index`
+            isnt really useful I dont know why its here honestly
+        agent_means,time_means : array_like
+            column and row means for c respectively. finds the mean error per 
+            `agent_means` agent and `time_means` time point
+        
         """
         sample_rate =self.filter_class.filter_params["sample_rate"]
         c = np.ones(((a.shape[0]//sample_rate),int(a.shape[1]/2)))*np.nan
@@ -787,20 +895,16 @@ class agg_plots:
         return c,index,agent_means,time_means
     
     def agg_diagnostic_plots(self,a,b,save):
-            """
-            self - UKf class for various information
-            
-            a-observed agents
-            
-            b-UKF predictions of a
-            
-            observed- bool for plotting observed or unobserved agents
-            if True observed else unobserved
-            
-            save- bool for saving plots in current directory. saves if true
-            
-            
-            """
+        """plots general diagnostics plots for efficacy of UKF
+        
+        Parameters
+        ------
+        a,b : array_like
+            `a` measurements and `b` ukf arrays
+        save : bool
+            `save` plots?
+        
+        """
             
                 
             #sample_rate =self.filter_class.filter_params["sample_rate"]
@@ -872,7 +976,18 @@ class agg_plots:
             return c,time_means
     
     def pair_frames(self,a,b):
-        "pairwise animation"
+        """ pairwise animation with observerd/unobserved error over top
+        
+        ..deprecated:: 
+            not really used this for a while its too small
+            a nice gridspec excercise for anyone interested in nested plotting
+        
+        Parameters
+        ------
+        a,b : array_like
+            `a` measurements and `b` ukf estimates
+        
+        """    
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
@@ -919,6 +1034,20 @@ class agg_plots:
         animations.animate(self,self.save_dir+"output_pairs",self.save_dir+f"aggregate_pairwise_{self.filter_class.pop_total}",24)
 
     def pair_frames_single(self,a,b,frame_number):
+        """ pairwise animation with observerd/unobserved error over top
+        
+        
+        Parameters
+        ------
+        a,b : array_like
+            `a` measurements and `b` ukf estimates
+        
+        frame_number : int
+            `frame_number` which time frame to plot
+            
+        save: bool
+            `save` plot?
+        """   
         filter_class = self.filter_class
         width = filter_class.model_params["width"]
         height = filter_class.model_params["height"]
@@ -961,7 +1090,23 @@ class agg_plots:
         f.savefig(file)
             
     def heatmap_single(self,a,poly_list,frame_number):
+        """ pairwise animation with observerd/unobserved error over top
         
+        
+        Parameters
+        ------
+        a : array_like
+            `a` measurements and `b` ukf estimates
+        
+        poly_list: list
+            `poly_list` list of polygons to plot
+            
+        frame_number : int
+            `frame_number` which time frame to plot
+            
+        save: bool
+            `save` plot?
+        """   
         
 
         "provide density of agents positions as a heatmap"

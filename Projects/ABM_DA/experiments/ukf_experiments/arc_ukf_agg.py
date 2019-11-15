@@ -1,10 +1,11 @@
 
 """
-Run some experiments using the stationsim/particle_filter.
-The script
+Run some experiments using the stationsim/ukf.
+The script allows a user to run multiple ukf experiment runs using 
+leeds' ARC3 supercomputer.
 @author: RC
 
-run following in arc console:
+To run use following in bash terminal:
     
 #log in with
 scp username@arc3.leeds.ac.uk
@@ -22,11 +23,9 @@ source mypython/bin/activate
 
 #install dependencies
 pip install imageio
-pip install filterpy
 pip install ffmpeg
 pip install seaborn
 pip install shapely
-pip install geopandas
 
 # open python script. change num_age, bins, and run_id
 # to change number of agents, bin size, and number of runs
@@ -55,8 +54,8 @@ from stationsim.ukf_aggregate import agg_ukf_ss,grid_poly
 from stationsim.stationsim_model import Model
 
 import os
-import time
-import warnings
+#import time
+#import warnings
 import numpy as np
 import pickle
 

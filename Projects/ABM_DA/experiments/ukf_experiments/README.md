@@ -35,7 +35,6 @@ This logs the user onto the arc3 system setting up a python3 virtual environment
 #for arc_base_config.py and arc_ukf.py
 
 pip install imageio
-pip install filterpy
 pip install ffmpeg
 pip install seaborn
 

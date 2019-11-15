@@ -32,17 +32,16 @@ source mypython/bin/activate
 This logs the user onto the arc3 system setting up a python3 virtual environment to run the experiments in. Now we can pip in packages as necessary depending on the desired experiment. We have two sets of packages:
 
 ```
-for arc_base_config.py and arc_ukf.py
+#for arc_base_config.py and arc_ukf.py
 
 pip install imageio
 pip install filterpy
 pip install ffmpeg
 pip install seaborn
 
-for arc_ukf_agg.py also install:
+#for arc_ukf_agg.py also install:
 
 pip install shapely
-pip install geopandas
 ```
 
 In this environment we run an example experiment for the basic ukf using `arc_ukf.py`. We will run the UKF 20 times for 5 and 10 agents at 0.5 and 1.0 proportion observed. First we define the parameters we wish to run in `arc_ukf.py`.

@@ -44,6 +44,8 @@ This folder is for other useful resources, not necessarily directly related to t
 
 ### R
 
- - [Leaflet](https://rstudio.github.io/leaflet/) is great for making interactive maps
+ - [R for data science](https://r4ds.had.co.nz/) O'Reilly (e) book written by Hadley Wickham (who's probably the best known person for R data science).
+ - [Shiny tutorial](https://shiny.rstudio.com/tutorial/) for making data visualisations
  - [Geocomputation with R](https://geocompr.robinlovelace.net/) for learning how to use R to work with spatial data.
- - [R for data science](https://r4ds.had.co.nz/)
+ - [Leaflet](https://rstudio.github.io/leaflet/) is great for making interactive maps
+  - [Software carpentry](https://software-carpentry.org/lessons/) (_also recommended above in the 'good coding practice' section_).

@@ -61,7 +61,8 @@ https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
 
 #%%
 class HiddenPrints:
-    """supresses repeat print of "iterations:" by stationsim """
+    """supresses repeat print of "iterations:" by stationsim 
+    """
     def __enter__(self):
         self._original_stdout = sys.stdout
         sys.stdout = open(os.devnull, 'w')
@@ -744,112 +745,7 @@ class agg_plots:
         animations.animate(self,self.save_dir+"output_positions",self.save_dir+f"positions_{filter_class.pop_total}_",12)
             
         
-    def heatmap(self,a,poly_list):
-        """ Aggregate grid square agent density map animation
-        
-        Parameters
-        ------ 
-        a : array_like
-            `a` noisy measurements 
-        poly_list : list
-            `poly_list` list of polygons to plot
-        
-        """
-        #sample_agents = [self.base_model.agents[j] for j in self.index]
-        #swap if restricting observed agents
-        filter_class = self.filter_class
-        bin_size = filter_class.filter_params["bin_size"]
-        width = filter_class.model_params["width"]
-        height = filter_class.model_params["height"]
-        os.mkdir(self.save_dir+"output_heatmap")
-        
-        
-        "cmap set up. defining bottom value (0) to be black"
-        cmap = cm.cividis
-        cmaplist = [cmap(i) for i in range(cmap.N)]
-        cmaplist[0] = (0.0,0.0,0.0,1.0)
-        cmap = col.LinearSegmentedColormap("custom_cmap",cmaplist,N=cmap.N)
-        cmap = cmap.from_list("custom",cmaplist)
-        "split norm for better vis"
-        n = self.filter_class.model_params["pop_total"]
-        norm =DivergingNorm(1,n/3,0.1,0.9,1e-8,n)
 
-        sm = cm.ScalarMappable(norm = norm,cmap=cmap)
-        sm.set_array([])  
-        for i in range(a.shape[0]):
-            locs = a[i,:]
-            
-             
-            counts = self.filter_class.poly_count(poly_list,locs)
-            #if np.nansum(counts)!=0:
-            #    densities = np.array(counts)/np.nansum(counts) #density
-            #else:
-            #    densities = np.array(counts)
-            #counts[np.where(counts==0)]=np.nan
-            #norm =col.DivergingNorm(0.2)
-            
-            f = plt.figure(figsize=(12,8))
-            ax = f.add_subplot(111)
-            divider = make_axes_locatable(ax)
-            cax = divider.append_axes("right",size="5%",pad=0.05)
-            "plot density histogram and locations scatter plot assuming at least one agent available"
-            #ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
-            ax.set_ylim(0,height)
-            ax.set_xlim(0,width)
-            
-            
-            
-            #column = frame["counts"].astype(float)
-            #im = frame.plot(column=column,
-            #                ax=ax,cmap=cmap,norm=norm,vmin=0,vmax = n)
-       
-            patches = []
-            for item in poly_list:
-               patches.append(mpatches.Polygon(np.array(item.exterior),closed=True))
-             
-            collection = PatchCollection(patches,cmap=cmap, norm=norm, alpha=1.0)
-            ax.add_collection(collection)
-            "if no agents in model for some reason just give a black frame"
-            if np.nansum(counts)!=0:
-                collection.set_array(np.array(counts))
-            else:
-                collection.set_array(np.zeros(np.array(counts).shape))
-
-            for k,count in enumerate(counts):
-                plt.plot
-                ax.annotate(s=count, xy=poly_list[k].centroid.coords[0], 
-                            ha='center',va="center",color="w")
-                
-            "set up cbar. colouration proportional to number of agents"
-            ax.text(0,101,s="Total Agents: " + str(np.sum(counts)),color="k")
-            
-            
-            cbar = plt.colorbar(sm,cax=cax,spacing="proportional")
-            cbar.set_label("Agent Counts")
-            cbar.set_alpha(1)
-            #cbar.draw_all()
-            
-            "set legend to bottom centre outside of plot"
-            box = ax.get_position()
-            ax.set_position([box.x0, box.y0 + box.height * 0.1,
-                             box.width, box.height * 0.9])
-            
-            "labels"
-            ax.set_xlabel("Corridor width")
-            ax.set_ylabel("Corridor height")
-            #ax.set_title("Agent Densities vs True Positions")
-            cbar.set_label(f"Agent Counts (out of {n})")
-            """
-            frame number and saving. padded zeroes to keep frames in order.
-            padded to nearest upper order of 10 of number of iterations.
-            """
-            number = str(i).zfill(ceil(log10(a.shape[0])))
-            file = self.save_dir+f"output_heatmap/{number}"
-            f.savefig(file)
-            plt.close()
-        
-        animations.animate(self,self.save_dir+"output_heatmap",self.save_dir+f"heatmap_{filter_class.pop_total}_",12)
-        
     def L2s(self,a,b):
         """L2 distance errors between measurements and ukf predictions
         
@@ -906,74 +802,74 @@ class agg_plots:
         
         """
             
-                
-            #sample_rate =self.filter_class.filter_params["sample_rate"]
             
-            #f=plt.figure(figsize=(12,8))
-            #for j in range(int(a.shape[1]/2)):
-            #    plt.plot(a[:,(2*j)],a[:,(2*j)+1],lw=3)  
-            #    plt.xlim([0,self.filter_class.model_params["width"]])
-            #    plt.ylim([0,self.filter_class.model_params["height"]])
-            #    plt.xlabel("Corridor Width")
-            #    plt.ylabel("Corridor Height")
-            #    plt.title(f"Agent True Positions")
-    
-            #g = plt.figure(figsize=(12,8))
-            #for j in range(int(a.shape[1]/2)):
-            #    plt.plot(b[::sample_rate,2*j],b[::sample_rate,(2*j)+1],lw=3) 
-            #    plt.xlim([0,self.filter_class.model_params["width"]])
-            #    plt.ylim([0,self.filter_class.model_params["height"]])
-            #    plt.xlabel("Corridor Width")
-            #    plt.ylabel("Corridor Height")
-            #    plt.title(f"Aggregate KF Predictions")
+        #sample_rate =self.filter_class.filter_params["sample_rate"]
+        
+        #f=plt.figure(figsize=(12,8))
+        #for j in range(int(a.shape[1]/2)):
+        #    plt.plot(a[:,(2*j)],a[:,(2*j)+1],lw=3)  
+        #    plt.xlim([0,self.filter_class.model_params["width"]])
+        #    plt.ylim([0,self.filter_class.model_params["height"]])
+        #    plt.xlabel("Corridor Width")
+        #    plt.ylabel("Corridor Height")
+        #    plt.title(f"Agent True Positions")
+
+        #g = plt.figure(figsize=(12,8))
+        #for j in range(int(a.shape[1]/2)):
+        #    plt.plot(b[::sample_rate,2*j],b[::sample_rate,(2*j)+1],lw=3) 
+        #    plt.xlim([0,self.filter_class.model_params["width"]])
+        #    plt.ylim([0,self.filter_class.model_params["height"]])
+        #    plt.xlabel("Corridor Width")
+        #    plt.ylabel("Corridor Height")
+        #    plt.title(f"Aggregate KF Predictions")
             
           
-            c,c_index,agent_means,time_means = self.L2s(a,b)
-            
-           # h = plt.figure(figsize=(12,8))
-           #time_means[np.isnan(time_means)]
-           # plt.plot(c_index,time_means,lw=5,color="k",label="Mean Agent L2")
-           # for i in range(c.shape[1]):
-           #     plt.plot(c_index,c[:,i],linestyle="-.",lw=3)
-           #     
-           # plt.axhline(y=0,color="k",ls="--",alpha=0.5)
-           # plt.xlabel("Time (steps)")
-           # plt.ylabel("L2 Error")
-           # plt.legend()
-           # """find agent with highest L2 and plot it.
-           # mainly done to check something odd isnt happening"""
-           # 
-           # index = np.where(agent_means == np.nanmax(agent_means))[0][0]
-           # print(index)
-           # a1 = a[:,(2*index):(2*index)+2]
-           # b1 = b[:,(2*index):(2*index)+2]
-           # 
-           # i = plt.figure(figsize=(12,8))
-           # plt.plot(a1[:,0],a1[:,1],label= "True Path",lw=3)
-           # plt.plot(b1[::self.filter_class.sample_rate,0],
-           #          b1[::self.filter_class.sample_rate,1],label = "KF Prediction",lw=3)
-           # plt.legend()
-           # plt.xlim([0,self.filter_class.model_params["width"]])
-           # plt.ylim([0,self.filter_class.model_params["height"]])
-           # plt.xlabel("Corridor Width")
-           # plt.ylabel("Corridor Height")
-           #plt.title("worst agent")
-    
-            j = plt.figure(figsize=(12,8))
-            plt.hist(agent_means,density=False,
-                     bins = self.filter_class.model_params["pop_total"],edgecolor="k")
-            plt.xlabel("Agent L2")
-            plt.ylabel(f" {self.filter_class.sample_size} Aggregated Agent Counts")
-           # kdeplot(agent_means,color="red",cut=0,lw=4)
+        c,c_index,agent_means,time_means = self.L2s(a,b)
+        
+       # h = plt.figure(figsize=(12,8))
+       #time_means[np.isnan(time_means)]
+       # plt.plot(c_index,time_means,lw=5,color="k",label="Mean Agent L2")
+       # for i in range(c.shape[1]):
+       #     plt.plot(c_index,c[:,i],linestyle="-.",lw=3)
+       #     
+       # plt.axhline(y=0,color="k",ls="--",alpha=0.5)
+       # plt.xlabel("Time (steps)")
+       # plt.ylabel("L2 Error")
+       # plt.legend()
+       # """find agent with highest L2 and plot it.
+       # mainly done to check something odd isnt happening"""
+       # 
+       # index = np.where(agent_means == np.nanmax(agent_means))[0][0]
+       # print(index)
+       # a1 = a[:,(2*index):(2*index)+2]
+       # b1 = b[:,(2*index):(2*index)+2]
+       # 
+       # i = plt.figure(figsize=(12,8))
+       # plt.plot(a1[:,0],a1[:,1],label= "True Path",lw=3)
+       # plt.plot(b1[::self.filter_class.sample_rate,0],
+       #          b1[::self.filter_class.sample_rate,1],label = "KF Prediction",lw=3)
+       # plt.legend()
+       # plt.xlim([0,self.filter_class.model_params["width"]])
+       # plt.ylim([0,self.filter_class.model_params["height"]])
+       # plt.xlabel("Corridor Width")
+       # plt.ylabel("Corridor Height")
+       #plt.title("worst agent")
+
+        j = plt.figure(figsize=(12,8))
+        plt.hist(agent_means,density=False,
+                 bins = self.filter_class.model_params["pop_total"],edgecolor="k")
+        plt.xlabel("Agent L2")
+        plt.ylabel(f" {self.filter_class.sample_size} Aggregated Agent Counts")
+       # kdeplot(agent_means,color="red",cut=0,lw=4)
   
-            if save:
-                #f.savefig(self.save_dir+f"Aggregate_obs.pdf")
-                #g.savefig(self.save_dir+f"Aggregate_kf.pdf")
-                #h.savefig(self.save_dir+f"Aggregate_l2.pdf")
-                #i.savefig(self.save_dir+f"Aggregate_worst.pdf")
-                j.savefig(self.save_dir+f"Aggregate_agent_hist.pdf")
-                
-            return c,time_means
+        if save:
+            #f.savefig(self.save_dir+f"Aggregate_obs.pdf")
+            #g.savefig(self.save_dir+f"Aggregate_kf.pdf")
+            #h.savefig(self.save_dir+f"Aggregate_l2.pdf")
+            #i.savefig(self.save_dir+f"Aggregate_worst.pdf")
+            j.savefig(self.save_dir+f"Aggregate_agent_hist.pdf")
+            
+        return c,time_means
     
     def pair_frames(self,a,b):
         """ pairwise animation with observerd/unobserved error over top
@@ -1088,7 +984,115 @@ class agg_plots:
         number =  str(i).zfill(ceil(log10(a.shape[0]))) #zfill names files such that sort() does its job properly later
         file = self.save_dir+f"agg_pairs{number}"
         f.savefig(file)
+
+
+    def heatmap(self,a,poly_list):
+        """ Aggregate grid square agent density map animation
+        
+        Parameters
+        ------ 
+        a : array_like
+            `a` noisy measurements 
+        poly_list : list
+            `poly_list` list of polygons to plot
+        
+        """
+        #sample_agents = [self.base_model.agents[j] for j in self.index]
+        #swap if restricting observed agents
+        filter_class = self.filter_class
+        bin_size = filter_class.filter_params["bin_size"]
+        width = filter_class.model_params["width"]
+        height = filter_class.model_params["height"]
+        os.mkdir(self.save_dir+"output_heatmap")
+        
+        
+        "cmap set up. defining bottom value (0) to be black"
+        cmap = cm.cividis
+        cmaplist = [cmap(i) for i in range(cmap.N)]
+        cmaplist[0] = (0.0,0.0,0.0,1.0)
+        cmap = col.LinearSegmentedColormap("custom_cmap",cmaplist,N=cmap.N)
+        cmap = cmap.from_list("custom",cmaplist)
+        "split norm for better vis"
+        n = self.filter_class.model_params["pop_total"]
+        n_min = 2*( 1/(1+np.exp(-1/2))-0.5)*n
+        norm =DivergingNorm(0.1*n_min,0.9*n_min,0.1,0.9,1e-8,n)
+
+        sm = cm.ScalarMappable(norm = norm,cmap=cmap)
+        sm.set_array([])  
+        for i in range(a.shape[0]):
+            locs = a[i,:]
             
+             
+            counts = self.filter_class.poly_count(poly_list,locs)
+            #if np.nansum(counts)!=0:
+            #    densities = np.array(counts)/np.nansum(counts) #density
+            #else:
+            #    densities = np.array(counts)
+            #counts[np.where(counts==0)]=np.nan
+            #norm =col.DivergingNorm(0.2)
+            
+            f = plt.figure(figsize=(12,8))
+            ax = f.add_subplot(111)
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right",size="5%",pad=0.05)
+            "plot density histogram and locations scatter plot assuming at least one agent available"
+            #ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
+            ax.set_ylim(0,height)
+            ax.set_xlim(0,width)
+            
+            
+            
+            #column = frame["counts"].astype(float)
+            #im = frame.plot(column=column,
+            #                ax=ax,cmap=cmap,norm=norm,vmin=0,vmax = n)
+       
+            patches = []
+            for item in poly_list:
+               patches.append(mpatches.Polygon(np.array(item.exterior),closed=True))
+             
+            collection = PatchCollection(patches,cmap=cmap, norm=norm, alpha=1.0)
+            ax.add_collection(collection)
+            "if no agents in model for some reason just give a black frame"
+            if np.nansum(counts)!=0:
+                collection.set_array(np.array(counts))
+            else:
+                collection.set_array(np.zeros(np.array(counts).shape))
+
+            for k,count in enumerate(counts):
+                plt.plot
+                ax.annotate(s=count, xy=poly_list[k].centroid.coords[0], 
+                            ha='center',va="center",color="w")
+                
+            "set up cbar. colouration proportional to number of agents"
+            ax.text(0,101,s="Total Agents: " + str(np.sum(counts)),color="k")
+            
+            
+            cbar = plt.colorbar(sm,cax=cax,spacing="proportional")
+            cbar.set_label("Agent Counts")
+            cbar.set_alpha(1)
+            #cbar.draw_all()
+            
+            "set legend to bottom centre outside of plot"
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                             box.width, box.height * 0.9])
+            
+            "labels"
+            ax.set_xlabel("Corridor width")
+            ax.set_ylabel("Corridor height")
+            #ax.set_title("Agent Densities vs True Positions")
+            cbar.set_label(f"Agent Counts (out of {n})")
+            """
+            frame number and saving. padded zeroes to keep frames in order.
+            padded to nearest upper order of 10 of number of iterations.
+            """
+            number = str(i).zfill(ceil(log10(a.shape[0])))
+            file = self.save_dir+f"output_heatmap/{number}"
+            f.savefig(file)
+            plt.close()
+        
+        animations.animate(self,self.save_dir+"output_heatmap",self.save_dir+f"heatmap_{filter_class.pop_total}_",12)
+                    
     def heatmap_single(self,a,poly_list,frame_number):
         """ pairwise animation with observerd/unobserved error over top
         
@@ -1130,7 +1134,8 @@ class agg_plots:
         """
         How the colourbar is spread we have 
         """
-        norm =DivergingNorm(1,n/5,0.1,0.9,1e-8,n)
+        n_min = 2*( 1/(1+np.exp(-1/2))-0.5)*n
+        norm =DivergingNorm(0.1*n_min,0.9*n_min,0.1,0.9,1e-8,n)
         "10% to 90% quantiles of the colour bar are between 1 and n/5 (e.g. 6 for n =30). colouration is between 1e-8 (not quite 0) and n"
 
         locs = a[i,:]
@@ -1267,7 +1272,7 @@ if __name__ == "__main__":
                 'sample_rate': 5,
                 "do_restrict": True, 
                 "prop": 1,
-                "bin_size":25,
+                "bin_size":1,
                 "bring_noise":True,
                 "noise":0.5,
                 "do_batch":False,
@@ -1283,7 +1288,7 @@ if __name__ == "__main__":
         """
         
         ukf_params = {
-                "a":30,
+                "a":1,
                 "b":2,
                 "k":0,
                 }
@@ -1322,7 +1327,7 @@ if __name__ == "__main__":
 
     plot_save = True
     
-    obs,preds,full_preds,truth,nan_array= u.data_parser(True)
+    obs,preds,full_preds,truth,nan_array= u.data_parser()
     truth[~nan_array]=np.nan
     preds[~nan_array]=np.nan
     full_preds[~nan_array]=np.nan
@@ -1352,3 +1357,6 @@ if __name__ == "__main__":
 
         agg_plts.heatmap(obs[::u.sample_rate,:],poly_list)
         agg_plts.trajectories(obs[::u.sample_rate,:],poly_list)
+
+
+

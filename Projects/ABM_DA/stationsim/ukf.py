@@ -130,12 +130,12 @@ class ukf:
         self.xs = []
         self.Ps = []
 
-    def Sigmas(self,mean,S):
+    def Sigmas(self,mean,P):
         """sigma point calculations based on current mean x and covariance P
         
         Parameters
         ------
-        mean , S : array_like
+        mean , P : array_like
             mean `x` and covariance `P` numpy arrays
             
         Returns
@@ -148,8 +148,8 @@ class ukf:
      
         sigmas = np.ones((self.n,(2*self.n)+1)).T*mean
         sigmas=sigmas.T
-        sigmas[:,1:self.n+1] += self.g*S #'upper' confidence sigmas
-        sigmas[:,self.n+1:] -= self.g*S #'lower' confidence sigmas
+        sigmas[:,1:self.n+1] += self.g*P #'upper' confidence sigmas
+        sigmas[:,self.n+1:] -= self.g*P #'lower' confidence sigmas
         return sigmas 
 
     def predict(self,**fx_args):
@@ -339,10 +339,6 @@ class ukf_ss:
             predicted measured state for given sigma point
         """   
             
-     
-     
-                
-        
         #f = open(f"temp_pickle_model_ukf_{self.time1}","rb")
         #model = pickle.load(f)
         #f.close()

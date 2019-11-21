@@ -1,14 +1,20 @@
 """
-This function calibrates the BusSim model in the static scenario at different values of maxDemand
+This function calibrates the BusSim models against the data generated from BusSim-truth
+
+The calibration technique is Cross-Entropy Method (https://en.wikipedia.org/wiki/Cross-entropy_method)
+
 Written by: Minh Kieu, University of Leeds
-    Update v3
-    - Calibration using CEM (KL-D)
 """
 import numpy as np
 import pickle
 from scipy.stats import truncnorm
-#from BusSim_static_deterministic import Model
-from BusSim_static_v2 import Model
+import os
+os.chdir("/Users/minhkieu/Documents/Github/dust/Projects/ABM_DA/bussim/")
+
+# COMMENT/UNCOMMENT the model you want to calibrate here: 
+
+#from BusSim_deterministic import Model
+from BusSim_stochastic import Model
 
 def unpickle_initiation(maxDemand):
     #load up ground truth data from a pickle

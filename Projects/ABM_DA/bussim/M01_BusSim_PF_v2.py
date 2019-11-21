@@ -6,8 +6,11 @@ This code will apply Particle Filter on BusSim, requires model BusSim_static.py
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-#from BusSim_static_deterministic import Bus,BusStop,Model
-from BusSim_static_v2 import Bus,BusStop,Model
+
+#Comment/Uncomment the model that you want to evaluate here:
+
+#from BusSim_deterministic import Bus,BusStop,Model
+from BusSim_stochastic import Bus,BusStop,Model
 
 from ParticleFilter_MK import ParticleFilter
 from copy import deepcopy
@@ -18,12 +21,12 @@ import pandas as pd
 
 def load_calibrated_params_IncreaseRate(IncreaseRate):
     #with open('C:/Users/geomlk/Dropbox/Minh_UoL/DA/ABM/BusSim/Calibration/BusSim_Model2_calibration_IncreaseRate_9.pkl', 'rb') as f:
-    name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Calibration/BusSim_Model2_calibration_IncreaseRate_',str(IncreaseRate),'.pkl']
+    name0 = ['./Calibration/BusSim_Model2_calibration_IncreaseRate_',str(IncreaseRate),'.pkl']
     str1 = ''.join(name0)    
     with open(str1, 'rb') as f:      
         model_params, best_mean_model2,Sol_archived_mean,Sol_archived_std,PI_archived = pickle.load(f)
 
-    name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Calibration/BusSim_Model1_calibration_IncreaseRate_',str(IncreaseRate),'.pkl']
+    name0 = ['./Calibration/BusSim_Model1_calibration_IncreaseRate_',str(IncreaseRate),'.pkl']
     str1 = ''.join(name0)    
     with open(str1, 'rb') as f:      
         model_params, best_mean_model1,Sol_archived_mean,Sol_archived_std,PI_archived = pickle.load(f)
@@ -31,12 +34,12 @@ def load_calibrated_params_IncreaseRate(IncreaseRate):
 
 def load_calibrated_params_maxDemand(maxDemand):
     #with open('C:/Users/geomlk/Dropbox/Minh_UoL/DA/ABM/BusSim/Calibration/BusSim_Model2_calibration_IncreaseRate_9.pkl', 'rb') as f:
-    name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Calibration/BusSim_Model2_calibration_static_maxDemand_',str(maxDemand),'.pkl']
+    name0 = ['./Calibration/BusSim_Model2_calibration_static_maxDemand_',str(maxDemand),'.pkl']
     str1 = ''.join(name0)    
     with open(str1, 'rb') as f:      
         model_params, best_mean_model2,Sol_archived_mean,Sol_archived_std,PI_archived = pickle.load(f)
 
-    name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Calibration/BusSim_Model1_calibration_static_maxDemand_',str(maxDemand),'.pkl']
+    name0 = ['./Calibration/BusSim_Model1_calibration_static_maxDemand_',str(maxDemand),'.pkl']
     str1 = ''.join(name0)    
     with open(str1, 'rb') as f:      
         model_params, best_mean_model1,Sol_archived_mean,Sol_archived_std,PI_archived = pickle.load(f)
@@ -46,7 +49,7 @@ def load_actual_params_IncreaseRate(IncreaseRate):
     #load up a model from a Pickle    
     #with open('C:/Users/geomlk/Dropbox/Minh_UoL/DA/ABM/BusSim/Data/Realtime_data_IncreaseRate_9.pkl','rb') as f2:
 
-    name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Data/Realtime_data_IncreaseRate_',str(IncreaseRate),'.pkl']
+    name0 = ['./Data/Realtime_data_IncreaseRate_',str(IncreaseRate),'.pkl']
     str1 = ''.join(name0)    
 
     with open(str1, 'rb') as f:
@@ -57,7 +60,7 @@ def load_actual_params_maxDemand(maxDemand):
     #load up a model from a Pickle    
     #with open('C:/Users/geomlk/Dropbox/Minh_UoL/DA/ABM/BusSim/Data/Realtime_data_IncreaseRate_9.pkl','rb') as f2:
 
-    name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Data/Realtime_data_static_maxDemand_',str(maxDemand),'.pkl']
+    name0 = ['./Data/Realtime_data_static_maxDemand_',str(maxDemand),'.pkl']
     str1 = ''.join(name0)    
 
     with open(str1, 'rb') as f:
@@ -122,7 +125,7 @@ def IncreaseRate_analysis():
         model_params, t,x,GroundTruth0 = load_actual_params_IncreaseRate(IncreaseRate)
         best_mean_model1,best_mean_model2 = load_calibrated_params_IncreaseRate(IncreaseRate)
         '''load BusSim-stochastic model'''
-        from BusSim_static_v2 import Model as Model2
+        from BusSim_stochastic import Model as Model2
         ArrivalRate = best_mean_model2[0:(model_params['NumberOfStop'])]
         DepartureRate = best_mean_model2[model_params['NumberOfStop']:(2*model_params['NumberOfStop'])]    
         TrafficSpeed = best_mean_model2[-2]
@@ -132,7 +135,7 @@ def IncreaseRate_analysis():
 
         x2=apply_PF_IncreaseRate(IncreaseRate,model2,GroundTruth0)    
         
-        from BusSim_static_deterministic import Model as Model1
+        from BusSim_deterministic import Model as Model1
         ArrivalRate = best_mean_model1[0:(model_params['NumberOfStop'])]
         DepartureRate = best_mean_model1[model_params['NumberOfStop']:(2*model_params['NumberOfStop'])]    
         TrafficSpeed = best_mean_model1[-2]
@@ -162,7 +165,7 @@ def IncreaseRate_analysis():
     
             plt.legend()
             plt.show()
-            name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_PF_IncreaseRate_',str(IncreaseRate),'.pdf']
+            name0 = ['./Figures/Fig_PF_IncreaseRate_',str(IncreaseRate),'.pdf']
             str1 = ''.join(name0)    
             plt.savefig(str1, dpi=200,bbox_inches='tight')
         
@@ -184,7 +187,7 @@ def IncreaseRate_analysis():
  
         plt.legend()
         plt.show()
-        plt.savefig('/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_PF_results_IncreaseRate.pdf', dpi=200,bbox_inches='tight')
+        plt.savefig('./Figures/Fig_PF_results_IncreaseRate.pdf', dpi=200,bbox_inches='tight')
 
     return Results
 
@@ -198,7 +201,7 @@ def maxDemand_analysis():
         model_params, t,x,GroundTruth0 = load_actual_params_maxDemand(maxDemand)
         best_mean_model1,best_mean_model2 = load_calibrated_params_maxDemand(maxDemand)
         '''load BusSim-stochastic model'''
-        from BusSim_static_v2 import Model as Model2
+        from BusSim_stochastic import Model as Model2
         ArrivalRate = best_mean_model2[0:(model_params['NumberOfStop'])]
         DepartureRate = best_mean_model2[model_params['NumberOfStop']:(2*model_params['NumberOfStop'])]    
         TrafficSpeed = best_mean_model2[-1]
@@ -208,7 +211,7 @@ def maxDemand_analysis():
 
         x2=apply_PF_maxDemand(maxDemand,model2,GroundTruth0)    
         
-        from BusSim_static_deterministic import Model as Model1
+        from BusSim_deterministic import Model as Model1
         ArrivalRate = best_mean_model1[0:(model_params['NumberOfStop'])]
         DepartureRate = best_mean_model1[model_params['NumberOfStop']:(2*model_params['NumberOfStop'])]    
         TrafficSpeed = best_mean_model1[-1]
@@ -227,7 +230,7 @@ def maxDemand_analysis():
             plt.plot(t, x1, linewidth=.5,linestyle = '--',color='b',label='BusSim-deterministic')
             plt.legend()
             plt.show()
-            name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_PF_maxDemand_',str(maxDemand),'.pdf']
+            name0 = ['./Figures/Fig_PF_maxDemand_',str(maxDemand),'.pdf']
             str1 = ''.join(name0)    
             plt.savefig(str1, dpi=200,bbox_inches='tight')
         
@@ -255,7 +258,7 @@ def maxDemand_analysis():
  
         plt.legend()
         plt.show()
-        plt.savefig('/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_PF_results_maxDemand.pdf', dpi=200,bbox_inches='tight')
+        plt.savefig('./Figures/Fig_PF_results_maxDemand.pdf', dpi=200,bbox_inches='tight')
 
 
     return Results
@@ -294,14 +297,14 @@ def IncreaseRate_analysis_NO_CALIBRATION():
         }
 
         '''load BusSim-stochastic model'''
-        from BusSim_static_v2 import Model as Model2
+        from BusSim_stochastic import Model as Model2
         #load model
         model2 = Model2(model_params, TrafficSpeed,ArrivalRate,DepartureRate)
         t = np.arange(0, model_params['EndTime'], model_params['dt'])
 
         x2=apply_PF_IncreaseRate(IncreaseRate,model2,GroundTruth0)    
         
-        from BusSim_static_deterministic import Model as Model1
+        from BusSim_deterministic import Model as Model1
         ArrivalRate = np.random.uniform(minDemand / 60, maxDemand / 60, NumberOfStop)
         DepartureRate = np.sort(np.random.uniform(0.05, 0.5,NumberOfStop))
         #DepartureRate = np.linspace(0.05, 0.5,NumberOfStop)
@@ -333,7 +336,7 @@ def IncreaseRate_analysis_NO_CALIBRATION():
     
             plt.legend()
             plt.show()
-            name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_PF_IncreaseRate_',str(IncreaseRate),'_NO_CALIBRATION.pdf']
+            name0 = ['./Figures/Fig_PF_IncreaseRate_',str(IncreaseRate),'_NO_CALIBRATION.pdf']
             str1 = ''.join(name0)    
             plt.savefig(str1, dpi=200,bbox_inches='tight')
         
@@ -355,7 +358,7 @@ def IncreaseRate_analysis_NO_CALIBRATION():
  
         plt.legend()
         plt.show()
-        plt.savefig('/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_PF_results_IncreaseRate_NO_CALIBRATION.pdf', dpi=200,bbox_inches='tight')
+        plt.savefig('./Figures/Fig_PF_results_IncreaseRate_NO_CALIBRATION.pdf', dpi=200,bbox_inches='tight')
 
     return Results
 
@@ -393,14 +396,14 @@ def maxDemand_analysis_NO_CALIBRATION():
         }
 
         '''load BusSim-stochastic model'''
-        from BusSim_static_v2 import Model as Model2
+        from BusSim_stochastic import Model as Model2
         #load model
         model2 = Model2(model_params, TrafficSpeed,ArrivalRate,DepartureRate)
         t = np.arange(0, model_params['EndTime'], model_params['dt'])
 
         x2=apply_PF_maxDemand(maxDemand,model2,GroundTruth0)    
         
-        from BusSim_static_deterministic import Model as Model1
+        from BusSim_deterministic import Model as Model1
         ArrivalRate = np.random.uniform(minDemand / 60, maxDemand / 60, NumberOfStop)
         DepartureRate = np.sort(np.random.uniform(0.05, 0.5,NumberOfStop))
         #DepartureRate = np.linspace(0.05, 0.5,NumberOfStop)
@@ -432,7 +435,7 @@ def maxDemand_analysis_NO_CALIBRATION():
     
             plt.legend()
             plt.show()
-            name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_PF_maxDemand_',str(maxDemand),'_NO_CALIBRATION.pdf']
+            name0 = ['./Figures/Fig_PF_maxDemand_',str(maxDemand),'_NO_CALIBRATION.pdf']
             str1 = ''.join(name0)    
             plt.savefig(str1, dpi=200,bbox_inches='tight')
         
@@ -455,12 +458,14 @@ def maxDemand_analysis_NO_CALIBRATION():
  
         plt.legend()
         plt.show()
-        plt.savefig('/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_PF_results_maxDemand_NO_CALIBRATION.pdf', dpi=200,bbox_inches='tight')
+        plt.savefig('./Figures/Fig_PF_results_maxDemand_NO_CALIBRATION.pdf', dpi=200,bbox_inches='tight')
 
     return Results
 
  
 if __name__ == '__main__':
+    
+    #comment/uncomment the analysis that you want to do here:
     Results=IncreaseRate_analysis()
     #Results=maxDemand_analysis()
     

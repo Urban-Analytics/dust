@@ -1,16 +1,12 @@
 """
 
-This is a static bus sim ABM to simulate the bus operation, we then add noise to see if calibration and DA can deal with uncertainty or not. 
-
-Deterministic Traffic
-Deterministic Arrival rate
-Det Departure Rate
-
-We are just trying to find out whether Calibration and DA can deal with the noise we add into the data
+This is a STOCHASTIC bus sim ABM to simulate the bus operation. The different to BusSim-truth is that BusSim-truth is both stochastic and dynamic, this model is NOT DYNAMIC. 
 """
 # Import
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
+import pandas as pd
 #from copy import deepcopy
 #import time
 
@@ -46,11 +42,9 @@ class BusStop:
 
 class Model:
 
-    def __init__(self, model_params, TrafficSpeed,ArrivalRate,DepartureRate):
-        #self.params = (params, fixed_params, ArrivalRate,  DepartureRate, TrafficSpeed)
+    def __init__(self, model_params, TrafficSpeed,ArrivalRate,DepartureRate):        
         [setattr(self, key, value) for key, value in model_params.items()]        
         # Initial Condition
-        #self.maxDemand=maxDemand
         self.TrafficSpeed = TrafficSpeed
         self.ArrivalRate = ArrivalRate        
         #no passengers board from the first and last stops
@@ -71,6 +65,7 @@ class Model:
         # self.initialise_states()
         return
 
+ 
     def agents2state(self, do_measurement=False):
         '''
         This function stores the system state of all agents in a state vector with format:
@@ -111,8 +106,7 @@ class Model:
     def step(self):
         '''
         This function moves the whole state one time step ahead
-        '''
-        
+        '''        
         # This is the main step function to move the model forward
         self.current_time += self.dt
         # Loop through each bus and let it moves or dwells
@@ -158,14 +152,13 @@ class Model:
                             if self.busstops[Current_StopID].activation <= self.current_time:
                                 #boarding_count = min(np.random.poisson(arrival_rate * self.BurnIn), (bus.size - bus.occupancy))
                                 #boarding_count = min(np.random.poisson(arrival_rate * (self.current_time-self.busstops[Current_StopID].activation)), (bus.size - bus.occupancy))
-                                boarding_count = min(int(arrival_rate * (self.current_time-self.busstops[Current_StopID].activation)), (bus.size - bus.occupancy))
+                                boarding_count = np.random.poisson(arrival_rate * self.Headway)
                                 #if boarding_count>99:
-                                #print('Boarding passengers = ', boarding_count)
+                                #    print('Boarding passengers = ', boarding_count)
                             alighting_count = int(bus.occupancy * departure_rate)
                         else:
                             timegap = self.current_time - self.busstops[Current_StopID].arrival_time[-1]
-                            #boarding_count = min(np.random.poisson(arrival_rate*timegap/2), bus.size - bus.occupancy)                        
-                            boarding_count = min(int(arrival_rate*timegap/2), bus.size - bus.occupancy)                        
+                            boarding_count = min(np.random.poisson(arrival_rate*timegap), bus.size - bus.occupancy)                        
                             #print('Boarding passengers = ', boarding_count)
                             alighting_count = int(bus.occupancy * departure_rate)
                             #print('Alighting passengers = ', alighting_count)
@@ -207,8 +200,6 @@ class Model:
             #text0 = ['Departure rate of stop:', busstopID, 'is: ',departure_rate ]
             #print(text0)
             activation = busstopID * int(self.LengthBetweenStop/(self.TrafficSpeed)) - 1*60
-            #text0 = ['Activation time of stop:', busstopID, 'is: ',activation ]
-            #print(text0)
             # define the bus stop object and add to the model
             busstop = BusStop(position, busstopID, arrival_rate, departure_rate,activation)
             self.busstops.append(busstop)
@@ -235,11 +226,10 @@ class Model:
             self.buses.append(bus)
         return
 
-def run_model(model_params, TrafficSpeed,ArrivalRate,DepartureRate,do_ani,do_spacetime_plot,do_reps,uncalibrated):
+def run_model(model_params,TrafficSpeed,ArrivalRate,DepartureRate,do_ani,do_spacetime_plot,do_reps,uncalibrated):
     '''
     Model runing and plotting
     '''
-   
     model = Model(model_params, TrafficSpeed,ArrivalRate,DepartureRate)
 
     if do_ani or do_spacetime_plot or uncalibrated:
@@ -278,8 +268,9 @@ def run_model(model_params, TrafficSpeed,ArrivalRate,DepartureRate,do_ani,do_spa
             x[x >= (model.NumberOfStop * model.LengthBetweenStop)] = np.nan            
             plt.ylabel('Distance (m)')
             plt.xlabel('Time (s)')
-            plt.plot(t, x, linewidth=2)
-            plt.pause(1 / 300)    
+            plt.plot(t, x, linewidth=.5,linestyle = '-')
+            plt.pause(1 / 300) 
+            #plt.savefig('Fig_spacetime_dynamic.pdf', dpi=200,bbox_inches='tight')
         
         if  uncalibrated:
             plt.figure(3, figsize=(16 / 2, 9 / 2))
@@ -330,97 +321,170 @@ def run_model(model_params, TrafficSpeed,ArrivalRate,DepartureRate,do_ani,do_spa
         for b in range(1, model.FleetSize):
             RepGPS = np.vstack((RepGPS, model.buses[b].trajectory))
         RepGPS[RepGPS < 0] = 0        
-        RepGPS=np.transpose(RepGPS)        
-       
-        return RepGPS
-        
-    
+        RepGPS=np.transpose(RepGPS)       
+      
+        return RepGPS        
+ 
+
 if __name__ == '__main__':
     
-    NumberOfStop=20
-    minDemand=0.5
-    maxDemand=2
-    #Initialise the ArrivalRate and DepartureRate
-    ArrivalRate = np.random.uniform(minDemand / 60, maxDemand / 60, NumberOfStop)
-    DepartureRate = np.sort(np.random.uniform(0.05, 0.5,NumberOfStop))
-    TrafficSpeed=14
-    #Initialise the model parameters
-    model_params = {
-        "dt": 10,
-        "minDemand":minDemand,        
-        "NumberOfStop": NumberOfStop,
-        "LengthBetweenStop": 2000,
-        "EndTime": 6000,
-        "Headway": 5 * 60,
-        "BurnIn": 1 * 60,
-        "AlightTime": 1,
-        "BoardTime": 3,
-        "StoppingTime": 3,
-        "BusAcceleration": 3,  # m/s
-    }
-    
+
     #runing parameters    
-    
-    do_reps = True #whether we should export the distribution of headways
+    NumberOfStop = 20
+    do_reps = False #whether we should export the distribution of headways
     do_spacetime_plot = False
     do_ani = False
     do_spacetime_rep_plot = False
-    uncalibrated=False    
-    
-    if do_ani or do_spacetime_plot:
-        model, model_params, ArrivalData, StateData, GroundTruth,GPSData = run_model(model_params, TrafficSpeed,ArrivalRate,DepartureRate,do_ani,do_spacetime_plot,do_reps,uncalibrated)
-        plt.show()
-        import pickle
-        with open('BusSim_data_static.pkl', 'wb') as f:
-            pickle.dump([model_params, ArrivalRate, ArrivalData, DepartureRate, StateData, GroundTruth,GPSData], f)
-    
-    GPSData = []
-    if do_reps:
-        NumReps = 100
-        #GPSData = [run_model(model_params,do_ani,do_spacetime_plot,do_reps,uncalibrated)]
-        for r in range(NumReps):
-            RepGPS = run_model(model_params,TrafficSpeed,ArrivalRate,DepartureRate,do_ani,do_spacetime_plot,do_reps,uncalibrated)             
-            GPSData.append(RepGPS)            
-        meanGPS = np.mean(GPSData,axis=0)
-        stdGPS = np.std(GPSData,axis=0)
+    uncalibrated=False
+    do_data_export_realtime = False
+    do_data_export_historical= False    
+    do_two_plots = True
         
-        import pickle
-        with open('BusSim_headway_100reps_static_deterministic.pkl', 'wb') as f:
-            pickle.dump([model_params,meanGPS,stdGPS], f)
-            
-    if do_spacetime_rep_plot:  #plot a few replications using the same data to see the spread        
-        NumReps = 10
-        do_spacetime_plot = True
-        uncalibrated = False
-        for r in range(NumReps):
-            run_model(model_params,do_ani,do_spacetime_plot,do_reps,uncalibrated)                    
-        do_spacetime_plot = False
-        uncalibrated = True 
-        if uncalibrated: #run and plot the model when it is uncalibrated to see further spread            
-            for s in range(NumReps):                
-            #Initialise the ArrivalRate and DepartureRate
-                ArrivalRate = np.random.uniform(minDemand / 60, maxDemand / 60, NumberOfStop)
-                DepartureRate = np.sort(np.random.uniform(0.05, 0.5,NumberOfStop))                
-                TrafficSpeed = np.random.uniform(11, 17)
-                #Initialise the model parameters
-                model_params = {
-                    "dt": 10,
-                    "NumberOfStop": NumberOfStop,
-                    "LengthBetweenStop": 2000,
-                    "EndTime": 6000,
-                    "Headway": 5 * 60,
-                    "BurnIn": 1 * 60,
-                    "AlightTime": 1,
-                    "BoardTime": 3,
-                    "StoppingTime": 3,
-                    "BusAcceleration": 3,  # m/s
-                    "TrafficSpeed": TrafficSpeed,  # m/s
-                    "ArrivalRate": ArrivalRate,
-                    "DepartureRate": DepartureRate                    
-                }
-                run_model(model_params,do_ani,do_spacetime_plot,do_reps,uncalibrated)
-                #print('model run')
+    if do_two_plots:                 
+        plt.figure(3, figsize=(16 / 2, 9 / 2))
+        plt.clf() 
 
+        minDemand=0.5
+        maxDemand = 0.5
+        ArrivalRate = np.random.uniform(minDemand / 60, maxDemand / 60, NumberOfStop)
+        DepartureRate = np.sort(np.random.uniform(0.05, 0.5,NumberOfStop))
+        #DepartureRate = np.linspace(0.05, 0.5,NumberOfStop)
+        DepartureRate[0]=0
+        TrafficSpeed=14    
+        #Initialise the model parameters
+        model_params = {
+            "dt": 10,
+            "minDemand":minDemand,        
+            "NumberOfStop": NumberOfStop,
+            "LengthBetweenStop": 2000,
+            "EndTime": 6000,
+            "Headway": 5 * 60,
+            "BurnIn": 1 * 60,
+            "AlightTime": 1,
+            "BoardTime": 3,
+            "StoppingTime": 3,
+            "BusAcceleration": 3  # m/s          
+        }
+
+        model = Model(model_params, TrafficSpeed,ArrivalRate,DepartureRate)
+        for time_step in range(int(model.EndTime / model.dt)):
+            model.step()
+        x = np.array([bus.trajectory for bus in model.buses]).T        
+        t = np.arange(0, model.EndTime, model.dt)
+        x[x <= 0 ] = np.nan
+        x[x >= (model.NumberOfStop * model.LengthBetweenStop)] = np.nan            
+        plt.plot(t, x, 'r',linewidth=1,linestyle = '--')
+        
+        maxDemand = 3
+        ArrivalRate = np.random.uniform(minDemand / 60, maxDemand / 60, NumberOfStop)
+        model = Model(model_params, TrafficSpeed,ArrivalRate,DepartureRate)
+        for time_step in range(int(model.EndTime / model.dt)):
+            model.step()
+        x = np.array([bus.trajectory for bus in model.buses]).T        
+        t = np.arange(0, model.EndTime, model.dt)
+        x[x <= 0 ] = np.nan
+        x[x >= (model.NumberOfStop * model.LengthBetweenStop)] = np.nan            
+        plt.ylabel('Distance (m)')
+        plt.xlabel('Time (s)')
+        plt.plot(t, x, 'k',linewidth=1.5,linestyle = '-')
+                
+        plt.plot([],[], 'r',linestyle = '--',linewidth=1, label='Low passenger demand')
+        plt.plot([],[], 'k',linestyle = '-',linewidth=1.5, label='High passenger demand')
+        plt.legend()           
         plt.show()
+        plt.savefig('Fig_spacetime_2stochastic.pdf', dpi=200,bbox_inches='tight')
+        do_spacetime_plot=False    
+
+
+
+    if do_data_export_realtime: #this is the section where we export multiple pickles, each is for a synthetic 'real-time' GPS data of IncreaseRate
+        do_spacetime_plot = True        
+        for maxDemand in range(1,10,1):
+            maxDemand = maxDemand/2
+            print('maxDemand = ',maxDemand)
+            minDemand=0.5
+            ArrivalRate = np.random.uniform(minDemand / 60, maxDemand / 60, NumberOfStop)
+            DepartureRate = np.sort(np.random.uniform(0.05, 0.5,NumberOfStop))
+            #DepartureRate = np.linspace(0.05, 0.5,NumberOfStop)
+            DepartureRate[0]=0
+            TrafficSpeed=14    
+            #Initialise the model parameters
+            model_params = {
+                "dt": 10,
+                "minDemand":minDemand,        
+                "NumberOfStop": NumberOfStop,
+                "LengthBetweenStop": 2000,
+                "EndTime": 6000,
+                "Headway": 5 * 60,
+                "BurnIn": 1 * 60,
+                "AlightTime": 1,
+                "BoardTime": 3,
+                "StoppingTime": 3,
+                "BusAcceleration": 3  # m/s          
+            }
+
+            model2 = Model(model_params, TrafficSpeed,ArrivalRate,DepartureRate)
+            for time_step in range(int(model2.EndTime / model2.dt)):
+                model2.step()
+                        
+            plt.figure(3, figsize=(16 / 2, 9 / 2))
+            plt.clf() 
+            x = np.array([bus.trajectory for bus in model2.buses]).T        
+            t = np.arange(0, model2.EndTime, model2.dt)
+            x[x <= 0 ] = np.nan
+            x[x >= (model2.NumberOfStop * model2.LengthBetweenStop)] = np.nan            
+            plt.ylabel('Distance (m)')
+            plt.xlabel('Time (s)')
+            plt.plot(t, x, linewidth=1)
+            name0 = ['./Figures/Fig_spacetime_static_maxDemand_',str(maxDemand),'.pdf']
+            str1 = ''.join(name0)
+            plt.savefig(str1, dpi=200,bbox_inches='tight')    
+            
+            GroundTruth = pd.DataFrame(model2.buses[0].groundtruth)
+            for b in range(1, model2.FleetSize):
+                GroundTruth = np.hstack((GroundTruth, model2.buses[b].groundtruth))
+            GroundTruth[GroundTruth < 0] = 0    
+            
+            name0 = ['./Data/Realtime_data_static_maxDemand_',str(maxDemand),'.pkl']
+            str1 = ''.join(name0)    
+            with open(str1,'wb') as f2:
+                pickle.dump([model_params,t,x,GroundTruth],f2)
+
+    if do_data_export_historical:  #plot a few replications using the same data to see the spread        
+        do_reps=True
+        NumReps = 20
+        for maxDemand in range(1,10,1):
+            maxDemand = maxDemand/2
+            print('maxDemand = ',maxDemand)
+            minDemand=0.5
+            ArrivalRate = np.random.uniform(minDemand / 60, maxDemand / 60, NumberOfStop)
+            DepartureRate = np.sort(np.random.uniform(0.05, 0.5,NumberOfStop))
+            #DepartureRate = np.linspace(0.05, 0.5,NumberOfStop)
+            DepartureRate[0]=0
+            TrafficSpeed=14    
+            #Initialise the model parameters
+            model_params = {
+                "dt": 10,
+                "minDemand":minDemand,        
+                "NumberOfStop": NumberOfStop,
+                "LengthBetweenStop": 2000,
+                "EndTime": 6000,
+                "Headway": 5 * 60,
+                "BurnIn": 1 * 60,
+                "AlightTime": 1,
+                "BoardTime": 3,
+                "StoppingTime": 3,
+                "BusAcceleration": 3  # m/s          
+            }
+            GPSData=[]
+            for r in range(NumReps):
+                RepGPS = run_model(model_params,TrafficSpeed,ArrivalRate,DepartureRate,do_ani,do_spacetime_plot,do_reps,uncalibrated)             
+                GPSData.append(RepGPS)            
+            meanGPS = np.mean(GPSData,axis=0)
+            stdGPS = np.std(GPSData,axis=0)
+            name0 = ['./Data/Historical_data_static_maxDemand_',str(maxDemand),'.pkl']
+            str1 = ''.join(name0)    
+            with open(str1,'wb') as f2:
+                pickle.dump([model_params,meanGPS,stdGPS],f2)
             
     

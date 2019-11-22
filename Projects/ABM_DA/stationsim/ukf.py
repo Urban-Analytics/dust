@@ -1160,9 +1160,6 @@ class animations:
 #%%
 if __name__ == "__main__":
     
-    
-    np.random.seed(seed = 8) #hash if not needed.
-    # this seed (8) is a good example of an agent getting stuck given 10 agents
     recall =True # recalling a pickled run or starting from scratch?
     do_pickle =True # if not recalling do you want to pickle this run so you can recall it?
 
@@ -1300,8 +1297,8 @@ if __name__ == "__main__":
     
     plts.pair_frames_single(truth,full_preds,100,False)
 
-    animate = False
     "animate into pairwise plots gifs?"
+    animate = False
     if animate:
         if filter_params["sample_rate"]==1:
             plts.pair_frames(truth,preds)

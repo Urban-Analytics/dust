@@ -1012,9 +1012,11 @@ class agg_plots:
         cmaplist[0] = (0.0,0.0,0.0,1.0)
         cmap = col.LinearSegmentedColormap("custom_cmap",cmaplist,N=cmap.N)
         cmap = cmap.from_list("custom",cmaplist)
-        "split norm for better vis"
+        "bottom heavy norm for better vis variable on size"
         n = self.filter_class.model_params["pop_total"]
-        n_min = 2*( 1/(1+np.exp(-1/2))-0.5)*n
+        """this function is basically make it linear for low pops and squeeze 
+        colouration lower for higher. Google it youll see what I mean"""
+        n_min = 2*( 1/(1+np.exp(-15/n))-0.5)*n
         norm =DivergingNorm(0.1*n_min,0.9*n_min,0.1,0.9,1e-8,n)
 
         sm = cm.ScalarMappable(norm = norm,cmap=cmap)
@@ -1206,9 +1208,6 @@ class agg_plots:
 
 #%%
 if __name__ == "__main__":
-    np.random.seed(seed = 8) #seeded example hash if want random
-    # this seed (8) is a good example of an agent getting stuck for 10 agents
-    
     recall = True #recall previous run
     do_pickle = True #pickle new run
     if not recall:
@@ -1271,7 +1270,7 @@ if __name__ == "__main__":
                 "Process_Noise": 1, 
                 'sample_rate': 5,
                 "do_restrict": True, 
-                "prop": 1,
+                "prop": 25,
                 "bin_size":1,
                 "bring_noise":True,
                 "noise":0.5,

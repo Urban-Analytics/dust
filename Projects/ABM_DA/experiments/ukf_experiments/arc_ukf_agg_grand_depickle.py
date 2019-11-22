@@ -143,7 +143,6 @@ def grand_L2_matrix(n,bin_size):
                 f.close()
                 distances = l2_parser(uagg)#
                 "grand agent means"
-                L2_2.append(np.nanmean(distances,axis=0))
                 "grand agent medians"
                 L2_2.append(np.nanmedian(distances,axis=0))
 
@@ -248,7 +247,7 @@ def boxplot_parser(n,bin_size):
                 f.close()
                 distances = l2_parser(u)#
                 
-                L2_2.append(np.nanmean(distances,0))
+                L2_2.append(np.nanmedian(np.nanmean(distances,axis=0)))
 
             L2[i][_] = np.hstack(L2_2)
           
@@ -342,7 +341,7 @@ def boxplot_medians(n,bin_size):
                 #"grand agent means"
                 #L2_2.append(np.nanmean(distances,axis=0))
                 "grand agent medians"
-                L2_2.append(np.nanmean(np.nanmedian(distances,axis=0)))
+                L2_2.append(np.nanmedian(np.nanmean(distances,axis=0)))
         
             L2[num,_]=L2_2
 
@@ -394,7 +393,7 @@ if __name__ == "__main__":
     bin_size :  list of grid square sizes
     save     : save plots?
     """
-    plot1 = True
+    plot1 = False
     plot2 = False
     plot3 = True
     n=[10,20,30]

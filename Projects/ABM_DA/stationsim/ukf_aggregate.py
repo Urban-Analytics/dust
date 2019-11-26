@@ -1270,7 +1270,7 @@ if __name__ == "__main__":
                 "Process_Noise": 1, 
                 'sample_rate': 5,
                 "do_restrict": True, 
-                "prop": 25,
+                "prop": 1,
                 "bin_size":1,
                 "bring_noise":True,
                 "noise":0.5,

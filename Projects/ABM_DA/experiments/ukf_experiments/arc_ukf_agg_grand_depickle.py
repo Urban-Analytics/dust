@@ -110,7 +110,7 @@ def l2_parser(instance):
     return distances_obs
 
 
-def grand_L2_matrix(n,bin_size): 
+def grand_L2_matrix(n,bin_size,source): 
     """produces grand median matrix for all 30 ABM runs for choropleth plot
     
     Parameters
@@ -133,7 +133,7 @@ def grand_L2_matrix(n,bin_size):
         
         files={}
         for j in bin_size: 
-            files[j] = glob.glob(f"ukf_results/agg_ukf_agents_{num}_bin_{j}-*")
+            files[j] = glob.glob(source + f"/agg_ukf_agents_{num}_bin_{j}-*")
 
         for k,_ in enumerate(files.keys()):
             L2_2=[]
@@ -212,7 +212,7 @@ def grand_L2_plot(data,n,bin_size,save):
         plt.savefig("Aggregate_Grand_L2s.pdf")
 
             
-def boxplot_parser(n,bin_size):
+def boxplot_parser(n,bin_size,source):
     """similar to grand_L2_matrix but creats a pandas frame for sns.catplot to read
     
     .. deprecated:: 
@@ -236,7 +236,7 @@ def boxplot_parser(n,bin_size):
         for j in bin_size:
             files={}
             for j in bin_size: 
-                files[j] = glob.glob(f"ukf_results/agg_ukf_agents_{i}_bin_{j}-*")
+                files[j] = glob.glob(source + f"/agg_ukf_agents_{i}_bin_{j}-*")
         "sub dictionary for each bin size"       
         L2[i] = {} 
         for _ in files.keys():
@@ -303,7 +303,7 @@ def boxplot_plots(n,bin_size,frame,separate,save):
         if save:
             plt.savefig(f_name)
     
-def boxplot_medians(n,bin_size):
+def boxplot_medians(n,bin_size,source):
     """similar to grand_L2_matrix but creats a pandas frame for sns.catplot to read
     
    
@@ -329,7 +329,7 @@ def boxplot_medians(n,bin_size):
         
         files={}
         for j in bin_size: 
-            files[j] = glob.glob(f"ukf_results/agg_ukf_agents_{num}_bin_{j}-*")
+            files[j] = glob.glob(source + f"/agg_ukf_agents_{num}_bin_{j}-*")
 
         for k,_ in enumerate(files.keys()):
             L2_2=[]
@@ -398,15 +398,17 @@ if __name__ == "__main__":
     plot3 = True
     n=[10,20,30]
     bin_size = [5,10,25,50]
+    source = "/media/rob/ROB1/ukf_results_100_1"
     
     save=True
+    
     if plot1:
-        L2 = grand_L2_matrix(n,bin_size)
+        L2 = grand_L2_matrix(n, bin_size, source)
         grand_L2_plot(L2,n,bin_size,save)
     if plot2:
-        frame = boxplot_parser(n,bin_size)
+        frame = boxplot_parser(n, bin_size, source)
         boxplot_plots(n,bin_size,frame,False,save)        
 
     if plot3:
-        L2_frame = boxplot_medians(n,bin_size)
+        L2_frame = boxplot_medians(n, bin_size, source)
         median_boxplot(L2_frame)

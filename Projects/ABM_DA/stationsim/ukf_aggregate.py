@@ -89,7 +89,7 @@ class agg_ukf:
         Noise structures `P` `Q` `R`
     
     """
-    def __init__(self,ukf_params,init_x,poly_list,fx,hx,P,Q,R):
+    def __init__(self,ukf_params,init_x,fx,hx,P,Q,R):
         """
         x - state
         n - state size 
@@ -106,8 +106,6 @@ class agg_ukf:
         #init initial state
         self.x = init_x #!!initialise some positions and covariances
         self.n = self.x.shape[0] #state space dimension
-
-        self.poly_list = poly_list #polygon list of aggregate grid squares. can generalise this to any closed polygon list
         
         self.P = P
         #self.P = np.linalg.cholesky(self.x)
@@ -542,35 +540,7 @@ class agg_ukf_ss:
         else:
             return a,b,d,nan_array
         
-def grid_poly(width,length,bin_size):
-    """generates complete grid of tesselating square polygons covering corridor in station sim.
-   
-    Parameters
-    -----
-    width,length : float
-        `width` and `length` of StationSim corridor. 
-    
-    bin_size : float
-     size of grid squares. larger implies fewer squares `bin_size`
-     
-    Returns
-    ------
-    polys : list
-        list of closed square polygons `polys`
-    """
-    polys = []
-    for i in range(int(width/bin_size)):
-        for j in range(int(length/bin_size)):
-            bl = [x*bin_size for x in (i,j)]
-            br = [x*bin_size for x in (i+1,j)]
-            tl = [x*bin_size for x in (i,j+1)]
-            tr = [x*bin_size for x in (i+1,j+1)]
-            
-            polys.append(Polygon((bl,br,tr,tl)))
-    "hashed lines for plots to verify desired grid"
-    #for poly in polys:
-    #    plt.plot(*poly.exterior.xy)
-    return polys
+
        
 
 
@@ -742,9 +712,8 @@ class agg_plots:
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,self.save_dir+"output_positions",self.save_dir+f"positions_{filter_class.pop_total}_",12)
-            
-        
+        animations.animate(self,self.save_dir+"output_positions",
+                           self.save_dir+f"positions_{filter_class.pop_total}_",12) 
 
     def L2s(self,a,b):
         """L2 distance errors between measurements and ukf predictions

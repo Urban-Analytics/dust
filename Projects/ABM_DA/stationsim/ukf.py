@@ -2,7 +2,9 @@
 """
 Created on Thu May 23 11:13:26 2019
 @author: RC
-The Unscented Kalman Filter designed to be hyper efficient alternative to MC techniques
+
+The Unscented Kalman Filter (UKF) designed to be hyper efficient alternative to similar 
+Monte Carlo techniques such as the Particle Filter.
 based on
 citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
 class built into 5 steps
@@ -11,16 +13,24 @@ class built into 5 steps
 -Predictions
 -Update SP generation
 -Update
-ANTI-CONFUSION NOTE: 'observation/obs' are observed stationsim data
+
+NOTE: To avoid confusion 'observation/obs' are observed stationsim data
 not to be confused with the 'observed' boolean 
 determining whether to look at observed/unobserved agent subset
 (maybe change the former the measurements etc.)
+
 NOTE: __main__ here is now deprecated. use ukf notebook in experiments folder
+
+As of 01/09/19 dependencies are: 
+    pip install imageio
+    pip install ffmpeg
+    pip install scipy
+    pip install filterpy
 """
 
 #for filter
 import numpy as np
-from math import floor,log10,ceil,cos,sin
+from math import floor, log10, ceil
 import matplotlib.pyplot as plt
 import datetime
 import multiprocessing
@@ -30,36 +40,30 @@ import sys
 import pickle 
 
 #due to import errors from other directories
+
 sys.path.append("..")
 from stationsim.stationsim_model import Model
 
 #for plots
 
-#from seaborn import kdeplot#no longer used
+#from seaborn import kdeplot  # no longer used
 import matplotlib.gridspec as gridspec #for nested plots in matplotlib pair_frames_stack
 import imageio #for animations
-from scipy.stats import norm #easy l2 norming (dont think used as of 25/9/19)
 from shutil import rmtree #used to keep animatons frames in order
 
-plt.rcParams.update({'font.size':20})
 
-"""
-As of 01/09/19 only dependencies are
-pip install imageio
-pip install ffmpeg
-pip install scipy
-pip install filterpy
-note:
-now suppressing repeat printing of iterations in F_x from new stationsim
-E.g. 
-with HiddenPrints():
-    everything done here prints nothing
-everything here prints again
-https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
-"""
+# used for plotting covariance ellipses for each agent. 
+# from filterpy.stats import covariance_ellipse  
+# from scipy.stats import norm #easy l2 norming  
+# from math import cos, sin
 
+plt.rcParams.update({'font.size':20})  # make plot font bigger
 #%%
 class HiddenPrints:
+    """stop repeating printing from stationsim
+    https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
+
+    """
     def __enter__(self):
         self._original_stdout = sys.stdout
         sys.stdout = open(os.devnull, 'w')
@@ -282,7 +286,7 @@ class ukf_ss:
         ukf_histories- placeholder to store ukf trajectories
         time1 - start gate time used to calculate run time 
         """
-        #call params
+        # call params
         self.model_params = model_params #stationsim parameters
         self.filter_params = filter_params # ukf parameters
         self.ukf_params = ukf_params
@@ -293,10 +297,10 @@ class ukf_ss:
         many agents to be observed throughout the model
         """
         self.pop_total = self.model_params["pop_total"] #number of agents
-        #number of batch iterations
+        # number of batch iterations
         self.number_of_iterations = model_params['step_limit']
         self.sample_rate = self.filter_params["sample_rate"]
-        #how many agents being observed
+        # how many agents being observed
         if self.filter_params["prop"]<1: 
             self.sample_size= floor(self.pop_total*self.filter_params["prop"])
         else:
@@ -1310,5 +1314,3 @@ if __name__ == "__main__":
             #plts.pair_frames_stack_ellipse(obs,full_preds) #these probably dont work anymore. feel free to try
             #plts.heatmap(obs)
     
-
-

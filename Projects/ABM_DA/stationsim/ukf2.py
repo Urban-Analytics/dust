@@ -54,6 +54,12 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as lines
 "for nested plots in matplotlib pair_frames_stack"
 import matplotlib.gridspec as gridspec 
+"for heatmap plots"
+import matplotlib.cm as cm
+import matplotlib.colors as col
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.patches as mpatches
+from matplotlib.collections import PatchCollection
 "for rendering animations"
 import imageio 
 from shutil import rmtree
@@ -101,7 +107,7 @@ class ukf:
     
     """
     
-    def __init__(self, ukf_params, init_x, fx, hx, p, q, r):
+    def __init__(self, model_params, ukf_params, init_x, fx, hx, p, q, r):
         """
         x - state
         n - state size 
@@ -116,6 +122,8 @@ class ukf:
         """
         
         #init initial state
+        self.model_params = model_params
+        self.ukf_params = ukf_params
         self.x = init_x #!!initialise some positions and covariances
         self.n = self.x.shape[0] #state space dimension
 
@@ -235,7 +243,7 @@ class ukf:
         
         "calculate measured state sigmas from desired sigmas using hx"
         "apply along axis version seems better than multiprocessing"
-        nl_sigmas = np.apply_along_axis(self.hx,0,sigmas)
+        nl_sigmas = np.apply_along_axis(self.hx,0,sigmas,self.model_params,self.ukf_params)
         
         "old multiprocessing version. might be faster for higher dim cases"
         # p = multiprocessing.Pool()
@@ -276,13 +284,11 @@ class ukf:
         k = np.matmul(pxy,np.linalg.inv(pyy))
  
         "update x and p. add to overall trajectories"
-        self.x = self.x + np.matmul(k,(self.hx(z)-yhat))
+        self.x = self.x + np.matmul(k,(self.hx(z, self.model_params, self.ukf_params)-yhat))
         self.p = self.p - np.matmul(k,np.matmul(pyy,k.T))
         self.ps.append(self.p)
         self.xs.append(self.x)
-        
-        
-        
+
     def batch(self):
         """
         batch function hopefully coming soon
@@ -367,7 +373,7 @@ class ukf_ss:
         p = ukf_params["p"]#inital guess at state covariance
         q = ukf_params["q"]
         r = ukf_params["r"]#sensor noise
-        self.ukf = ukf(ukf_params,x,ukf_params["fx"],ukf_params["hx"],p,q,r)
+        self.ukf = ukf(model_params, ukf_params,x,ukf_params["fx"],ukf_params["hx"],p,q,r)
     
     
     def main(self):
@@ -406,17 +412,17 @@ class ukf_ss:
                     
                     
                 self.ukf.update(z=state) #update UKF
-                key = self.obs_key_func(state)
+                key = self.obs_key_func(state,self.model_params, self.ukf_params)
                 "force inactive agents to unobserved"
                 key *= [agent.status%2 for agent in self.base_model.agents]
                 self.obs_key.append(key)
 
                 self.ukf_histories.append(self.ukf.x) #append histories
                 self.ukf_preds.append(self.ukf.x)
-                status = np.repeat(np.array([float(agent.status) for agent in self.base_model.agents]),2)
-                status[status!=1] = np.nan 
-                self.obs.append(self.ukf.hx(state))
+                
+                self.obs.append(self.ukf.hx(state, self.model_params, self.ukf_params))
                 self.full_ps.append(self.ukf.p)
+                     
                 
                 x = self.ukf.x
                 if np.sum(np.isnan(x))==x.shape[0]:
@@ -454,9 +460,7 @@ class ukf_ss:
         nan_array : array_like
             `nan_array` which entries of b are nan. good for plotting/metrics            
         """
-        
-        
-        
+       
         nan_array = np.ones(shape=(max([len(agent.history_locations) for agent in self.base_model.agents]),2*self.pop_total))*np.nan
         for i in range(self.pop_total):
             agent = self.base_model.agents[i]
@@ -665,7 +669,7 @@ class ukf_plots:
             f.savefig(file)
             plt.close()
     
-    def pair_frames_animation(self,truth,preds,plot_range):
+    def pair_frames_animation(self, truth, preds, plot_range):
         
         
         """ pairwise animation of ukf predictions and true measurements over ABM run
@@ -687,7 +691,7 @@ class ukf_plots:
                             self.save_dir +f"pairwise_gif_{self.filter_class.pop_total}",24)
         
     
-    def pair_frame(self,truth,preds,frame_number):
+    def pair_frame(self, truth, preds, frame_number):
         
         
         """single frame version of above
@@ -707,7 +711,7 @@ class ukf_plots:
 
         
         
-    def path_plots(self,truth,preds,save):
+    def path_plots(self, truth, preds, save):
         f=plt.figure(figsize=(12,8))
         for i in range(self.filter_class.pop_total):
             plt.plot(truth[::self.filter_class.sample_rate,(2*i)],
@@ -733,20 +737,227 @@ class ukf_plots:
             g.savefig("UKF_Paths.pdf")
             
         
-    def error_hist(self,save):
+    def error_hist(self, save):
         distances = self.L2s(truth,preds)
         agent_means = np.nanmean(distances,axis=0)
         j = plt.figure(figsize=(12,8))
         plt.hist(agent_means,density=False,
                  bins = self.filter_class.model_params["pop_total"],edgecolor="k")
         plt.xlabel("Agent L2")
-        plt.ylabel(f" {self.filter_class.sample_size} Aggregated Agent Counts")
+        plt.ylabel("Agent Counts")
         # kdeplot(agent_means,color="red",cut=0,lw=4)
 
         if save:
             j.savefig(self.save_dir+f"Aggregate_agent_hist.pdf")
     
+    def heatmap_main(self, truth, ukf_params, plot_range, save_dir):
+        """main heatmap plot
+        
+        """        
+        "cmap set up. defining bottom value (0) to be black"
+        cmap = cm.cividis
+        cmaplist = [cmap(i) for i in range(cmap.N)]
+        cmaplist[0] = (0.0,0.0,0.0,1.0)
+        cmap = col.LinearSegmentedColormap("custom_cmap",cmaplist,N=cmap.N)
+        cmap = cmap.from_list("custom",cmaplist)
+        "bottom heavy norm for better vis variable on size"
+        n = self.filter_class.model_params["pop_total"]
+        """this function is basically make it linear for low pops and squeeze 
+        colouration lower for higher. Google it youll see what I mean"""
+        n_prop = n*(1-np.tanh(n/15))
+        norm =CompressionNorm(1e-5,n_prop,0.1,0.9,1e-8,n)
+
+        sm = cm.ScalarMappable(norm = norm,cmap=cmap)
+        sm.set_array([])  
+        
+        for i in plot_range:
+            locs = truth[i,:]
+            counts = poly_count(ukf_params["poly_list"],locs)
+            
+            f = plt.figure(figsize=(12,8))
+            ax = f.add_subplot(111)
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right",size="5%",pad=0.05)
+            "plot density histogram and locations scatter plot assuming at least one agent available"
+            #ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
+            ax.set_ylim(0,self.height)
+            ax.set_xlim(0,self.width)
+            
+            
+            
+            #column = frame["counts"].astype(float)
+            #im = frame.plot(column=column,
+            #                ax=ax,cmap=cmap,norm=norm,vmin=0,vmax = n)
+       
+            patches = []
+            for item in ukf_params["poly_list"]:
+               patches.append(mpatches.Polygon(np.array(item.exterior),closed=True))
+             
+            collection = PatchCollection(patches,cmap=cmap, norm=norm, alpha=1.0)
+            ax.add_collection(collection)
+            "if no agents in model for some reason just give a black frame"
+            if np.nansum(counts)!=0:
+                collection.set_array(np.array(counts))
+            else:
+                collection.set_array(np.zeros(np.array(counts).shape))
     
+            for k,count in enumerate(counts):
+                plt.plot
+                ax.annotate(s=count, xy=ukf_params["poly_list"][k].centroid.coords[0], 
+                            ha='center',va="center",color="w")
+                
+            "set up cbar. colouration proportional to number of agents"
+            ax.text(0,101,s="Total Agents: " + str(np.sum(counts)),color="k")
+            
+            
+            cbar = plt.colorbar(sm,cax=cax,spacing="proportional")
+            cbar.set_label("Agent Counts")
+            cbar.set_alpha(1)
+            #cbar.draw_all()
+            
+            "set legend to bottom centre outside of plot"
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                             box.width, box.height * 0.9])
+            
+            "labels"
+            ax.set_xlabel("Corridor width")
+            ax.set_ylabel("Corridor height")
+            #ax.set_title("Agent Densities vs True Positions")
+            cbar.set_label(f"Agent Counts (out of {n})")
+            """
+            frame number and saving. padded zeroes to keep frames in order.
+            padded to nearest upper order of 10 of number of iterations.
+            """
+            number = str(i).zfill(ceil(log10(truth.shape[0])))
+            file = save_dir+f"heatmap_{number}"
+            f.savefig(file)
+            plt.close()
+    
+    def heatmap(self,truth, ukf_params, plot_range):
+        """ Aggregate grid square agent density map animation
+        
+        Parameters
+        ------ 
+        a : array_like
+            `a` noisy measurements 
+        poly_list : list
+            `poly_list` list of polygons to plot
+        
+        """
+        os.mkdir(self.save_dir+"output_heatmap")
+        self.heatmap_main(truth, ukf_params, range(plot_range), self.save_dir+"output_heatmap/")
+        animations.animate(self,self.save_dir+"output_heatmap",
+                           self.save_dir+f"heatmap_{self.filter_class.pop_total}_",12)
+    
+    def heatmap_frame(self, truth, ukf_params, frame_number):
+        
+        
+        """single frame version of above
+        
+        Parameters
+        ------
+        truth : array_like
+            `truth` true agent positions
+        
+        frame_number : int
+            `frame_number` frame to plot
+
+        """
+        self.heatmap_main(truth, ukf_params, [frame_number], self.save_dir)
+    
+class CompressionNorm(col.Normalize):
+    def __init__(self, vleft,vright,vlc,vrc, vmin=None, vmax=None):
+        """RCs customised matplotlib diverging norm
+        
+        The original matplotlib version (DivergingNorm) allowed the user to split their 
+        data about some middle point (e.g. 0) and a symmetric colourbar for symmetric plots. 
+        This is a slight generalisation of that.
+        
+        It allows you change how the colour bar concentrates itself for skewed data. 
+        Say your data is very bottom heavy and you want more precise colouring in the bottom 
+        of your data range. For example, if your data was between 5 and 10 and 
+        90% of it was <6. If we used parameters:
+            
+        vleft=5,vright=6,vlc=0,vrc=0.9,vmin=5,vmax=10
+        
+        Then the first 90% of the colour bar colours would put themselves between 
+        5 and 6 and the remaining 10% would do 6-10. 
+        This gives a bottom heavy colourbar that matches the data.
+        
+        This works for generally heavily skewed data and could probably 
+        be generalised further but starts to get very very messy
+        
+        Parameters
+        ----------
+        vcenter : float
+            The data value that defines ``0.5`` in the normalization.
+      
+        vleft: float
+            left limit to tight band
+        vright : flaot
+            right limit to tight band
+            
+        vlc/vrc: float between 0 and 1 
+        
+            value left/right colouration.
+            Two floats that indicate how many colours of the  256 colormap colouration
+            are within the vleft/vright band as a percentage.
+            If these numbers are 0 and 1 all 256 colours are in the band
+            If these numbers are 0.1 and 0,2 then the 
+            25th to the 51st colours of the colormap represent the band.
+            
+        
+        vmin : float, optional
+            The data value that defines ``0.0`` in the normalization.
+            Defaults to the min value of the dataset.
+        vmax : float, optional
+            The data value that defines ``1.0`` in the normalization.
+            Defaults to the the max value of the dataset.
+        """
+
+        self.vleft = vleft
+        self.vright = vright
+        self.vmin = vmin
+        self.vmax = vmax
+        self.vlc=vlc
+        self.vrc=vrc
+        if vleft>vright:
+            raise ValueError("vleft and vright must be in ascending order"
+                             )
+        if vright is not None and vmax is not None and vright >= vmax:
+            raise ValueError('vmin, vcenter, and vmax must be in '
+                             'ascending order')
+        if vleft is not None and vmin is not None and vleft <= vmin:
+            raise ValueError('vmin, vcenter, and vmax must be in '
+                             'ascending order')
+
+    def autoscale_None(self, A):
+        """
+        Get vmin and vmax, and then clip at vcenter
+        """
+        super().autoscale_None(A)
+        if self.vmin > self.vleft:
+            self.vmin = self.vleft
+        if self.vmax < self.vright:
+            self.vmax = self.vright
+
+
+    def __call__(self, value, clip=None):
+        """
+        Map value to the interval [0, 1]. The clip argument is unused.
+        """
+        result, is_scalar = self.process_value(value)
+        self.autoscale_None(result)  # sets self.vmin, self.vmax if None
+
+        if not self.vmin <= self.vleft and self.vright <= self.vmax:
+            raise ValueError("vmin, vleft,vright, vmax must increase monotonically")
+        result = np.ma.masked_array(
+            np.interp(result, [self.vmin, self.vleft,self.vright, self.vmax],
+                      [0, self.vlc,self.vrc, 1.]), mask=np.ma.getmask(result))
+        if is_scalar:
+            result = np.atleast_1d(result)[0]
+        return result    
     
 class animations():
     
@@ -808,7 +1019,7 @@ def fx(x):
     state = model.get_state(sensor="location")
     
     return state
-
+#%%
 def omission_index(n,sample_size):
     
     
@@ -831,6 +1042,28 @@ def omission_index(n,sample_size):
     index2[1::2] += 1
     return index, index2
 
+
+def hx1(state, model_params, ukf_params):
+    
+    
+    """Convert each sigma point from noisy gps positions into actual measurements
+    
+    -   omits pre-definied unobserved agents given by index/index2
+    
+    Parameters
+    ------
+    state : array_like
+        desired `state` n-dimensional sigmapoint to be converted
+
+    Returns
+    ------
+    obs_state : array_like
+        `obs_state` actual observed state
+    """
+    obs_state = state[ukf_params["index2"]]
+    
+    return obs_state   
+
 def omission_params(model_params, ukf_params):
     
     
@@ -846,52 +1079,31 @@ def omission_params(model_params, ukf_params):
     """
     n = model_params["pop_total"]
     ukf_params["prop"] = 0.5
-    sample_size= floor(n * ukf_params["prop"])
+    ukf_params["sample_size"]= floor(n * ukf_params["prop"])
 
-    ukf_params["index"], ukf_params["index2"] = omission_index(n, sample_size)
+    
+    ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
     
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = np.eye(2 * n)
-    ukf_params["r"] = np.eye(2 * sample_size)#sensor noise
+    ukf_params["r"] = np.eye(2 * ukf_params["sample_size"])#sensor noise
     
-    "function needs to be defined here to let index2 be default variable"
-    def hx1(state, index2=ukf_params["index2"]):
-        
-        
-        """Convert each sigma point from noisy gps positions into actual measurements
-        
-        -   omits pre-definied unobserved agents given by index/index2
-        
-        Parameters
-        ------
-        state : array_like
-            desired `state` n-dimensional sigmapoint to be converted
-            
-        **hx_args
-            generic hx kwargs
-        Returns
-        ------
-        counts : array_like
-            forecasted `counts` of how many agents in each square to 
-            compare with actual counts
-        """
-        state = state[index2]
-        
-        return state   
+   
     ukf_params["fx"] = fx
     ukf_params["hx"] = hx1
     
-    def obs_key_func(state,index=ukf_params["index"]):
+    def obs_key_func(state, model_params, ukf_params):
         """which agents are observed"""
         
         key = np.zeros(model_params["pop_total"])
-        key[index] +=2
+        key[ukf_params["index"]] +=2
         return key
     
     ukf_params["obs_key_func"] = obs_key_func
-
+        
     return ukf_params
 
+#%%
 def poly_count(poly_list,points):
     
     
@@ -975,8 +1187,21 @@ def aggregate_params(ukf_params):
     ukf_params["q"] = np.eye(2*n)
     ukf_params["r"] = np.eye(len(ukf_params["poly_list"]))#sensor noise 
     
+    ukf_params["fx"] = fx
+    ukf_params["hx"] = hx2
     
-    def hx2(state, poly_list = ukf_params["poly_list"]):
+    def obs_key_func(state,model_params,ukf_params):
+        """which agents are observed"""
+        
+        key = np.ones(model_params["pop_total"])
+        
+        return key
+    
+    ukf_params["obs_key_func"] = obs_key_func
+        
+    return ukf_params
+    
+def hx2(state,model_params,ukf_params):
         """Convert each sigma point from noisy gps positions into actual measurements
         
         -   uses function poly_count to count how many agents in each closed 
@@ -998,23 +1223,71 @@ def aggregate_params(ukf_params):
             forecasted `counts` of how many agents in each square to 
             compare with actual counts
         """
-        counts = poly_count(poly_list,state)
+        counts = poly_count(ukf_params["poly_list"],state)
         
         return counts
+#%%
+        
+def hx3(state, model_params, ukf_params):
+
+
+    """Convert each sigma point from noisy gps positions into actual measurements
     
+    -   omits pre-definied unobserved agents given by index/index2
+    
+    Parameters
+    ------
+    state : array_like
+        desired `state` n-dimensional sigmapoint to be converted
+    
+    Returns
+    ------
+    obs_state : array_like
+        `obs_state` actual observed state
+    """
+    ukf_params["index"], ukf_params["index2"] = omission_index(model_params["pop_total"], ukf_params["sample_size"])
+
+    obs_state = state[ukf_params["index2"]]
+    
+    return obs_state   
+    
+def lateral_params(model_params, ukf_params):
+    
+    
+    """update ukf_params with fx/hx for lateral partial omission.
+    I.E every agent has some observations over time
+    (potential experiment 3)
+    
+    Parameters
+    ------
+    ukf_params : dict
+        
+    Returns
+    ------
+    ukf_params : dict
+    """
+    n = model_params["pop_total"]
+    ukf_params["prop"] = 0.5
+    ukf_params["sample_size"]= floor(n * ukf_params["prop"])
+
+    ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
+    ukf_params["q"] = np.eye(2 * n)
+    ukf_params["r"] = np.eye(2 * ukf_params["sample_size"])#sensor noise
+    
+   
     ukf_params["fx"] = fx
-    ukf_params["hx"] = hx2
+    ukf_params["hx"] = hx3
     
-    def obs_key_func(state):
+    def obs_key_func(state,ukf_params):
         """which agents are observed"""
         
-        key = np.ones(model_params["pop_total"])
-        
+        key = np.zeros(model_params["pop_total"])
+        key[ukf_params["index"]] +=2
         return key
     
     ukf_params["obs_key_func"] = obs_key_func
+        
     return ukf_params
-
 #%%
 
 if __name__ == "__main__":
@@ -1039,7 +1312,7 @@ if __name__ == "__main__":
             3 do_ bools for saving plotting and animating data. 
         """
         model_params = {
-    			'pop_total': 5,
+    			'pop_total': 10,
     
     			'width': 200,
     			'height': 100,
@@ -1083,8 +1356,6 @@ if __name__ == "__main__":
         
         ukf_params = {      
                
-                "Sensor_Noise" :  1, 
-                "Process_Noise" : 1, 
                 'sample_rate' : 5,
                 "do_restrict" : True, 
                 "bring_noise" : True,
@@ -1097,16 +1368,13 @@ if __name__ == "__main__":
                 
                 }
         
-        
-        
-        
-        "add aggregate parameters as necessary"
-        
         "unhash the necessary one"
         "omission version"
         #ukf_params = omission_params(model_params, ukf_params)
-        """aggregate version"""
+        "aggregate version"
         ukf_params = aggregate_params(ukf_params)
+        "lateral omission"
+        #ukf_params = lateral_params(model_params, ukf_params)
         base_model = Model(**model_params)
         u = ukf_ss(model_params,ukf_params,base_model)
         u.main()
@@ -1118,7 +1386,6 @@ if __name__ == "__main__":
 
         plts = ukf_plots(u,"../stationsim/")
         
-        
         "animations"
         #plts.trajectories(truth)
         #if ukf_params["sample_rate"]>1:
@@ -1126,8 +1393,12 @@ if __name__ == "__main__":
         #else:
         #    plts.pair_frames_animation(truth,preds)
             
-        plts.pair_frame(truth,preds,50)
+        plts.heatmap(truth,ukf_params,truth.shape[0])
         
+        plts.pair_frame(truth,preds,50)
+        plts.heatmap_frame(truth,ukf_params,50)
+        plts.error_hist(False)
+        plts.path_plots(truth,preds,False)
     else:
         "file name to recall from certain parameters or enter own"
         n = 30

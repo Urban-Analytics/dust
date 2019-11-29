@@ -46,7 +46,7 @@ from shapely.geometry import Polygon,MultiPoint
 from shapely.prepared import prep
 
 "import other useful things from other ukf file"
-from ukf import animations
+from stationsim.ukf2 import animations
 
 
 """

@@ -45,7 +45,8 @@ import sys
 import pickle 
 
 "import stationsim model"
-from stationsim_model import Model
+sys.path.append("..")
+from stationsim.stationsim_model import Model
 
 "for plots"
 #from seaborn import kdeplot  # will be back shortly when diagnostic plots are better
@@ -496,6 +497,43 @@ class ukf_ss:
         else:
             return a,b,d,obs_key,nan_array
 
+
+def L2s(truth,preds):
+        
+    
+    """L2 distance errors between measurements and ukf predictions
+    
+    finds mean L2 (euclidean) distance at each time step and per each agent
+    provides whole array of distances per agent and time
+    and L2s per agent and time. 
+    
+    Parameters
+    ------
+    truth, preds: array_like
+        `truth` true positions and `preds` ukf arrays to compare
+        
+    Returns
+    ------
+    
+    distances : array_like
+        `distances` matrix of  L2 distances between a and b over time and agents.
+    """
+    "placeholder"
+    distances = np.ones((truth.shape[0],int(truth.shape[1]/2)))*np.nan
+
+    "loop over each agent"
+    "!!theres probably a better way to do this with apply_along_axis etc."
+    for i in range(int(truth.shape[1]/2)):
+            "pull one agents xy coords"
+            truth2 = truth[:,(2*i):((2*i)+2)]
+            preds2 = preds[:,(2*i):((2*i)+2)]
+            res = truth2-preds2
+            "loop over xy coords to get L2 value for ith agent at jth time"
+            for j in range(res.shape[0]):
+                distances[j,i]=np.linalg.norm(res[j,:]) 
+                
+    return distances
+
 class ukf_plots:
     
     
@@ -527,43 +565,7 @@ class ukf_plots:
         self.colours = ["black", "orangered", "yellow", "skyblue"]
         
         self.save_dir = save_dir
-        
-    def L2s(self,a,b):
-        
-        
-        """L2 distance errors between measurements and ukf predictions
-        
-        finds mean L2 (euclidean) distance at each time step and per each agent
-        provides whole array of distances per agent and time
-        and L2s per agent and time. 
-        
-        Parameters
-        ------
-        a,b: array_like
-            `a` measurements and `b` ukf arrays to compare
-            
-        Returns
-        ------
-        
-        distances : array_like
-            `distances` matrix of  L2 distances between a and b over time and agents.
-        """
-        "placeholder"
-        distances = np.ones((a.shape[0],int(a.shape[1]/2)))*np.nan
-
-        "loop over each agent"
-        "!!theres probably a better way to do this with apply_along_axis etc."
-        for i in range(self.filter_class.model_params["pop_total"]):
-                "pull one agents xy coords"
-                a2 = a[:,(2*i):((2*i)+2)]
-                b2 = b[:,(2*i):((2*i)+2)]
-                res = a2-b2
-                "loop over xy coords to get L2 value for ith agent at jth time"
-                for j in range(res.shape[0]):
-                    distances[j,i]=np.linalg.norm(res[j,:]) 
-                    
-        return distances
-    
+                        
     def trajectories(self,truth):
         
         
@@ -571,8 +573,8 @@ class ukf_plots:
         
         Parameters
         ------ 
-        a : array_like
-            `a` true measurements 
+        truth : array_like
+            `truth` true positions 
 
         """
         os.mkdir(self.save_dir+"output_positions")
@@ -621,6 +623,10 @@ class ukf_plots:
                            self.save_dir+f"positions_{self.filter_class.pop_total}_",12)
     
     def pair_frames_main(self, truth, preds, obs_key,plot_range,save_dir):
+        
+        
+        """main pair wise frame plot
+        """
         for i in plot_range:
             "extract rows of tables"
             truth2 = truth[i,:]
@@ -712,6 +718,10 @@ class ukf_plots:
         
         
     def path_plots(self, truth, preds, save):
+        
+        
+        """plot paths taken by agents and their ukf predictions
+        """
         f=plt.figure(figsize=(12,8))
         for i in range(self.filter_class.pop_total):
             plt.plot(truth[::self.filter_class.sample_rate,(2*i)],
@@ -738,8 +748,13 @@ class ukf_plots:
             
         
     def error_hist(self, save):
-        distances = self.L2s(truth,preds)
-        agent_means = np.nanmean(distances,axis=0)
+        
+        
+        """Plot distribution of median agent errors
+        """
+        
+        distances = L2s(truth,preds)
+        agent_means = np.nanmedian(distances,axis=0)
         j = plt.figure(figsize=(12,8))
         plt.hist(agent_means,density=False,
                  bins = self.filter_class.model_params["pop_total"],edgecolor="k")

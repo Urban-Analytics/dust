@@ -24,7 +24,7 @@ import sys
 #sys.path.append("../../stationsim")
 sys.path.append("../..")
 
-from stationsim.ukf2 import L2s as L2_parser
+from ukf_plots import L2s as L2_parser
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -45,12 +45,11 @@ class grand_plots:
     
     """
 
-    def __init__(self,params,source,prefix,save):
+    def __init__(self,params,save):
         self.param_keys = [key for key in params.keys()]
         self.p1 = params[self.param_keys[0]]
         self.p2 = params[self.param_keys[1]]
-        self.source = source
-        self.prefix = prefix
+        self.source = params["source"]
         self.save = save
     def depickle_data_parser(self,instance):
         
@@ -93,7 +92,7 @@ class grand_plots:
             files={}
             "loop over second parameter to load in all files for given value of i"
             for j in self.p2:
-                f_name = self.source + self.prefix + f"{keys[0]}_{i}_{keys[1]}_{j}-*"
+                f_name = self.source + f"{keys[0]}_{i}_{keys[1]}_{j}-*"
                 files[j] = glob.glob(f_name)
                 
             "sub dictionary for each second parameter"       
@@ -228,25 +227,30 @@ class grand_plots:
         plt.tight_layout()
         if self.save:
             f.savefig(f_name)
-          
-"parameter dictionary"
-params = {}
-"parameter1. usually number of agents"
-params["agents"] = [10,20,30]
-"""parameter2. proportion observed (prop) or size of aggregate squares "bin" """
-"int 1 here because I named the results files poorly.!! fix"
-#params["prop"] = [0.25, 0.5, 0.75, int(1)] 
-params["bin"] = [5,10,25,50]
-"where files are loaded from"
-"dust repo"
-source = "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/" 
-"USB"
-#source = "/media/rob/ROB1/ukf_results/"
-"start of file names. either agg_ukf_ or ukf_"
-prefix = "agg_ukf_"
+       
+        
+        
+        
+"""parameter dictionary
+parameter1: usually number of "agents"
+
+parameter2: proportion observed "prop" or size of aggregate squares "bin" 
+    int 1 here because I named the results files poorly.!! fix later using grep?"
+
+source : "where files are loaded from plus some file prefix such as "ukf" or "agg_ukf" e.g. dust repo or a USB
+
+
+"""
+depickle_params = {
+        "agents" :  [10,20,30],
+        #"prop" : [0.25, 0.5, 0.75, int(1)],
+        "bin" : [5,10,25,50],
+        #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
+        "source" : "/media/rob/ROB1/ukf_results_100_1/agg_ukf_",
+        }
 
 "init plot class"
-g_plts = grand_plots(params,source,prefix,False)
+g_plts = grand_plots(depickle_params,False)
 "make frame"
 g_plts.frame_extractor()
 "make choropleth numpy array"

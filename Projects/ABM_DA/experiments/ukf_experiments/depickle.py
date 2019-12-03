@@ -223,10 +223,10 @@ class grand_plots:
         f_name = f"Aggregate_grand_median_boxplot.pdf"
         y_name = "L2 agent errors"
         f = plt.figure()
-        sns.catplot(x=str(keys[0]),y=y_name,col=str(keys[1]),kind="box", data=data)
+        sns.catplot(x=str(keys[1]),y=y_name,col=str(keys[0]),kind="box", data=data)
         plt.tight_layout()
         if self.save:
-            f.savefig(f_name)
+            plt.savefig(f_name)
        
         
         
@@ -246,11 +246,11 @@ depickle_params = {
         #"prop" : [0.25, 0.5, 0.75, int(1)],
         "bin" : [5,10,25,50],
         #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
-        "source" : "/media/rob/ROB1/ukf_results_100_1/agg_ukf_",
+        "source" : "/media/rob/ROB1/ukf_results_100_2/agg_ukf_",
         }
 
 "init plot class"
-g_plts = grand_plots(depickle_params,False)
+g_plts = grand_plots(depickle_params,True)
 "make frame"
 g_plts.frame_extractor()
 "make choropleth numpy array"

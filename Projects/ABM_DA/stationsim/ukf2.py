@@ -84,7 +84,7 @@ class ukf:
     
     """
     
-    def __init__(self, model_params, ukf_params, init_x, fx, hx, p, q, r):
+    def __init__(self, model_params, ukf_params, base_model, init_x, fx, hx, p, q, r):
         """
         x - state
         n - state size 
@@ -101,6 +101,7 @@ class ukf:
         #init initial state
         self.model_params = model_params
         self.ukf_params = ukf_params
+        self.base_model = base_model
         self.x = init_x #!!initialise some positions and covariances
         self.n = self.x.shape[0] #state space dimension
 
@@ -167,7 +168,7 @@ class ukf:
         "calculate MSSPs using x and P"
         sigmas = self.Sigmas(self.x,np.linalg.cholesky(self.p)) #calculate current sigmas using state x and UT element S
         "numpy apply along axis or multiprocessing options"
-        nl_sigmas = np.apply_along_axis(self.fx,0,sigmas,base_model)
+        nl_sigmas = np.apply_along_axis(self.fx,0,sigmas,self.base_model)
         "old multiprocessing version. maybe better in higher dimensional cases"
         # p = multiprocessing.Pool()
         # nl_sigmas = np.vstack(p.map(self.fx,[sigmas[:,j] for j in range(sigmas.shape[1])])).T
@@ -350,7 +351,7 @@ class ukf_ss:
         p = ukf_params["p"]#inital guess at state covariance
         q = ukf_params["q"]
         r = ukf_params["r"]#sensor noise
-        self.ukf = ukf(model_params, ukf_params,x,ukf_params["fx"],ukf_params["hx"],p,q,r)
+        self.ukf = ukf(self.model_params, ukf_params, self.base_model, x, ukf_params["fx"], ukf_params["hx"], p, q, r)
     
     
     def main(self):
@@ -473,11 +474,22 @@ class ukf_ss:
         else:
             return a,b,d,obs_key,nan_array
 
+
+def pickler(f_name):
+    f = open(f_name,"wb")
+    pickle.dump(u,f)
+    f.close()
+
+def depickler(source,f_name):
+    f = open(source+f_name,"rb")
+    u = pickle.load(f)
+    f.close()
+    return u
 #%%
 
 if __name__ == "__main__":
     recall = False #recall previous run
-    do_pickle = False #pickle new run
+    do_pickle = True #pickle new run
     if not recall:
         """
             width - corridor width
@@ -497,7 +509,6 @@ if __name__ == "__main__":
             3 do_ bools for saving plotting and animating data. 
         """
         model_params = {
-    			'pop_total': 5,
     
     			'width': 200,
     			'height': 100,
@@ -553,11 +564,12 @@ if __name__ == "__main__":
                 
                 }
         
+        model_params["pop_total"] = 5
         "unhash the necessary one"
         "omission version"
-        #ukf_params = omission_params(model_params, ukf_params, 0.5)
+        ukf_params = omission_params(model_params, ukf_params, 0.5)
         "aggregate version"
-        ukf_params = aggregate_params(model_params, ukf_params,50)
+        #ukf_params = aggregate_params(model_params, ukf_params,50)
         "lateral omission"
         #ukf_params = lateral_params(model_params, ukf_params)
         print(model_params)
@@ -566,42 +578,44 @@ if __name__ == "__main__":
         u = ukf_ss(model_params,ukf_params,base_model)
         u.main()
         
-        obs,preds,full_preds,truth,obs_key,nan_array= u.data_parser()
-        truth[~nan_array]=np.nan
-        preds[~nan_array]=np.nan
-        full_preds[~nan_array]=np.nan
+        if do_pickle:
+            pickler(ukf_params["pickle_file_name"])
+        
+        
 
-        plts = ukf_plots(u,"../stationsim/")
-        
-        "animations"
-        #plts.trajectories(truth)
-        #if ukf_params["sample_rate"]>1:
-        #    plts.pair_frames_animation(truth,full_preds,range(truth.shape[0]))
-        #else:
-        #    plts.pair_frames_animation(truth,preds)
             
-        #plts.heatmap(truth,ukf_params,truth.shape[0])
-        
-        "single frame plots"
-        
-        plts.pair_frame(truth, preds, obs_key, 50)
-        plts.heatmap_frame(truth,ukf_params,50)
-        plts.error_hist(truth, preds, False)
-        plts.path_plots(truth,preds, False)
     else:
         "file name to recall from certain parameters or enter own"
-        n = 30
+        n = 5
         noise= 0.5 
-        bin_size = 25
+        bin_size = 50
 
-
-        file_name = f"ukf_agg_pickle_{n}_{bin_size}_{noise}.pkl"
-        f = open("../experiments/ukf_experiments/"+file_name,"rb")
-        u = pickle.load(f)
-        f.close()
-        filter_params=u.filter_params
+        source = "../stationsim/"
+        f_name =  f"agg_ukf_agents_{n}_bin_{bin_size}.pkl"
+        u = depickler(source, f_name)
     
-        poly_list =u.poly_list #generic square grid over corridor
 
+    plts = ukf_plots(u,"../stationsim/")
+        
+    "animations"
+    #plts.trajectories(truth)
+    #if ukf_params["sample_rate"]>1:
+    #    plts.pair_frames_animation(truth,full_preds,range(truth.shape[0]))
+    #else:
+    #    plts.pair_frames_animation(truth,preds)
+        
+    #plts.heatmap(truth,ukf_params,truth.shape[0])
+    
+    "single frame plots"
+    obs,preds,full_preds,truth,obs_key,nan_array= u.data_parser()
+    truth[~nan_array]=np.nan
+    preds[~nan_array]=np.nan
+    full_preds[~nan_array]=np.nan
+
+    plts.pair_frame(truth, preds, obs_key, 50)
+    plts.heatmap_frame(truth,ukf_params,50)
+    plts.error_hist(truth, preds, False)
+    plts.path_plots(truth,preds, False)
+    
 
 

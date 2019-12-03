@@ -7,8 +7,8 @@ Created on Mon Dec  2 11:27:06 2019
 """
 import os
 import sys
-sys.path.append("../..")
-from ukf_ex2 import poly_count
+sys.path.append("..")
+from ukf_experiments.ukf_ex2 import poly_count
 
 
 import numpy as np

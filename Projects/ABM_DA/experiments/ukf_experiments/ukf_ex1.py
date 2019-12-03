@@ -55,6 +55,13 @@ def hx1(state, model_params, ukf_params):
     
     return obs_state   
 
+def obs_key_func(state, model_params, ukf_params):
+    """which agents are observed"""
+    
+    key = np.zeros(model_params["pop_total"])
+    key[ukf_params["index"]] +=2
+    return key
+
 def omission_params(model_params, ukf_params, prop):
     
     
@@ -74,7 +81,6 @@ def omission_params(model_params, ukf_params, prop):
 
     
     ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
-    
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = np.eye(2 * n)
     ukf_params["r"] = np.eye(2 * ukf_params["sample_size"])#sensor noise
@@ -82,15 +88,10 @@ def omission_params(model_params, ukf_params, prop):
     ukf_params["fx"] = fx
     ukf_params["hx"] = hx1
     
-    def obs_key_func(state, model_params, ukf_params):
-        """which agents are observed"""
-        
-        key = np.zeros(model_params["pop_total"])
-        key[ukf_params["index"]] +=2
-        return key
-    
     ukf_params["obs_key_func"] = obs_key_func
-        
+    ukf_params["pickle_file_name"] = f"ukf_agents_{n}_prop_{prop}.pkl"    
+    
+    
     return ukf_params
 
 

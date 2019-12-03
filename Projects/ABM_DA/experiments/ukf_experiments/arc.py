@@ -31,6 +31,8 @@ source mypython/bin/activate
 #install in dependencies.
 # for filtering
 pip install filterpy
+#for polygons
+pip install shapely
 # for plotting
 pip install seaborn
 # for animations
@@ -41,7 +43,7 @@ pip install imageio
 # conda install -c conda-forge imageio-ffmpeg ""
 # either way. this isnt necessary for arc only. 
 #
-qsub arc_ukf.sh
+qsub arc.sh
 
 when exporting from arc in another linux terminal use 
 
@@ -53,19 +55,18 @@ from linux terminal
 scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/ukf* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
 """
 
-import os
 import sys
-path = os.path.join(os.path.dirname(__file__), os.pardir)
-sys.path.append(path)
+#path = os.path.join(os.path.dirname(__file__), os.pardir)
+#sys.path.append(path)
 
-
+sys.path.append('../../stationsim')
 sys.path.append('../..')
 
 from stationsim.ukf2 import ukf_ss
 from stationsim.stationsim_model import Model
+
 from ukf_ex1 import omission_params
 from ukf_ex2 import aggregate_params
-import os
 import datetime
 import warnings
 import numpy as np
@@ -90,10 +91,7 @@ def ex2_input(num_age,bin_size,run_id):
     model_params['pop_total'] = param_list[int(sys.argv[1])-1][0]
     aggregate_params(model_params, ukf_params, param_list[int(sys.argv[1])-1][1])
     ukf_params["run_id"] = param_list[int(sys.argv[1])-1][2]
-    ukf_params["f_name"] = "ukf_results/agg_ukf_agents_{}_bin_{}-{}".format(      
-                                str(int(model_params['pop_total'])).zfill(3),
-                                str(ukf_params['bin_size']).zfill(3),
-                                str(ukf_params["run_id"]).zfill(3))
+
 
 if __name__ == '__main__':
     __spec__ = None
@@ -152,10 +150,6 @@ if __name__ == '__main__':
     print("UKF params: " + str(ukf_params))
     print("Model params: " + str(model_params))
     
-    #print("Saving files to: {}".format(outfile))
-
-    # Run the particle filter
-    
     #init and run ukf
     time1 = datetime.datetime.now()  # Time how long the whole run take
     base_model = Model(**model_params)
@@ -168,19 +162,7 @@ if __name__ == '__main__':
     pickle.dump(u,f)
     f.close()
 
-
-        #with open(outfile, 'a') as f:
-        #    if result == None: # If no results then don't write anything
-        #        warnings.warn("Result from the particle filter is 'none' for some reason. This sometimes happens when there is only 1 agent in the model.")
-        #    else:
-        #        # Two sets of errors are created, those before resampling, and those after. Results is a list with two tuples.
-        #        # First tuple has eerrors before resampling, second has errors afterwards.
-        #        for before in [0, 1]:
-        #            f.write(str(result[before])[1:-1].replace(" ", "") + "," + str(before) + "\n")  # (slice to get rid of the brackets aruond the tuple)
-
     print("Run: {}, prop: {}, agents: {}, took: {}(s)".format(str(ukf_params["run_id"]).zfill(4), ukf_params['prop'], 
           model_params['pop_total'], round(time1 - datetime.datetime.now()),flush=True))
     
-    print("Finished single run")
-
 

@@ -5,7 +5,9 @@ Created on Mon Dec  2 11:19:48 2019
 
 @author: rob
 """
-from ukf_fx import fx
+import sys
+sys.path.append("..")
+from ukf_experiments.ukf_fx import fx
 
 import numpy as np
 from shapely.geometry import Polygon,MultiPoint
@@ -70,6 +72,14 @@ def grid_poly(width,length,bin_size):
     #    plt.plot(*poly.exterior.xy)
     return polys
 
+
+def obs_key_func(state,model_params,ukf_params):
+        """which agents are observed"""
+        
+        key = np.ones(model_params["pop_total"])
+        
+        return key
+
 def aggregate_params(model_params, ukf_params, bin_size):
     
     
@@ -97,12 +107,7 @@ def aggregate_params(model_params, ukf_params, bin_size):
     ukf_params["fx"] = fx
     ukf_params["hx"] = hx2
     
-    def obs_key_func(state,model_params,ukf_params):
-        """which agents are observed"""
-        
-        key = np.ones(model_params["pop_total"])
-        
-        return key
+    
     
     ukf_params["obs_key_func"] = obs_key_func
     ukf_params["pickle_file_name"] = f"agg_ukf_agents_{n}_bin_{bin_size}.pkl"    

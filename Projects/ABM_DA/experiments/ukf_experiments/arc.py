@@ -18,7 +18,9 @@ ssh username@arc3.leeds.ac.uk
 #move to nobackup storage
 cd /nobackup/username
 #clone in git repository
-git clone https://github.com/Urban-Analytics/dust/
+#git clone https://github.com/Urban-Analytics/dust/
+git clone -b dev_rc https://github.com/Urban-Analytics/dust/
+
 #move to experiments folder
 cd /dust/Projects/ABM_DA/experiments/ukf_experiments
 
@@ -91,7 +93,10 @@ def ex2_input(num_age,bin_size,run_id):
     model_params['pop_total'] = param_list[int(sys.argv[1])-1][0]
     aggregate_params(model_params, ukf_params, param_list[int(sys.argv[1])-1][1])
     ukf_params["run_id"] = param_list[int(sys.argv[1])-1][2]
-
+    ukf_params["f_name"] = "ukf_results/ukf_agents_{}_bin_{}-{}".format(      
+                            str(int(model_params['pop_total'])).zfill(3),
+                            str(float(ukf_params['bin_size'])),
+                            str(ukf_params["run_id"]).zfill(3))
 
 if __name__ == '__main__':
     __spec__ = None

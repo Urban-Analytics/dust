@@ -39,25 +39,22 @@ sys.path.append(path)
 "general timer"
 import datetime 
 
-"used to calculate sigma points in parallel."
-import multiprocessing  
+#"used to calculate sigma points in parallel."
+#import multiprocessing  
 
 "used to save clss instances when run finished."
 import pickle 
 
 "import stationsim model"
+"this append seems redundant but the notebooks need it. no idea why."
 sys.path.append("..")
 from stationsim.stationsim_model import Model
 
-
-
-
 sys.path.append("../experiments/ukf_experiments/")
 
-from ukf_ex1 import omission_params
-from ukf_ex2 import aggregate_params 
-from ukf_plots import ukf_plots
-
+"config files"
+from ukf_ex1 import omission_params, ex1_plots
+from ukf_ex2 import aggregate_params, ex2_plots
 
 "used for plotting covariance ellipses for each agent. not really used anymore"
 # from filterpy.stats import covariance_ellipse  
@@ -488,7 +485,12 @@ def depickler(source,f_name):
 #%%
 
 if __name__ == "__main__":
-    recall = False #recall previous run
+    """__main__ experimental main function for ukf2. mostly for testing in spyder.
+    
+    Refere to notebook ukf_experiments2 to see this in action
+    
+    """
+    recall = True #recall previous run
     do_pickle = True #pickle new run
     if not recall:
         """
@@ -567,13 +569,13 @@ if __name__ == "__main__":
         model_params["pop_total"] = 5
         "unhash the necessary one"
         "omission version"
-        ukf_params = omission_params(model_params, ukf_params, 0.5)
+        #ukf_params = omission_params(model_params, ukf_params, 0.5)
         "aggregate version"
-        #ukf_params = aggregate_params(model_params, ukf_params,50)
-        "lateral omission"
-        #ukf_params = lateral_params(model_params, ukf_params)
+        ukf_params = aggregate_params(model_params, ukf_params,50)
+        
         print(model_params)
         print(ukf_params)
+        
         base_model = Model(**model_params)
         u = ukf_ss(model_params,ukf_params,base_model)
         u.main()
@@ -589,33 +591,17 @@ if __name__ == "__main__":
         n = 5
         noise= 0.5 
         bin_size = 50
-
+        prop = 0.5
         source = "../stationsim/"
+        "unhash the necessary one"
         f_name =  f"agg_ukf_agents_{n}_bin_{bin_size}.pkl"
+        #f_name =  f"ukf_agents_{n}_prop_{prop}.pkl"
+
         u = depickler(source, f_name)
     
+    "unhash the necessary one"
+    #ex1_plots(u,"../experiments/ukf_experiments/",False,"ukf_")
+    ex2_plots(u,"../experiments/ukf_experiments/",False,"agg_ukf_")
 
-    plts = ukf_plots(u,"../stationsim/")
-        
-    "animations"
-    #plts.trajectories(truth)
-    #if ukf_params["sample_rate"]>1:
-    #    plts.pair_frames_animation(truth,full_preds,range(truth.shape[0]))
-    #else:
-    #    plts.pair_frames_animation(truth,preds)
-        
-    #plts.heatmap(truth,ukf_params,truth.shape[0])
-    
-    "single frame plots"
-    obs,preds,full_preds,truth,obs_key,nan_array= u.data_parser()
-    truth[~nan_array]=np.nan
-    preds[~nan_array]=np.nan
-    full_preds[~nan_array]=np.nan
-
-    plts.pair_frame(truth, preds, obs_key, 50)
-    plts.heatmap_frame(truth,ukf_params,50)
-    plts.error_hist(truth, preds, False)
-    plts.path_plots(truth,preds, False)
-    
 
 

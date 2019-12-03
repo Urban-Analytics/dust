@@ -6,7 +6,15 @@ Created on Mon Dec  2 11:16:33 2019
 @author: rob
 
 """
-from ukf_fx import fx
+import sys
+try:
+    sys.path.append("..")
+    from ukf_experiments.ukf_fx import fx
+    from ukf_experiments.ukf_plots import ukf_plots
+except:
+    sys.path.append("../experiments/ukf_experiments")
+    from ukf_fx import fx
+    from ukf_plots import ukf_plots
 
 import numpy as np
 from math import floor
@@ -94,4 +102,27 @@ def omission_params(model_params, ukf_params, prop):
     
     return ukf_params
 
+
+def ex1_plots(instance,plot_dir,animate,prefix):
+    plts = ukf_plots(instance,plot_dir,prefix)
+        
+    "single frame plots"
+    obs,preds,full_preds,truth,obs_key,nan_array= instance.data_parser()
+    ukf_params = instance.ukf_params
+    truth[~nan_array]=np.nan
+    preds[~nan_array]=np.nan
+    full_preds[~nan_array]=np.nan
+
+    plts.pair_frame(truth, preds, obs_key, 50)
+    plts.error_hist(truth, preds, False)
+    plts.path_plots(truth,preds, False)
+    
+    if animate:
+                
+        #plts.trajectories(truth)
+        if ukf_params["sample_rate"]>1:
+            plts.pair_frames_animation(truth,full_preds,range(truth.shape[0]))
+        else:
+            plts.pair_frames_animation(truth,preds)
+    
 

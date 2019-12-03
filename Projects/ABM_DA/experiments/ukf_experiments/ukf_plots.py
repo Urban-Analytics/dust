@@ -7,12 +7,18 @@ Created on Mon Dec  2 11:27:06 2019
 """
 import os
 import sys
-sys.path.append("..")
-from ukf_experiments.ukf_ex2 import poly_count
-
 
 import numpy as np
 from math import ceil, log10
+
+try:
+    sys.path.append("..")
+    from ukf_experiments.poly_functions import poly_count
+except:
+    sys.path.append("../experiments/ukf_experiments")
+    from poly_functions import poly_count
+
+    
 "for plots"
 #from seaborn import kdeplot  # will be back shortly when diagnostic plots are better
 "general plotting"
@@ -27,7 +33,7 @@ from matplotlib.collections import PatchCollection
 "for rendering animations"
 import imageio 
 from shutil import rmtree
-from shapely.geometry import Polygon,MultiPoint
+
 
 plt.rcParams.update({'font.size':20})  # make plot font bigger
 
@@ -85,7 +91,7 @@ class ukf_plots:
         e.g into ukf_experiments directory from stationsim "../experiments/ukf_experiments"
     """
     
-    def __init__(self,filter_class,save_dir):
+    def __init__(self,filter_class,save_dir, prefix):
         "define which class to plot from"
         self.filter_class=filter_class
         self.width = filter_class.model_params["width"]
@@ -99,6 +105,7 @@ class ukf_plots:
         self.colours = ["black", "orangered", "yellow", "skyblue"]
         
         self.save_dir = save_dir
+        self.prefix = prefix
                         
     def trajectories(self,truth):
         
@@ -205,7 +212,7 @@ class ukf_plots:
             #plt.title("True Positions vs UKF Predictions")
             "save frame and close plot else struggle for RAM"
             number =  str(i).zfill(ceil(log10(truth.shape[0]))) #zfill names files such that sort() does its job properly later
-            file = save_dir +f"/ukf_pairs{number}"
+            file = save_dir + self.prefix + f"pairs{number}"
             f.savefig(file)
             plt.close()
     
@@ -384,7 +391,7 @@ class ukf_plots:
             padded to nearest upper order of 10 of number of iterations.
             """
             number = str(i).zfill(ceil(log10(truth.shape[0])))
-            file = save_dir+f"heatmap_{number}"
+            file = save_dir + self.prefix + f"heatmap_{number}"
             f.savefig(file)
             plt.close()
     
@@ -548,6 +555,6 @@ class animations():
         #animations.clear_output_folder(self,file)
         
         
-        
-        
-        
+
+
+    

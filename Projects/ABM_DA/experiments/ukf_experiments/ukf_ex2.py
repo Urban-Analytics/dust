@@ -6,18 +6,17 @@ Created on Mon Dec  2 11:19:48 2019
 @author: rob
 """
 import sys
-try:
-    sys.path.append("..")
-    from ukf_experiments.ukf_fx import fx
-    from ukf_experiments.poly_functions import poly_count, grid_poly
-    from ukf_experiments.ukf_plots import ukf_plots
-except:
-    sys.path.append("../experiments/ukf_experiments")
-    from ukf_fx import fx
-    from poly_functions import poly_count, grid_poly
-    from ukf_plots import ukf_plots
+from ukf_fx import fx
+from poly_functions import poly_count, grid_poly
+from ukf_plots import ukf_plots
+from default_ukf_configs import model_params,ukf_params
+
+sys.path.append("../../stationsim")
+from ukf2 import ukf_ss, pickler, depickler
+from stationsim_model import Model
 
 import numpy as np
+
 def obs_key_func(state,model_params,ukf_params):
         """which agents are observed"""
         
@@ -25,7 +24,7 @@ def obs_key_func(state,model_params,ukf_params):
         
         return key
 
-def aggregate_params(model_params, ukf_params, bin_size):
+def aggregate_params(n, bin_size,model_params=model_params,ukf_params=ukf_params):
     
     
     """update ukf_params with fx/hx and their parameters for experiment 2
@@ -38,9 +37,8 @@ def aggregate_params(model_params, ukf_params, bin_size):
     ------
     ukf_params : dict
     """
-    
-    n = model_params["pop_total"]
-    
+    model_params["pop_total"] = n
+
     ukf_params["bin_size"] = bin_size
     ukf_params["poly_list"] = grid_poly(model_params["width"],
               model_params["height"],ukf_params["bin_size"])
@@ -58,7 +56,7 @@ def aggregate_params(model_params, ukf_params, bin_size):
     ukf_params["pickle_file_name"] = f"agg_ukf_agents_{n}_bin_{bin_size}.pkl"    
     
     
-    return ukf_params
+    return model_params, ukf_params
     
 def hx2(state,model_params,ukf_params):
         """Convert each sigma point from noisy gps positions into actual measurements
@@ -98,7 +96,7 @@ def ex2_plots(instance,plot_dir,animate,prefix):
 
     plts.pair_frame(truth, preds, obs_key, 50)
     plts.heatmap_frame(truth,ukf_params,50)
-    plts.error_hist(truth, preds, False)
+    plts.error_hist(truth, preds,"Aggregate", False)
     plts.path_plots(truth,preds, False)
     
     if animate:
@@ -110,3 +108,38 @@ def ex2_plots(instance,plot_dir,animate,prefix):
         else:
             plts.pair_frames_animation(truth,preds)
         
+if __name__ == "__main__":
+    """__main__ experimental main function for ukf2. mostly for testing in spyder.
+    
+    Refere to notebook ukf_experiments2 to see this in action
+    
+    """
+    recall = True #recall previous run
+    do_pickle = True #pickle new run
+    n = 30
+    bin_size = 25
+    if not recall:
+        model_params, ukf_params = aggregate_params(n, bin_size)
+        
+        print(model_params)
+        print(ukf_params)
+        
+        base_model = Model(**model_params)
+        u = ukf_ss(model_params,ukf_params,base_model)
+        u.main()
+        
+        if do_pickle:
+            pickler("", ukf_params["pickle_file_name"], u)
+       
+    else:
+        
+        f_name = f"agg_ukf_agents_{n}_bin_{bin_size}.pkl"  
+    
+        source = ""
+
+        u = depickler(source, f_name)
+    
+    "unhash the necessary one"
+
+    ex2_plots(u,"",False,"agg_ukf_")
+    

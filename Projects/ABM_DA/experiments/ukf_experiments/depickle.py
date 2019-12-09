@@ -45,12 +45,36 @@ class grand_plots:
     
     """
 
-    def __init__(self,params,save):
+    def __init__(self,params, save, restrict = None, **kwargs):
+        """initialise plot class
+        
+        Parameters
+        ------
+        params: dict
+            `params` dictionary defines 2 parameters to extract data over 
+            and a file source.
+            
+            e.g.
+            depickle_params = {
+                    "agents" :  [10,20,30],
+                    "bin" : [5,10,25,50],
+                    "source" : "/media/rob/ROB1/ukf_results/ukf_",
+            }
+            Searches for files with 10,20, and 30 "agents" (population size) 
+            and 5, 10, 25, and 50 experiment 2 square grid size "bin".
+            It extracts theres files from the source.
+            Please be careful with this as it 
+        
+        
+        """
         self.param_keys = [key for key in params.keys()]
         self.p1 = params[self.param_keys[0]]
         self.p2 = params[self.param_keys[1]]
         self.source = params["source"]
         self.save = save
+        self.restrict = restrict
+        self.kwargs = kwargs
+        
     def depickle_data_parser(self,instance):
         
         
@@ -78,49 +102,84 @@ class grand_plots:
         "!!theres probably an easier way to do this"
         for j in range(int(preds.shape[0]//instance.sample_rate)):
             preds[j*instance.sample_rate,:] = preds2[j,:]
-            
-        return truth,preds
         
-    def frame_extractor(self):
-        """pull multiple class runs into pandas frame for analysis
+        nan_array = np.ones(shape = truth.shape,)*np.nan
+        for i, agent in enumerate(instance.base_model.agents):
+            array = np.array(agent.history_locations)
+            index = np.where(array !=None)[0]
+            nan_array[index,2*i:(2*i)+2] = 1
+        
+        return truth*nan_array, preds*nan_array
+        
+    def data_extractor(self):
+        """pull multiple class runs into arrays for analysis
+        
+        This is function looks awful... because it is. 
+        Heres what it does:
+            
+        - build grand dictionary L2
+        - loop over first parameter e.g. population size
+            - create sub dictionary for given i L2[i]
+            - loop over second parameter e.g. proportion observed (prop)
+                - create placeholder list sub_L2 to store data for given i and j.
+                - load each ukf pickle with the given i and j.
+                - for each pickle extract the data, calculate L2s, and put the 
+                    grand median L2 into sub_L2.
+                - put list sub_L2 as a bnpy array into 
+                dictionary L2[i] with key j.
+        
+        This will output a dictionary where for every pair of keys i and j , we accquire
+        an array of grand medians.
         """
+        "names of first and second parameters. e.g. agents and prop"
         keys = self.param_keys
         "placeholder dictionary for all parameters" 
         L2 = {}
+        "loop over first parameter. usually agents."
         for i in self.p1:
-            "file names for all files with parameter 1 value i"
-            files={}
-            "loop over second parameter to load in all files for given value of i"
-            for j in self.p2:
-                f_name = self.source + f"{keys[0]}_{i}_{keys[1]}_{j}-*"
-                files[j] = glob.glob(f_name)
-                
-            "sub dictionary for each second parameter"       
+            print(i)
+            "sub dictionary for parameter i"
             L2[i] = {} 
-            for _ in files.keys():
-                "collect all individual UKF run error metrics into a list"
-                L2_2=[]
-                for file in files[_]:
+            for j in self.p2:
+                "file names for glob to find. note wildcard * is needed"
+                f_name = self.source + f"{keys[0]}_{i}_{keys[1]}_{j}-*"
+                "find all files with given i and j"
+                files = glob.glob(f_name)
+                "placeholder list for grand medians of UKF runs with parameters i and j"
+                sub_L2=[]
+                for file in files:
+                    "open pickle"
                     f = open(file,"rb")
                     u = pickle.load(f)
                     f.close()
+                    "pull raw data"
                     truth, preds = self.depickle_data_parser(u)
-                    distances = L2_parser(truth[::u.sample_rate,:], preds[::u.sample_rate,:])
+                    "find L2 distances"
+                    distances = L2_parser(truth[::u.sample_rate,:], 
+                                          preds[::u.sample_rate,:])
+                    if self.restrict is not None:
+                        distances = self.restrict(distances, u, self.kwargs)
                     
-                    L2_2.append(np.nanmedian(np.nanmean(distances,axis=0)))
+                    "add grand median to sub_L2"
+                    sub_L2.append(np.nanmean(np.nanmedian(distances,axis=0)))
+                    "stack list of grand medians as an nx1 vector array"
+                    "put array into grand dictionary with keys i and j"
+                L2[i][j] = np.hstack(sub_L2)
+           
+        return L2
     
-                L2[i][_] = np.hstack(L2_2)
-                
+    def data_framer(self,L2):
         sub_frames = []
-    
+        keys = self.param_keys
         for i in self.p1:
             for j in self.p2:
+                "extract L2s from L2 dictionary with corresponding i and j."
                 L2s = L2[i][j]
                 sub_frames.append(pd.DataFrame([[i]*len(L2s),[j]*len(L2s),L2s]).T)
     
         "stack into grand frames and label columns"
         error_frame = pd.concat(sub_frames)
-        error_frame.columns = [keys[0], keys[1], "L2 agent errors"]
+        error_frame.columns = [keys[0], keys[1], "Grand Median L2s"]
     
         self.error_frame = error_frame
 
@@ -139,7 +198,7 @@ class grand_plots:
     
         self.error_array = error_array
 
-    def choropleth_plot(self):
+    def choropleth_plot(self, xlabel, ylabel, title):
        
         
         """choropleth style plot for grand medians
@@ -166,9 +225,23 @@ class grand_plots:
         
         " mask needed to get bad white squares in imshow"
         data2 = np.ma.masked_where(np.isnan(data),data)
-        "rotate again so imshow right way up (origin bottom left i.e. lower)"
+        "rotate again so imshow right way up for labels (origin bottom left i.e. lower)"
         data2=np.flip(data2,axis=0) 
         im=ax.imshow(data2,interpolation="nearest",cmap=cmap,origin="lower")
+        
+        
+        "text on top of squares for clarity"
+        data = np.flip(data,axis=0)
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                plt.text(j,i,str(data[i,j].round(2)),ha="center",va="center",color="w",
+                         path_effects=[pe.Stroke(linewidth = 0.7,foreground='k')])
+        
+        
+        "colourbar alignment and labelling"
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right",size="5%",pad=0.05)
+        cbar=plt.colorbar(im,cax,cax)
         
         "labelling"
         ax.set_xticks(np.arange(len(self.p1)))
@@ -178,32 +251,16 @@ class grand_plots:
         ax.set_xticks(np.arange(-.5,len(self.p1),1),minor=True)
         ax.set_yticks(np.arange(-.5,len(self.p2),1),minor=True)
         ax.grid(which="minor",color="k",linestyle="-",linewidth=2)
-        ax.set_xlabel("Number of Agents")
-        ax.set_ylabel("Aggregate Grid Squre Size")
-        #plt.title("Grand L2s Over Varying Agents and Percentage Observed")
-    
-    
-        "text on top of squares for clarity"
-        data = np.flip(data,axis=0)
-        for i in range(data.shape[0]):
-            for j in range(data.shape[1]):
-                plt.text(j,i,str(data[i,j].round(2)),ha="center",va="center",color="w",
-                         path_effects=[pe.Stroke(linewidth = 0.7,foreground='k')])
-                
-        "colourbar alignment and labelling"
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right",size="5%",pad=0.05)
-        cbar=plt.colorbar(im,cax,cax)
-        cbar.set_label("Grand Mean L2 Error")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        plt.title = title + " Choropleth"
+        cbar.set_label(title + " Grand Median L2s")
         
-        "further labelling and saving"
-        cbar.set_label("Aggregate Median L2s")
-        ax.set_ylabel("Aggregate Grid Squre Width")
-        
+        "save"
         if self.save:
-            plt.savefig("Aggregate_Grand_L2s.pdf")
+            plt.savefig(title + "_Choropleth.pdf")
         
-    def boxplot(self):
+    def boxplot(self, xlabel, ylabel, title):
         """produces grand median boxplot for all 30 ABM runs for choropleth plot
         
            
@@ -220,15 +277,23 @@ class grand_plots:
         """       
         keys = self.param_keys
         data = self.error_frame
-        f_name = f"Aggregate_grand_median_boxplot.pdf"
-        y_name = "L2 agent errors"
+        f_name = title  + "_boxplot.pdf"
+        y_name = "Grand Median L2s"
+        
         f = plt.figure()
-        sns.catplot(x=str(keys[1]),y=y_name,col=str(keys[0]),kind="box", data=data)
+        cat = sns.catplot(x=str(keys[1]),y=y_name,col=str(keys[0]),kind="box", data=data)
         plt.tight_layout()
+        
+        for i, ax in enumerate(cat.axes.flatten()):
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.set_title(str(keys[0]).capitalize() + " = " + str(self.p1[i]))
+        plt.title = title
         if self.save:
             plt.savefig(f_name)
        
         
+      
         
         
 """parameter dictionary
@@ -241,21 +306,73 @@ source : "where files are loaded from plus some file prefix such as "ukf" or "ag
 
 
 """
-depickle_params = {
-        "agents" :  [10,20,30],
-        #"prop" : [0.25, 0.5, 0.75, int(1)],
-        "bin" : [5,10,25,50],
-        #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
-        "source" : "/media/rob/ROB1/ukf_results_100_2/agg_ukf_",
-        }
 
-"init plot class"
-g_plts = grand_plots(depickle_params,True)
-"make frame"
-g_plts.frame_extractor()
-"make choropleth numpy array"
-g_plts.choropleth_array()
-"make choropleth"
-g_plts.choropleth_plot()
-"make boxplot"
-g_plts.boxplot()
+def ex1_restrict(distances,instance, *kwargs):
+    "split L2s for observed unobserved"
+    try:
+        observed = kwargs[0]["observed"]
+    except:
+        observed = kwargs["observed"] 
+    index = instance.index
+    
+    if observed:
+        distances = distances[:,index]
+    elif not observed:
+        "~ doesnt seem to work here for whatever reason. using delete instead"
+        distances = np.delete(distances,index,axis=1)
+        
+    return distances
+    
+def ex1_depickle():
+
+    depickle_params = {
+            "agents" :  [10, 20,30],
+            "prop" : [0.25, 0.5, 0.75, int(1)],
+            #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
+            "source" : "/media/rob/ROB1/ukf_results/ukf_",
+            }
+    "plot observed/unobserved plots"
+    obs_bools = [True, False]
+    obs_titles = ["Observed", "Unobserved"]
+    for i in range(len(obs_bools)):
+        
+        "initialise plot for observed/unobserved agents"
+        g_plts = grand_plots(depickle_params, True, restrict = ex1_restrict, observed = obs_bools[i])
+        "make dictionary"
+        L2 = g_plts.data_extractor()
+        "make pandas dataframe for seaborn"
+        g_plts.data_framer(L2)
+        "make choropleth numpy array"
+        g_plts.choropleth_array()
+        "make choropleth"
+        g_plts.choropleth_plot("Numbers of Agents", "Proportion Observed",obs_titles[i])
+        "make boxplot"
+        g_plts.boxplot("Proportion Observed", "Grand Median L2s",obs_titles[i])
+        
+        
+def ex2_depickle():
+
+    depickle_params = {
+            "agents" :  [10, 20, 30],
+            "bin" : [5,10,25,50],
+            #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
+            "source" : "/media/rob/ROB1/ukf_results_100_1/agg_ukf_",
+            }
+
+    "init plot class"
+    g_plts = grand_plots(depickle_params,True)
+    "make dictionary"
+    L2 = g_plts.data_extractor()
+    "make pandas dataframe for seaborn"
+    g_plts.data_framer(L2)
+    "make choropleth numpy array"
+    g_plts.choropleth_array()
+    "make choropleth"
+    g_plts.choropleth_plot("Numbers of Agents", "Proportion Observed","Aggregate")
+    "make boxplot"
+    g_plts.boxplot("Grid Square Size", "Grand Median L2s", "Aggregate")
+    
+if __name__ == "__main__":
+    #ex1_depickle()
+    ex2_depickle()
+    

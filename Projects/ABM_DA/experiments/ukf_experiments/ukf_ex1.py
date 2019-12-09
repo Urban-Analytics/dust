@@ -7,14 +7,13 @@ Created on Mon Dec  2 11:16:33 2019
 
 """
 import sys
-try:
-    sys.path.append("..")
-    from ukf_experiments.ukf_fx import fx
-    from ukf_experiments.ukf_plots import ukf_plots
-except:
-    sys.path.append("../experiments/ukf_experiments")
-    from ukf_fx import fx
-    from ukf_plots import ukf_plots
+from ukf_fx import fx
+from ukf_plots import ukf_plots
+from default_ukf_configs import model_params,ukf_params
+
+sys.path.append("../../stationsim")
+from ukf2 import ukf_ss, pickler, depickler
+from stationsim_model import Model
 
 import numpy as np
 from math import floor
@@ -70,7 +69,7 @@ def obs_key_func(state, model_params, ukf_params):
     key[ukf_params["index"]] +=2
     return key
 
-def omission_params(model_params, ukf_params, prop):
+def omission_params(n, prop, model_params = model_params, ukf_params=ukf_params):
     
     
     """update ukf_params with fx/hx and their parameters for experiment 1
@@ -83,7 +82,7 @@ def omission_params(model_params, ukf_params, prop):
     ------
     ukf_params : dict
     """
-    n = model_params["pop_total"]
+    model_params["pop_total"] = n
     ukf_params["prop"] = prop
     ukf_params["sample_size"]= floor(n * ukf_params["prop"])
 
@@ -100,29 +99,61 @@ def omission_params(model_params, ukf_params, prop):
     ukf_params["pickle_file_name"] = f"ukf_agents_{n}_prop_{prop}.pkl"    
     
     
-    return ukf_params
+    return model_params, ukf_params
 
 
-def ex1_plots(instance,plot_dir,animate,prefix):
+def ex1_plots(instance,plot_dir,save, animate, prefix):
     plts = ukf_plots(instance,plot_dir,prefix)
-        
     "single frame plots"
     obs,preds,full_preds,truth,obs_key,nan_array= instance.data_parser()
     ukf_params = instance.ukf_params
-    truth[~nan_array]=np.nan
-    preds[~nan_array]=np.nan
+    truth*nan_array
+    preds*nan_array
     full_preds[~nan_array]=np.nan
 
+
+    index2 = ukf_params["index2"]
     plts.pair_frame(truth, preds, obs_key, 50)
-    plts.error_hist(truth, preds, False)
-    plts.path_plots(truth,preds, False)
+    plts.error_hist(truth[:,index2], preds[:,index2],"Observed Errors", save)
+    plts.error_hist(truth[:,~index2], preds[:,~index2],"Unobserved Errors", save)
+    plts.path_plots(truth, preds, save)
     
     if animate:
-                
-        #plts.trajectories(truth)
+        plts.trajectories(truth)
         if ukf_params["sample_rate"]>1:
             plts.pair_frames_animation(truth,full_preds,range(truth.shape[0]))
         else:
             plts.pair_frames_animation(truth,preds)
     
 
+if __name__ == "__main__":
+    recall = True #recall previous run
+    do_pickle = True #pickle new run
+    n= 30
+    prop = 0.5
+    
+    if not recall:
+        model_params, ukf_params = omission_params(n, prop)
+        print(model_params)
+        print(ukf_params)
+        
+        base_model = Model(**model_params)
+        u = ukf_ss(model_params,ukf_params,base_model)
+        u.main()
+        
+        if do_pickle:
+            pickler("", ukf_params["pickle_file_name"], u)
+            
+    else:
+        f_name = f"ukf_agents_{n}_prop_{prop}.pkl"
+        source = ""
+        u = depickler(source, f_name)
+        ukf_params = u.ukf_params
+        model_params = u.model_params
+
+    ex1_plots(u,"",True, False,"ukf_")
+
+    
+    
+    
+    

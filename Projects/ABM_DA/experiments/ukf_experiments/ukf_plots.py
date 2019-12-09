@@ -173,20 +173,27 @@ class ukf_plots:
             truth2 = truth[i,:]
             preds2 = preds[i,:]
             obs_key2 = self.obs_key[i//self.filter_class.ukf_params["sample_rate"],:]
-            
+            ms = 10
+            alpha = 1
             f = plt.figure(figsize=(12,8))
             ax = plt.subplot(111)
             plt.xlim([0,self.width])
             plt.ylim([0,self.height])
             
             "plot true agents and dummies for legend"
-            
-            ax.scatter(truth2[0::2], truth2[1::2], color=self.colours[0], marker = self.markers[0])
+            "one scatter for translucent fill. one for opaque edges"
+            ax.scatter(truth2[0::2], truth2[1::2], color=self.colours[0], s= ms**2, marker = self.markers[0],alpha=alpha)
+            ax.scatter(truth2[0::2], truth2[1::2], c="none", s= ms**2, marker = self.markers[0],ec="k",linewidths=1.5)
+
             for j in range(self.filter_class.pop_total):
                     obs_key3 = int(obs_key2[j]+1)
                     colour = self.colours[obs_key3]
                     marker = self.markers[obs_key3]
-                    ax.scatter(preds2[(2*j)],preds2[(2*j)+1],color=colour,marker = marker,edgecolors="k")
+                    "one scatter for translucent fill. one for opaque edges"
+                    ax.scatter(preds2[(2*j)],preds2[(2*j)+1], c="none", marker = marker, s= ms**2, 
+                                       edgecolors="k",linewidths=1.5)
+                    ax.scatter(preds2[(2*j)],preds2[(2*j)+1],color=colour,marker = marker, s= ms**2, 
+                                      alpha=alpha, edgecolors="k")
                     x = np.array([truth2[(2*j)],preds2[(2*j)]])
                     y = np.array([truth2[(2*j)+1],preds2[(2*j)+1]])
                     plt.plot(x,y,linewidth=3,color="k",linestyle="-")
@@ -194,10 +201,14 @@ class ukf_plots:
     
                     
             "dummy markers for consistent legend" 
-            ax.scatter(-1,-1,color=self.colours[0],label = "Truth",marker=self.markers[0],edgecolors="k")
-            ax.scatter(-1,-1,color=self.colours[1],label = "Unobserved",marker=self.markers[1],edgecolors="k")
-            ax.scatter(-1,-1,color=self.colours[2],label = "Aggregate",marker=self.markers[2],edgecolors="k")
-            ax.scatter(-1,-1,color=self.colours[3],label = "GPS",marker=self.markers[3],edgecolors="k")
+            ax.scatter(-1,-1,color=self.colours[0],label = "Truth", s= ms**2,
+                       marker=self.markers[0],edgecolors="k",linewidths=1.5)
+            ax.scatter(-1,-1,color=self.colours[1],label = "Unobserved", s= ms**2,
+                       marker=self.markers[1],edgecolors="k",linewidths=1.5)
+            ax.scatter(-1,-1,color=self.colours[2],label = "Aggregate", s= ms**2,
+                       marker=self.markers[2],edgecolors="k",linewidths=1.5)
+            ax.scatter(-1,-1,color=self.colours[3],label = "GPS",
+                      marker=self.markers[3],edgecolors="k",linewidths=1.5)
             
             "put legend outside of plot"
             box = ax.get_position()
@@ -288,7 +299,7 @@ class ukf_plots:
             g.savefig("UKF_Paths.pdf")
             
         
-    def error_hist(self, truth, preds, save):
+    def error_hist(self, truth, preds, title, save):
         
         
         """Plot distribution of median agent errors
@@ -301,10 +312,11 @@ class ukf_plots:
                  bins = self.filter_class.model_params["pop_total"],edgecolor="k")
         plt.xlabel("Agent L2")
         plt.ylabel("Agent Counts")
+        plt.title(title)
         # kdeplot(agent_means,color="red",cut=0,lw=4)
 
         if save:
-            j.savefig(self.save_dir+f"Aggregate_agent_hist.pdf")
+            j.savefig(self.save_dir+f"{title}_Agent_Hist.pdf")
     
     def heatmap_main(self, truth, ukf_params, plot_range, save_dir):
         """main heatmap plot
@@ -318,6 +330,7 @@ class ukf_plots:
         cmap = cmap.from_list("custom",cmaplist)
         "bottom heavy norm for better vis variable on size"
         n = self.filter_class.model_params["pop_total"]
+        
         """n_prop function basically makes linear colouration for low pops and 
         large bins but squeeze colouration into bottom percentage for higher pops/low bins.
         This is done to get better visuals for higher pops/bin size
@@ -325,6 +338,7 @@ class ukf_plots:
         Starts near 1 and slowly goes to 0.
         Used tanh identity as theres no sech function in numpy.
         There's probably a nice kernel I dont know of."""
+        
         n_prop = n*(1-np.tanh(n/ukf_params["bin_size"])**2)
         norm =CompressionNorm(1e-5,0.9*n_prop,0.1,0.9,1e-8,n)
 
@@ -365,7 +379,8 @@ class ukf_plots:
             for k,count in enumerate(counts):
                 plt.plot
                 ax.annotate(s=count, xy=ukf_params["poly_list"][k].centroid.coords[0], 
-                            ha='center',va="center",color="w")
+                            ha='center',va="center",color="w",
+                                         size = ukf_params["bin_size"])
             
             "set up cbar. colouration proportional to number of agents"
             ax.text(0,101,s="Total Agents: " + str(np.sum(counts)),color="k")
@@ -407,7 +422,8 @@ class ukf_plots:
         
         """
         os.mkdir(self.save_dir+"output_heatmap")
-        self.heatmap_main(truth, ukf_params, range(plot_range), self.save_dir+"output_heatmap/")
+        self.heatmap_main(truth, ukf_params, range(plot_range), 
+                          self.save_dir+"output_heatmap/")
         animations.animate(self,self.save_dir+"output_heatmap",
                            self.save_dir+f"heatmap_{self.filter_class.pop_total}_",12)
     

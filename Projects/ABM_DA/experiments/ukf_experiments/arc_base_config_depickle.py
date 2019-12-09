@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import colors
 import matplotlib.patheffects as pe
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.collections import PolyCollection
+import matplotlib.lines as lines
+plt.rcParams["font.size"] = 22
 """
 Translates results from base ukf experiments into plot.
 plot indicates which performs best of noisy observations,
@@ -52,7 +52,7 @@ def base_data_parser(n,rates,noises,run_id):
     for i in rates:
         for j in noises:
             for k in run_id:
-                file = glob.glob(f"ukf_results/agents_{n}_rate_{i}_noise_{j}_base_config_errors_*{k}")
+                file = glob.glob(f"/media/rob/ROB1/ukf_results/agents_{n}_rate_{i}_noise_{j}_base_config_errors_*{k}")
                 if file != []:
                     file=file[0]
                     rates2.append(i)
@@ -257,8 +257,8 @@ def plot_2_3d(data2,best_array,n,rates,noises,save):
     "init and some labelling"
     fig = plt.figure(figsize=(14,6))
     ax = fig.add_subplot(111,projection='3d')
-    ax.set_xlabel('Noise')
-    ax.set_ylabel("Rate")
+    ax.set_xlabel('Observation Noise', labelpad = 20,fontsize = 22)
+    ax.set_ylabel("Assimilation Rate", labelpad = 20)
     ax.set_zlabel('Grand L2 Error')
     ax.view_init(45,225)
     
@@ -269,19 +269,19 @@ def plot_2_3d(data2,best_array,n,rates,noises,save):
         ukf=list(sub_data["ukf"])
         obs=list(sub_data["obs"])
         l1=ax.plot(xs=noises,ys=[i]*len(noises),zs=obs,color=colours[0],linewidth=4,
-                path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=0.5), pe.Normal()],alpha=0.5)
-        l2=ax.plot(xs=noises,ys=[i]*len(noises),zs=preds,color=colours[1],linewidth=4,
-                path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=0.5), pe.Normal()],alpha=0.5)
-        l3=ax.plot(xs=noises,ys=[i]*len(noises),zs=ukf,color=colours[2],linewidth=4,
-                path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=0.5), pe.Normal()],alpha=0.5)
+                path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=1), pe.Normal()],alpha=0.8)
+        l2=ax.plot(xs=noises,ys=[i]*len(noises),zs=preds,color=colours[1],linewidth=4,linestyle = "-.",
+                path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=1), pe.Normal()],alpha=0.6)
+        l3=ax.plot(xs=noises,ys=[i]*len(noises),zs=ukf,color=colours[2],linewidth=4,linestyle = "--",
+                path_effects=[pe.Stroke(offset=(4,0),linewidth=6, foreground='k',alpha=1), pe.Normal()],alpha=1)
              
     "placeholder dummies for legend"
-    s1=matplotlib.lines.Line2D([-1],[-1],color=colours[0],label="obs",linewidth=4,
-                path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=0.5), pe.Normal()])
-    s2=matplotlib.lines.Line2D([-1],[-1],color=colours[1],label="preds",linewidth=4,
-                path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=0.5), pe.Normal()])
-    s3=matplotlib.lines.Line2D([-1],[-1],color=colours[2],label="ukf",
-                path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=0.5), pe.Normal()])
+    s1=lines.Line2D([-1],[-1],color=colours[0],label="obs",linewidth=4,linestyle = "-",
+                path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=1), pe.Normal()])
+    s2 = lines.Line2D([-1],[-1],color=colours[1],label="preds",linewidth=4,linestyle = "-.",
+                path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=1), pe.Normal()])
+    s3 = lines.Line2D([-1],[-1],color=colours[2],label="ukf",linewidth=4,linestyle = "--",
+                path_effects=[pe.Stroke(offset=(4,0),linewidth=6, foreground='k',alpha=1), pe.Normal()])
 
     "rest of labelling"
     ax.set_xticks(np.arange(0,len(noises)))
@@ -306,17 +306,17 @@ if __name__ == "__main__":
     rates = [1,2,5,10] #.2 to 1 by .2
     noises = [0,0.25,0.5,1,2,5]
     run_id = np.arange(0,30,1) #20 runs
-    plot1 =True #do plot 1
-    plot2 = True # do plot2
+    plot1 =False #do plot 1
+    plot2 = False # do plot2
     plot3=True
-    save =True # save plots
+    save =False # save plots
     
     for n in ns:
         data2,best_array = base_data_parser(n,rates,noises,run_id)
         
-        if plot_1:
+        if plot1:
             plot_1(data2,best_array,n,rates,noises,save)
-        if plot_2:
+        if plot2:
             plot_2(data2,best_array,n,rates,noises,save)
         if plot3:
             plot_2_3d(data2,best_array,n,rates,noises,save)

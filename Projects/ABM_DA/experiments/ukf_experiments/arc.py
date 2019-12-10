@@ -22,7 +22,7 @@ cd /nobackup/username
 git clone -b dev_rc https://github.com/Urban-Analytics/dust/
 
 #move to experiments folder
-cd /dust/Projects/ABM_DA/experiments/ukf_experiments
+cd dust/Projects/ABM_DA/experiments/ukf_experiments
 
 #create python 3 virtual environment
 

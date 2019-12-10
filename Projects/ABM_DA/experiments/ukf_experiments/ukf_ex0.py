@@ -57,7 +57,7 @@ def hx0(state, model_params, ukf_params):
     return state
 
 
-def ex0_save(instance,source):
+def ex0_save(instance,source,f_name):
     
     obs,preds,forecasts,truths,nan_array= instance.data_parser()
     truths *= nan_array
@@ -77,7 +77,7 @@ def ex0_save(instance,source):
     ukf_error =  np.nanmedian(np.nanmedian(errors["ukf"],axis=0))
     
     mean_array = np.array([obs_error, forecast_error, ukf_error])
-    np.save(source + ukf_params["file_name"], mean_array)
+    np.save(source + f_name, mean_array)
     
 def ex0_main():
 
@@ -91,7 +91,7 @@ def ex0_main():
     base_model = Model(**model_params)
     u = ukf_ss(model_params,ukf_params,base_model)
     u.main()
-    ex0_save(u,"")
+    ex0_save(u, "ukf_results/", ukf_params["file_name"])
   
 #%%  
     

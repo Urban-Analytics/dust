@@ -25,7 +25,8 @@ git clone -b dev_rc https://github.com/Urban-Analytics/dust/
 cd /dust/Projects/ABM_DA/experiments/ukf_experiments
 
 #create python 3 virtual environment
-module load python python-libs
+
+# ffmpeg-imageio not on pip. eithmodule load python python-libs
 virtualenv mypython
 source mypython/bin/activate
 
@@ -39,8 +40,7 @@ pip install shapely
 pip install seaborn
 # for animations
 pip install imageio
-# 
-# ffmpeg-imageio not on pip. either install an older imageio version <=2.4.1 
+# er install an older imageio version <=2.4.1 
 # or find another way e.g.
 # conda install -c conda-forge imageio-ffmpeg ""
 # either way. this isnt necessary for arc only. 
@@ -67,8 +67,8 @@ sys.path.append('../..')
 from stationsim.ukf2 import ukf_ss
 from stationsim.stationsim_model import Model
 
-import default_ukf_configs
-from ukf_ex0 import ex0_params
+from default_ukf_configs import model_params,ukf_params
+from ukf_ex0 import ex0_params, ex0_save
 from ukf_ex1 import omission_params
 from ukf_ex2 import aggregate_params
 
@@ -90,12 +90,17 @@ def ex0_input(model_params,ukf_params):
     
     model_params['pop_total'] = num_age
  
-    sample_rate = param_list[int(sys.argv[1])-1][0]
-    noise = param_list[int(sys.argv[1])-1][1]
-    ex0_params(n, noise, sample_rate, model_params, ukf_params)
+    sample_rate = param_list[719][0]
+    noise = param_list[719][1]
+
+    #sample_rate = param_list[int(sys.argv[1])-1][0]
+    #noise = param_list[int(sys.argv[1])-1][1]
+    ex0_params(num_age, noise, sample_rate, model_params, ukf_params)
     
     
-    ukf_params["run_id"] = param_list[int(sys.argv[1])-1][2]
+    ukf_params["run_id"] = param_list[719][2]
+    #ukf_params["run_id"] = param_list[int(sys.argv[1])-1][2]
+
     ukf_params["f_name"] = "ukf_results/config_agents_{}_rate_{}_noise_{}-{}".format(      
                             str(int(model_params['pop_total'])).zfill(3),
                             str(float(ukf_params['sample_rate'])),
@@ -144,10 +149,10 @@ def ex2_input(model_params,ukf_params):
 if __name__ == '__main__':
     __spec__ = None
 
-    if len(sys.argv) != 2:
-        print("I need an integer to tell me which experiment to run. \n\t"
-                 "Usage: python run_pf <N>")
-        sys.exit(1)
+    #if len(sys.argv) != 2:
+    #    print("I need an integer to tell me which experiment to run. \n\t"
+    #         "Usage: python run_pf <N>")
+    #    sys.exit(1)
 
     ex0_input(model_params,ukf_params)
     #ex1_input(model_params,ukf_params)
@@ -163,13 +168,18 @@ if __name__ == '__main__':
     u = ukf_ss(model_params, ukf_params, base_model)
     u.main()
     
-    #store final class instance via pickle
-    f_name = ukf_params["f_name"]
-    f = open(f_name,"wb")
-    pickle.dump(u,f)
-    f.close()
-
-    print("Run: {}, prop: {}, agents: {}, took: {}(s)".format(str(ukf_params["run_id"]).zfill(4), ukf_params['prop'], 
-          model_params['pop_total'], round(time1 - datetime.datetime.now()),flush=True))
+    do_pickle = False
+    
+    if do_pickle:
+        #store final class instance via pickle
+        f_name = ukf_params["f_name"]
+        f = open(f_name,"wb")
+        pickle.dump(u,f)
+        f.close()
+    
+    else:
+        ex0_save(u, "ukf_results/", ukf_params["f_name"])
+        
+    print(time1 - datetime.datetime.now())
     
 

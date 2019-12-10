@@ -26,7 +26,8 @@ cd /dust/Projects/ABM_DA/experiments/ukf_experiments
 
 #create python 3 virtual environment
 
-# ffmpeg-imageio not on pip. eithmodule load python python-libs
+# ffmpeg-imageio not on pip. eith
+module load python python-libs
 virtualenv mypython
 source mypython/bin/activate
 
@@ -78,7 +79,6 @@ import numpy as np
 import pickle
 
 #%%
-
 def ex0_input(model_params,ukf_params):
     num_age = 10 # 10 to 30 agent population by 10
 
@@ -90,18 +90,18 @@ def ex0_input(model_params,ukf_params):
     
     model_params['pop_total'] = num_age
  
-    sample_rate = param_list[719][0]
-    noise = param_list[719][1]
+    sample_rate = param_list[600][0]
+    noise = param_list[600][1]
 
     #sample_rate = param_list[int(sys.argv[1])-1][0]
     #noise = param_list[int(sys.argv[1])-1][1]
     ex0_params(num_age, noise, sample_rate, model_params, ukf_params)
     
     
-    ukf_params["run_id"] = param_list[719][2]
+    ukf_params["run_id"] = param_list[600][2]
     #ukf_params["run_id"] = param_list[int(sys.argv[1])-1][2]
 
-    ukf_params["f_name"] = "ukf_results/config_agents_{}_rate_{}_noise_{}-{}".format(      
+    ukf_params["f_name"] = "config_agents_{}_rate_{}_noise_{}-{}".format(      
                             str(int(model_params['pop_total'])).zfill(3),
                             str(float(ukf_params['sample_rate'])),
                             str(float(ukf_params['noise'])),
@@ -180,6 +180,6 @@ if __name__ == '__main__':
     else:
         ex0_save(u, "ukf_results/", ukf_params["f_name"])
         
-    print(time1 - datetime.datetime.now())
+    print(datetime.datetime.now()-time1)
     
 

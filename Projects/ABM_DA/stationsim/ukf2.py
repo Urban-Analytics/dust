@@ -335,13 +335,12 @@ class ukf_ss:
     def ss_Predict(self):
         "forecast sigma points forwards to predict next state"
         self.ukf.predict() 
+        self.forecasts.append(self.ukf.x)
         "step model forwards"
         self.base_model.step()
         "add true noiseless values from ABM for comparison"
         self.truths.append(self.base_model.get_state(sensor="location"))
         "append raw ukf forecasts of x and p"
-        self.forecasts.append(self.ukf.x)
-        self.full_ps.append(self.ukf.p)
 
     def ss_Update(self,step):
         if step%self.sample_rate == 0:
@@ -362,7 +361,7 @@ class ukf_ss:
                 self.obs_key.append(key)
 
             self.ukf_histories.append(self.ukf.x) #append histories
-            self.obs.append(self.ukf.hx(state, self.model_params, self.ukf_params))
+            self.obs.append(state)
                  
         
     def main(self):

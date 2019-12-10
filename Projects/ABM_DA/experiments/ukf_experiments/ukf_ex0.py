@@ -60,6 +60,8 @@ def hx0(state, model_params, ukf_params):
 def ex0_save(instance,source,f_name):
     
     obs,preds,forecasts,truths,nan_array= instance.data_parser()
+    
+    obs *= nan_array[::instance.sample_rate]
     truths *= nan_array
     preds *= nan_array
     forecasts *= nan_array
@@ -68,15 +70,12 @@ def ex0_save(instance,source,f_name):
     preds = preds[::instance.sample_rate,:]
     forecasts = forecasts[::instance.sample_rate,:]
 
-    errors = {}
-    errors["obs"] = L2s(truths,obs)
-    obs_error = np.nanmedian(np.nanmedian(errors["obs"],axis=0))
-    errors["forecasts"] = L2s(truths,forecasts)
-    forecast_error = np.nanmedian(np.nanmedian(errors["forecasts"],axis=0))
-    errors["ukf"] = L2s(truths,preds)
-    ukf_error =  np.nanmedian(np.nanmedian(errors["ukf"],axis=0))
+    obs_error = np.nanmedian(np.nanmedian(L2s(truths,obs),axis=0))
+    forecast_error = np.nanmedian(np.nanmedian(L2s(truths,forecasts),axis=0))
+    ukf_error =  np.nanmedian(np.nanmedian(L2s(truths,preds),axis=0))
     
     mean_array = np.array([obs_error, forecast_error, ukf_error])
+    print(mean_array)
     np.save(source + f_name, mean_array)
     
 def ex0_main():

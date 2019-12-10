@@ -300,15 +300,17 @@ class ukf_ss:
         """fills in blanks between assimlations with pure stationsim. 
         good for animation. not good for error metrics use ukf_histories
         """
-        self.ukf_preds=[] 
         """assimilated ukf positions no filled in section
         (this is predictions vs full predicitons above)"""
-        self.ukf_histories = []  
-        self.full_ps=[]  # full covariances. again used for animations and not error metrics
-        self.truths = []  # noiseless observations
+        
         self.obs = []  # actual sensor observations
+        self.ukf_histories = []  
+        self.forecasts=[] 
+        self.truths = []  # noiseless observations
+
+        self.full_ps=[]  # full covariances. again used for animations and not error metrics
         self.obs_key = [] # which agents are observed (0 not, 1 agg, 2 gps)
-        self.obs_key_func = ukf_params["obs_key_func"]  #
+        self.obs_key_func = ukf_params["obs_key_func"]  #defines what type of observation each agent has
 
         self.time1 =  datetime.datetime.now()#timer
         self.time2 = None
@@ -330,7 +332,39 @@ class ukf_ss:
         r = ukf_params["r"]#sensor noise
         self.ukf = ukf(self.model_params, ukf_params, self.base_model, x, ukf_params["fx"], ukf_params["hx"], p, q, r)
     
-    
+    def ss_Predict(self):
+        "forecast sigma points forwards to predict next state"
+        self.ukf.predict() 
+        "step model forwards"
+        self.base_model.step()
+        "add true noiseless values from ABM for comparison"
+        self.truths.append(self.base_model.get_state(sensor="location"))
+        "append raw ukf forecasts of x and p"
+        self.forecasts.append(self.ukf.x)
+        self.full_ps.append(self.ukf.p)
+
+    def ss_Update(self,step):
+        if step%self.sample_rate == 0:
+            state = self.base_model.get_state(sensor="location")
+            "apply noise to active agents"
+            if self.ukf_params["bring_noise"]:
+                noise_array=np.ones(self.pop_total*2)
+                noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
+                noise_array*=np.random.normal(0,self.ukf_params["noise"],self.pop_total*2)
+                state+=noise_array
+                
+                
+            self.ukf.update(z=state) #update UKF
+            if self.obs_key_func is not None:
+                key = self.obs_key_func(state,self.model_params, self.ukf_params)
+                "force inactive agents to unobserved"
+                key *= [agent.status%2 for agent in self.base_model.agents]
+                self.obs_key.append(key)
+
+            self.ukf_histories.append(self.ukf.x) #append histories
+            self.obs.append(self.ukf.hx(state, self.model_params, self.ukf_params))
+                 
+        
     def main(self):
         """main function for applying ukf to gps style station StationSim
         -    initiates ukf
@@ -343,53 +377,24 @@ class ukf_ss:
         
         """
         
+        "initialise UKF"
         self.init_ukf(self.ukf_params) 
-        for _ in range(self.number_of_iterations-1):
+        for step in range(self.number_of_iterations-1):
             
-            "forecast sigma points forwards to predict next state"
-            self.ukf.predict() 
-            "step model forwards"
-            self.base_model.step()
-            "add true noiseless values from ABM for comparison"
-            self.truths.append(self.base_model.get_state(sensor="location"))
+            "forecast next StationSim state and jump model forwards"
+            self.ss_Predict()
+            "assimilate forecasts using new model state."
+            self.ss_Update(step)
             
-            "DA update step and data logging"
-            "data logged for full preds and only assimilated preds (just predict step or predict and update)"
-            if _%self.sample_rate == 0: #update kalman filter assimilate predictions/measurements
-                
-                state = self.base_model.get_state(sensor="location") #observed agents states
-                "apply noise to active agents"
-                if self.ukf_params["bring_noise"]:
-                    noise_array=np.ones(self.pop_total*2)
-                    noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
-                    noise_array*=np.random.normal(0,self.ukf_params["noise"],self.pop_total*2)
-                    state+=noise_array
-                    
-                    
-                self.ukf.update(z=state) #update UKF
-                key = self.obs_key_func(state,self.model_params, self.ukf_params)
-                "force inactive agents to unobserved"
-                key *= [agent.status%2 for agent in self.base_model.agents]
-                self.obs_key.append(key)
-
-                self.ukf_histories.append(self.ukf.x) #append histories
-                self.ukf_preds.append(self.ukf.x)
-                self.obs.append(self.ukf.hx(state, self.model_params, self.ukf_params))
-                self.full_ps.append(self.ukf.p)
-                     
-                
-                x = self.ukf.x
-                if np.sum(np.isnan(x))==x.shape[0]:
-                    print("math error. try larger values of alpha else check fx and hx.")
-                    break
-            else:
-                "update full preds that arent assimilated"
-                self.ukf_preds.append(self.ukf.x)
-                self.full_ps.append(self.ukf.p)
-                ""
-            if self.base_model.pop_finished == self.pop_total: #break condition
+            finished = self.base_model.pop_finished == self.pop_total
+            if finished: #break condition
                 break
-        
+            
+            #elif np.nansum(np.isnan(self.ukf.x)) == 0:
+            #    print("math error. try larger values of alpha else check fx and hx.")
+            #    break
+          
+
         self.time2 = datetime.datetime.now()#timer
         print(self.time2-self.time1)
 
@@ -401,53 +406,64 @@ class ukf_ss:
         Returns
         ------
             
-        a : array_like
-            `a` noisy observations of agents positions
-        b : array_like
-            `b` ukf predictions of said agent positions
-        c : array_like
-            `c` if sampling rate >1 fills blank space in b with pure stationsim prediciton
-                this is solely for smoother animations later
-        d : 
-            `d` true noiseless agent positions for post-hoc comparison
+        obs : array_like
+            `obs` noisy observations of agents positions
+        preds : array_like
+            `preds` ukf predictions of said agent positions
+        forecasts : array_like
+            `forecasts` just the first ukf step at every time point
+            useful for comparison in experiment 0
+        truths : 
+            `truths` true noiseless agent positions for post-hoc comparison
             
         nan_array : array_like
             `nan_array` which entries of b are nan. good for plotting/metrics            
         """
        
-        nan_array = np.ones(shape = self.truths.shape)*np.nan
-        for i, agent in enumerate(self.base_model.agents):
-            array = np.array(agent.history_locations)
-            index = np.where(array !=None)[0]
-            nan_array[index,2*i:(2*i)+2] = 1
+       
             
         """pull actual data. note a and b dont have gaps every sample_rate
         measurements. Need to fill in based on truths (d).
         """
-        a =  np.vstack(self.obs) 
-        b2 = np.vstack(self.ukf_histories)
-        d = np.vstack(self.truths)
-        obs_key2 = np.vstack(self.obs_key)
+        obs =  np.vstack(self.obs) 
+        preds2 = np.vstack(self.ukf_histories)
+        truths = np.vstack(self.truths)
+        
         
         "full 'd' size placeholders"
-        b= np.zeros((d.shape[0],self.pop_total*2))*np.nan
-        obs_key = np.zeros((d.shape[0],self.pop_total))*np.nan
+        preds= np.zeros((truths.shape[0],self.pop_total*2))*np.nan
         
         "fill in every sample_rate rows with ukf estimates and observation type key"
-        for j in range(int(b.shape[0]//self.sample_rate)):
-            b[j*self.sample_rate,:] = b2[j,:]
-            obs_key[j*self.sample_rate,:] = obs_key2[j,:]
+        for j in range(int(preds.shape[0]//self.sample_rate)):
+            preds[j*self.sample_rate,:] = preds2[j,:]
+
+        nan_array = np.ones(shape = truths.shape)*np.nan
+        for i, agent in enumerate(self.base_model.agents):
+            array = np.array(agent.history_locations)
+            index = np.where(array !=None)[0]
+            nan_array[index,2*i:(2*i)+2] = 1
 
         """only need c if there are gaps in measurements >1 sample_rate
         else ignore
         """
-        if self.sample_rate>1:
-            c= np.vstack(self.ukf_preds)
-            return a,b,c,d,obs_key,nan_array
-        else:
-            return a,b,d,obs_key,nan_array
-
-
+        try:
+            if self.ukf_params["do_forecasts"]:
+                forecasts = np.vstack(self.forecasts) #full forecast array for smooth plotting etc   
+            return obs,preds,forecasts,truths,nan_array
+        except:
+            return obs,preds,truths,nan_array
+          
+            
+    def obs_key_parser(self):
+        obs_key2 = np.vstack(self.obs_key)
+        shape = np.vstack(self.truths).shape[0]
+        obs_key = np.zeros((shape,self.pop_total))*np.nan
+        
+        for j in range(int(shape//self.sample_rate)):
+            obs_key[j*self.sample_rate,:] = obs_key2[j,:]
+        
+        return obs_key
+        
 def pickler(source, f_name, instance):
     f = open(source + f_name,"wb")
     pickle.dump(instance,f)

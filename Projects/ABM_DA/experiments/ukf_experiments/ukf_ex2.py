@@ -88,12 +88,10 @@ def ex2_plots(instance,plot_dir,animate,prefix):
     plts = ukf_plots(instance,plot_dir,prefix)
         
     "pull data and put finished agents to nan"
-    obs,preds,full_preds,truth,obs_key,nan_array= instance.data_parser()
+    obs, preds, truth, obs_key, nan_array= instance.data_parser()
     ukf_params = instance.ukf_params
-    truth[~nan_array]=np.nan
-    preds[~nan_array]=np.nan
-    full_preds[~nan_array]=np.nan
-
+    truth *= nan_array
+    preds *= nan_array
     plts.pair_frame(truth, preds, obs_key, 50)
     plts.heatmap_frame(truth,ukf_params,50)
     plts.error_hist(truth, preds,"Aggregate", False)
@@ -103,10 +101,7 @@ def ex2_plots(instance,plot_dir,animate,prefix):
                 
         #plts.trajectories(truth)
         plts.heatmap(truth,ukf_params,truth.shape[0])
-        if ukf_params["sample_rate"]>1:
-            plts.pair_frames_animation(truth,full_preds,range(truth.shape[0]))
-        else:
-            plts.pair_frames_animation(truth,preds)
+        plts.pair_frames_animation(truth,preds)
         
 if __name__ == "__main__":
     """__main__ experimental main function for ukf2. mostly for testing in spyder.

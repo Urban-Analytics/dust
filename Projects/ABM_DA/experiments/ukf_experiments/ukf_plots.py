@@ -168,12 +168,15 @@ class ukf_plots:
         
         """main pair wise frame plot
         """
+        sample_rate = self.filter_class.ukf_params["sample_rate"]
+        n = self.filter_class.model_params["pop_total"]
+
         for i in plot_range:
             "extract rows of tables"
             truth2 = truth[i,:]
             preds2 = preds[i,:]
             obs_key2 = self.obs_key[i//self.filter_class.ukf_params["sample_rate"],:]
-            ms = 10
+            ms = 10 #marker_size
             alpha = 1
             f = plt.figure(figsize=(12,8))
             ax = plt.subplot(111)
@@ -185,7 +188,7 @@ class ukf_plots:
             ax.scatter(truth2[0::2], truth2[1::2], color=self.colours[0], s= ms**2, marker = self.markers[0],alpha=alpha)
             ax.scatter(truth2[0::2], truth2[1::2], c="none", s= ms**2, marker = self.markers[0],ec="k",linewidths=1.5)
 
-            for j in range(self.filter_class.pop_total):
+            for j in range(n):
                     obs_key3 = int(obs_key2[j]+1)
                     colour = self.colours[obs_key3]
                     marker = self.markers[obs_key3]
@@ -299,7 +302,7 @@ class ukf_plots:
             g.savefig("UKF_Paths.pdf")
             
         
-    def error_hist(self, truth, preds, title, save):
+    def error_hist(self, truth, preds, plot_title, save):
         
         
         """Plot distribution of median agent errors
@@ -312,17 +315,18 @@ class ukf_plots:
                  bins = self.filter_class.model_params["pop_total"],edgecolor="k")
         plt.xlabel("Agent L2")
         plt.ylabel("Agent Counts")
-        plt.title(title)
+        plt.title(plot_title) 
         # kdeplot(agent_means,color="red",cut=0,lw=4)
 
         if save:
-            j.savefig(self.save_dir+f"{title}_Agent_Hist.pdf")
+            j.savefig(self.save_dir+f"{plot_title}_Agent_Hist.pdf")
     
     def heatmap_main(self, truth, ukf_params, plot_range, save_dir):
         """main heatmap plot
         
         """        
         "cmap set up. defining bottom value (0) to be black"
+        sample_rate = self.filter_class.ukf_params["sample_rate"]
         cmap = cm.cividis
         cmaplist = [cmap(i) for i in range(cmap.N)]
         cmaplist[0] = (0.0,0.0,0.0,1.0)
@@ -346,7 +350,7 @@ class ukf_plots:
         sm.set_array([])  
         
         for i in plot_range:
-            locs = truth[i,:]
+            locs = truth[i//sample_rate,:]
             counts = poly_count(ukf_params["poly_list"],locs)
             
             f = plt.figure(figsize=(12,8))

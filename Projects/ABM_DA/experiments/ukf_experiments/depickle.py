@@ -50,7 +50,7 @@ class grand_plots:
         
         Parameters
         ------
-        params: dict
+        params : dict
             `params` dictionary defines 2 parameters to extract data over 
             and a file source.
             
@@ -65,7 +65,25 @@ class grand_plots:
             It extracts theres files from the source.
             Please be careful with this as it 
         
-        
+        save : bool
+            `save` plots?
+            
+        restrict : func
+            `restrict` function allows you to split up the distances data you
+            plot. For example, in experiment 1 we have an observed/unobserved data
+            split. This function allows you to restrict the plotting to observed
+            or unobserved plotting only so we can properly observe the split. 
+            
+            The aim is to get this working with obs_array for new pickles 
+            such that one can plot unobserved/ aggregate/observed depickle plots
+            all separately.
+            
+        **kwargs : **kwargs
+            `kwargs` keywords arguements for restrict function. For example,
+            ex1_restrict is the restrict function for experiment 1. It needs a 
+            boolean determining whether to plot observed/unobserved. This is 
+            just a generalised version so we can hopefully work with both this
+            current version for old pickles and the obs_array stuff for new pickles.
         """
         self.param_keys = [key for key in params.keys()]
         self.p1 = params[self.param_keys[0]]
@@ -161,7 +179,7 @@ class grand_plots:
                         distances = self.restrict(distances, u, self.kwargs)
                     
                     "add grand median to sub_L2"
-                    sub_L2.append(np.nanmean(np.nanmedian(distances,axis=0)))
+                    sub_L2.append(np.nanmedian(np.nanmedian(distances,axis=0)))
                     "stack list of grand medians as an nx1 vector array"
                     "put array into grand dictionary with keys i and j"
                 L2[i][j] = np.hstack(sub_L2)
@@ -213,25 +231,24 @@ class grand_plots:
             `save` plot?
     
         """    
-        "rotate frame 90 degrees so population on x axis"
+        "rotate  so population on x axis"
         data = np.rot90(self.error_array,k=1) 
-        keys = self.param_keys
+        "flip so proportion goes upwards so imshow `origin=lower` is true"
+        data = np.flip(data,axis=0)
+        "put nan values to white"
+        data2 = np.ma.masked_where(np.isnan(data),data)
+
         "initiate plot"
         f,ax=plt.subplots(figsize=(8,8))
         "colourmap"
         cmap = cm.viridis
-        "set nans for 0 agents unobserved to white (not black because black text)"
+        "set nan values for 100% unobserved to white (not black because black text)"
         cmap.set_bad("white") 
         
-        " mask needed to get bad white squares in imshow"
-        data2 = np.ma.masked_where(np.isnan(data),data)
-        "rotate again so imshow right way up for labels (origin bottom left i.e. lower)"
-        data2=np.flip(data2,axis=0) 
         im=ax.imshow(data2,interpolation="nearest",cmap=cmap,origin="lower")
         
         
         "text on top of squares for clarity"
-        data = np.flip(data,axis=0)
         for i in range(data.shape[0]):
             for j in range(data.shape[1]):
                 plt.text(j,i,str(data[i,j].round(2)),ha="center",va="center",color="w",
@@ -326,7 +343,7 @@ def ex1_restrict(distances,instance, *kwargs):
 def ex1_depickle():
 
     depickle_params = {
-            "agents" :  [10, 20,30],
+            "agents" :  [10,20, 30],
             "prop" : [0.25, 0.5, 0.75, int(1)],
             #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
             "source" : "/media/rob/ROB1/ukf_results/ukf_",
@@ -335,7 +352,6 @@ def ex1_depickle():
     obs_bools = [True, False]
     obs_titles = ["Observed", "Unobserved"]
     for i in range(len(obs_bools)):
-        
         "initialise plot for observed/unobserved agents"
         g_plts = grand_plots(depickle_params, True, restrict = ex1_restrict, observed = obs_bools[i])
         "make dictionary"
@@ -356,7 +372,7 @@ def ex2_depickle():
             "agents" :  [10, 20, 30],
             "bin" : [5,10,25,50],
             #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
-            "source" : "/media/rob/ROB1/ukf_results_100_1/agg_ukf_",
+            "source" : "/media/rob/ROB1/ukf_results_100_2/agg_ukf_",
             }
 
     "init plot class"
@@ -371,8 +387,9 @@ def ex2_depickle():
     g_plts.choropleth_plot("Numbers of Agents", "Proportion Observed","Aggregate")
     "make boxplot"
     g_plts.boxplot("Grid Square Size", "Grand Median L2s", "Aggregate")
-    
+
+#%%
 if __name__ == "__main__":
-    #ex1_depickle()
-    ex2_depickle()
+    ex1_depickle()
+    #ex2_depickle()
     

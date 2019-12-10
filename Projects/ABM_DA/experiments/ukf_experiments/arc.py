@@ -67,6 +67,8 @@ sys.path.append('../..')
 from stationsim.ukf2 import ukf_ss
 from stationsim.stationsim_model import Model
 
+import default_ukf_configs
+from ukf_ex0 import ex0_params
 from ukf_ex1 import omission_params
 from ukf_ex2 import aggregate_params
 
@@ -77,22 +79,62 @@ import pickle
 
 #%%
 
-def ex1_input(num_age,props,run_id):
+def ex0_input(model_params,ukf_params):
+    num_age = 10 # 10 to 30 agent population by 10
 
+    sample_rate = [1,2,5,10] # how often to assimilate with ukf
+    noise = [0,0.25,0.5,1,2,5] #list of gaussian noise standard deviations
+    run_id = np.arange(0,30,1)  # 30 runs
+
+    param_list = [(x, y, z) for x in sample_rate for y in noise for z in run_id]
+    
+    model_params['pop_total'] = num_age
+ 
+    sample_rate = param_list[int(sys.argv[1])-1][0]
+    noise = param_list[int(sys.argv[1])-1][1]
+    ex0_params(n, noise, sample_rate, model_params, ukf_params)
+    
+    
+    ukf_params["run_id"] = param_list[int(sys.argv[1])-1][2]
+    ukf_params["f_name"] = "ukf_results/config_agents_{}_rate_{}_noise_{}-{}".format(      
+                            str(int(model_params['pop_total'])).zfill(3),
+                            str(float(ukf_params['sample_rate'])),
+                            str(float(ukf_params['noise'])),
+                            str(ukf_params["run_id"]).zfill(3))
+    
+
+def ex1_input(model_params,ukf_params):
+    
+    num_age = [10,20,30]  # 10 to 30 agent population by 10
+    props = [0.25,0.5,0.75,1]  # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
+    run_id = np.arange(0,30,1)  # 30 runs
+    
     param_list = [(x, y,z) for x in num_age for y in props for z in run_id]
-    model_params['pop_total'] = param_list[int(sys.argv[1])-1][0]
-    omission_params(model_params,ukf_params, param_list[int(sys.argv[1])-1][1])
+    
+    n =  param_list[int(sys.argv[1])-1][0]
+    prop = param_list[int(sys.argv[1])-1][1]
+    model_params['pop_total'] = n
+    
+    omission_params(n, prop, model_params, ukf_params)
+    
     ukf_params["run_id"] = param_list[int(sys.argv[1])-1][2]
     ukf_params["f_name"] = "ukf_results/ukf_agents_{}_prop_{}-{}".format(      
                             str(int(model_params['pop_total'])).zfill(3),
                             str(float(ukf_params['prop'])),
                             str(ukf_params["run_id"]).zfill(3))
     
-def ex2_input(num_age,bin_size,run_id):
-
+def ex2_input(model_params,ukf_params):
+    
+    num_age = [10,20,30]  # 10 to 30 agent population by 10
+    bin_size = [5,10,25,50]  # unitless grid square size (must be a factor of 100 and 200)
+    run_id = np.arange(0,30,1)  # 30 runs
+    
     param_list = [(x, y,z) for x in num_age for y in bin_size for z in run_id]
-    model_params['pop_total'] = param_list[int(sys.argv[1])-1][0]
-    aggregate_params(model_params, ukf_params, param_list[int(sys.argv[1])-1][1])
+    n = param_list[int(sys.argv[1])-1][0] 
+    bin_size = param_list[int(sys.argv[1])-1][1]
+    model_params['pop_total'] = n
+    aggregate_params(n, bin_size, model_params, ukf_params)
+    
     ukf_params["run_id"] = param_list[int(sys.argv[1])-1][2]
     ukf_params["f_name"] = "ukf_results/ukf_agents_{}_bin_{}-{}".format(      
                             str(int(model_params['pop_total'])).zfill(3),
@@ -107,50 +149,9 @@ if __name__ == '__main__':
                  "Usage: python run_pf <N>")
         sys.exit(1)
 
-    model_params = {
-
-			'width': 200,
-			'height': 100,
-
-			'gates_in': 3,
-			'gates_out': 2,
-			'gates_space': 1,
-			'gates_speed': 1,
-
-			'speed_min': .2,
-			'speed_mean': 1,
-			'speed_std': 1,
-			'speed_steps': 3,
-
-			'separation': 5,
-			'max_wiggle': 1,
-
-			'step_limit': 3600,
-
-			'do_history': True,
-			'do_print': True,
-		}
-
-    ukf_params = {      
-            'sample_rate': 5,
-            "do_restrict": True, 
-            "do_animate": False,         
-            
-            "bring_noise":True,
-            "noise":0.5,
-            "do_batch":False,
-
-            "a":1,
-            "b":2,
-            "k":0,
-            }
-
-    num_age = [10,20,30]  # 10 to 30 agent population by 10
-    props = [0.25,0.5,0.75,1]  # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
-    #bin_size = [5,10,25,50]  # unitless grid square size (must be a factor of 100 and 200)
-    run_id = np.arange(0,30,1)  # 30 runs
-    ex1_input(num_age, props, run_id,)
-    #ex2_input(num_age,bin_size,run_id)
+    ex0_input(model_params,ukf_params)
+    #ex1_input(model_params,ukf_params)
+    #ex2_input(model_params,ukf_params)
 
     
     print("UKF params: " + str(ukf_params))

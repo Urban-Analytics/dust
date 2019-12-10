@@ -107,9 +107,9 @@ def ex1_plots(instance,plot_dir,save, animate, prefix):
     "single frame plots"
     obs,preds,full_preds,truth,obs_key,nan_array= instance.data_parser()
     ukf_params = instance.ukf_params
-    truth*nan_array
-    preds*nan_array
-    full_preds[~nan_array]=np.nan
+    truth *= nan_array
+    preds *= nan_array
+    full_preds *= nan_array
 
 
     index2 = ukf_params["index2"]

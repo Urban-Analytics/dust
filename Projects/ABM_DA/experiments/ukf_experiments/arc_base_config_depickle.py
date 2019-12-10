@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import colors
 import matplotlib.patheffects as pe
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.lines as lines
 plt.rcParams["font.size"] = 22
 """
@@ -255,12 +256,12 @@ def plot_2_3d(data2,best_array,n,rates,noises,save):
     colours = ["yellow","orangered","skyblue"]
 
     "init and some labelling"
-    fig = plt.figure(figsize=(14,6))
+    fig = plt.figure(figsize = (12,12))
     ax = fig.add_subplot(111,projection='3d')
     ax.set_xlabel('Observation Noise', labelpad = 20,fontsize = 22)
     ax.set_ylabel("Assimilation Rate", labelpad = 20)
     ax.set_zlabel('Grand L2 Error')
-    ax.view_init(45,225)
+    ax.view_init(30,225)
     
     "take each rate plot l2 error over each noise for preds obs and ukf"
     for i,rate in enumerate(rates):
@@ -273,7 +274,7 @@ def plot_2_3d(data2,best_array,n,rates,noises,save):
         l2=ax.plot(xs=noises,ys=[i]*len(noises),zs=preds,color=colours[1],linewidth=4,linestyle = "-.",
                 path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=1), pe.Normal()],alpha=0.6)
         l3=ax.plot(xs=noises,ys=[i]*len(noises),zs=ukf,color=colours[2],linewidth=4,linestyle = "--",
-                path_effects=[pe.Stroke(offset=(4,0),linewidth=6, foreground='k',alpha=1), pe.Normal()],alpha=1)
+                path_effects=[pe.Stroke(offset=(2,0),linewidth=6, foreground='k',alpha=1), pe.Normal()],alpha=1)
              
     "placeholder dummies for legend"
     s1=lines.Line2D([-1],[-1],color=colours[0],label="obs",linewidth=4,linestyle = "-",
@@ -281,7 +282,7 @@ def plot_2_3d(data2,best_array,n,rates,noises,save):
     s2 = lines.Line2D([-1],[-1],color=colours[1],label="preds",linewidth=4,linestyle = "-.",
                 path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=1), pe.Normal()])
     s3 = lines.Line2D([-1],[-1],color=colours[2],label="ukf",linewidth=4,linestyle = "--",
-                path_effects=[pe.Stroke(offset=(4,0),linewidth=6, foreground='k',alpha=1), pe.Normal()])
+                path_effects=[pe.Stroke(offset=(2,0),linewidth=6, foreground='k',alpha=1), pe.Normal()])
 
     "rest of labelling"
     ax.set_xticks(np.arange(0,len(noises)))
@@ -306,10 +307,10 @@ if __name__ == "__main__":
     rates = [1,2,5,10] #.2 to 1 by .2
     noises = [0,0.25,0.5,1,2,5]
     run_id = np.arange(0,30,1) #20 runs
-    plot1 =False #do plot 1
+    plot1 = False #do plot 1
     plot2 = False # do plot2
-    plot3=True
-    save =False # save plots
+    plot3= True
+    save = True # save plots
     
     for n in ns:
         data2,best_array = base_data_parser(n,rates,noises,run_id)

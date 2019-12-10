@@ -12,7 +12,7 @@ and vary noise/sample_rate
 import sys
 
 from ukf_fx import fx
-from ukf_plots import ukf_plots
+from ukf_plots import L2s
 from default_ukf_configs import model_params,ukf_params
 from ukf_ex1 import obs_key_func, omission_index, hx1
 sys.path.append("../../stationsim")
@@ -21,7 +21,6 @@ from stationsim_model import Model
 
 import numpy as np
 from math import floor
-
 
 def ex0_params(n, noise, sample_rate, model_params = model_params, ukf_params=ukf_params):
     
@@ -36,78 +35,68 @@ def ex0_params(n, noise, sample_rate, model_params = model_params, ukf_params=uk
     ------
     ukf_params : dict
     """
-    prop = 1 # observe everything
     model_params["pop_total"] = n
-    ukf_params["prop"] = prop
-    ukf_params["sample_size"]= n
-
+    ukf_params["noise"] = noise
+    ukf_params["sample_rate"] = sample_rate
     
-    ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = np.eye(2 * n)
-    ukf_params["r"] = np.eye(2 * ukf_params["sample_size"])#sensor noise
+    ukf_params["r"] = np.eye(2 * n)#sensor noise
     
     ukf_params["fx"] = fx
-    ukf_params["hx"] = hx1
+    ukf_params["hx"] = hx0    
+    ukf_params["obs_key_func"] = None
     
-    ukf_params["obs_key_func"] = obs_key_func
-    ukf_params["pickle_file_name"] = f"ukf_agents_{n}_prop_{prop}.pkl"    
-    
+    ukf_params["file_name"] = f"config_agents_{n}_rate_{sample_rate}_noise_{noise}"
+    ukf_params["do_forecasts"] = True
     
     return model_params, ukf_params
 
-
-def ex1_plots(instance,plot_dir,save, animate, prefix):
-    plts = ukf_plots(instance,plot_dir,prefix)
-    "single frame plots"
-    obs,preds,full_preds,truth,obs_key,nan_array= instance.data_parser()
-    ukf_params = instance.ukf_params
-    truth[~nan_array]=np.nan
-    preds[~nan_array]=np.nan
-    full_preds[~nan_array]=np.nan
+def hx0(state, model_params, ukf_params):
+    "do nothing for hx. two states are the same."
+    return state
 
 
-    index2 = ukf_params["index2"]
-    plts.pair_frame(truth, preds, obs_key, 50)
-    plts.error_hist(truth[:,index2], preds[:,index2],"Observed Errors", save)
-    plts.error_hist(truth[:,~index2], preds[:,~index2],"Unobserved Errors", save)
-    plts.path_plots(truth, preds, save)
+def ex0_save(instance,source):
     
-    if animate:
-        plts.trajectories(truth)
-        if ukf_params["sample_rate"]>1:
-            plts.pair_frames_animation(truth,full_preds,range(truth.shape[0]))
-        else:
-            plts.pair_frames_animation(truth,preds)
+    obs,preds,forecasts,truths,nan_array= instance.data_parser()
+    truths *= nan_array
+    preds *= nan_array
+    forecasts *= nan_array
     
+    truths = truths[::instance.sample_rate,:]
+    preds = preds[::instance.sample_rate,:]
+    forecasts = forecasts[::instance.sample_rate,:]
 
+    errors = {}
+    errors["obs"] = L2s(truths,obs)
+    obs_error = np.nanmedian(np.nanmedian(errors["obs"],axis=0))
+    errors["forecasts"] = L2s(truths,forecasts)
+    forecast_error = np.nanmedian(np.nanmedian(errors["forecasts"],axis=0))
+    errors["ukf"] = L2s(truths,preds)
+    ukf_error =  np.nanmedian(np.nanmedian(errors["ukf"],axis=0))
+    
+    mean_array = np.array([obs_error, forecast_error, ukf_error])
+    np.save(source + ukf_params["file_name"], mean_array)
+    
+def ex0_main():
+
+    n= 5
+    noise = 0.5
+    sampling_rate = 5
+    model_params, ukf_params = ex0_params(n, noise, sampling_rate)
+    print(model_params)
+    print(ukf_params)
+    
+    base_model = Model(**model_params)
+    u = ukf_ss(model_params,ukf_params,base_model)
+    u.main()
+    ex0_save(u,"")
+  
+#%%  
+    
 if __name__ == "__main__":
-    recall = True #recall previous run
-    do_pickle = True #pickle new run
-    n= 30
-    prop = 0.5
-    
-    if not recall:
-        model_params, ukf_params = omission_params(n, prop)
-        print(model_params)
-        print(ukf_params)
-        
-        base_model = Model(**model_params)
-        u = ukf_ss(model_params,ukf_params,base_model)
-        u.main()
-        
-        if do_pickle:
-            pickler("", ukf_params["pickle_file_name"], u)
-            
-    else:
-        f_name = f"ukf_agents_{n}_prop_{prop}.pkl"
-        source = ""
-        u = depickler(source, f_name)
-        ukf_params = u.ukf_params
-        model_params = u.model_params
-
-    ex1_plots(u,"",True, False,"ukf_")
-
+    ex0_main()
     
     
     

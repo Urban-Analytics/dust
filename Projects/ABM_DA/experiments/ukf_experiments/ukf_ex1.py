@@ -21,7 +21,7 @@ from math import floor
 def omission_index(n,sample_size):
     
     
-    """randomly pick agents to omit 
+    """randomly pick agents without replacement to omit 
     used in experiment 1 hx function
     
     Parameters 
@@ -33,10 +33,14 @@ def omission_index(n,sample_size):
     ------
     index,index2: array_like:
         `index` of which agents are observed and `index2` their correpsoding
-        index for xy coordinates from the desired state vector.
+         xy coordinate columns from the whole state space.
+         E.g for 5 agents we have 5x2 = 10 xy coordinates.
+         if we choose 0th and 2nd agents we also choose 0,1,4,5 xy columns.
     """
     index = np.sort(np.random.choice(n,sample_size,replace=False))
-    index2 = np.repeat(2*index,2)
+    "double up index to choose x and y positions columns. both are used."
+    index2 = np.repeat(2*index,2) 
+    "nudge every second item to take the ith+1 column (y coordinate corresponding to chosen x)"
     index2[1::2] += 1
     return index, index2
 
@@ -55,15 +59,36 @@ def hx1(state, model_params, ukf_params):
 
     Returns
     ------
-    obs_state : array_like
-        `obs_state` actual observed state
+    state : array_like
+        `state` actual observed state
     """
-    obs_state = state[ukf_params["index2"]]
     
-    return obs_state   
+    return  state[ukf_params["index2"]] 
 
 def obs_key_func(state, model_params, ukf_params):
-    """which agents are observed"""
+    
+    
+    """which agents are observed
+    if agent in index2 fully observed and assign 2.
+    else not unobserved and assign 0.
+    
+    Parameters
+    ------
+    state : array_like
+        model `state` of agent positions
+    model_params, ukf_params : dict
+        dictionaries of parameters `model_params` for stationsim 
+        and `ukf_params` for the ukf.
+    
+    Returns
+    ------
+    
+    key : array_like
+        `key` array same shape as the true positions indicates
+        each agents observation type for each time point 
+        (unobserved,aggregate,gps)
+    
+    """
     
     key = np.zeros(model_params["pop_total"])
     key[ukf_params["index"]] +=2
@@ -97,34 +122,63 @@ def omission_params(n, prop, model_params = model_params, ukf_params=ukf_params)
     
     ukf_params["obs_key_func"] = obs_key_func
     ukf_params["pickle_file_name"] = f"ukf_agents_{n}_prop_{prop}.pkl"    
-    
-    
+        
     return model_params, ukf_params
 
 
 def ex1_plots(instance,plot_dir,save, animate, prefix):
+    
+    
+    """do plots for experiment 1
+    
+    - pull data from ukf_ss instance
+    - filter out measurements from non-active agents
+    - plot one pairs plot frame linking ukf predictions to true values by tethers
+    - plot population of agent median L2 errors in a  histogram
+    - plot agent paths for observations, ukf preditions, and true values
+    - if animated
+    - plot true paths for agents in trajectories
+    - plot a pair plot frame for every model step and animate them together.
+    
+    Parameters
+    ------
+    
+    instance : class
+        uks_ss class `instance` after completed run.
+    plot_dir, prefix : str
+        `plot_dir` where to save the plot to e.g. "" for this directory or 
+        "ukf_results/ for ukf_results"
+        `prefix` puts some prefix in front of various picture file names.
+        e.g. "ukf_" or "agg_ukf_" so you can differentiate them and not overwrite
+        them
+    save , animate : bool
+        `save` plots or `animate` whole model run?
+    
+    """
     plts = ukf_plots(instance,plot_dir,prefix)
     "single frame plots"
-    obs,preds,full_preds,truth,obs_key,nan_array= instance.data_parser()
+    obs,preds,truths,nan_array= instance.data_parser()
+    obs_key = instance.obs_key_parser()
     ukf_params = instance.ukf_params
-    truth *= nan_array
+    
+    obs *= nan_array[::instance.sample_rate,instance.ukf_params["index2"]]
+    truths *= nan_array
     preds *= nan_array
-    full_preds *= nan_array
-
 
     index2 = ukf_params["index2"]
-    plts.pair_frame(truth, preds, obs_key, 50)
-    plts.error_hist(truth[:,index2], preds[:,index2],"Observed Errors", save)
-    plts.error_hist(truth[:,~index2], preds[:,~index2],"Unobserved Errors", save)
-    plts.path_plots(truth, preds, save)
     
+    plts.pair_frame(truths, preds, obs_key, 50)
+    plts.error_hist(truths[:,index2], preds[:,index2],"Observed Errors", save)
+    plts.error_hist(truths[:,~index2], preds[:,~index2],"Unobserved Errors", save)
+    plts.path_plots(obs, "Observed", save)
+    "remove nan rows to stop plot clipping"
+    plts.path_plots(preds[::instance.sample_rate], "Predicted", save)
+    plts.path_plots(truths, "True", save)
+
     if animate:
-        plts.trajectories(truth)
-        if ukf_params["sample_rate"]>1:
-            plts.pair_frames_animation(truth,full_preds,range(truth.shape[0]))
-        else:
-            plts.pair_frames_animation(truth,preds)
-    
+        plts.trajectories(truths)
+        plts.pair_frames_animation(truths,preds,range(truths.shape[0]))
+        
 
 if __name__ == "__main__":
     recall = True #recall previous run
@@ -142,16 +196,16 @@ if __name__ == "__main__":
         u.main()
         
         if do_pickle:
-            pickler("", ukf_params["pickle_file_name"], u)
+            pickler("",  "test_pickles/" + ukf_params["pickle_file_name"], u)
             
     else:
-        f_name = f"ukf_agents_{n}_prop_{prop}.pkl"
+        f_name = "test_pickles/" + f"ukf_agents_{n}_prop_{prop}.pkl"
         source = ""
         u = depickler(source, f_name)
         ukf_params = u.ukf_params
         model_params = u.model_params
 
-    ex1_plots(u,"",True, False,"ukf_")
+    ex1_plots(u,"plots/",False, False,"ukf_")
 
     
     

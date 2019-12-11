@@ -167,6 +167,13 @@ class ukf_plots:
         
         
         """main pair wise frame plot
+        
+        plots pairwise plots for each time point given by plot_range
+        
+        - chooses time i
+        - extracts truths., obs_key and preds at time i
+        -
+        
         """
         sample_rate = self.filter_class.ukf_params["sample_rate"]
         n = self.filter_class.model_params["pop_total"]
@@ -272,34 +279,23 @@ class ukf_plots:
 
         
         
-    def path_plots(self, truth, preds, save):
+    def path_plots(self, data, title, save):
         
         
         """plot paths taken by agents and their ukf predictions
         """
         f=plt.figure(figsize=(12,8))
-        for i in range(self.filter_class.pop_total):
-            plt.plot(truth[::self.filter_class.sample_rate,(2*i)],
-                           truth[::self.filter_class.sample_rate,(2*i)+1],lw=3)  
+        for i in range(data.shape[1]//2):
+            plt.plot(data[:,(2*i)],data[:,(2*i)+1],lw=3)  
             plt.xlim([0,self.filter_class.model_params["width"]])
             plt.ylim([0,self.filter_class.model_params["height"]])
             plt.xlabel("Corridor Width")
             plt.ylabel("Corridor Height")
-            plt.title("True Positions")
+            plt.title(f"{title} Positions")
             
-        g = plt.figure(figsize=(12,8))
-        for j in range(self.filter_class.pop_total):
-            plt.plot(preds[::self.filter_class.sample_rate,2*j],
-                     preds[::self.filter_class.sample_rate,(2*j)+1],lw=3) 
-            plt.xlim([0,self.width])
-            plt.ylim([0,self.height])
-            plt.xlabel("Corridor Width")
-            plt.ylabel("Corridor Height")
-            plt.title("KF Predictions")
-        
+
         if save:
-            f.savefig("True_Paths.pdf")
-            g.savefig("UKF_Paths.pdf")
+            f.savefig(self.save_dir + f"{title}_Paths.pdf")
             
         
     def error_hist(self, truth, preds, plot_title, save):

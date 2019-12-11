@@ -40,8 +40,8 @@ sys.path.append(path)
 import datetime 
 
 #"used to calculate sigma points in parallel."
-#import multiprocessing  
-
+import multiprocessing  
+from itertools import product
 "used to save clss instances when run finished."
 import pickle 
 
@@ -122,6 +122,8 @@ class ukf:
         self.xs = []
         self.ps = []
 
+
+
     def unscented_Mean(self, sigma_function,*function_args):
         """calcualte unscented transform estimate for forecasted/desired means
         
@@ -131,17 +133,30 @@ class ukf:
         "calculate either forecasted sigmas X- or measured sigmas Y with f/h"
         nl_sigmas = np.apply_along_axis(sigma_function,0,sigmas,*function_args)
         "calculate unscented mean using non linear sigmas and MSSP mean weights"
-        xhat = np.sum(nl_sigmas*self.wm,axis=1)#unscented mean for predicitons
+        xhat = np.dot(nl_sigmas,self.wm)#unscented mean for predicitons
         
         return sigmas, nl_sigmas, xhat
         
     def covariance(self, data1, mean1, weight, data2 = None,mean2 = None, addition = None):
+        
+        
         """within/cross-covariance between sigma points and their unscented mean.
         
-        Note: CAN'T use numpy.cov here as it uses the regular mean and not the unscented mean
+        Note: CAN'T use numpy.cov here as it uses the regular mean 
+            and not the  unscented mean. Maybe theres a faster numpy version
         
+        takes matrices X_{mxp}, Y_{nxp} and some vectors a_{mx1}, b_{nx1}, 
+        and weights vector w
+        
+        Also define function COL(X,a) as the column subtraction operator
+        such that we subtract a from every column of X
+        
+        calculates P_xy = COL(X-a) * W * COL(Y-b)^T
+        
+        given  diagonal matrix W with entries w.
         """
         "check whether between or cross covariance calculation"
+        
         if data2 is None and mean2 is None:
             data2 = data1
             mean2 = mean1
@@ -149,9 +164,12 @@ class ukf:
         "calculate component matrices for covariance"
         "this is the quadratic form of the covariance."
         " "
+        
+        weighting = np.diag(weight)
         residuals = (data1.T - mean1).T
         residuals2 = (data2.T - mean2).T
-        weighting = np.diag(weight)
+        
+    
         covariance_matrix = np.linalg.multi_dot([residuals,weighting,residuals2.T])
         
         if addition is not None:
@@ -170,6 +188,8 @@ class ukf:
         return covariance_matrix
     
     def calc_Sigmas(self,mean,p):
+        
+        
         """sigma point calculations based on current mean x and covariance P
         
         Parameters
@@ -191,6 +211,8 @@ class ukf:
         return sigmas 
 
     def predict(self):
+        
+        
         """Transitions sigma points forwards using markovian transition function plus noise Q
         
         - calculate sigmas using prior mean and covariance P.
@@ -212,16 +234,18 @@ class ukf:
         self.p = pxx #update Sxx
         self.x = xhat #update xhat
     
-    def update(self,z):     
+    def update(self,z):   
+        
+        
         """ update forecasts with measurements to get posterior assimilations
         
-        Does numerous things in the following order
-        - nudges X- sigmas with calculated Px from predict
-        - calculate measurement sigmas Y = h(X)
-        - calculate unscented means of Y
-        -calculate py pxy,K using r
-        - calculate x update
-        - calculate p update
+        - nudges X- sigmas with new pxx from predict
+        - calculate measurement sigmas Y = h(X-)
+        - calculate unscented mean of Y, yhat
+        - calculate measured state covariance pyy sing r
+        - calculate cross covariance between X- and Y and Kalman gain (pxy, K)
+        - update x and P
+        - store x and P updates in lists (xs, ps)
         
         Parameters
         ------
@@ -238,8 +262,9 @@ class ukf:
         k = np.matmul(pxy,np.linalg.inv(pyy))
  
         "assimilate for x and p"
-        self.x = self.x + np.matmul(k,(self.hx(z, self.model_params, self.ukf_params)-yhat))
-        self.p = self.p - np.matmul(k,np.matmul(pyy,k.T))
+        "i dont know why `self.x += ...` doesnt work here"
+        self.x = self.x + np.matmul(k,(z-yhat))
+        self.p = self.p - np.linalg.multi_dot([k, pyy, k.T])
         "append overall lists"
         self.ps.append(self.p)
         self.xs.append(self.x)
@@ -252,6 +277,8 @@ class ukf:
     
     
 class ukf_ss:
+    
+    
     """UKF for station sim using ukf filter class.
     
     Parameters
@@ -264,7 +291,10 @@ class ukf_ss:
     base_model : method
         stationsim model `base_model`
     """
+    
     def __init__(self,model_params,ukf_params,base_model):
+        
+        
         """
         *_params - loads in parameters for the model, station sim filter and general UKF parameters
         base_model - initiate stationsim 
@@ -316,8 +346,14 @@ class ukf_ss:
         self.time2 = None
     
     def init_ukf(self,ukf_params):
+        
+        
         """initialise ukf with initial state and covariance structures.
         
+        set:
+            - initial state
+            - noise structures p,q,r
+            - ABM base_model, fx/hx functions and their args
         
         Parameters
         ------
@@ -333,6 +369,15 @@ class ukf_ss:
         self.ukf = ukf(self.model_params, ukf_params, self.base_model, x, ukf_params["fx"], ukf_params["hx"], p, q, r)
     
     def ss_Predict(self):
+        
+        
+        """ Forecast step of UKF for stationsim.
+        
+        - forecast state using UKF (unscented transform)
+        - update forecasts list
+        - jump base_model forwards to forecast time
+        - 
+        """
         "forecast sigma points forwards to predict next state"
         self.ukf.predict() 
         self.forecasts.append(self.ukf.x)
@@ -343,6 +388,17 @@ class ukf_ss:
         "append raw ukf forecasts of x and p"
 
     def ss_Update(self,step):
+        
+        
+        """ Update step of UKF for stationsim.
+        
+        - measure state from base_model.
+        - add some gaussian noise.
+        - assimilate ukf with noise state
+        - record each agents observation type.
+        - append lists of ukf assimilations and observations
+        
+        """
         if step%self.sample_rate == 0:
             state = self.base_model.get_state(sensor="location")
             "apply noise to active agents"
@@ -352,8 +408,11 @@ class ukf_ss:
                 noise_array*=np.random.normal(0,self.ukf_params["noise"],self.pop_total*2)
                 state+=noise_array
                 
+            "convert full noisy state to actual sensor observations"
+            state = self.ukf.hx(state, self.model_params, self.ukf_params)
                 
-            self.ukf.update(z=state) #update UKF
+            self.ukf.update(state)
+            
             if self.obs_key_func is not None:
                 key = self.obs_key_func(state,self.model_params, self.ukf_params)
                 "force inactive agents to unobserved"
@@ -416,7 +475,7 @@ class ukf_ss:
             `truths` true noiseless agent positions for post-hoc comparison
             
         nan_array : array_like
-            `nan_array` which entries of b are nan. good for plotting/metrics            
+            `nan_array` stationsim gets stuck when an agent finishes it's run. good for plotting/metrics            
         """
        
        
@@ -438,22 +497,19 @@ class ukf_ss:
 
         nan_array = np.ones(shape = truths.shape)*np.nan
         for i, agent in enumerate(self.base_model.agents):
+            "find which rows are  NOT (None, None). Store in index. "
             array = np.array(agent.history_locations)
             index = ~np.equal(array,None)[:,0]
+            "set anything in index to 1. I.E which agents are still in model."
             nan_array[index,2*i:(2*i)+2] = 1
 
-        """only need c if there are gaps in measurements >1 sample_rate
-        else ignore
-        """
-        try:
-            if self.ukf_params["do_forecasts"]:
-                forecasts = np.vstack(self.forecasts) #full forecast array for smooth plotting etc   
-            return obs,preds,forecasts,truths,nan_array
-        except:
-            return obs,preds,truths,nan_array
+        return obs,preds,truths,nan_array
           
-            
+       
     def obs_key_parser(self):
+        """extract obs_key
+        
+        """
         obs_key2 = np.vstack(self.obs_key)
         shape = np.vstack(self.truths).shape[0]
         obs_key = np.zeros((shape,self.pop_total))*np.nan
@@ -464,11 +520,13 @@ class ukf_ss:
         return obs_key
         
 def pickler(source, f_name, instance):
+    "save ukf run as a pickle"
     f = open(source + f_name,"wb")
     pickle.dump(instance,f)
     f.close()
 
 def depickler(source, f_name):
+    "load a ukf pickle"
     f = open(source+f_name,"rb")
     u = pickle.load(f)
     f.close()

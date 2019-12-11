@@ -48,19 +48,24 @@ def ex0_params(n, noise, sample_rate, model_params = model_params, ukf_params=uk
     ukf_params["obs_key_func"] = None
     
     ukf_params["file_name"] = f"config_agents_{n}_rate_{sample_rate}_noise_{noise}"
-    ukf_params["do_forecasts"] = True
     
     return model_params, ukf_params
 
 def hx0(state, model_params, ukf_params):
+    
+    
     "do nothing for hx. two states are the same."
     return state
 
 
 def ex0_save(instance,source,f_name):
     
-    obs,preds,forecasts,truths,nan_array= instance.data_parser()
     
+    """save grand median L2s between truths and obs,preds, and ukf"""
+    
+    obs, preds, truths,nan_array= instance.data_parser()
+    forecasts = np.vstack(instance.forecasts)
+
     obs *= nan_array[::instance.sample_rate]
     truths *= nan_array
     preds *= nan_array
@@ -80,7 +85,9 @@ def ex0_save(instance,source,f_name):
     np.save(source + f_name, mean_array)
     
 def ex0_main():
-
+    
+    
+    """ main ex0 function"""
     n= 10
     noise = 0.5
     sampling_rate = 5

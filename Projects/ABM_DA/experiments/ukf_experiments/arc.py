@@ -14,9 +14,9 @@ The script
 run following in bash console:
     
 #log in to arc (requires UoL login)
-ssh username@arc3.leeds.ac.uk
+ssh medrclaa@arc3.leeds.ac.uk
 #move to nobackup storage
-cd /nobackup/username
+cd /nobackup/medrclaa
 #clone in git repository
 #git clone https://github.com/Urban-Analytics/dust/
 git clone -b dev_rc https://github.com/Urban-Analytics/dust/
@@ -41,11 +41,11 @@ pip install shapely
 pip install seaborn
 # for animations
 pip install imageio
-# er install an older imageio version <=2.4.1 
-# or find another way e.g.
-# conda install -c conda-forge imageio-ffmpeg ""
-# either way. this isnt necessary for arc only. 
-#
+ 
+# also needs imageio-ffmpeg from conda forge. 
+# idk if theres a pip alternative but doesnt matter for arc.
+
+#to run this file (arc.py)
 qsub arc.sh
 
 when exporting from arc in another linux terminal use 
@@ -80,6 +80,10 @@ import pickle
 
 #%%
 def ex0_input(model_params,ukf_params):
+    """ experiment 0 input for arc
+    
+    """
+    
     num_age = 10 # 10 to 30 agent population by 10
 
     sample_rate = [1,2,5,10] # how often to assimilate with ukf
@@ -90,16 +94,16 @@ def ex0_input(model_params,ukf_params):
     
     model_params['pop_total'] = num_age
  
-    sample_rate = param_list[600][0]
-    noise = param_list[600][1]
-
-    #sample_rate = param_list[int(sys.argv[1])-1][0]
-    #noise = param_list[int(sys.argv[1])-1][1]
+    #sample_rate = param_list[600][0]
+    #noise = param_list[600][1]
+    sample_rate = param_list[int(sys.argv[1])-1][0]
+    noise = param_list[int(sys.argv[1])-1][1]
+    
     ex0_params(num_age, noise, sample_rate, model_params, ukf_params)
     
     
-    ukf_params["run_id"] = param_list[600][2]
-    #ukf_params["run_id"] = param_list[int(sys.argv[1])-1][2]
+    #ukf_params["run_id"] = param_list[600][2]
+    ukf_params["run_id"] = param_list[int(sys.argv[1])-1][2]
 
     ukf_params["f_name"] = "config_agents_{}_rate_{}_noise_{}-{}".format(      
                             str(int(model_params['pop_total'])).zfill(3),
@@ -107,7 +111,9 @@ def ex0_input(model_params,ukf_params):
                             str(float(ukf_params['noise'])),
                             str(ukf_params["run_id"]).zfill(3))
     
-
+    ukf_params["do_pickle"] = False
+    
+    
 def ex1_input(model_params,ukf_params):
     
     num_age = [10,20,30]  # 10 to 30 agent population by 10
@@ -128,6 +134,8 @@ def ex1_input(model_params,ukf_params):
                             str(float(ukf_params['prop'])),
                             str(ukf_params["run_id"]).zfill(3))
     
+    ukf_params["do_pickle"] = True
+
 def ex2_input(model_params,ukf_params):
     
     num_age = [10,20,30]  # 10 to 30 agent population by 10
@@ -145,14 +153,16 @@ def ex2_input(model_params,ukf_params):
                             str(int(model_params['pop_total'])).zfill(3),
                             str(float(ukf_params['bin_size'])),
                             str(ukf_params["run_id"]).zfill(3))
+    
+    ukf_params["do_pickle"] = True
 
 if __name__ == '__main__':
     __spec__ = None
 
-    #if len(sys.argv) != 2:
-    #    print("I need an integer to tell me which experiment to run. \n\t"
-    #         "Usage: python run_pf <N>")
-    #    sys.exit(1)
+    if len(sys.argv) != 2:
+        print("I need an integer to tell me which experiment to run. \n\t"
+             "Usage: python run_pf <N>")
+        sys.exit(1)
 
     ex0_input(model_params,ukf_params)
     #ex1_input(model_params,ukf_params)
@@ -170,7 +180,7 @@ if __name__ == '__main__':
     
     do_pickle = False
     
-    if do_pickle:
+    if ukf_params["do_pickle"]:
         #store final class instance via pickle
         f_name = ukf_params["f_name"]
         f = open(f_name,"wb")

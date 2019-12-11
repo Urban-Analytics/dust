@@ -4,6 +4,9 @@
 Created on Mon Dec  2 11:25:37 2019
 
 @author: rob
+
+THIS IS JUST A PROOF OF CONCEPT FOR NOW. IGNORE IT
+
 """
 
 import sys

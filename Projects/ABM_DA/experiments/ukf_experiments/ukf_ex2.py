@@ -84,24 +84,31 @@ def hx2(state,model_params,ukf_params):
         
         return counts
     
-def ex2_plots(instance,plot_dir,animate,prefix):
+def ex2_plots(instance, plot_dir, save, animate, prefix):
     plts = ukf_plots(instance,plot_dir,prefix)
         
     "pull data and put finished agents to nan"
-    obs, preds, truth, obs_key, nan_array= instance.data_parser()
+    obs, preds, truths, nan_array= instance.data_parser()
+    obs_key = instance.obs_key_parser()
     ukf_params = instance.ukf_params
-    truth *= nan_array
+    
+    truths *= nan_array
     preds *= nan_array
-    plts.pair_frame(truth, preds, obs_key, 50)
-    plts.heatmap_frame(truth,ukf_params,50)
-    plts.error_hist(truth, preds,"Aggregate", False)
-    plts.path_plots(truth,preds, False)
+    
+    plts.pair_frame(truths, preds, obs_key, 50)
+    plts.heatmap_frame(truths,ukf_params,50)
+    plts.error_hist(truths, preds,"Aggregate", False)
+
+    "remove nan rows to stop plot clipping"
+    plts.path_plots(preds[::instance.sample_rate], "Predicted", save)
+    plts.path_plots(truths, "True", save)    
+    
     
     if animate:
                 
         #plts.trajectories(truth)
-        plts.heatmap(truth,ukf_params,truth.shape[0])
-        plts.pair_frames_animation(truth,preds)
+        plts.heatmap(truths,ukf_params,truth.shape[0])
+        plts.pair_frames_animation(truths,preds)
         
 if __name__ == "__main__":
     """__main__ experimental main function for ukf2. mostly for testing in spyder.
@@ -124,11 +131,11 @@ if __name__ == "__main__":
         u.main()
         
         if do_pickle:
-            pickler("", ukf_params["pickle_file_name"], u)
+            pickler("", "test_pickles/" + ukf_params["pickle_file_name"], u)
        
     else:
         
-        f_name = f"agg_ukf_agents_{n}_bin_{bin_size}.pkl"  
+        f_name = "test_pickles/" + f"agg_ukf_agents_{n}_bin_{bin_size}.pkl"  
     
         source = ""
 
@@ -136,5 +143,5 @@ if __name__ == "__main__":
     
     "unhash the necessary one"
 
-    ex2_plots(u,"",False,"agg_ukf_")
+    ex2_plots(u, "", True, False, "agg_ukf_")
     

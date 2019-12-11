@@ -5,14 +5,16 @@ Created on Mon Dec  2 11:42:17 2019
 
 @author: rob
 """
+"used in HiddenPrints"
 import os
 import sys
+
 "used in fx to restore stepped model"
 from copy import deepcopy  
+
 class HiddenPrints:
-
-
-    """stop repeating printing from stationsim
+    """stop repeating printing from stationsim as it jumps back and forth over
+    every 100th step
     https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
     """
     def __enter__(self):
@@ -28,10 +30,12 @@ def fx(x, base_model):
     
     """Transition function for the StationSim
     
-    -Copies current base model
-    -Replaces position with sigma point
-    -Moves replaced model forwards one time point
-    -record new stationsim positions as forecasted sigmapoint
+    - Copies current base model
+    - Replaces positions with some sigma points
+    - Step replaced model forwards one time point
+    - record new stationsim positions as forecasted sigmapoint
+    - loop over this in ukf function to get family of forecasted 
+      sigmas
     
     Parameters
     ------

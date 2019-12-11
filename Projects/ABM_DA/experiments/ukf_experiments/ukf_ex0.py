@@ -75,12 +75,13 @@ def ex0_save(instance,source,f_name):
     ukf_error =  np.nanmedian(np.nanmedian(L2s(truths,preds),axis=0))
     
     mean_array = np.array([obs_error, forecast_error, ukf_error])
+    print ("obs", "forecast", "ukf")
     print(mean_array)
     np.save(source + f_name, mean_array)
     
 def ex0_main():
 
-    n= 5
+    n= 10
     noise = 0.5
     sampling_rate = 5
     model_params, ukf_params = ex0_params(n, noise, sampling_rate)

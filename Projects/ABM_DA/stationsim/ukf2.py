@@ -439,7 +439,7 @@ class ukf_ss:
         nan_array = np.ones(shape = truths.shape)*np.nan
         for i, agent in enumerate(self.base_model.agents):
             array = np.array(agent.history_locations)
-            index = np.where(array != None)[0]
+            index = ~np.equal(array,None)[:,0]
             nan_array[index,2*i:(2*i)+2] = 1
 
         """only need c if there are gaps in measurements >1 sample_rate

@@ -31,6 +31,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.cm as cm
 import matplotlib.patheffects as pe
+import matplotlib.colors as colors
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.lines as lines
 
 import glob
 import seaborn as sns
@@ -92,7 +95,176 @@ class grand_plots:
         self.save = save
         self.restrict = restrict
         self.kwargs = kwargs
+     
+    def numpy_parser(self):
+        """ if data is in numpy form (see experiment 0)
+        do the same thing as depickle_data_parser but with numpy arrays
+        """
+        keys = self.param_keys
+        errors = {}
+        for i in self.p1:
+            
+            errors[i] = {}
+            
+            for j in self.p2:
+                
+                f_name = self.source + f"{keys[0]}_{i}_{keys[1]}_{j}*"
+                files = glob.glob(f_name)
+                
+                errors[i][j] = []
+                
+                for file in files:
+                    errors[i][j].append(np.load(file))
+                    
+                
+        return errors
+    
+    def numpy_extractor(self, L2s):
+        "convert L2s from numpy arrays into pandas table"
+        keys = self.param_keys
+        columns = [keys[0],keys[1],"obs","forecasts","ukf"]
+        frame = pd.DataFrame(columns = columns)
+        for i in self.p1:
+            for j in self.p2:
+                data = L2s[i][j]
+                for item in data:
+                    new_row = pd.DataFrame([[float(i),float(j)]+list(item)], columns = columns)
+                    frame = pd.concat([frame,new_row])
         
+        "aggregate by rate then noise using median"
+        frame = frame.groupby(by = ["rate","noise"]).median()
+        best = frame.idxmin(axis=1) #which estiamtes are closest to the truth
+        
+        best.loc[best=="obs"] = 0
+        best.loc[best=="forecasts"] = 1
+        best.loc[best=="ukf"] = 2
+        
+        frame["best"] = best
+        
+        best_array= np.zeros(shape = (len(self.p1),len(self.p2)))
+        for i , x in enumerate(self.p1):
+            for j, y in enumerate(self.p2):
+                best_array[i,j] = int(L2_frame.loc[x].loc[y]["best"])
+                
+        return frame, best_array
+                
+    def comparison_choropleth(self, n, data, xlabel, ylabel, title):
+        """plot choropleth style for which is best our obs forecasts and ukf
+    
+        Parameters
+        ------
+        data2,best_array : array_like
+            `data2` and `best_array` defined above
+        
+        n,rates,noises: list
+            `n` `rates` `list` lists of each parameter defined above
+        save : bool
+            `save` plot?
+        """
+        
+        f,ax = plt.subplots(figsize=(8,8))
+        "cbar axis"
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right",size="5%",pad=0.05)
+        colours = ["yellow","orangered","skyblue"]
+        "custom discrete 3 colour map"
+        cmap = colors.ListedColormap(colours)
+        cmaplist = [cmap(i) for i in range(cmap.N)]
+        cmap = colors.LinearSegmentedColormap.from_list("custom_map",cmaplist,cmap.N)
+        bounds = [0,1,2,3]
+        norm = colors.BoundaryNorm(bounds,cmap.N)
+        
+        "imshow plot and colourbar"
+        im = ax.imshow(data,origin="lower",cmap = cmap,norm=norm)
+        #"""alternative continous contour plot idea for more "spatially real" mapping"""
+        #grid = np.meshgrid(noises,rates)
+        #im = plt.contourf(grid[0],grid[1],best_array,cmap=cmap,levels=[0,1,2,3])
+        plt.ylim([0,2])
+        cbar = plt.colorbar(im,cax=cax,ticks=np.arange(0,len(bounds)-1,1)+0.5,boundaries = [0,1,2,3])
+        cbar.set_label("Best Error")
+        cbar.set_alpha(1)
+        cbar.draw_all()
+        
+        "labelling"
+        cbar.set_ticklabels(("Obs","Preds","UKF"))
+        ax.set_xticks(np.arange(len(self.p2)))
+        ax.set_yticks(np.arange(len(self.p1)))
+        ax.set_xticklabels(self.p2)
+        ax.set_yticklabels(self.p1)
+        ax.set_xticks(np.arange(-.5,len(self.p2),1),minor=True)
+        ax.set_yticks(np.arange(-.5,len(self.p1),1),minor=True)
+        ax.grid(which="minor",color="k",linestyle="-",linewidth=2)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        if self.save:
+            plt.savefig("plots/" + f"{n}_base_config_test.pdf")
+
+    def comparisons_3d(self, n, data, best_array):
+        
+        
+        """3d version of plots 2 based on Minh's code
+        
+            Parameters
+            ------
+            data2,best_array : array_like
+                `data2` and `best_array` defined above
+            
+            n,rates,noises: list
+                `n` `rates` `list` lists of each parameter defined above
+            save : bool
+                `save` plot?
+            """
+        #first make list of plots
+        colours = ["yellow","orangered","skyblue"]
+    
+        "init and some labelling"
+        fig = plt.figure(figsize = (12,12))
+        ax = fig.add_subplot(111,projection='3d')
+        ax.set_xlabel('Observation Noise', labelpad = 20,fontsize = 22)
+        ax.set_ylabel("Assimilation Rate", labelpad = 20)
+        ax.set_zlabel('Grand L2 Error')
+        ax.view_init(30,225)
+        
+        "take each rate plot l2 error over each noise for preds obs and ukf"
+        for i,rate in enumerate(self.p1):
+            sub_data = data.loc[rate]
+            preds=list(sub_data["forecasts"])
+            ukf=list(sub_data["ukf"])
+            obs=list(sub_data["obs"])
+            
+            xs = np.arange(len(self.p2))
+            ys = [i]*len(self.p2)
+            l1=ax.plot(xs= xs, ys=ys, zs=obs,color=colours[0], linewidth=4,
+                    path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=1), pe.Normal()],alpha=0.8)
+            
+            l2=ax.plot(xs= xs, ys= ys,zs=preds,color=colours[1],linewidth=4,
+                       linestyle = "-.", path_effects=[pe.Stroke(linewidth=6, foreground='k'
+                        ,alpha=1), pe.Normal()],alpha=0.6)
+            l3=ax.plot(xs= xs, ys= ys, zs=ukf, color=colours[2], linewidth=4,
+                       linestyle = "--",path_effects=[pe.Stroke(offset=(2,0),linewidth=6,
+                        foreground='k',alpha=1), pe.Normal()],alpha=1)
+                 
+        "placeholder dummies for legend"
+        s1=lines.Line2D([-1],[-1],color=colours[0],label="obs",linewidth=4,linestyle = "-",
+                    path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=1), pe.Normal()])
+        s2 = lines.Line2D([-1],[-1],color=colours[1],label="preds",linewidth=4,linestyle = "-.",
+                    path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=1), pe.Normal()])
+        s3 = lines.Line2D([-1],[-1],color=colours[2],label="ukf",linewidth=4,linestyle = "--",
+                    path_effects=[pe.Stroke(offset=(2,0),linewidth=6, foreground='k',alpha=1), pe.Normal()])
+    
+        "rest of labelling"
+        ax.set_xticks(np.arange(0,len(self.p2)))
+        ax.set_xticklabels(self.p2)
+        ax.set_yticks(np.arange(0,len(self.p1)))
+        ax.set_yticklabels(self.p1)
+        ax.legend([s1,s2,s3],["obs","preds","ukf"])
+        plt.tight_layout()
+        "save?"
+        if self.save:
+            plt.savefig("plots/" + f"3d_{n}_error_trajectories.pdf")
+
+    
     def depickle_data_parser(self,instance):
         
         
@@ -128,7 +300,8 @@ class grand_plots:
             nan_array[index,2*i:(2*i)+2] = 1
         
         return truth*nan_array, preds*nan_array
-        
+    
+    
     def data_extractor(self):
         """pull multiple class runs into arrays for analysis
         
@@ -275,7 +448,7 @@ class grand_plots:
         
         "save"
         if self.save:
-            plt.savefig(title + "_Choropleth.pdf")
+            plt.savefig("plots/" + title + "_Choropleth.pdf")
         
     def boxplot(self, xlabel, ylabel, title):
         """produces grand median boxplot for all 30 ABM runs for choropleth plot
@@ -307,7 +480,7 @@ class grand_plots:
             ax.set_title(str(keys[0]).capitalize() + " = " + str(self.p1[i]))
         plt.title = title
         if self.save:
-            plt.savefig(f_name)
+            plt.savefig("plots/" + f_name)
        
         
       
@@ -324,8 +497,25 @@ source : "where files are loaded from plus some file prefix such as "ukf" or "ag
 
 """
 
+
+def ex0_grand():
+    n = 30 #population size
+    file_params = {
+            "rate" :  [1.0, 2.0, 5.0, 10.0],
+            "noise" : [0., 0.25, 0.5, 1.0, 2.0, 5.0],
+            #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
+            "source" : f"/home/rob/ukf_config_test/config_agents_{str(n).zfill(3)}_",
+            }
+    
+    g_plts = grand_plots(file_params, True)
+    L2 = g_plts.numpy_parser()
+    L2_frame, best_array = g_plts.numpy_extractor(L2)
+    g_plts.comparison_choropleth(n,best_array,"Observation Noise Standard Deviation",
+                                 "Assimilation Rate","")
+    g_plts.comparisons_3d(n, L2_frame, best_array)
+    
 def ex1_restrict(distances,instance, *kwargs):
-    "split L2s for observed unobserved"
+    "split L2s for separate observed unobserved plots."
     try:
         observed = kwargs[0]["observed"]
     except:
@@ -340,9 +530,9 @@ def ex1_restrict(distances,instance, *kwargs):
         
     return distances
     
-def ex1_depickle():
+def ex1_grand():
 
-    depickle_params = {
+    file_params = {
             "agents" :  [10,20, 30],
             "prop" : [0.25, 0.5, 0.75, int(1)],
             #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
@@ -353,7 +543,7 @@ def ex1_depickle():
     obs_titles = ["Observed", "Unobserved"]
     for i in range(len(obs_bools)):
         "initialise plot for observed/unobserved agents"
-        g_plts = grand_plots(depickle_params, True, restrict = ex1_restrict, observed = obs_bools[i])
+        g_plts = grand_plots(file_params, True, restrict = ex1_restrict, observed = obs_bools[i])
         "make dictionary"
         L2 = g_plts.data_extractor()
         "make pandas dataframe for seaborn"
@@ -366,9 +556,9 @@ def ex1_depickle():
         g_plts.boxplot("Proportion Observed", "Grand Median L2s",obs_titles[i])
         
         
-def ex2_depickle():
+def ex2_grand():
 
-    depickle_params = {
+    file_params = {
             "agents" :  [10, 20, 30],
             "bin" : [5,10,25,50],
             #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
@@ -376,7 +566,7 @@ def ex2_depickle():
             }
 
     "init plot class"
-    g_plts = grand_plots(depickle_params,True)
+    g_plts = grand_plots(file_params,True)
     "make dictionary"
     L2 = g_plts.data_extractor()
     "make pandas dataframe for seaborn"
@@ -390,6 +580,7 @@ def ex2_depickle():
 
 #%%
 if __name__ == "__main__":
-    ex1_depickle()
-    #ex2_depickle()
+    ex0_grand()
+    #ex1_grand()
+    #ex2_grand()
     

@@ -62,21 +62,17 @@ import sys
 #path = os.path.join(os.path.dirname(__file__), os.pardir)
 #sys.path.append(path)
 
-sys.path.append('../../stationsim')
-sys.path.append('../..')
+sys.path.append('../../../stationsim')
 
-from stationsim.ukf2 import ukf_ss
-from stationsim.stationsim_model import Model
+from ukf2 import ukf_ss, pickler
+from stationsim_model import Model
 
 from default_ukf_configs import model_params,ukf_params
 from ukf_ex0 import ex0_params, ex0_save
 from ukf_ex1 import omission_params
 from ukf_ex2 import aggregate_params
 
-import datetime
-import warnings
 import numpy as np
-import pickle
 
 #%%
 def ex0_input(model_params,ukf_params):
@@ -115,6 +111,10 @@ def ex0_input(model_params,ukf_params):
     
     
 def ex1_input(model_params,ukf_params):
+    
+    
+    """input for experiment 1
+    """
     
     num_age = [10,20,30]  # 10 to 30 agent population by 10
     props = [0.25,0.5,0.75,1]  # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
@@ -156,7 +156,8 @@ def ex2_input(model_params,ukf_params):
     
     ukf_params["do_pickle"] = True
 
-if __name__ == '__main__':
+
+def main(ex_input,ex_save=None):
     __spec__ = None
 
     if len(sys.argv) != 2:
@@ -164,7 +165,7 @@ if __name__ == '__main__':
              "Usage: python run_pf <N>")
         sys.exit(1)
 
-    ex0_input(model_params,ukf_params)
+    ex_input(model_params,ukf_params)
     #ex1_input(model_params,ukf_params)
     #ex2_input(model_params,ukf_params)
 
@@ -173,23 +174,20 @@ if __name__ == '__main__':
     print("Model params: " + str(model_params))
     
     #init and run ukf
-    time1 = datetime.datetime.now()  # Time how long the whole run take
     base_model = Model(**model_params)
     u = ukf_ss(model_params, ukf_params, base_model)
     u.main()
-    
-    do_pickle = False
-    
+        
     if ukf_params["do_pickle"]:
         #store final class instance via pickle
-        f_name = ukf_params["f_name"]
-        f = open(f_name,"wb")
-        pickle.dump(u,f)
-        f.close()
+        pickler(u, "../ukf_results/", ukf_params["pickle_file_name"])
     
     else:
-        ex0_save(u, "ukf_results/", ukf_params["f_name"])
-        
-    print(datetime.datetime.now()-time1)
+        ex_save(u, "../ukf_results/", ukf_params["f_name"])
     
+if __name__ == '__main__':
+    main(ex0_input, ex0_save)
+    #main(ex1_input)
+    #main(ex2_input)
+        
 

@@ -11,16 +11,16 @@ and vary noise/sample_rate
 
 import sys
 
+"import required modules"
 from ukf_fx import fx
 from ukf_plots import L2s
 from default_ukf_configs import model_params,ukf_params
-from ukf_ex1 import obs_key_func, omission_index, hx1
-sys.path.append("../../stationsim")
-from ukf2 import ukf_ss, pickler, depickler
+
+sys.path.append("../../../stationsim")
+from ukf2 import ukf_ss
 from stationsim_model import Model
 
 import numpy as np
-from math import floor
 
 def ex0_params(n, noise, sample_rate, model_params = model_params, ukf_params=ukf_params):
     
@@ -29,7 +29,10 @@ def ex0_params(n, noise, sample_rate, model_params = model_params, ukf_params=uk
     
     Parameters
     ------
-    ukf_params : dict
+    n, noise, sample_rate : float
+        `n` population, additive `noise`, and `sample_rate` sampling rate
+        
+        ukf_params : dict
         
     Returns
     ------
@@ -98,7 +101,7 @@ def ex0_main():
     base_model = Model(**model_params)
     u = ukf_ss(model_params,ukf_params,base_model)
     u.main()
-    ex0_save(u, "ukf_results/", ukf_params["file_name"])
+    ex0_save(u, "../ukf_results/", ukf_params["file_name"])
   
 #%%  
     

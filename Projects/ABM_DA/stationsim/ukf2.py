@@ -28,6 +28,7 @@ As of 01/09/19 dependencies are:
 """
 
 #general packages used for filtering
+
 "used for a lot of things"
 import os
 import sys 
@@ -39,9 +40,6 @@ sys.path.append(path)
 "general timer"
 import datetime 
 
-#"used to calculate sigma points in parallel."
-import multiprocessing  
-from itertools import product
 "used to save clss instances when run finished."
 import pickle 
 
@@ -124,14 +122,24 @@ class ukf:
 
 
 
-    def unscented_Mean(self, sigma_function,*function_args):
-        """calcualte unscented transform estimate for forecasted/desired means
+    def unscented_Mean(self, sigma_function, kf_function, *function_args):
+        
+        
+        """calculate unscented transform estimate for forecasted/desired means
+        
+        -calculate sigma points defined by sigma_function 
+            (usually MSSP or central differenceing)
+            
+        - apply kf_function to sigma points (usually transition function or 
+            measurement function.) to get transformed sigma points
+        
+        - calculate weighted mean of transformed points to get unscented mean
         
         """
-        "calculate Merwe Scaled Sigma Points (MSSPs) based on previous x and p. "
-        sigmas = self.calc_Sigmas(self.x,np.linalg.cholesky(self.p))
+        
+        sigmas = sigma_function(self.x,self.p)
         "calculate either forecasted sigmas X- or measured sigmas Y with f/h"
-        nl_sigmas = np.apply_along_axis(sigma_function,0,sigmas,*function_args)
+        nl_sigmas = np.apply_along_axis(kf_function,0,sigmas,*function_args)
         "calculate unscented mean using non linear sigmas and MSSP mean weights"
         xhat = np.dot(nl_sigmas,self.wm)#unscented mean for predicitons
         
@@ -143,51 +151,61 @@ class ukf:
         """within/cross-covariance between sigma points and their unscented mean.
         
         Note: CAN'T use numpy.cov here as it uses the regular mean 
-            and not the  unscented mean. Maybe theres a faster numpy version
+            and not the unscented mean. Maybe theres a faster numpy version
         
-        takes matrices X_{mxp}, Y_{nxp} and some vectors a_{mx1}, b_{nx1}, 
-        and weights vector w
+        Define sigma point matrices X_{mxp}, Y_{nxp}, 
+        some unscented mean vectors a_{mx1}, b_{nx1}
+        and some vector of covariance weights wc.
         
-        Also define function COL(X,a) as the column subtraction operator
-        such that we subtract a from every column of X
+        Also define a column subtraction operator COL(X,a) 
+        such that we subtract a from every column of X elementwise.
         
-        calculates P_xy = COL(X-a) * W * COL(Y-b)^T
+        Using the above we calculate the cross covariance between two sets of 
+        sigma points as 
         
-        given  diagonal matrix W with entries w.
+        P_xy = COL(X-a) * W * COL(Y-b)^T
+        
+        Given some diagonal weight matrix W with diagonal entries wc and 0 otherwise.
+        
+        This is similar to the standard statistical covariance with the exceptions
+        of a non standard mean and weightings.
         """
-        "check whether between or cross covariance calculation"
+        
+        "if no secondary data defined do within covariance. else do cross"
         
         if data2 is None and mean2 is None:
             data2 = data1
             mean2 = mean1
             
-        "calculate component matrices for covariance"
-        "this is the quadratic form of the covariance."
-        " "
+        """calculate component matrices for covariance by performing 
+            column subtraction and diagonalising weights."""
         
         weighting = np.diag(weight)
         residuals = (data1.T - mean1).T
         residuals2 = (data2.T - mean2).T
         
+        "calculate P_xy as defined above"
     
         covariance_matrix = np.linalg.multi_dot([residuals,weighting,residuals2.T])
         
-        if addition is not None:
-            covariance_matrix += addition
-        
         """old versions"""
-        "old quadratic form version. made faster with multi_dot"
+        "old quadratic form version. made faster with multi_dot."
         #covariance_matrix = np.matmul(np.matmul((data1.transpose()-mean1).T,np.diag(weight)),
         #                (data1.transpose()-mean1))+self.q
         
-        "old version. numpy quadratic form far faster than this for loop"
+        "numpy quadratic form far faster than this for loop"
         #covariance_matrix =  self.wc[0]*np.outer((data1[:,0].T-mean1),(data2[:,0].T-mean2))+self.Q
         #for i in range(1,len(self.wc)): 
         #    pxx += self.wc[i]*np.outer((nl_sigmas[:,i].T-self.x),nl_sigmas[:,i].T-xhat)
         
+        "if some additive noise is involved (as with the Kalman filter) do it here"
+        
+        if addition is not None:
+            covariance_matrix += addition
+        
         return covariance_matrix
     
-    def calc_Sigmas(self,mean,p):
+    def MSSP(self,mean,p):
         
         
         """sigma point calculations based on current mean x and covariance P
@@ -200,14 +218,14 @@ class ukf:
         Returns
         ------
         sigmas : array_like
-            sigma point matrix
+            matrix of MSSPs with each column representing one point
         
         """
-
+        P = np.linalg.cholesky(p)
         sigmas = np.ones((self.n,(2*self.n)+1)).T*mean
         sigmas=sigmas.T
-        sigmas[:,1:self.n+1] += self.g*p #'upper' confidence sigmas
-        sigmas[:,self.n+1:] -= self.g*p #'lower' confidence sigmas
+        sigmas[:,1:self.n+1] += self.g*P #'upper' confidence sigmas
+        sigmas[:,self.n+1:] -= self.g*P #'lower' confidence sigmas
         return sigmas 
 
     def predict(self):
@@ -218,17 +236,12 @@ class ukf:
         - calculate sigmas using prior mean and covariance P.
         - forecast sigmas X- for next timestep using transition function Fx.
         - unscented mean for foreacsting next state.
-        - calculate interim Px
-        - pass these onto next update function
+        - calculate interim mean state x and covariance P
+        - pass these onto  update function
         
-        Parameters
-        ------
-        **fx_args
-            generic arguments for transition function f
         """
         
-        "forecast sigmas and get unscented mean estimate of next state "
-        sigmas, nl_sigmas, xhat = self.unscented_Mean(self.fx,self.base_model)
+        sigmas, nl_sigmas, xhat = self.unscented_Mean(self.MSSP, self.fx,self.base_model)
         pxx = self.covariance(nl_sigmas,xhat,self.wc,addition = self.q)
         
         self.p = pxx #update Sxx
@@ -252,20 +265,17 @@ class ukf:
         z : array_like
             measurements from sensors `z`
         """
-        "nudge sigmas based on forecasts of x and p and calculate measured sigmas using hx"
-        sigmas, nl_sigmas, yhat = self.unscented_Mean(self.hx,self.model_params,self.ukf_params)
-        "calculate measured state covariance and desired/measured cross covariance"
+        
+        sigmas, nl_sigmas, yhat = self.unscented_Mean(self.MSSP, self.hx, 
+                                                      self.model_params,self.ukf_params)
         pyy =self.covariance(nl_sigmas,yhat, self.wc, addition=self.r)
         pxy = self.covariance(sigmas,self.x, self.wc, nl_sigmas, yhat)
-        
-        "kalman gain. ratio of trust between forecast and measurements."
         k = np.matmul(pxy,np.linalg.inv(pyy))
  
-        "assimilate for x and p"
         "i dont know why `self.x += ...` doesnt work here"
         self.x = self.x + np.matmul(k,(z-yhat))
         self.p = self.p - np.linalg.multi_dot([k, pyy, k.T])
-        "append overall lists"
+        
         self.ps.append(self.p)
         self.xs.append(self.x)
 
@@ -519,7 +529,7 @@ class ukf_ss:
         
         return obs_key
         
-def pickler(source, f_name, instance):
+def pickler(instance, source, f_name):
     "save ukf run as a pickle"
     f = open(source + f_name,"wb")
     pickle.dump(instance,f)

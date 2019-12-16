@@ -11,7 +11,7 @@ from ukf_fx import fx
 from ukf_plots import ukf_plots
 from default_ukf_configs import model_params,ukf_params
 
-sys.path.append("../../stationsim")
+sys.path.append("../../../stationsim")
 from ukf2 import ukf_ss, pickler, depickler
 from stationsim_model import Model
 
@@ -166,10 +166,10 @@ def ex1_plots(instance,plot_dir,save, animate, prefix):
     preds *= nan_array
 
     index2 = ukf_params["index2"]
-    
+    not_index2 = np.array([i for i in np.arange(truths.shape[1]) if i not in index2])
     plts.pair_frame(truths, preds, obs_key, 50)
     plts.error_hist(truths[:,index2], preds[:,index2],"Observed Errors", save)
-    plts.error_hist(truths[:,~index2], preds[:,~index2],"Unobserved Errors", save)
+    plts.error_hist(truths[:,not_index2], preds[:,not_index2],"Unobserved Errors", save)
     plts.path_plots(obs, "Observed", save)
     "remove nan rows to stop plot clipping"
     plts.path_plots(preds[::instance.sample_rate], "Predicted", save)
@@ -183,6 +183,7 @@ def ex1_plots(instance,plot_dir,save, animate, prefix):
 if __name__ == "__main__":
     recall = True #recall previous run
     do_pickle = True #pickle new run
+    pickle_source = "../test_pickles/"
     n= 30
     prop = 0.5
     
@@ -196,16 +197,15 @@ if __name__ == "__main__":
         u.main()
         
         if do_pickle:
-            pickler("",  "test_pickles/" + ukf_params["pickle_file_name"], u)
+            pickler(u, pickle_source, ukf_params["pickle_file_name"])
             
     else:
-        f_name = "test_pickles/" + f"ukf_agents_{n}_prop_{prop}.pkl"
-        source = ""
-        u = depickler(source, f_name)
+        f_name = f"ukf_agents_{n}_prop_{prop}.pkl"
+        u = depickler(pickle_source, f_name)
         ukf_params = u.ukf_params
         model_params = u.model_params
 
-    ex1_plots(u,"plots/",False, False,"ukf_")
+    ex1_plots(u,"../plots/",False, False,"ukf_")
 
     
     

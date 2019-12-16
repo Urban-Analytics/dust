@@ -6,23 +6,30 @@ Created on Mon Dec  2 11:19:48 2019
 @author: rob
 """
 import sys
+
 from ukf_fx import fx
 from poly_functions import poly_count, grid_poly
 from ukf_plots import ukf_plots
 from default_ukf_configs import model_params,ukf_params
 
-sys.path.append("../../stationsim")
+sys.path.append("../../../stationsim")
 from ukf2 import ukf_ss, pickler, depickler
 from stationsim_model import Model
 
 import numpy as np
 
 def obs_key_func(state,model_params,ukf_params):
-        """which agents are observed"""
-        
-        key = np.ones(model_params["pop_total"])
-        
-        return key
+    """categorises agent observation type for a given time step
+    0 - unobserved
+    1 - aggregate
+    2 - gps style observed
+    
+    
+    """
+    
+    key = np.ones(model_params["pop_total"])
+    
+    return key
 
 def aggregate_params(n, bin_size,model_params=model_params,ukf_params=ukf_params):
     
@@ -84,8 +91,8 @@ def hx2(state,model_params,ukf_params):
         
         return counts
     
-def ex2_plots(instance, plot_dir, save, animate, prefix):
-    plts = ukf_plots(instance,plot_dir,prefix)
+def ex2_plots(instance, destination, save, animate, prefix):
+    plts = ukf_plots(instance, destination, prefix)
         
     "pull data and put finished agents to nan"
     obs, preds, truths, nan_array= instance.data_parser()
@@ -107,7 +114,7 @@ def ex2_plots(instance, plot_dir, save, animate, prefix):
     if animate:
                 
         #plts.trajectories(truth)
-        plts.heatmap(truths,ukf_params,truth.shape[0])
+        plts.heatmap(truths,ukf_params,truths.shape[0])
         plts.pair_frames_animation(truths,preds)
         
 if __name__ == "__main__":
@@ -118,7 +125,8 @@ if __name__ == "__main__":
     """
     recall = True #recall previous run
     do_pickle = True #pickle new run
-    n = 30
+    pickle_source = "../test_pickles/"
+    n = 5
     bin_size = 25
     if not recall:
         model_params, ukf_params = aggregate_params(n, bin_size)
@@ -131,17 +139,14 @@ if __name__ == "__main__":
         u.main()
         
         if do_pickle:
-            pickler("", "test_pickles/" + ukf_params["pickle_file_name"], u)
+            pickler(u, pickle_source,  ukf_params["pickle_file_name"])
        
     else:
         
-        f_name = "test_pickles/" + f"agg_ukf_agents_{n}_bin_{bin_size}.pkl"  
-    
-        source = ""
-
-        u = depickler(source, f_name)
+        f_name = f"agg_ukf_agents_{n}_bin_{bin_size}.pkl"  
+        u = depickler(pickle_source, f_name)
     
     "unhash the necessary one"
 
-    ex2_plots(u, "", True, False, "agg_ukf_")
+    ex2_plots(u, "../plots/", True, False, "agg_ukf_")
     

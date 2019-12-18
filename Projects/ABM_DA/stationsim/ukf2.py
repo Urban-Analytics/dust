@@ -59,17 +59,16 @@ except:
 #%%
 
 class ukf:
+    
     """main ukf class with aggregated measurements
     
     Parameters
     ------
-    ukf_params : dict
-        dictionary of ukf parameters `ukf_params`
+    model_params, ukf_params : dict
+        dictionary of model `model_params` and ukf `ukf_params` parameters
     init_x : array_like
         Initial ABM state `init_x`
-    poly_list : list
-        list of polygons `poly_list`
-    fx,hx: method
+    fx,hx: function
         transitions and measurement functions `fx` `hx`
     P,Q,R : array_like
         Noise structures `P` `Q` `R`
@@ -77,6 +76,8 @@ class ukf:
     """
     
     def __init__(self, model_params, ukf_params, base_model, init_x, fx, hx, p, q, r):
+        
+        
         """
         x - state
         n - state size 
@@ -127,14 +128,31 @@ class ukf:
         
         """calculate unscented transform estimate for forecasted/desired means
         
-        -calculate sigma points defined by sigma_function 
-            (usually MSSP or central differenceing)
-            
+        -calculate sigma points using sigma_function 
+            (e.g Merwe Scaled Sigma Points (MSSP) or 
+            central difference sigma points (CDSP)) 
         - apply kf_function to sigma points (usually transition function or 
             measurement function.) to get transformed sigma points
-        
         - calculate weighted mean of transformed points to get unscented mean
         
+        Parameters
+        ------
+        sigma_function, kf_function : function
+            `sigma_function` function defining type of sigmas used and
+            `kf_function` defining whether to apply transition of measurement 
+            function (f/h) of UKF.
+        
+        *function_args : args
+            `function_args` positional arguements for kf_function. Varies depending
+            on the experiment so good to be general here.
+            
+        Returns 
+        ------
+        
+        sigmas, nl_sigmas, xhat : array_like
+            raw `sigmas` from sigma_function, projected non-linear `nl_sigmas`, 
+            and the unscented mean of `xhat` of said projections.
+            
         """
         
         sigmas = sigma_function(self.x,self.p)
@@ -145,7 +163,7 @@ class ukf:
         
         return sigmas, nl_sigmas, xhat
         
-    def covariance(self, data1, mean1, weight, data2 = None,mean2 = None, addition = None):
+    def covariance(self, data1, mean1, weight, data2 = None, mean2 = None, addition = None):
         
         
         """within/cross-covariance between sigma points and their unscented mean.
@@ -169,7 +187,32 @@ class ukf:
         
         This is similar to the standard statistical covariance with the exceptions
         of a non standard mean and weightings.
+        
+        Parameters
+        ------
+        
+        data1, mean1` : array_like
+            `data1` some array of sigma points and their unscented mean `mean1` 
+            
+        data2, mean2` : array_like
+            `data2` some OTHER array of sigma points and their unscented mean `mean2` 
+            can be same as data1, mean1 for within covariance
+            
+        `weight` : array_like
+            `weight` sample covariance weightings
+        
+        addition : array_like
+            some additive noise for the covariance such as the sensor/process noise.
+            
+        Returns 
+        ------
+        
+        covariance_matrix : array_like
+         `covariance_matrix` unscented covariance matrix used in ukf algorithm
+            
         """
+        
+    
         
         "if no secondary data defined do within covariance. else do cross"
         
@@ -218,7 +261,7 @@ class ukf:
         Returns
         ------
         sigmas : array_like
-            matrix of MSSPs with each column representing one point
+            matrix of MSSPs with each column representing one sigma point
         
         """
         P = np.linalg.cholesky(p)
@@ -321,28 +364,21 @@ class ukf_ss:
         self.ukf_params = ukf_params # ukf parameters
         self.base_model = base_model #station sim
         
-        
-        """
-        calculate how many agents are observed and take a random sample of that
-        many agents to be observed throughout the model
-        """
-        self.pop_total = self.model_params["pop_total"] #number of agents
-        # number of batch iterations
-        self.number_of_iterations = model_params['step_limit']
-        self.sample_rate = self.ukf_params["sample_rate"]
-        # how many agents being observed
 
-            
-        #random sample of agents to be observed
+        self.pop_total = self.model_params["pop_total"] #  number of agents
+        self.number_of_iterations = model_params['step_limit'] #  number of batch iterations
+        self.sample_rate = self.ukf_params["sample_rate"] # how often do we assimilate
+        self.obs_key_func = ukf_params["obs_key_func"]  #defines what type of observation each agent has
 
-        
-        
-        """fills in blanks between assimlations with pure stationsim. 
-        good for animation. not good for error metrics use ukf_histories
+
+        """lists for various data outputs
+        observations
+        ukf assimilations
+        pure stationsim forecasts
+        ground truths
+        list of covariance matrices
+        list of observation types for each agents at one time point
         """
-        """assimilated ukf positions no filled in section
-        (this is predictions vs full predicitons above)"""
-        
         self.obs = []  # actual sensor observations
         self.ukf_histories = []  
         self.forecasts=[] 
@@ -350,8 +386,8 @@ class ukf_ss:
 
         self.full_ps=[]  # full covariances. again used for animations and not error metrics
         self.obs_key = [] # which agents are observed (0 not, 1 agg, 2 gps)
-        self.obs_key_func = ukf_params["obs_key_func"]  #defines what type of observation each agent has
 
+        "timer"
         self.time1 =  datetime.datetime.now()#timer
         self.time2 = None
     
@@ -360,16 +396,22 @@ class ukf_ss:
         
         """initialise ukf with initial state and covariance structures.
         
-        set:
-            - initial state
-            - noise structures p,q,r
-            - ABM base_model, fx/hx functions and their args
+        - set
+             - initial state
+             - noise structures p,q,r
+             - ABM base_model, fx/hx functions and their args
+        - initialised ukf class
         
         Parameters
         ------
         ukf_params : dict
             dictionary of various ukf parameters `ukf_params`
         
+        
+        Returns
+        ------
+        self.ukf : class
+            `ukf` class intance for stationsim
         """
         
         x = self.base_model.get_state(sensor="location")#initial state
@@ -386,32 +428,29 @@ class ukf_ss:
         - forecast state using UKF (unscented transform)
         - update forecasts list
         - jump base_model forwards to forecast time
-        - 
+        - update truths list with new positions
         """
-        "forecast sigma points forwards to predict next state"
         self.ukf.predict() 
         self.forecasts.append(self.ukf.x)
-        "step model forwards"
         self.base_model.step()
-        "add true noiseless values from ABM for comparison"
         self.truths.append(self.base_model.get_state(sensor="location"))
-        "append raw ukf forecasts of x and p"
 
     def ss_Update(self,step):
         
         
         """ Update step of UKF for stationsim.
-        
-        - measure state from base_model.
-        - add some gaussian noise.
-        - assimilate ukf with noise state
-        - record each agents observation type.
-        - append lists of ukf assimilations and observations
-        
+        - if step is a multiple of sample_rate
+            - measure state from base_model.
+            - add some gaussian noise to active agents.
+            - apply measurement funciton h to project noisy 
+                state onto measured state
+            - assimilate ukf with projected noisy state
+            - calculate each agents observation type with obs_key_func.
+            - append lists of ukf assimilations and model observations
+        - else do nothing
         """
         if step%self.sample_rate == 0:
             state = self.base_model.get_state(sensor="location")
-            "apply noise to active agents"
             if self.ukf_params["bring_noise"]:
                 noise_array=np.ones(self.pop_total*2)
                 noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
@@ -529,19 +568,77 @@ class ukf_ss:
         
         return obs_key
         
-def pickler(instance, source, f_name):
-    "save ukf run as a pickle"
-    f = open(source + f_name,"wb")
+def pickler(instance, pickle_source, f_name):
+    
+    
+    """save ukf run as a pickle
+    
+    Parameters
+    ------
+    instance : class
+        finished ukf_ss class `instance` to pickle. defaults to None 
+        such that if no run is available we load a pickle instead.
+        
+    f_name, pickle_source : str
+        `f_name` name of pickle file and `pickle_source` where to load 
+        and save pickles from/to
+
+    """
+    
+    f = open(pickle_source + f_name,"wb")
     pickle.dump(instance,f)
     f.close()
 
-def depickler(source, f_name):
-    "load a ukf pickle"
-    f = open(source+f_name,"rb")
+def depickler(pickle_source, f_name):
+    
+    
+    """load a ukf pickle
+    
+    Parameters
+    ------
+    pickle_source : str
+        `pickle_source` where to load and save pickles from/to
+
+    instance : class
+        finished ukf_ss class `instance` to pickle. defaults to None 
+        such that if no run is available we load a pickle instead.
+    """
+    f = open(pickle_source+f_name,"rb")
     u = pickle.load(f)
     f.close()
     return u
 
+def pickle_main(f_name, pickle_source, do_pickle, instance = None):
+    
+    
+    """main function for saving and loading ukf pickles
+    
+    - check if we have a finished ukf_ss class and do we want to pickle it
+    - if so, pickle it as f_name at pickle_source
+    - else, if no ukf_ss class is present, load one with f_name from pickle_source 
+        
+    Parameters
+    ------
+    f_name, pickle_source : str
+        `f_name` name of pickle file and `pickle_source` where to load 
+        and save pickles from/to
+    
+    do_pickle : bool
+        `do_pickle` do we want to pickle a finished run?
+   
+    instance : class
+        finished ukf_ss class `instance` to pickle. defaults to None 
+        such that if no run is available we load a pickle instead.
+    """
+    
+    if do_pickle and instance is not None:
+        print(f"Pickling file to {f_name}")
+        pickler(instance, pickle_source, f_name)
+        return
+    else:
+        print(f"Loading pickle {f_name}")
+        instance = depickler(pickle_source, f_name)
+        return instance
 
 
 

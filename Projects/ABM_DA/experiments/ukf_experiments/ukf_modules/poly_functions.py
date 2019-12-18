@@ -14,7 +14,7 @@ def poly_count(poly_list,points):
     
     """ counts how many agents in each closed polygon of poly_list
     
-    -    use shapely polygon functions to count agents in each polygon
+    - use shapely polygon functions to count agents in each polygon
     
     Parameters
     ------

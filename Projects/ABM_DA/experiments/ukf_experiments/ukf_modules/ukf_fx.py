@@ -13,10 +13,14 @@ import sys
 from copy import deepcopy  
 
 class HiddenPrints:
-    """stop repeating printing from stationsim as it jumps back and forth over
-    every 100th step
+    
+    
+    """stop repeating printing from stationsim 
+    We get a low of `iterations : X` prints as it jumps back 
+    and forth over every 100th step. This stops that.
     https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
     """
+    
     def __enter__(self):
         self._original_stdout = sys.stdout
         sys.stdout = open(os.devnull, 'w')

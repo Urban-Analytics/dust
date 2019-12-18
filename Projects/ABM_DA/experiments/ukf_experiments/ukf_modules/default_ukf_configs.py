@@ -4,6 +4,9 @@
 Created on Thu Dec  5 13:51:09 2019
 
 @author: rob
+
+These are the default stationsim and UKF filter parameters used in all experiments.
+We append these dictionaries for the indivual experiment as necssary
 """
 
 """
@@ -12,7 +15,7 @@ height - corridor height
 
 gates_in - how many entrances
 gates_out - how many exits
-gate_space- how wide are exits 
+gate_space- how wide are the exits 
 gate_speed- mean entry speed for agents
 
 speed_min - minimum agents speed to prevent ridiculuous iteration numbers

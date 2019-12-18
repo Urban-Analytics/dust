@@ -19,11 +19,14 @@ change to relevant directories
 
 """
 
-import pickle
 import sys
-#sys.path.append("../../stationsim")
-sys.path.append("../../..")
+sys.path.append("../ukf_old")
+"""import old files. 
+NOTE THIS IS NOT THE MAIN STATIONSIM FILE. IT IS IN UKF_OLD AND
+NEEDS THE FOLDER NAME TO KEEP PICKLE HAPPY"""
+import stationsim.ukf, stationsim.ukf_aggregate
 
+sys.path.append("../ukf_modules")
 from ukf_plots import L2s as L2_parser
 
 import numpy as np
@@ -39,6 +42,7 @@ import glob
 import seaborn as sns
 import pandas as pd
 
+import pickle
 
 #%%
 class grand_plots:
@@ -388,6 +392,17 @@ class grand_plots:
         
         This will output a dictionary where for every pair of keys i and j , we accquire
         an array of grand medians.
+        
+        Returns
+        ------
+        L2 : dict
+             dictionary of `L2` distances between ground truth and ukf predictions 
+             over 2 parameters. We have keys [i][j] corresponding to the ith 
+             value of parameter 1 (e.g population) and jth value of parameter 2
+             (e.g proportion observed). Each pair of keys will contain a list of 
+             numpy arrays. Each array is a scalar grand median of an L2 distance matrix
+             output by ukf_plots.L2s
+             
         """
         "names of first and second parameters. e.g. agents and prop"
         keys = self.param_keys
@@ -427,6 +442,20 @@ class grand_plots:
         return L2
     
     def data_framer(self,L2):
+        
+        
+        """ turns dictionary of L2 arrays into pandas dataframe for easier plotting
+        
+        Returns
+        ------
+        error_frame : array_like
+        
+            `error_frame` pandas data frame where each row has parameters 1 and 2 
+            as well as a grand median value for each pair. Each parameter pair will
+            have a sample of grand median L2s which used as a boxplot sample or
+            further aggregated for choropleths.
+        
+        """
         sub_frames = []
         keys = self.param_keys
         for i in self.p1:
@@ -439,15 +468,22 @@ class grand_plots:
         error_frame = pd.concat(sub_frames)
         error_frame.columns = [keys[0], keys[1], "Grand Median L2s"]
     
-        self.error_frame = error_frame
+        return error_frame
 
-    def choropleth_array(self):
+    def choropleth_array(self, error_frame):
         
         
         """converts pandas frame into generalised numpy array for choropleth
         
+        Returns
+        ------
+        
+        error_array : array_like
+            `error_array` numpy array whose ith row and jth column correspond
+            to the ith and jth items of the parameter keys. The i,jth entry of
+            the array gives the overall grand median agent L2error for choropleths
         """
-        error_frame2 = self.error_frame.groupby(by =[str(self.param_keys[0]),
+        error_frame2 = error_frame.groupby(by =[str(self.param_keys[0]),
                                                      str(self.param_keys[1])]).median()
         error_array = np.ones((len(self.p1),len(self.p2)))*np.nan
         
@@ -455,9 +491,9 @@ class grand_plots:
             for  j, y in enumerate(self.p2):
                 error_array[i,j] = error_frame2.loc[(x,y),][0]
     
-        self.error_array = error_array
+        return error_array
 
-    def choropleth_plot(self, xlabel, ylabel, title):
+    def choropleth_plot(self, error_array, xlabel, ylabel, title):
        
         
         """choropleth style plot for grand medians
@@ -473,7 +509,7 @@ class grand_plots:
     
         """    
         "rotate  so population on x axis"
-        data = np.rot90(self.error_array,k=1) 
+        data = np.rot90(error_array,k=1) 
         "flip so proportion goes upwards so imshow `origin=lower` is true"
         data = np.flip(data,axis=0)
         "put nan values to white"
@@ -584,7 +620,9 @@ def ex0_grand():
     g_plts.comparisons_3d(n, L2_frame, best_array)
     
 def ex1_restrict(distances,instance, *kwargs):
-    "split L2s for separate observed unobserved plots."
+    """split L2s for separate observed unobserved plots.
+    
+    """
     try:
         observed = kwargs[0]["observed"]
     except:
@@ -618,11 +656,11 @@ def ex1_grand():
         "make dictionary"
         L2 = g_plts.data_extractor()
         "make pandas dataframe for seaborn"
-        g_plts.data_framer(L2)
+        error_frame = g_plts.data_framer(L2)
         "make choropleth numpy array"
-        g_plts.choropleth_array()
+        error_array = g_plts.choropleth_array(error_frame)
         "make choropleth"
-        g_plts.choropleth_plot("Numbers of Agents", "Proportion Observed",obs_titles[i])
+        g_plts.choropleth_plot(error_array, "Numbers of Agents", "Proportion Observed",obs_titles[i])
         "make boxplot"
         g_plts.boxplot("Proportion Observed", "Grand Median L2s",obs_titles[i])
         
@@ -642,11 +680,12 @@ def ex2_grand():
     "make dictionary"
     L2 = g_plts.data_extractor()
     "make pandas dataframe for seaborn"
-    g_plts.data_framer(L2)
+    error_frame = g_plts.data_framer(L2)
     "make choropleth numpy array"
-    g_plts.choropleth_array()
+    error_array = g_plts.choropleth_array(error_frame)
     "make choropleth"
-    g_plts.choropleth_plot("Numbers of Agents", "Proportion Observed","Aggregate")
+    g_plts.choropleth_plot(error_array, "Numbers of Agents", 
+                           "Proportion Observed","Aggregate")
     "make boxplot"
     g_plts.boxplot("Grid Square Size", "Grand Median L2s", "Aggregate")
 

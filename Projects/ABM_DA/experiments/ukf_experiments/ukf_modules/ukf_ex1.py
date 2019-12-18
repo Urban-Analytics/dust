@@ -12,7 +12,7 @@ from ukf_plots import ukf_plots
 from default_ukf_configs import model_params,ukf_params
 
 sys.path.append("../../../stationsim")
-from ukf2 import ukf_ss, pickler, depickler
+from ukf2 import ukf_ss, pickle_main
 from stationsim_model import Model
 
 import numpy as np
@@ -21,8 +21,7 @@ from math import floor
 def omission_index(n,sample_size):
     
     
-    """randomly pick agents without replacement to omit 
-    used in experiment 1 hx function
+    """randomly pick agents without replacement to observe 
     
     Parameters 
     ------
@@ -37,6 +36,7 @@ def omission_index(n,sample_size):
          E.g for 5 agents we have 5x2 = 10 xy coordinates.
          if we choose 0th and 2nd agents we also choose 0,1,4,5 xy columns.
     """
+    
     index = np.sort(np.random.choice(n,sample_size,replace=False))
     "double up index to choose x and y positions columns. both are used."
     index2 = np.repeat(2*index,2) 
@@ -48,9 +48,10 @@ def omission_index(n,sample_size):
 def hx1(state, model_params, ukf_params):
     
     
-    """Convert each sigma point from noisy gps positions into actual measurements
+    """Measurement function for ex1 taking observed subset of agent positions
     
-    -   omits pre-definied unobserved agents given by index/index2
+    - take full desired state X of all agent observations.
+    - take subset of observed agent as our measured state Y.
     
     Parameters
     ------
@@ -69,8 +70,9 @@ def obs_key_func(state, model_params, ukf_params):
     
     
     """which agents are observed
-    if agent in index2 fully observed and assign 2.
-    else not unobserved and assign 0.
+    
+    - if agent in index2 fully observed and assign 2.
+    - else unobserved and assign 0.
     
     Parameters
     ------
@@ -84,9 +86,9 @@ def obs_key_func(state, model_params, ukf_params):
     ------
     
     key : array_like
-        `key` array same shape as the true positions indicates
+        `key` array same shape as the measured state indicating
         each agents observation type for each time point 
-        (unobserved,aggregate,gps)
+        (unobserved,aggregate,gps) for 0, 1, or 2.
     
     """
     
@@ -99,14 +101,28 @@ def omission_params(n, prop, model_params = model_params, ukf_params=ukf_params)
     
     """update ukf_params with fx/hx and their parameters for experiment 1
     
+    - assign population size and proportion observed.
+    - randomly select agents to observed for index/index2
+    - assign initial covariance p as well as sensor and process noise (q,r)
+    - assign transition and measurement functions (fx,hx)
+    - assign observation key function and numpy file name for saving later.
+    
+        
     Parameters
     ------
-    ukf_params : dict
+    n, prop : float
+        `n` population and proportion observed 0<=`prop`<=1
+        
+    model_params, ukf_params : dict
+        dictionaries of model `model_params` and ukf `ukf_params` parameters 
         
     Returns
     ------
-    ukf_params : dict
+    model_params, ukf_params : dict
+        updated dictionaries of model `model_params` and ukf `ukf_params`
+        parameters ready to use in ukf_ss
     """
+    
     model_params["pop_total"] = n
     ukf_params["prop"] = prop
     ukf_params["sample_size"]= floor(n * ukf_params["prop"])
@@ -121,18 +137,38 @@ def omission_params(n, prop, model_params = model_params, ukf_params=ukf_params)
     ukf_params["hx"] = hx1
     
     ukf_params["obs_key_func"] = obs_key_func
-    ukf_params["pickle_file_name"] = f"ukf_agents_{n}_prop_{prop}.pkl"    
+    ukf_params["pickle_file_name"] =  ex1_pickle_name(n, prop)
         
     return model_params, ukf_params
 
+def ex1_pickle_name(n, prop):
+    
+    
+    """build name for pickle file
+    
+    Parameters
+    ------
+    n, prop : float
+        `n` population and `proportion` observed
+        
+    Returns
+    ------
+    
+    f_name : str
+        return `f_name` file name to save pickle as
+    """
+    
+    f_name = f"ukf_agents_{n}_prop_{prop}.pkl"
+    return f_name
 
-def ex1_plots(instance,plot_dir,save, animate, prefix):
+
+def ex1_plots(instance, destination, prefix, save, animate):
     
     
     """do plots for experiment 1
     
-    - pull data from ukf_ss instance
-    - filter out measurements from non-active agents
+    - extract truths, obs, ukf predictions (preds), and forecasts
+    - remove inactive agent measurements to prevent bias
     - plot one pairs plot frame linking ukf predictions to true values by tethers
     - plot population of agent median L2 errors in a  histogram
     - plot agent paths for observations, ukf preditions, and true values
@@ -155,59 +191,79 @@ def ex1_plots(instance,plot_dir,save, animate, prefix):
         `save` plots or `animate` whole model run?
     
     """
-    plts = ukf_plots(instance,plot_dir,prefix)
-    "single frame plots"
+    plts = ukf_plots(instance, destination, prefix, save, animate)
+
     obs,preds,truths,nan_array= instance.data_parser()
     obs_key = instance.obs_key_parser()
     ukf_params = instance.ukf_params
-    
-    obs *= nan_array[::instance.sample_rate,instance.ukf_params["index2"]]
+    index2 = ukf_params["index2"]
+
+    obs *= nan_array[::instance.sample_rate,index2]
     truths *= nan_array
     preds *= nan_array
-
-    index2 = ukf_params["index2"]
+    
+    "indices for unobserved agents"
     not_index2 = np.array([i for i in np.arange(truths.shape[1]) if i not in index2])
     plts.pair_frame(truths, preds, obs_key, 50)
-    plts.error_hist(truths[:,index2], preds[:,index2],"Observed Errors", save)
-    plts.error_hist(truths[:,not_index2], preds[:,not_index2],"Unobserved Errors", save)
-    plts.path_plots(obs, "Observed", save)
+    plts.error_hist(truths[:,index2], preds[:,index2],"Observed Errors")
+    plts.error_hist(truths[:,not_index2], preds[:,not_index2],"Unobserved Errors")
+    plts.path_plots(obs, "Observed")
     "remove nan rows to stop plot clipping"
-    plts.path_plots(preds[::instance.sample_rate], "Predicted", save)
-    plts.path_plots(truths, "True", save)
+    plts.path_plots(preds[::instance.sample_rate], "Predicted")
+    plts.path_plots(truths, "True")
 
     if animate:
         plts.trajectories(truths)
         plts.pair_frames_animation(truths,preds,range(truths.shape[0]))
         
-
-if __name__ == "__main__":
-    recall = True #recall previous run
-    do_pickle = True #pickle new run
-    pickle_source = "../test_pickles/"
-    n= 30
-    prop = 0.5
+def ex1_main(n, prop, recall, do_pickle, pickle_source):
     
+    
+    """main function to run experiment 1
+    
+    - build model and ukf dictionary parameters based on n and prop
+    - initiate Model and ukf_ss based on new dictionaries
+    - run ABM with filtering on top
+    - make plots using finished run data
+    
+    Parameters
+    ------
+    n, prop : float
+        `n` population and proportion observed 0<=`prop`<=1
+    
+    recall, do_pickle : bool
+        `recall` a previous run or  `do_pickle` pickle a new one?
+        
+    pickle_source : str
+        `pickle_source` where to load/save any pickles.
+    """
+
     if not recall:
         model_params, ukf_params = omission_params(n, prop)
-        print(model_params)
-        print(ukf_params)
+        
+        print(f"Population: {n}")
+        print(f"Proportion Observed: {prop}")
         
         base_model = Model(**model_params)
         u = ukf_ss(model_params,ukf_params,base_model)
         u.main()
-        
-        if do_pickle:
-            pickler(u, pickle_source, ukf_params["pickle_file_name"])
-            
+        pickle_main(ukf_params["pickle_file_name"],pickle_source, do_pickle,
+                    u, model_params, ukf_params)
+    
     else:
-        f_name = f"ukf_agents_{n}_prop_{prop}.pkl"
-        u = depickler(pickle_source, f_name)
-        ukf_params = u.ukf_params
-        model_params = u.model_params
+        "if recalling, load a pickle."
+        f_name = ex1_pickle_name(n, prop)
+        u  = pickle_main(f_name, pickle_source, do_pickle)
+        model_params, ukf_params = u.model_params, u.ukf_params
+        
+    ex1_plots(u, "../plots/", "ukf_", True, False)
 
-    ex1_plots(u,"../plots/",False, False,"ukf_")
-
     
+if __name__ == "__main__":
+    recall = True #recall previous run
+    do_pickle = True #pickle new run
+    pickle_source = "../test_pickles/" #where to load/save pickles from
+    n = 30 #population size
+    prop = 0.5 #proportion observed
     
-    
-    
+    ex1_main(n, prop, recall, do_pickle, pickle_source)

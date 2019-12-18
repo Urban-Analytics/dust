@@ -125,3 +125,47 @@ scp <USERNAME>@arc3.leeds.ac.uk:/nobackup/<USERNAME>/dust/Projects/ABM_DA/experi
 
 This downloads all files to local to be processed by `depickle.py`. 
 
+## Building Your Own ARC3 Module.
+
+If you want to build your own arc experiment module, I strongly suggest you first look at the `ukf_modules` readme for information on how to build an experiment module first. These modules are very similar with only a small number of additions. The main aim here is to take the default parameter dictionaries for stationsim and the ukf defined in `default_ukf_configs` and append them with parameters necessary to run your desired experiment. I am going to use experiment 1 as an example of how to build an arc module script on top of the existing experiment module.
+
+First we define the function with the model_params and ukf_params as input
+
+```
+def ex1_input(model_params,ukf_params):
+```
+
+Next we build the list for the `arc.sh` task array. We build three seperate lists for each individual parameter unique to the ukf run. We have lists for population (num_age), proportion observed (props), and the run id (run_id) which indicates the repetition number given some pair of the previous parameters. We combine these sub lists together giving us our complete task array list.
+
+```
+num_age = [10,20,30]  # 10 to 30 agent population by 10
+props = [0.25,0.5,0.75,1]  # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
+run_id = np.arange(0,30,1)  # 30 runs
+
+param_list = [(x, y,z) for x in num_age for y in props for z in run_id]
+```
+
+Using this list, we then select one item of this list, determined by `arc.sh`, giving us some set of three parameters we wish to run. These parameters are set to n, prop, and run_id respectively. Note we assign the latter further on.
+
+```
+n =  param_list[int(sys.argv[1])-1][0]
+prop = param_list[int(sys.argv[1])-1][1]
+```
+
+We first assign the population size to model parameters and then assign a large number of required parameters to the ukf parameters using `omission_params`. For more on this function I direct the reader to the `ukf_modules` directory readme. We also assign the run_id, some file name to save the pickle under, and some boolean `do_pickle` to confirm if we pickle at all to the filter parameters. 
+
+```
+model_params['pop_total'] = n
+    
+omission_params(n, prop, model_params, ukf_params)
+    
+ukf_params["run_id"] = param_list[int(sys.argv[1])-1][2]
+ukf_params["f_name"] = "ukf_results/ukf_agents_{}_prop_{}-{}".format(      
+                    str(int(model_params['pop_total'])).zfill(3),
+                    str(float(ukf_params['prop'])),
+                    str(ukf_params["run_id"]).zfill(3))
+
+ukf_params["do_pickle"] = True
+```
+
+With these complete dictionaries, we run `ukf2.py` as normal and pickle the result into `ukf_results`. If we do not wish to pickle the entire class, we can also specify some `ex_save` function to provide an alternative to pickling. This can be anything the user desires. For example, `ex0_save` saves a 3x1 numpy array of error metrics to greatly reduce the size of the data. This is by default none, and hence by default `arc.py` pickles the whole `ukf_ss` class.

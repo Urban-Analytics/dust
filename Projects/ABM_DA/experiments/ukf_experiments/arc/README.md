@@ -169,3 +169,5 @@ ukf_params["do_pickle"] = True
 ```
 
 With these complete dictionaries, we run `ukf2.py` as normal and pickle the result into `ukf_results`. If we do not wish to pickle the entire class, we can also specify some `ex_save` function to provide an alternative to pickling. This can be anything the user desires. For example, `ex0_save` saves a 3x1 numpy array of error metrics to greatly reduce the size of the data. This is by default none, and hence by default `arc.py` pickles the whole `ukf_ss` class.
+
+## Depickle

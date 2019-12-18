@@ -554,7 +554,7 @@ class grand_plots:
         if self.save:
             plt.savefig(self.destination + title + "_Choropleth.pdf")
         
-    def boxplot(self, xlabel, ylabel, title):
+    def boxplot(self,error_frame, xlabel, ylabel, title):
         """produces grand median boxplot for all 30 ABM runs for choropleth plot
         
            
@@ -570,7 +570,7 @@ class grand_plots:
         
         """       
         keys = self.param_keys
-        data = self.error_frame
+        data = error_frame
         f_name = title  + "_boxplot.pdf"
         y_name = "Grand Median L2s"
         
@@ -662,7 +662,7 @@ def ex1_grand():
         "make choropleth"
         g_plts.choropleth_plot(error_array, "Numbers of Agents", "Proportion Observed",obs_titles[i])
         "make boxplot"
-        g_plts.boxplot("Proportion Observed", "Grand Median L2s",obs_titles[i])
+        g_plts.boxplot(error_frame, "Proportion Observed", "Grand Median L2s",obs_titles[i])
         
         
 def ex2_grand():
@@ -687,7 +687,7 @@ def ex2_grand():
     g_plts.choropleth_plot(error_array, "Numbers of Agents", 
                            "Proportion Observed","Aggregate")
     "make boxplot"
-    g_plts.boxplot("Grid Square Size", "Grand Median L2s", "Aggregate")
+    g_plts.boxplot(error_frame, "Grid Square Size", "Grand Median L2s", "Aggregate")
 
 #%%
 if __name__ == "__main__":

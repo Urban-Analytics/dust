@@ -1,10 +1,17 @@
-## Results
+## ARC High Performance Computing
 
-The pickled class instances for each experiment will end up in the [`ukf_results`](./results) folder. The script to read all the results is [`arc_depickle.py`] which depickles the classes and plots various metrics. 
+To perform experiments using the UKF on stationsim we employ the use of the ARC3 supercomputer.
 
-## Usage Guide
+(https://arc.leeds.ac.uk/systems/arc3/)
 
-To use the experiment files here in arc we require initial set up. In a linux bash terminal run the following with `<USERNAME>` replaced as necessary:
+This allows for much faster parallel running of multiple experiments but requires files `arc.py` and `arc.sh`. 
+The python script simply sets up and runs some experiment on stationsim using the ukf, some experiment module, and its associated parameters.
+
+We also have bash script `.sh` which allows us to run multiple experiments at once. We create a list of all possible parameter combinations we wish to run in `arc.py` and pass this list onto `arc.sh` as a task array. Each number of the task array corresponds to an index of the list and some unique set of parameters we wish to test in `arc.py`. Once an experiment is run with the given parameters, we save the entire `ukf_ss` class instance in ukf results for extraction to some local terminal later.
+
+## ARC3 Usage Guide
+
+To use the above files in ARC we some require initial set up. In a linux bash terminal run the following with `<USERNAME>` replaced as necessary:
 
 ```
 ssh <USERNAME>@arc3.leeds.ac.uk
@@ -15,51 +22,52 @@ virtualenv mypython
 source mypython/bin/activate
 ```
 
-This logs the user onto the arc3 system setting up a python3 virtual environment to run the experiments in. Now we can pip in packages as necessary depending on the desired experiment. We have two sets of packages:
+This logs the user onto the arc3 system, clones this repository, and sets up a python3 virtual environment to run the experiments in. With this environment, we can pip in packages as necessary depending on the desired experiment. We have two sets of packages:
 
 ```
-#for arc_base_config.py and arc_ukf.py
+#for experiments 0 and 1:
 
 pip install imageio
 pip install ffmpeg
 pip install seaborn
 
-#for arc_ukf_agg.py also install:
+#for experiment 2:
 
 pip install shapely
 ```
 
-In this environment we run an example experiment for the basic ukf using `arc_ukf.py`. We will run the UKF 20 times for 5 and 10 agents at 0.5 and 1.0 proportion observed. First we define the parameters we wish to run in `arc_ukf.py`.
+We are now ready to run experiments using arc. To do this we require some experiment module to run.
+We use `ex1_input`, the module for experiment 1, as an example. Say we wish to run experiments for 5 and 10 agents populations, 0.5 and 1.0 proportion observed, and 20 repetitions for each pop and prop pair. We go into `arc.py` and change the inputs for `ex1_input` as follows.
 
 ```
-nano arc_ukf.py #open text editor
+nano arc.py #open text editor
 
 default experiment parameters:
 
-62    num_age = [10,20,30]# 5 to 50 by 5
-63    props = [0.25,0.5,0.75,1] #.2 to 1 by .2
-64    run_id = np.arange(0,30,1) #20 runs
+170     num_age = [10,20,30]# 5 to 50 by 5
+171     props = [0.25,0.5,0.75,1] #.2 to 1 by .2
+172     run_id = np.arange(0,30,1) #20 runs
 
 new desired parameters:
 
-62    num_age = [5,10] # 5 to 10 by 5
-63    props = [0.5,1.0] #.5 to 1 by .5
-64    run_id = np.arange(0,20,1) #20 runs
+170     num_age = [5,10] # 5 to 10 by 5
+171     props = [0.5,1.0] #.5 to 1 by .5
+172     run_id = np.arange(0,20,1) #20 runs
 ```
 
-With our new parameters defined we calculate the total number of experiments. This is simply multiplying the length of each parameter list together N = 2x2x20 = 80. We must update `arc_ukf.sh` with this number such that it runs every experiment and does not run blank experiments.
+With our new parameters defined we now calculate the total number of experiments. This is simply multiplying the length of each parameter list together to get all unique combinations N = 2x2x20 = 80. We must update `arc_ukf.sh` with this number such that it runs every experiment and does not run blank experiments.
 
 ```
-nano arc_ukf.sh #open text editor
+nano arc.sh #open text editor
 
-#$ -t 1-3
+#$ -t 1-3 #run tasks 1 through 3
 
 becomes
 
-#$ -t 1-80
+#$ -t 1-80 # run tasks 1 through 80
 ```
 
-Now everything is ready to run the experiment in arc. To do this we use the simple command qsub.
+Now everything is ready to run the experiment in arc. To do this we use the simple command `qsub`.
 
 ```
 qsub arc_ukf.sh
@@ -75,8 +83,7 @@ qdel <job_id> - cancel current job
 We can also check the active progress or errors of each job using text files generated in the current working directory
 
 ```
-for ipython console
-nano arc_ukf.sh.o<job_id>.<task_id>
+nano arc_ukf.sh.o<job_id>.<task_id> #display python console text
 
 ## Hosts assigned to job 1373131.1:
 ##
@@ -116,39 +123,5 @@ e.g.
 scp <USERNAME>@arc3.leeds.ac.uk:/nobackup/<USERNAME>/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
 ```
 
-This downloads all files to local to be processed by `arc_depickle.py` and `grand_arc_depickle.py`. 
+This downloads all files to local to be processed by `depickle.py`. 
 
-## Glossary
-
-## arc_base_config.py and arc_base_config.sh
-
-Used to provide precedent for various parameters in further experiments. Compares noisy observations, StationSim predictions, and UKF assimilations against true (noiseless) positions. This file simply runs a number of experiments and calculates the mean Average Euclidean Distance (AED) between each of the three estimates and the truth outputting a 3x1 numpy array per run. We vary assimilation rates (rates) and number of agents (num_age) 
-
-The .sh script simply allows the .py file to be ran in arc. NOTE THE NUMBER OF TASKS N MUST BE ASSIGNED IN THE .sh SCRIPT `$# -t 1-N` ELSE NOT ALL EXPERIMENTS MAY BE RAN.
-
-## arc_ukf.py and arc_ukf.sh
-
-Basic Experiment running UKF on StationSim. The idea is to reduce the proportion of agents observed and see how the prediciton accuracy changes. We vary the number of agents (num_age) and proportion observed (prop).
-
-This produces a pickled UKF class instance which we download to perform analysis on using `arc_depickle.py` and `grand_arc_depickle.py`
-
-## arc_ukf_agg.py and arc_ukf_agg.sh
-
-Similar to `arc_ukf` but with aggreated data rather than roughly known positions. This data is aggregated into various sized squares on which we test the efficacy of position prediction.  We vary the number of agents (num_age), square size (bin_size), and noise (noise).
-
-## Depickles
-
-Various scripts which depickle experiment output files into plots.
-
-## base_config_depickle.py
-
-Determines which of the three base config estimates perform best over varying observation noise and sampling rate.
-Takes mean error over multiple runs for each of the observed,predcition and UKF metrics. Takes the minimum of the three means as the best performing metric for a given noise and sampling rate. Produces a chloropleth style map for the specified number of agents and lists of noises and rates.
-
-## arc_depickle.py and grand_arc_depickle.py
-
-The first produces more detailed diagnostics using multiple runs of a fixed number of agents for both `arc_ukf.py` and `arc_ukf_agg.py`. At each time point we sample the mean agent errors from each run as a population of means. The mean and variance of this sample are plotted to demonstrate the average error and uncertainty of the UKF over time. If the population is fully observed (as always with the aggregate case) then only one plot is produced. Otherwise both observed and unobserved plots are produced.
-
-The `grand_arc_depickle.py` produces a more generalised diagnostic over multiple runs using multiple numbers of agents for `arc_ukf.py` only. This produces a chloropleth style map showing the grand mean error over both time and agents for various fixed numbers of agents and proportions observed.
-
-NOTE: NEEDS AN EQUIVALENT FOR AGGREGATE CASE. SHOULD BE AS SIMPLE AS SWAPPING PROPORTION FOR BIN SIZE

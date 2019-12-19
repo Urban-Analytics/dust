@@ -639,7 +639,3 @@ def pickle_main(f_name, pickle_source, do_pickle, instance = None):
         print(f"Loading pickle {f_name}")
         instance = depickler(pickle_source, f_name)
         return instance
-
-
-
-

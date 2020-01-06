@@ -18,25 +18,26 @@ from stationsim_model import Model
 import numpy as np
 from math import floor
 
-def omission_index(n,sample_size):
+def omission_index(n, sample_size):
     
     
     """randomly pick agents without replacement to observe 
     
     Parameters 
     ------
-    n,p : int
+    n, p : int
          population `n` and proportion `p` observed. need p in [0,1]
          
     Returns
     ------
-    index,index2: array_like:
+    index, index2: array_like:
         `index` of which agents are observed and `index2` their correpsoding
          xy coordinate columns from the whole state space.
          E.g for 5 agents we have 5x2 = 10 xy coordinates.
          if we choose 0th and 2nd agents we also choose 0,1,4,5 xy columns.
     """
     
+    "randomly pick some subset of sample_size agents"
     index = np.sort(np.random.choice(n,sample_size,replace=False))
     "double up index to choose x and y positions columns. both are used."
     index2 = np.repeat(2*index,2) 
@@ -258,6 +259,7 @@ def ex1_main(n, prop, recall, do_pickle, pickle_source):
         
     ex1_plots(u, "../plots/", "ukf_", True, False)
 
+    return u
     
 if __name__ == "__main__":
     recall = True #recall previous run
@@ -266,4 +268,4 @@ if __name__ == "__main__":
     n = 30 #population size
     prop = 0.5 #proportion observed
     
-    ex1_main(n, prop, recall, do_pickle, pickle_source)
+    u = ex1_main(n, prop, recall, do_pickle, pickle_source)

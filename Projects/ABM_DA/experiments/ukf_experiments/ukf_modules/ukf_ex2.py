@@ -89,7 +89,8 @@ def hx2(state,model_params,ukf_params):
     """
     
     counts = poly_count(ukf_params["poly_list"],state)
-    
+    if np.sum(counts)>0:
+        counts /= np.sum(counts)
     return counts
 
 def ex2_pickle_name(n, bin_size):
@@ -193,14 +194,14 @@ def ex2_main(n, bin_size, recall, do_pickle, pickle_source):
         u = pickle_main(f_name, pickle_source, do_pickle)
 
     ex2_plots(u, "../plots/", "agg_ukf_", True, False)
-    
+    return u
        
 if __name__ == "__main__":
     n = 30
     bin_size = 25
-    recall = True #  recall previous run
+    recall = False #  recall previous run
     do_pickle = True #  pickle new run
     pickle_source = "../test_pickles/"
 
-    ex2_main(n, bin_size, recall, do_pickle, pickle_source)
+    u = ex2_main(n, bin_size, recall, do_pickle, pickle_source)
     

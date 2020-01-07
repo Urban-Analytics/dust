@@ -131,8 +131,8 @@ def omission_params(n, prop, model_params = model_params, ukf_params=ukf_params)
     
     ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
-    ukf_params["q"] = np.eye(2 * n)
-    ukf_params["r"] = np.eye(2 * ukf_params["sample_size"])#sensor noise
+    ukf_params["q"] = 0.1*np.eye(2 * n)
+    ukf_params["r"] = 0.1*np.eye(2 * ukf_params["sample_size"])#sensor noise
     
     ukf_params["fx"] = fx
     ukf_params["hx"] = hx1
@@ -248,8 +248,7 @@ def ex1_main(n, prop, recall, do_pickle, pickle_source):
         base_model = Model(**model_params)
         u = ukf_ss(model_params,ukf_params,base_model)
         u.main()
-        pickle_main(ukf_params["pickle_file_name"],pickle_source, do_pickle,
-                    u, model_params, ukf_params)
+        pickle_main(ukf_params["pickle_file_name"],pickle_source, do_pickle, u)
     
     else:
         "if recalling, load a pickle."
@@ -262,10 +261,10 @@ def ex1_main(n, prop, recall, do_pickle, pickle_source):
     return u
     
 if __name__ == "__main__":
-    recall = True #recall previous run
+    recall = False #recall previous run
     do_pickle = True #pickle new run
     pickle_source = "../test_pickles/" #where to load/save pickles from
-    n = 30 #population size
+    n = 10 #population size
     prop = 0.5 #proportion observed
     
     u = ex1_main(n, prop, recall, do_pickle, pickle_source)

@@ -19,42 +19,171 @@ determining whether to look at observed/unobserved agent subset
 
 NOTE: __main__ here is now deprecated. use ukf notebook in experiments folder
 
-As of 01/09/19 dependencies are: 
-    pip install imageio
-    pip install imageio-ffmpeg
-    pip install ffmpeg
-    pip install scipy
-    pip install filterpy
 """
 
 #general packages used for filtering
 
 "used for a lot of things"
-import os
-import sys 
 import numpy as np
-
-path = os.path.join(os.path.dirname(__file__), os.pardir)
-sys.path.append(path)
-
 "general timer"
 import datetime 
-
 "used to save clss instances when run finished."
 import pickle 
-
-"import stationsim model"
-"this append seems redundant but the notebooks need it. no idea why."
-try:
-    from stationsim_model import Model
-except:
-    sys.path.append("..")
-    from stationsim.stationsim_model import Model
+from scipy.stats import chi2
 
 "used for plotting covariance ellipses for each agent. not really used anymore"
 # from filterpy.stats import covariance_ellipse  
 # from scipy.stats import norm #easy l2 norming  
 # from math import cos, sin
+
+
+def unscented_Mean(sigmas, wm, sigma_function, kf_function, *function_args):
+    
+    
+    """calculate unscented transform estimate for forecasted/desired means
+    
+    -calculate sigma points using sigma_function 
+        (e.g Merwe Scaled Sigma Points (MSSP) or 
+        central difference sigma points (CDSP)) 
+    - apply kf_function to sigma points (usually transition function or 
+        measurement function.) to get transformed sigma points
+    - calculate weighted mean of transformed points to get unscented mean
+    
+    Parameters
+    ------
+    sigma_function, kf_function : function
+        `sigma_function` function defining type of sigmas used and
+        `kf_function` defining whether to apply transition of measurement 
+        function (f/h) of UKF.
+    
+    *function_args : args
+        `function_args` positional arguements for kf_function. Varies depending
+        on the experiment so good to be general here.
+        
+    Returns 
+    ------
+    
+    sigmas, nl_sigmas, xhat : array_like
+        raw `sigmas` from sigma_function, projected non-linear `nl_sigmas`, 
+        and the unscented mean of `xhat` of said projections.
+        
+    """
+    
+    "calculate either forecasted sigmas X- or measured sigmas Y with f/h"
+    nl_sigmas = np.apply_along_axis(kf_function,0,sigmas,*function_args)
+    "calculate unscented mean using non linear sigmas and MSSP mean weights"
+    xhat = np.dot(nl_sigmas, wm)#unscented mean for predicitons
+    
+    return nl_sigmas, xhat
+
+    
+def covariance(data1, mean1, weight, data2 = None, mean2 = None, addition = None):
+    
+    
+    """within/cross-covariance between sigma points and their unscented mean.
+    
+    Note: CAN'T use numpy.cov here as it uses the regular mean 
+        and not the unscented mean. Maybe theres a faster numpy version
+    
+    Define sigma point matrices X_{mxp}, Y_{nxp}, 
+    some unscented mean vectors a_{mx1}, b_{nx1}
+    and some vector of covariance weights wc.
+    
+    Also define a column subtraction operator COL(X,a) 
+    such that we subtract a from every column of X elementwise.
+    
+    Using the above we calculate the cross covariance between two sets of 
+    sigma points as 
+    
+    P_xy = COL(X-a) * W * COL(Y-b)^T
+    
+    Given some diagonal weight matrix W with diagonal entries wc and 0 otherwise.
+    
+    This is similar to the standard statistical covariance with the exceptions
+    of a non standard mean and weightings.
+    
+    Parameters
+    ------
+    
+    data1, mean1` : array_like
+        `data1` some array of sigma points and their unscented mean `mean1` 
+        
+    data2, mean2` : array_like
+        `data2` some OTHER array of sigma points and their unscented mean `mean2` 
+        can be same as data1, mean1 for within covariance
+        
+    `weight` : array_like
+        `weight` sample covariance weightings
+    
+    addition : array_like
+        some additive noise for the covariance such as the sensor/process noise.
+        
+    Returns 
+    ------
+    
+    covariance_matrix : array_like
+     `covariance_matrix` unscented covariance matrix used in ukf algorithm
+        
+    """
+    
+
+    
+    "if no secondary data defined do within covariance. else do cross"
+    
+    if data2 is None and mean2 is None:
+        data2 = data1
+        mean2 = mean1
+        
+    """calculate component matrices for covariance by performing 
+        column subtraction and diagonalising weights."""
+    
+    weighting = np.diag(weight)
+    residuals = (data1.T - mean1).T
+    residuals2 = (data2.T - mean2).T
+    
+    "calculate P_xy as defined above"
+
+    covariance_matrix = np.linalg.multi_dot([residuals,weighting,residuals2.T])
+    
+    """old versions"""
+    "old quadratic form version. made faster with multi_dot."
+    #covariance_matrix = np.matmul(np.matmul((data1.transpose()-mean1).T,np.diag(weight)),
+    #                (data1.transpose()-mean1))+self.q
+    
+    "numpy quadratic form far faster than this for loop"
+    #covariance_matrix =  self.wc[0]*np.outer((data1[:,0].T-mean1),(data2[:,0].T-mean2))+self.Q
+    #for i in range(1,len(self.wc)): 
+    #    pxx += self.wc[i]*np.outer((nl_sigmas[:,i].T-self.x),nl_sigmas[:,i].T-xhat)
+    
+    "if some additive noise is involved (as with the Kalman filter) do it here"
+    
+    if addition is not None:
+        covariance_matrix += addition
+    
+    return covariance_matrix
+
+def MSSP(mean,p,g):
+    
+    """sigma point calculations based on current mean x and covariance P
+    
+    Parameters
+    ------
+    mean , P : array_like
+        mean `x` and covariance `P` numpy arrays
+        
+    Returns
+    ------
+    sigmas : array_like
+        matrix of MSSPs with each column representing one sigma point
+    
+    """
+    n = mean.shape[0]
+    s = np.linalg.cholesky(p)
+    sigmas = np.ones((n,(2*n)+1)).T*mean
+    sigmas=sigmas.T
+    sigmas[:,1:n+1] += g*s #'upper' confidence sigmas
+    sigmas[:,n+1:] -= g*s #'lower' confidence sigmas
+    return sigmas 
 
 #%%
 
@@ -75,7 +204,7 @@ class ukf:
     
     """
     
-    def __init__(self, model_params, ukf_params, base_model, init_x, fx, hx, p, q, r):
+    def __init__(self, model_params, ukf_params, base_model):
         
         
         """
@@ -92,184 +221,42 @@ class ukf:
         """
         
         #init initial state
+        "full parameter dictionaries and ABM"
         self.model_params = model_params
         self.ukf_params = ukf_params
         self.base_model = base_model
-        self.x = init_x #!!initialise some positions and covariances
-        self.n = self.x.shape[0] #state space dimension
-
-        self.p = p
-        #self.P = np.linalg.cholesky(self.x)
-        self.fx = fx
-        self.hx = hx
         
-        #init further parameters based on a through el
-        self.lam = ukf_params["a"]**2*(self.n+ukf_params["k"]) - self.n #lambda paramter calculated viar
+        "pull parameters from dictionary"
+        self.x = self.base_model.get_state(sensor="location") #!!initialise some positions and covariances
+        self.n = self.x.shape[0] #state space dimension
+        self.p = ukf_params["p"]
+        self.q = ukf_params["q"]
+        self.r = ukf_params["r"]
+        self.fx = ukf_params["fx"]
+        self.hx = ukf_params["hx"]
+        
+        self.a = ukf_params["a"]
+        self.b = ukf_params["b"]
+        self.k = ukf_params["k"]
+
+        "MSSP sigma point scaling parameters"
+        self.lam = self.a**2*(self.n+self.k) - self.n 
         self.g = np.sqrt(self.n+self.lam) #gamma parameter
 
         
-        #init weights based on paramters a through el
+        "unscented mean and covariance weights based on a, b, and k"
         main_weight =  1/(2*(self.n+self.lam))
         self.wm = np.ones(((2*self.n)+1))*main_weight
         self.wm[0] *= 2*self.lam
         self.wc = self.wm.copy()
-        self.wc[0] += (1-ukf_params["a"]**2+ukf_params["b"])
-    
-        self.q = q
-        self.r = r
+        self.wc[0] += (1-self.a**2+self.b)
 
         self.xs = []
         self.ps = []
 
 
 
-    def unscented_Mean(self, sigma_function, kf_function, *function_args):
-        
-        
-        """calculate unscented transform estimate for forecasted/desired means
-        
-        -calculate sigma points using sigma_function 
-            (e.g Merwe Scaled Sigma Points (MSSP) or 
-            central difference sigma points (CDSP)) 
-        - apply kf_function to sigma points (usually transition function or 
-            measurement function.) to get transformed sigma points
-        - calculate weighted mean of transformed points to get unscented mean
-        
-        Parameters
-        ------
-        sigma_function, kf_function : function
-            `sigma_function` function defining type of sigmas used and
-            `kf_function` defining whether to apply transition of measurement 
-            function (f/h) of UKF.
-        
-        *function_args : args
-            `function_args` positional arguements for kf_function. Varies depending
-            on the experiment so good to be general here.
-            
-        Returns 
-        ------
-        
-        sigmas, nl_sigmas, xhat : array_like
-            raw `sigmas` from sigma_function, projected non-linear `nl_sigmas`, 
-            and the unscented mean of `xhat` of said projections.
-            
-        """
-        
-        sigmas = sigma_function(self.x,self.p)
-        "calculate either forecasted sigmas X- or measured sigmas Y with f/h"
-        nl_sigmas = np.apply_along_axis(kf_function,0,sigmas,*function_args)
-        "calculate unscented mean using non linear sigmas and MSSP mean weights"
-        xhat = np.dot(nl_sigmas,self.wm)#unscented mean for predicitons
-        
-        return sigmas, nl_sigmas, xhat
-        
-    def covariance(self, data1, mean1, weight, data2 = None, mean2 = None, addition = None):
-        
-        
-        """within/cross-covariance between sigma points and their unscented mean.
-        
-        Note: CAN'T use numpy.cov here as it uses the regular mean 
-            and not the unscented mean. Maybe theres a faster numpy version
-        
-        Define sigma point matrices X_{mxp}, Y_{nxp}, 
-        some unscented mean vectors a_{mx1}, b_{nx1}
-        and some vector of covariance weights wc.
-        
-        Also define a column subtraction operator COL(X,a) 
-        such that we subtract a from every column of X elementwise.
-        
-        Using the above we calculate the cross covariance between two sets of 
-        sigma points as 
-        
-        P_xy = COL(X-a) * W * COL(Y-b)^T
-        
-        Given some diagonal weight matrix W with diagonal entries wc and 0 otherwise.
-        
-        This is similar to the standard statistical covariance with the exceptions
-        of a non standard mean and weightings.
-        
-        Parameters
-        ------
-        
-        data1, mean1` : array_like
-            `data1` some array of sigma points and their unscented mean `mean1` 
-            
-        data2, mean2` : array_like
-            `data2` some OTHER array of sigma points and their unscented mean `mean2` 
-            can be same as data1, mean1 for within covariance
-            
-        `weight` : array_like
-            `weight` sample covariance weightings
-        
-        addition : array_like
-            some additive noise for the covariance such as the sensor/process noise.
-            
-        Returns 
-        ------
-        
-        covariance_matrix : array_like
-         `covariance_matrix` unscented covariance matrix used in ukf algorithm
-            
-        """
-        
     
-        
-        "if no secondary data defined do within covariance. else do cross"
-        
-        if data2 is None and mean2 is None:
-            data2 = data1
-            mean2 = mean1
-            
-        """calculate component matrices for covariance by performing 
-            column subtraction and diagonalising weights."""
-        
-        weighting = np.diag(weight)
-        residuals = (data1.T - mean1).T
-        residuals2 = (data2.T - mean2).T
-        
-        "calculate P_xy as defined above"
-    
-        covariance_matrix = np.linalg.multi_dot([residuals,weighting,residuals2.T])
-        
-        """old versions"""
-        "old quadratic form version. made faster with multi_dot."
-        #covariance_matrix = np.matmul(np.matmul((data1.transpose()-mean1).T,np.diag(weight)),
-        #                (data1.transpose()-mean1))+self.q
-        
-        "numpy quadratic form far faster than this for loop"
-        #covariance_matrix =  self.wc[0]*np.outer((data1[:,0].T-mean1),(data2[:,0].T-mean2))+self.Q
-        #for i in range(1,len(self.wc)): 
-        #    pxx += self.wc[i]*np.outer((nl_sigmas[:,i].T-self.x),nl_sigmas[:,i].T-xhat)
-        
-        "if some additive noise is involved (as with the Kalman filter) do it here"
-        
-        if addition is not None:
-            covariance_matrix += addition
-        
-        return covariance_matrix
-    
-    def MSSP(self,mean,p):
-        
-        
-        """sigma point calculations based on current mean x and covariance P
-        
-        Parameters
-        ------
-        mean , P : array_like
-            mean `x` and covariance `P` numpy arrays
-            
-        Returns
-        ------
-        sigmas : array_like
-            matrix of MSSPs with each column representing one sigma point
-        
-        """
-        P = np.linalg.cholesky(p)
-        sigmas = np.ones((self.n,(2*self.n)+1)).T*mean
-        sigmas=sigmas.T
-        sigmas[:,1:self.n+1] += self.g*P #'upper' confidence sigmas
-        sigmas[:,self.n+1:] -= self.g*P #'lower' confidence sigmas
-        return sigmas 
 
     def predict(self):
         
@@ -283,9 +270,12 @@ class ukf:
         - pass these onto  update function
         
         """
+        sigmas = MSSP(self.x, self.p, self.g)
+        nl_sigmas, xhat = unscented_Mean(sigmas, self.wm, 
+                                                 MSSP, self.fx,self.base_model)
+        self.sigmas = nl_sigmas
         
-        sigmas, nl_sigmas, xhat = self.unscented_Mean(self.MSSP, self.fx,self.base_model)
-        pxx = self.covariance(nl_sigmas,xhat,self.wc,addition = self.q)
+        pxx = covariance(nl_sigmas,xhat,self.wc,addition = self.q)
         
         self.p = pxx #update Sxx
         self.x = xhat #update xhat
@@ -309,10 +299,10 @@ class ukf:
             measurements from sensors `z`
         """
         
-        sigmas, nl_sigmas, yhat = self.unscented_Mean(self.MSSP, self.hx, 
+        nl_sigmas, yhat = unscented_Mean(self.sigmas, self.wm, MSSP, self.hx, 
                                                       self.model_params,self.ukf_params)
-        pyy =self.covariance(nl_sigmas,yhat, self.wc, addition=self.r)
-        pxy = self.covariance(sigmas,self.x, self.wc, nl_sigmas, yhat)
+        pyy =covariance(nl_sigmas, yhat, self.wc, addition=self.r)
+        pxy = covariance(self.sigmas, self.x, self.wc, nl_sigmas, yhat)
         k = np.matmul(pxy,np.linalg.inv(pyy))
  
         "i dont know why `self.x += ...` doesnt work here"
@@ -328,7 +318,189 @@ class ukf:
         """
         return
     
+#%%
+        
+ 
+class adaptive_ukf:
     
+    """main ukf class with aggregated measurements
+    
+    Parameters
+    ------
+    model_params, ukf_params : dict
+        dictionary of model `model_params` and ukf `ukf_params` parameters
+    init_x : array_like
+        Initial ABM state `init_x`
+    fx,hx: function
+        transitions and measurement functions `fx` `hx`
+    P,Q,R : array_like
+        Noise structures `P` `Q` `R`
+    
+    """
+    
+    def __init__(self, model_params, ukf_params, base_model):
+        
+        
+        """
+        x - state
+        n - state size 
+        p - state covariance
+        fx - transition function
+        hx - measurement function
+        lam - lambda paramter function of tuning parameters a,b,k
+        g - gamma parameter function of tuning parameters a,b,k
+        wm/wc - unscented weights for mean and covariances respectively.
+        q,r -noise structures for fx and hx
+        xs,ps - lists for storage
+        """
+        
+        #init initial state
+        "full parameter dictionaries and ABM"
+        self.model_params = model_params
+        self.ukf_params = ukf_params
+        self.base_model = base_model
+        
+        "pull parameters from dictionary"
+        self.x = self.base_model.get_state(sensor="location") #!!initialise some positions and covariances
+        self.n = self.x.shape[0] #state space dimension
+        self.p = ukf_params["p"]
+        self.q = ukf_params["q"]
+        self.r = ukf_params["r"]
+        self.fx = ukf_params["fx"]
+        self.hx = ukf_params["hx"]
+        
+        self.a = ukf_params["a"]
+        self.b = ukf_params["b"]
+        self.k = ukf_params["k"]
+
+        "MSSP sigma point scaling parameters"
+        self.lam = self.a**2*(self.n+self.k) - self.n 
+        self.g = np.sqrt(self.n+self.lam) #gamma parameter
+        
+        
+        self.phi0 = 0.2
+        self.delta0 = 0.2
+        
+        "unscented mean and covariance weights based on a, b, and k"
+        main_weight =  1/(2*(self.n+self.lam))
+        self.wm = np.ones(((2*self.n)+1))*main_weight
+        self.wm[0] *= 2*self.lam
+        self.wc = self.wm.copy()
+        self.wc[0] += (1-self.a**2+self.b)
+
+        self.xs = []
+        self.ps = []
+
+    def predict(self):
+        
+        
+        """Transitions sigma points forwards using markovian transition function plus noise Q
+        
+        - calculate sigmas using prior mean and covariance P.
+        - forecast sigmas X- for next timestep using transition function Fx.
+        - unscented mean for foreacsting next state.
+        - calculate interim mean state x and covariance P
+        - pass these onto  update function
+        
+        """
+        sigmas = MSSP(self.x, self.p, self.g)
+        nl_sigmas, xhat = unscented_Mean(sigmas, self.wm, 
+                                                 MSSP, self.fx,self.base_model)
+        self.sigmas = nl_sigmas
+        
+        pxx = covariance(nl_sigmas,xhat,self.wc,addition = self.q)
+        
+        self.p = pxx #update Sxx
+        self.x = xhat #update xhat
+    
+    
+    def update(self,z):   
+        
+        
+        """ update forecasts with measurements to get posterior assimilations
+        
+        - nudges X- sigmas with new pxx from predict
+        - calculate measurement sigmas Y = h(X-)
+        - calculate unscented mean of Y, yhat
+        - calculate measured state covariance pyy sing r
+        - calculate cross covariance between X- and Y and Kalman gain (pxy, K)
+        - update x and P
+        - store x and P updates in lists (xs, ps)
+        
+        Parameters
+        ------
+        z : array_like
+            measurements from sensors `z`
+        """
+        
+        nl_sigmas, yhat = unscented_Mean(self.sigmas, self.wm, MSSP, self.hx, 
+                                                      self.model_params,self.ukf_params)
+        pyy =covariance(nl_sigmas, yhat, self.wc, addition=self.r)
+        pxy = covariance(self.sigmas, self.x, self.wc, nl_sigmas, yhat)
+        k = np.matmul(pxy,np.linalg.inv(pyy))
+     
+        "i dont know why `self.x += ...` doesnt work here"
+        x = self.x + np.matmul(k,(z-yhat))
+        p = self.p - np.linalg.multi_dot([k, pyy, k.T])
+        
+        mu = np.array(z)- np.array(self.hx(self.sigmas[:,0],self.model_params,self.ukf_params))
+        
+        if np.sum(np.abs(mu))!=0:
+            x, p = self.fault_test(z, mu, pxy, pyy, x, p, k, yhat)
+        
+        self.x = x
+        self.p = p
+        self.ps.append(self.p)
+        self.xs.append(self.x)
+        
+        
+    
+    def fault_test(self,z, mu, pxy, pyy, x, p, k, yhat):
+        
+        
+        """ adaptive UKF augmentation
+        
+        -check chi squared test
+        -if fails update q and r.
+        -recalculate new x and p
+        
+        """
+        sigma = np.linalg.inv((pyy+ self.r))
+        psi = np.linalg.multi_dot([mu.T, sigma, mu])
+        critical = chi2.ppf(0.8, df = mu.shape[0]) #critical rejection point
+        print(psi, critical)
+        if psi <= critical :
+            "accept null hypothesis. keep q,r"
+            pass
+        else:
+            eps = z - self.hx(x,self.model_params,self.ukf_params)            
+            sigmas = MSSP(x,p,self.g)
+            syy = covariance(self.hx(sigmas, self.model_params, self.ukf_params), yhat,self.wc)
+            delta_1 =  1 - (self.a*critical)/psi
+            delta = np.max(self.delta0,delta_1)
+            phi_1 =  1 - (self.b*critical)/psi
+            phi = np.max(self.phi0, phi_1)
+            
+            self.q = (1-phi)*self.q + phi*np.linalg.multi_dot([k, mu, mu.T, k.T])
+            self.r = (1-delta)*self.r + delta*(np.linalg.multi_dot([eps, eps.T]) + syy)
+            
+            print("noises updated")
+            "correct estimates using new noise"
+            pyy  = syy + self.r
+            k = np.matmul(pxy,np.linalg.inv(pyy))
+            x = self.x + np.matmul(k,(z-yhat))
+            p = self.p - np.linalg.multi_dot([k, pyy, k.T])
+            
+        return x, p
+            
+    def batch(self):
+        """
+        batch function hopefully coming soon
+        """
+        return
+     
+    
+#%%
 class ukf_ss:
     
     
@@ -345,7 +517,7 @@ class ukf_ss:
         stationsim model `base_model`
     """
     
-    def __init__(self,model_params,ukf_params,base_model):
+    def __init__(self, model_params, ukf_params, base_model):
         
         
         """
@@ -395,13 +567,7 @@ class ukf_ss:
         
         
         """initialise ukf with initial state and covariance structures.
-        
-        - set
-             - initial state
-             - noise structures p,q,r
-             - ABM base_model, fx/hx functions and their args
-        - initialised ukf class
-        
+       
         Parameters
         ------
         ukf_params : dict
@@ -414,11 +580,8 @@ class ukf_ss:
             `ukf` class intance for stationsim
         """
         
-        x = self.base_model.get_state(sensor="location")#initial state
-        p = ukf_params["p"]#inital guess at state covariance
-        q = ukf_params["q"]
-        r = ukf_params["r"]#sensor noise
-        self.ukf = ukf(self.model_params, ukf_params, self.base_model, x, ukf_params["fx"], ukf_params["hx"], p, q, r)
+        
+        self.ukf = ukf(self.model_params, ukf_params, self.base_model)
     
     def ss_Predict(self):
         

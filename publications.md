@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Project Publications and Documentation 
+title: Project Publications and Documentation
 tagline: Documentation produced by, or associated with, the DUST project
 ---
 
@@ -8,14 +8,16 @@ _The following publications report on the current progress of the DUST project o
 
 ## Peer Reviewed Articles
 
+Kieu, Le-Minh, **N. Malleson**, and A. Heppenstall (2019). Dealing with Uncertainty in Agent-Based Models for Short-Term Predictions’. _Royal Society Open Science_ 7(1): 191074. DOI: [10.1098/rsos.191074](https://doi.org/10.1098/rsos.191074) (open access)
+
 Kieu, Le-Minh, D. Ngoduy, **N Malleson**, and E. Chung (2019). A Stochastic Schedule-Following Simulation Model of Bus Routes. _Transportmetrica B: Transport Dynamics_ 7 (1): 1588–1610. DOI: [10.1080/21680566.2019.1670118](https://doi.org/10.1080/21680566.2019.1670118).
 
-Crols, T., and **N. Malleson** (2019) Quantifying the Ambient Population Using Hourly Population Footfall Data and an Agent-Based Model of Daily Mobility. _GeoInformatica_ (online first). DOI: [10.1007/s10707-019-00346-1](https://doi.org/10.1007/s10707-019-00346-1). [[Open access](https://doi.org/10.1007/s10707-019-00346-1)]. 
+Crols, T., and **N. Malleson** (2019) Quantifying the Ambient Population Using Hourly Population Footfall Data and an Agent-Based Model of Daily Mobility. _GeoInformatica_ (online first). DOI: [10.1007/s10707-019-00346-1](https://doi.org/10.1007/s10707-019-00346-1). [[Open access](https://doi.org/10.1007/s10707-019-00346-1)].
 
 ## Preprints
 
 **Malleson, N.**, Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew A. West, Alison Heppenstall (2019) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. _Preprint_: [arXiv:1909.09397 [cs.MA]](https://arxiv.org/abs/1909.09397).
- 	
+
 Kieu, Le-Minh, **N. Malleson**, and A. Heppenstall (2019) Dealing with Uncertainty in Agent-Based Models for Short-Term Predictions’. _Preprint_ [arXiv:1908.08288 [cs.MA]](https://arxiv.org/abs/1908.08288).
 
 ## Conference proceedings
@@ -37,7 +39,7 @@ ability to reliably simulate urban systems and to forecast of the
 impacts of civil emergencies (and their management plans) on human
 populations. </p>
 
-## Abstract 
+## Abstract
 
 Civil emergencies such as flooding, terrorist attacks, fire, etc., can
 have devastating impacts on people, infrastructure, and economies.
@@ -250,7 +252,7 @@ The most ground-breaking and novel aspects of this project are:
     assimilating real-world streaming data that can be used as an
     emergency planning tool and for more general urban management.
 
-## What do I plan to do? 
+## What do I plan to do?
 
 This project will establish a team who will develop cutting-edge urban
 simulations that are capable of, for the first time, assimilating
@@ -600,4 +602,3 @@ right.
 [55]    Wilensky, U., and Rand, W. Making Models Match: Replicating an Agent-Based Model. Journal of Artificial Societies and Social Simulation 10, 4 (2007), 2.
 
 [56]    Yamamoto, S. Development and Operation of Social Media GIS for Disaster Risk Management in Japan. In Planning Support Systems and Smart Cities, S. Geertman, J. Ferreira, J. Stillwell, and R. Goodspeed, Eds., Lecture Notes in Geoinformation and Cartography. Springer International Publishing, 2015.
-

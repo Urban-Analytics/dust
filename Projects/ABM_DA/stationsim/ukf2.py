@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
 """
-Created on Thu May 23 11:13:26 2019
-@author: RC
-
 The Unscented Kalman Filter (UKF) designed to be hyper efficient alternative to similar 
 Monte Carlo techniques such as the Particle Filter. This file aims to unify the old 
 intern project files by combining them into one single filter. It also aims to be geared 
@@ -12,32 +9,20 @@ towards real data with a modular data input approach for a hybrid of sensors.
 This is based on
 citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
 
-NOTE: To avoid confusion 'observation/obs' are observed stationsim data
-not to be confused with the 'observed' boolean 
-determining whether to look at observed/unobserved agent subset
-(maybe change the former the measurements etc.)
-
-NOTE: __main__ here is now deprecated. use ukf notebook in experiments folder
+This file has no main. use ukf notebook/modules in experiments folder
 
 """
 
 #general packages used for filtering
 
-"used for a lot of things"
 import numpy as np
 "general timer"
-import datetime 
-"used to save clss instances when run finished."
-import pickle 
-from scipy.stats import chi2
+import datetime # for timing experiments
+import pickle # for saving class instances
+import json
+from scipy.stats import chi2 # for adaptive ukf test
 
-"used for plotting covariance ellipses for each agent. not really used anymore"
-# from filterpy.stats import covariance_ellipse  
-# from scipy.stats import norm #easy l2 norming  
-# from math import cos, sin
-
-
-def unscented_Mean(sigmas, wm, sigma_function, kf_function, *function_args):
+def unscented_Mean(sigmas, wm, kf_function, **function_kwargs):
     
     
     """calculate unscented transform estimate for forecasted/desired means
@@ -46,8 +31,8 @@ def unscented_Mean(sigmas, wm, sigma_function, kf_function, *function_args):
         (e.g Merwe Scaled Sigma Points (MSSP) or 
         central difference sigma points (CDSP)) 
     - apply kf_function to sigma points (usually transition function or 
-        measurement function.) to get transformed sigma points
-    - calculate weighted mean of transformed points to get unscented mean
+        measurement function.) to get an array of transformed sigma points.
+    - calculate weighted mean of transformed points to get unscented mean.
     
     Parameters
     ------
@@ -56,9 +41,16 @@ def unscented_Mean(sigmas, wm, sigma_function, kf_function, *function_args):
         `kf_function` defining whether to apply transition of measurement 
         function (f/h) of UKF.
     
-    *function_args : args
-        `function_args` positional arguements for kf_function. Varies depending
-        on the experiment so good to be general here.
+    **function_kwargs : kwargs
+        `function_kwargs` keyword arguments for kf_function. Varies depending
+        on the experiment so good to be general here. This must be in dictionary form 
+        e.g. {"test":1} then called as necessary in kf_function as 
+        test = function_kwargs["test"] = 1
+        
+        This allows for a generalised set of arguements for any desired
+        function. Typically we use Kalman filter measurement and transition functions.
+        Any function could be used as long as it takes some vector of 1d agent inputs and
+        returns a 1d output.
         
     Returns 
     ------
@@ -70,7 +62,7 @@ def unscented_Mean(sigmas, wm, sigma_function, kf_function, *function_args):
     """
     
     "calculate either forecasted sigmas X- or measured sigmas Y with f/h"
-    nl_sigmas = np.apply_along_axis(kf_function,0,sigmas,*function_args)
+    nl_sigmas = np.apply_along_axis(kf_function,0,sigmas, **function_kwargs)
     "calculate unscented mean using non linear sigmas and MSSP mean weights"
     xhat = np.dot(nl_sigmas, wm)#unscented mean for predicitons
     
@@ -83,8 +75,11 @@ def covariance(data1, mean1, weight, data2 = None, mean2 = None, addition = None
     """within/cross-covariance between sigma points and their unscented mean.
     
     Note: CAN'T use numpy.cov here as it uses the regular mean 
-        and not the unscented mean. Maybe theres a faster numpy version
+    and not the unscented mean. as far as i know there isnt a
+    numpy function for this
     
+    This is the mathematical formula. Feel free to ignore
+    --------------------------------------
     Define sigma point matrices X_{mxp}, Y_{nxp}, 
     some unscented mean vectors a_{mx1}, b_{nx1}
     and some vector of covariance weights wc.
@@ -101,6 +96,12 @@ def covariance(data1, mean1, weight, data2 = None, mean2 = None, addition = None
     
     This is similar to the standard statistical covariance with the exceptions
     of a non standard mean and weightings.
+    --------------------------------------
+    
+    - put weights in diagonal matrix
+    - calculate resdiual matrix/ices as each set of sigmas minus their mean
+    - calculate weighted covariance as per formula above
+    - add additional noise if required e.g. process/sensor noise
     
     Parameters
     ------
@@ -165,6 +166,12 @@ def covariance(data1, mean1, weight, data2 = None, mean2 = None, addition = None
 def MSSP(mean,p,g):
     
     """sigma point calculations based on current mean x and covariance P
+    
+    - calculate square root of P 
+    - generate empty sigma frame with each column as mean
+    - keep first point the same
+    - for next n points add the ith column of sqrt(P)
+    - for the final n points subtract the ith column of sqrt(P)
     
     Parameters
     ------
@@ -258,7 +265,7 @@ class ukf:
 
     
 
-    def predict(self):
+    def predict(self, **fx_kwargs):
         
         
         """Transitions sigma points forwards using markovian transition function plus noise Q
@@ -271,8 +278,9 @@ class ukf:
         
         """
         sigmas = MSSP(self.x, self.p, self.g)
-        nl_sigmas, xhat = unscented_Mean(sigmas, self.wm, 
-                                                 MSSP, self.fx,self.base_model)
+        fx_kwargs = self.ukf_params["fx_kwargs"]
+        nl_sigmas, xhat = unscented_Mean(sigmas, self.wm, self.fx,
+                                         **fx_kwargs )
         self.sigmas = nl_sigmas
         
         pxx = covariance(nl_sigmas,xhat,self.wc,addition = self.q)
@@ -299,8 +307,8 @@ class ukf:
             measurements from sensors `z`
         """
         
-        nl_sigmas, yhat = unscented_Mean(self.sigmas, self.wm, MSSP, self.hx, 
-                                                      self.model_params,self.ukf_params)
+        nl_sigmas, yhat = unscented_Mean(self.sigmas, self.wm,
+                                         self.hx, **self.ukf_params["hx_kwargs"])
         pyy =covariance(nl_sigmas, yhat, self.wc, addition=self.r)
         pxy = covariance(self.sigmas, self.x, self.wc, nl_sigmas, yhat)
         k = np.matmul(pxy,np.linalg.inv(pyy))
@@ -433,8 +441,7 @@ class adaptive_ukf:
             measurements from sensors `z`
         """
         
-        nl_sigmas, yhat = unscented_Mean(self.sigmas, self.wm, MSSP, self.hx, 
-                                                      self.model_params,self.ukf_params)
+        nl_sigmas, yhat = unscented_Mean(self.sigmas, self.wm, MSSP, self.hx,self.ukf_params["hx_args"])
         pyy =covariance(nl_sigmas, yhat, self.wc, addition=self.r)
         pxy = covariance(self.sigmas, self.x, self.wc, nl_sigmas, yhat)
         k = np.matmul(pxy,np.linalg.inv(pyy))
@@ -598,7 +605,7 @@ class ukf_ss:
         self.base_model.step()
         self.truths.append(self.base_model.get_state(sensor="location"))
 
-    def ss_Update(self,step):
+    def ss_Update(self,step,**hx_kwargs):
         
         
         """ Update step of UKF for stationsim.
@@ -621,7 +628,7 @@ class ukf_ss:
                 state+=noise_array
                 
             "convert full noisy state to actual sensor observations"
-            state = self.ukf.hx(state, self.model_params, self.ukf_params)
+            state = self.ukf.hx(state, **hx_kwargs)
                 
             self.ukf.update(state)
             
@@ -654,7 +661,7 @@ class ukf_ss:
             "forecast next StationSim state and jump model forwards"
             self.ss_Predict()
             "assimilate forecasts using new model state."
-            self.ss_Update(step)
+            self.ss_Update(step, **self.ukf_params["hx_kwargs"])
             
             finished = self.base_model.pop_finished == self.pop_total
             if finished: #break condition
@@ -771,15 +778,40 @@ def depickler(pickle_source, f_name):
     f.close()
     return u
 
+class class_dict_to_instance(ukf_ss):
+    
+    
+    """ build a complete ukf_ss instance from a saved class_dict.
+    
+    The main aim of this is to avoid the instability of pickle given
+    changes to code. Theyre also smaller.
+    """
+    
+    def __init__(self, dictionary):
+        for key in dictionary.keys():
+            setattr(self, key, dictionary[key])
+        
 def pickle_main(f_name, pickle_source, do_pickle, instance = None):
     
     
     """main function for saving and loading ukf pickles
     
+    NOTE THE FOLLOWING IS DEPRECATED IT NOW SAVES AS CLASS_DICT INSTEAD FOR 
+    VARIOUS REASONS
+    
     - check if we have a finished ukf_ss class and do we want to pickle it
     - if so, pickle it as f_name at pickle_source
     - else, if no ukf_ss class is present, load one with f_name from pickle_source 
         
+    IT IS NOW
+    
+    - check if we have a finished ukf_ss class instance and do we want to pickle it
+    - if so, pickle instance.__dict__ as f_name at pickle_source
+    - if no ukf_ss class is present, load one with f_name from pickle_source 
+    - if the file is a dictionary open it into a class instance for the plots to understand
+    - if it is an instance just load it as is.
+    
+           
     Parameters
     ------
     f_name, pickle_source : str
@@ -795,10 +827,20 @@ def pickle_main(f_name, pickle_source, do_pickle, instance = None):
     """
     
     if do_pickle and instance is not None:
-        print(f"Pickling file to {f_name}")
-        pickler(instance, pickle_source, f_name)
+        
+        print(f"Pickling file to dict_{f_name}")
+        pickler(instance.__dict__, pickle_source, "dict_" + f_name)
         return
+    
     else:
+        file = depickler(pickle_source, f_name)
         print(f"Loading pickle {f_name}")
-        instance = depickler(pickle_source, f_name)
+
+        if type(file) == dict:
+            instance =  class_dict_to_instance(file)
+        else: 
+            instance = file
+            
         return instance
+    
+

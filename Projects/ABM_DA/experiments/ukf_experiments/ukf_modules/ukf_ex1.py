@@ -7,13 +7,20 @@ Created on Mon Dec  2 11:16:33 2019
 
 """
 import sys
+
 from ukf_fx import fx
 from ukf_plots import ukf_plots
-from default_ukf_configs import model_params,ukf_params
+import default_ukf_configs 
 
-sys.path.append("../../../stationsim")
-from ukf2 import ukf_ss, pickle_main
-from stationsim_model import Model
+try:
+    sys.path.append("../../../stationsim")
+    from ukf2 import ukf_ss, pickle_main
+    from stationsim_model import Model
+
+except:
+    sys.path.append("../stationsim")
+    from ukf2 import ukf_ss, pickle_main
+    from stationsim_model import Model
 
 import numpy as np
 from math import floor
@@ -46,7 +53,7 @@ def omission_index(n, sample_size):
     return index, index2
 
 
-def hx1(state, model_params, ukf_params):
+def hx1(state, **hx_kwargs):
     
     
     """Measurement function for ex1 taking observed subset of agent positions
@@ -64,8 +71,8 @@ def hx1(state, model_params, ukf_params):
     state : array_like
         `state` actual observed state
     """
-    
-    return  state[ukf_params["index2"]] 
+    index2 = hx_kwargs.pop("index2")
+    return  state[index2] 
 
 def obs_key_func(state, model_params, ukf_params):
     
@@ -97,7 +104,7 @@ def obs_key_func(state, model_params, ukf_params):
     key[ukf_params["index"]] +=2
     return key
 
-def omission_params(n, prop, model_params = model_params, ukf_params=ukf_params):
+def omission_params(n, prop, model_params, ukf_params):
     
     
     """update ukf_params with fx/hx and their parameters for experiment 1
@@ -125,6 +132,8 @@ def omission_params(n, prop, model_params = model_params, ukf_params=ukf_params)
     """
     
     model_params["pop_total"] = n
+    base_model = Model(**model_params)
+
     ukf_params["prop"] = prop
     ukf_params["sample_size"]= floor(n * ukf_params["prop"])
 
@@ -135,12 +144,14 @@ def omission_params(n, prop, model_params = model_params, ukf_params=ukf_params)
     ukf_params["r"] = 0.1*np.eye(2 * ukf_params["sample_size"])#sensor noise
     
     ukf_params["fx"] = fx
+    ukf_params["fx_kwargs"] = {"base_model":base_model} 
     ukf_params["hx"] = hx1
+    ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"], "test": "test"}
     
     ukf_params["obs_key_func"] = obs_key_func
     ukf_params["pickle_file_name"] =  ex1_pickle_name(n, prop)
         
-    return model_params, ukf_params
+    return model_params, ukf_params, base_model
 
 def ex1_pickle_name(n, prop):
     
@@ -217,7 +228,7 @@ def ex1_plots(instance, destination, prefix, save, animate):
         plts.trajectories(truths)
         plts.pair_frames_animation(truths,preds,range(truths.shape[0]))
         
-def ex1_main(n, prop, recall, do_pickle, pickle_source):
+def ex1_main(n, prop, recall, do_pickle, source, destination):
     
     
     """main function to run experiment 1
@@ -240,12 +251,14 @@ def ex1_main(n, prop, recall, do_pickle, pickle_source):
     """
 
     if not recall:
-        model_params, ukf_params = omission_params(n, prop)
+        model_params = default_ukf_configs.model_params
+        ukf_params = default_ukf_configs.ukf_params
+        model_params, ukf_params, base_model = omission_params(n, prop,
+                                                               model_params, ukf_params)
         
         print(f"Population: {n}")
         print(f"Proportion Observed: {prop}")
         
-        base_model = Model(**model_params)
         u = ukf_ss(model_params,ukf_params,base_model)
         u.main()
         pickle_main(ukf_params["pickle_file_name"],pickle_source, do_pickle, u)
@@ -253,18 +266,25 @@ def ex1_main(n, prop, recall, do_pickle, pickle_source):
     else:
         "if recalling, load a pickle."
         f_name = ex1_pickle_name(n, prop)
-        u  = pickle_main(f_name, pickle_source, do_pickle)
+        
+        "try loading class_dicts first. If no dict then class instance."
+        try:
+            u  = pickle_main("dict_" + f_name, source, do_pickle)
+        except:
+            u  = pickle_main(f_name, source, do_pickle)
+ 
         model_params, ukf_params = u.model_params, u.ukf_params
         
-    ex1_plots(u, "../plots/", "ukf_", True, False)
+    ex1_plots(u, destination, "ukf_", True, False)
 
     return u
     
 if __name__ == "__main__":
-    recall = False #recall previous run
+    recall = True #recall previous run
     do_pickle = True #pickle new run
     pickle_source = "../test_pickles/" #where to load/save pickles from
-    n = 10 #population size
+    destination = "../plots/"
+    n = 5 #population size
     prop = 0.5 #proportion observed
     
-    u = ex1_main(n, prop, recall, do_pickle, pickle_source)
+    u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

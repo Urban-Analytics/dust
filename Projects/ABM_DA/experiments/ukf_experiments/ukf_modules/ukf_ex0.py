@@ -26,15 +26,20 @@ import sys
 "import required modules"
 from ukf_fx import fx
 from ukf_plots import L2s
-from default_ukf_configs import model_params,ukf_params
+import default_ukf_configs
 
-sys.path.append("../../../stationsim")
-from ukf2 import ukf_ss
-from stationsim_model import Model
+"can misbehave when importing with ex1/ex2 modules as well"
+try:
+    sys.path.append("../../../stationsim")
+    from ukf2 import ukf_ss
+    from stationsim_model import Model
+
+except:
+    pass
 
 import numpy as np
 
-def ex0_params(n, noise, sample_rate, model_params = model_params, ukf_params=ukf_params):
+def ex0_params(n, noise, sample_rate, model_params, ukf_params):
     
     
     """update ukf_params with fx/hx and their parameters for experiment 1
@@ -64,19 +69,23 @@ def ex0_params(n, noise, sample_rate, model_params = model_params, ukf_params=uk
     ukf_params["noise"] = noise
     ukf_params["sample_rate"] = sample_rate
     
+    base_model = Model(**model_params)
+
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = np.eye(2 * n)
     ukf_params["r"] = np.eye(2 * n)#sensor noise
     
     ukf_params["fx"] = fx
+    ukf_params["fx_kwargs"] = {"base_model": base_model}
     ukf_params["hx"] = hx0    
+    ukf_params["hx_kwargs"] = {}
     ukf_params["obs_key_func"] = None
     
     ukf_params["file_name"] = f"config_agents_{n}_rate_{sample_rate}_noise_{noise}"
     
-    return model_params, ukf_params
+    return model_params, ukf_params, base_model
 
-def hx0(state, model_params, ukf_params):
+def hx0(state, **hx_kwargs):
     
     
     """ null transition function does nothing for hx. two states are the same.
@@ -136,7 +145,7 @@ def ex0_save(instance,source,f_name):
     print(mean_array)
     np.save(source + f_name, mean_array)
     
-def ex0_main():
+def ex0_main(n, noise, sampling_rate):
     
     
     """ main ex0 function 
@@ -146,14 +155,15 @@ def ex0_main():
     - build base model and init ukf_ss class
     - run stationsim with ukf filtering
     """
-    n= 10
-    noise = 0.5
-    sampling_rate = 5
-    model_params, ukf_params = ex0_params(n, noise, sampling_rate)
+    
+    model_params = default_ukf_configs.model_params
+    ukf_params = default_ukf_configs.ukf_params
+    
+    model_params, ukf_params, base_model = ex0_params(n, noise, sampling_rate, model_params,
+                                                      ukf_params)
     print(model_params)
     print(ukf_params)
     
-    base_model = Model(**model_params)
     u = ukf_ss(model_params,ukf_params,base_model)
     u.main()
     ex0_save(u, "../ukf_results/", ukf_params["file_name"])
@@ -161,7 +171,10 @@ def ex0_main():
 #%%  
     
 if __name__ == "__main__":
-    ex0_main()
+    n= 10
+    noise = 0.5
+    sampling_rate = 5    
+    ex0_main(n,  noise, sampling_rate)
     
     
     

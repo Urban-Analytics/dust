@@ -10,12 +10,17 @@ import sys
 from ukf_fx import fx
 from poly_functions import poly_count, grid_poly
 from ukf_plots import ukf_plots
-from default_ukf_configs import model_params,ukf_params
+import default_ukf_configs 
 
-sys.path.append("../../../stationsim")
-from ukf2 import ukf_ss, pickle_main
-from stationsim_model import Model
-
+"can misbehave when importing with ex0/ex1 modules"
+try:
+    sys.path.append("../../../stationsim")
+    from ukf2 import ukf_ss, pickle_main
+    from stationsim_model import Model
+except:
+    sys.path.append("../stationsim")
+    from ukf2 import ukf_ss, pickle_main
+    from stationsim_model import Model
 import numpy as np
 
 def obs_key_func(state,model_params,ukf_params):
@@ -31,7 +36,7 @@ def obs_key_func(state,model_params,ukf_params):
     
     return key
 
-def aggregate_params(n, bin_size,model_params=model_params,ukf_params=ukf_params):
+def aggregate_params(n, bin_size, model_params, ukf_params):
     
     
     """update ukf_params with fx/hx and their parameters for experiment 2
@@ -44,8 +49,10 @@ def aggregate_params(n, bin_size,model_params=model_params,ukf_params=ukf_params
     ------
     ukf_params : dict
     """
+    
     model_params["pop_total"] = n
-
+    base_model = Model(**model_params)
+    
     ukf_params["bin_size"] = bin_size
     ukf_params["poly_list"] = grid_poly(model_params["width"],
               model_params["height"],ukf_params["bin_size"])
@@ -55,7 +62,10 @@ def aggregate_params(n, bin_size,model_params=model_params,ukf_params=ukf_params
     ukf_params["r"] = np.eye(len(ukf_params["poly_list"]))#sensor noise 
     
     ukf_params["fx"] = fx
+    ukf_params["fx_kwargs"]  = {"base_model" : base_model}
     ukf_params["hx"] = hx2
+    ukf_params["hx_kwargs"] = {"poly_list":ukf_params["poly_list"]}
+    
     
     
     
@@ -63,9 +73,9 @@ def aggregate_params(n, bin_size,model_params=model_params,ukf_params=ukf_params
     ukf_params["pickle_file_name"] = ex2_pickle_name(n, bin_size)    
     
     
-    return model_params, ukf_params
+    return model_params, ukf_params, base_model
     
-def hx2(state,model_params,ukf_params):
+def hx2(state,**hx_kwargs):
     
     
     """Convert each sigma point from noisy gps positions into actual measurements
@@ -87,8 +97,10 @@ def hx2(state,model_params,ukf_params):
         forecasted `counts` of how many agents in each square to 
         compare with actual counts
     """
+    poly_list = hx_kwargs["poly_list"]
     
-    counts = poly_count(ukf_params["poly_list"],state)
+    counts = poly_count(poly_list, state)
+    
     if np.sum(counts)>0:
         counts /= np.sum(counts)
     return counts
@@ -156,7 +168,7 @@ def ex2_plots(instance, destination, prefix, save, animate):
         plts.heatmap(truths,ukf_params,truths.shape[0])
         plts.pair_frames_animation(truths,preds)
 
-def ex2_main(n, bin_size, recall, do_pickle, pickle_source):
+def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     
     
     """main function to run experiment 1
@@ -174,34 +186,43 @@ def ex2_main(n, bin_size, recall, do_pickle, pickle_source):
     recall, do_pickle : bool
         `recall` a previous run or  `do_pickle` pickle a new one?
         
-    pickle_source : str
-        `pickle_source` where to load/save any pickles.
+    source, destination : str
+        `source` where to load/save any pickles and the `destination` of 
+        any plots
     """
     
     if not recall:
-        model_params, ukf_params = aggregate_params(n, bin_size)
+        model_params = default_ukf_configs.model_params
+        ukf_params = default_ukf_configs.ukf_params
+        
+        model_params, ukf_params, base_model = aggregate_params(n,
+                                        bin_size, model_params, ukf_params)
         
         print(f"Population: {n}")
         print(f"Square grid size: {bin_size}")
         
-        base_model = Model(**model_params)
         u = ukf_ss(model_params,ukf_params,base_model)
         u.main()
         pickle_main(ukf_params["pickle_file_name"], pickle_source, do_pickle, u)
        
     else:
         f_name = ex2_pickle_name(n, bin_size)
-        u = pickle_main(f_name, pickle_source, do_pickle)
-
-    ex2_plots(u, "../plots/", "agg_ukf_", True, False)
+        try:
+            u  = pickle_main("dict_" + f_name, source, do_pickle)
+        except:
+            print(f_name)
+            print("dictionary not found. trying to load class")
+            u  = pickle_main(f_name, source, do_pickle)
+            
+    ex2_plots(u, destination, "agg_ukf_", True, False)
     return u
        
 if __name__ == "__main__":
-    n = 30
+    n = 5
     bin_size = 25
-    recall = False #  recall previous run
+    recall = True #  recall previous run
     do_pickle = True #  pickle new run
     pickle_source = "../test_pickles/"
-
-    u = ex2_main(n, bin_size, recall, do_pickle, pickle_source)
+    destination  = "../plots/"
+    u = ex2_main(n, bin_size, recall, do_pickle, pickle_source, destination)
     

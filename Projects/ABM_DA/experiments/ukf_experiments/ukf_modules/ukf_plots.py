@@ -198,7 +198,7 @@ class ukf_plots:
             truths2 = truths[i,:]
             preds2 = preds[i,:]
             obs_key2 = self.obs_key[i//self.filter_class.ukf_params["sample_rate"],:]
-            ms = 10 #marker_size
+            ms = 15 #marker_size
             alpha = 1
             f = plt.figure(figsize=(12,8))
             ax = plt.subplot(111)
@@ -211,6 +211,7 @@ class ukf_plots:
             ax.scatter(truths2[0::2], truths2[1::2], c="none", s= ms**2, marker = self.markers[0],ec="k",linewidths=1.5)
 
             for j in range(n):
+                    tether_width = ms/5
                     obs_key3 = int(obs_key2[j]+1)
                     colour = self.colours[obs_key3]
                     marker = self.markers[obs_key3]
@@ -221,8 +222,8 @@ class ukf_plots:
                                       alpha=alpha, edgecolors="k")
                     x = np.array([truths2[(2*j)],preds2[(2*j)]])
                     y = np.array([truths2[(2*j)+1],preds2[(2*j)+1]])
-                    plt.plot(x,y,linewidth=3,color="k",linestyle="-")
-                    plt.plot(x,y,linewidth=1,color="w",linestyle="-")
+                    plt.plot(x,y,linewidth=tether_width+2,color="k",linestyle="-")
+                    plt.plot(x,y,linewidth=tether_width,color="w",linestyle="-")
     
                     
             "dummy markers for consistent legend" 

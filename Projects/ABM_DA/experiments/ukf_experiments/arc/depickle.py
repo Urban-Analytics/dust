@@ -20,14 +20,21 @@ change to relevant directories
 """
 
 import sys
-sys.path.append("../ukf_old")
+sys.path.append("../ukf_old/stationsim")
 """import old files. 
 NOTE THIS IS NOT THE MAIN STATIONSIM FILE. IT IS IN UKF_OLD AND
-NEEDS THE FOLDER NAME TO KEEP PICKLE HAPPY"""
-import stationsim.ukf, stationsim.ukf_aggregate
+NEEDS THE OLD CODE TO KEEP PICKLE HAPPY."""
 
 sys.path.append("../ukf_modules")
 from ukf_plots import L2s as L2_parser
+
+
+try:
+    sys.path.append("../ukf_old")
+    import stationsim.stationsim_model
+except:
+    sys.path.append("ukf_experiments/ukf_old")
+    import stationsim
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -222,7 +229,7 @@ class grand_plots:
             `save` plot?
         """
         
-        f,ax = plt.subplots(figsize=(8,8))
+        f,ax = plt.subplots(figsize=(12,8))
         "cbar axis"
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right",size="5%",pad=0.05)
@@ -251,12 +258,12 @@ class grand_plots:
         #im = plt.contourf(grid[0],grid[1],best_array,cmap=cmap,levels=[0,1,2,3])
         plt.ylim([0,2])
         cbar = plt.colorbar(im,cax=cax,ticks=np.arange(0,len(bounds)-1,1)+0.5,boundaries = [0,1,2,3])
-        cbar.set_label("Best Error")
+        cbar.set_label("Minimum Grand Median L2 Error")
         cbar.set_alpha(1)
         cbar.draw_all()
         
         "labelling"
-        cbar.set_ticklabels(("Obs","Preds","UKF"))
+        cbar.ax.set_yticklabels(("Observations","StationSim","UKF Assimilations"), rotation=30,size=12, rotation_mode = "anchor")
         ax.set_xticks(np.arange(len(self.p2)))
         ax.set_yticks(np.arange(len(self.p1)))
         ax.set_xticklabels(self.p2)
@@ -268,6 +275,7 @@ class grand_plots:
         ax.set_ylabel(ylabel)
         ax.set_title(title)
         if self.save:
+            plt.tight_layout()
             plt.savefig(self.destination + f"{n}_base_config_test.pdf")
 
     def comparisons_3d(self, n, data, best_array):
@@ -291,17 +299,21 @@ class grand_plots:
         "init and some labelling"
         fig = plt.figure(figsize = (12,12))
         ax = fig.add_subplot(111,projection='3d')
-        ax.set_xlabel('Observation Noise', labelpad = 20,fontsize = 22)
+        ax.set_xlabel('Observation Noise', labelpad = 20)
         ax.set_ylabel("Assimilation Rate", labelpad = 20)
-        ax.set_zlabel('Grand L2 Error')
+        ax.set_zlabel('Log(Log(x+1)+1) Grand Median L2 Error (30 Agents)',labelpad=20)
         ax.view_init(30,225)
         
         "take each rate plot l2 error over each noise for preds obs and ukf"
         for i, p1 in enumerate(self.p1):
+            
+            def logx1(x):
+                return np.log1p(np.log1p(x))
+            
             sub_data = data.loc[p1]
-            preds=list(sub_data["forecasts"])
-            ukf=list(sub_data["ukf"])
-            obs=list(sub_data["obs"])
+            preds=list(logx1(sub_data["forecasts"]))
+            ukf=list(logx1(sub_data["ukf"]))
+            obs=list(logx1(sub_data["obs"]))
             
             xs = np.arange(len(self.p2))
             ys = [i]*len(self.p2)
@@ -317,11 +329,11 @@ class grand_plots:
                         foreground='k',alpha=1), pe.Normal()],alpha=1)
                  
         "placeholder dummies for legend"
-        s1=lines.Line2D([-1],[-1],color=colours[0],label="obs",linewidth=4,linestyle = "-",
+        s1=lines.Line2D([-1],[-1],color=colours[0],label="Observed",linewidth=4,linestyle = "-",
                     path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=1), pe.Normal()])
-        s2 = lines.Line2D([-1],[-1],color=colours[1],label="preds",linewidth=4,linestyle = "-.",
+        s2 = lines.Line2D([-1],[-1],color=colours[1],label="StationSim",linewidth=4,linestyle = "-.",
                     path_effects=[pe.Stroke(linewidth=6, foreground='k',alpha=1), pe.Normal()])
-        s3 = lines.Line2D([-1],[-1],color=colours[2],label="ukf",linewidth=4,linestyle = "--",
+        s3 = lines.Line2D([-1],[-1],color=colours[2],label="UKF Assimilations",linewidth=4,linestyle = "--",
                     path_effects=[pe.Stroke(offset=(2,0),linewidth=6, foreground='k',alpha=1), pe.Normal()])
     
         "rest of labelling"
@@ -329,7 +341,7 @@ class grand_plots:
         ax.set_xticklabels(self.p2)
         ax.set_yticks(np.arange(0,len(self.p1)))
         ax.set_yticklabels(self.p1)
-        ax.legend([s1,s2,s3],["obs","preds","ukf"])
+        ax.legend([s1,s2,s3],["Observed","StationSim","UKF Assimilations"])
         plt.tight_layout()
         "save?"
         if self.save:
@@ -602,14 +614,14 @@ source : "where files are loaded from plus some file prefix such as "ukf" or "ag
 """
 
 
-def ex0_grand():
+def ex0_grand(source, destination):
     n = 30 #population size
     file_params = {
             "rate" :  [1.0, 2.0, 5.0, 10.0],
             "noise" : [0., 0.25, 0.5, 1.0, 2.0, 5.0],
             #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
-            "source" : f"/home/rob/ukf_config_test/config_agents_{str(n).zfill(3)}_",
-            "destination" : "../plots/"
+            "source" : source,
+            "destination" : destination,
             }
     
     g_plts = grand_plots(file_params, True)
@@ -619,32 +631,31 @@ def ex0_grand():
                                  "Assimilation Rate","")
     g_plts.comparisons_3d(n, L2_frame, best_array)
     
-def ex1_restrict(distances,instance, *kwargs):
+def ex1_restrict(distances,instance, *args):
     """split L2s for separate observed unobserved plots.
     
     """
     try:
-        observed = kwargs[0]["observed"]
+        observed = args[0]["observed"]
     except:
-        observed = kwargs["observed"] 
+        observed = args["observed"] 
     index = instance.index
     
     if observed:
         distances = distances[:,index]
     elif not observed:
-        "~ doesnt seem to work here for whatever reason. using delete instead"
         distances = np.delete(distances,index,axis=1)
         
     return distances
     
-def ex1_grand():
+def ex1_grand(source, destination):
 
     file_params = {
             "agents" :  [10,20, 30],
             "prop" : [0.25, 0.5, 0.75, int(1)],
             #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
-            "source" : "/media/rob/ROB1/ukf_results/ukf_",
-            "destination" : "../plots/"
+            "source" : source,
+            "destination" : destination
             }
     
     "plot observed/unobserved plots"
@@ -664,15 +675,41 @@ def ex1_grand():
         "make boxplot"
         g_plts.boxplot(error_frame, "Proportion Observed", "Grand Median L2s",obs_titles[i])
         
-        
-def ex2_grand():
+def ex1_grand_no_split(source, destination):
+
+    file_params = {
+            "agents" :  [10,20, 30],
+            "prop" : [0.25, 0.5, 0.75, int(1)],
+            #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
+            "source" : source,
+            "destination" : destination
+            }
+    
+    "plot observed/unobserved plots"
+    obs_bools = [True, False]
+    obs_titles = ["Observed", "Unobserved"]
+    "initialise plot for observed/unobserved agents"
+    g_plts = grand_plots(file_params, True, restrict = None, observed = True)
+    "make dictionary"
+    L2 = g_plts.data_extractor()
+    "make pandas dataframe for seaborn"
+    error_frame = g_plts.data_framer(L2)
+    "make choropleth numpy array"
+    error_array = g_plts.choropleth_array(error_frame)
+    "make choropleth"
+    g_plts.choropleth_plot(error_array, "Numbers of Agents", "Proportion Observed","Mixed")
+    "make boxplot"
+    g_plts.boxplot(error_frame, "Proportion Observed", "Grand Median L2s","Mixed")
+    
+     
+def ex2_grand(source, destination):
 
     file_params = {
             "agents" :  [10, 20, 30],
             "bin" : [5,10,25,50],
             #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
-            "source" : "/media/rob/ROB1/ukf_results/ukf_",
-            "destination" : "../plots/"
+            "source" : source,
+            "destination" : destination,
             }
 
     "init plot class"
@@ -689,9 +726,17 @@ def ex2_grand():
     "make boxplot"
     g_plts.boxplot(error_frame, "Grid Square Size", "Grand Median L2s", "Aggregate")
 
+
+def main(experiment_function, source, destination):
+    experiment_function(source, destination)
+
 #%%
 if __name__ == "__main__":
-    ex1_grand()
-    #ex1_grand()
+    
+    main(ex0_grand,  f"/Users/medrclaa/ukf_config_test/config*030*", "../plots/")
+    #main(ex1_grand, "/Users/medrclaa/ukf_results/ukf_*", "../plots/")
+    #main(ex1_grand_no_split, "/Users/medrclaa/ukf_results/ukf_*", "../plots/")
+
+    #main(ex2_grand, "/Users/medrclaa/ukf_results_100_1/agg_*", "../plots/")
     #ex2_grand()
     

@@ -21,7 +21,8 @@ def poly_count(poly_list,points):
     poly_list : list
         list of closed polygons over StationSim corridor `poly_list`
     points : array_like
-        list of agent GPS positions to count
+        flatten list of positions. every even index is an x coordinate
+        every odd index is a y coordinate
     
     Returns
     ------

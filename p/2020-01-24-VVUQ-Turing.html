@@ -73,6 +73,7 @@
                     
                 </section>
 
+                <!--
                 <section id="dust-intro" data-background-image="../figures/cityscapes/ny_night3.jpg">
                     <div class="whitebackground2">
                         <h2>Data Assimilation for Agent-Based Models (DUST)</h2>
@@ -83,9 +84,8 @@
                         <p>Funded by the European Research Council</p>
                         <p>Main aim: create new methods for dynamically assimilating data into agent-based models.</p>
                     </div>
-
                 </section>
-
+                -->
 
 
 
@@ -103,7 +103,7 @@
                     <div class="whitebackground2 fragment" style=" position:relative">
                         <h3>What is happening in Trafalgar Square right now?</h3>
 
-                        <p>Real-time simulations will allow us to:</p>
+                        <p>Real-time models will allow us to:</p>
                         <p class="l2">Better understand what is happening <i>now</i></p>
                         <p class="l3">Improved day-to-day management of busy places</p>
                         <p class="l3">Management of emergency situations</p>
@@ -120,13 +120,17 @@
                 ************************************************************ -->
                 
                 <section id="prob-divergence"
-                         data-background-video="../videos/BBC_Swarm_Natures_Incredible_Invasions.mp4"
+                         data-background-video="../videos/flocking.mp4"
                          data-background-video-muted
                          data-background-video-loop="loop">
 
                         <div class="whitebackground fragment">
-                            <h2>Divergence</h2>
-                            <p>Nonlinear models predict near future well, but diverge over time.</p>
+                            <h2>Uncertainty &amp; Divergence</h2>
+                            <p>Nonlinear models predict near future well, but uncertainty causes them to diverge over time.</p>
+                            <p>Uncertainty arises from:</p>
+                            <p class="l2">Model structure</p>
+                            <p class="l2">Parameter values</p>
+                            <p class="l2">Measurement noise</p>
                             <p>Need a way to update the model state in response to new data</p>
                             <!--<p>Try to improve estimates of the true system state by combining:</p>
                             <p class="l2">Noisy, real-world observations</p>
@@ -219,14 +223,13 @@
                          data-background-video-loop="loop">
                     
                     <div class="whitebackground2 fragment">
-                        <h2>City Simulation</h2>
-                        
+                        <h2>Towards: City Simulation</h2>
                         <p>Simulate the interactions of the <i>individuals</i> who make up the city</p>
-                        <p>But models are almost exclusively built using historical data</p>
-                        <p class="l2">OK for offline simulation (e.g. scenario testing)</p>
-                        <p class="l2">But not suitable for real-time modelling / forecasting as <b>the simulation
-                            will rapidly diverge from reality</b></p>
-                        <p>This work moves us towards <i>real-time</i> agent-based models </p>
+                        <p>Assimilate (aggregate) information about urban movements</p>
+                        <p class="l2">Traffic counters</p>
+                        <p class="l2">Footfall (pedestrian) counters</p>
+                        <p class="l2">Population density estimates from mobile phone use</p>
+                        <p>Ultimately work towards <i>real-time</i> agent-based urban models </p>
 
                     </div>
                     
@@ -238,7 +241,7 @@
 
 
                 <section id="real-time-crowd-modelling" >
-                    <h3>(But that's too hard, so we're just looking at:)</h3>
+                    <h3>But that's too hard, so we're currently looking at:</h3>
                     <h2>Real Time Crowd Modelling</h2>
                     <img class="right" style="width:40%;" data-src="../figures/train_station_pedestrian.jpg"
                                  alt="Image of escalators in a train station" />
@@ -271,15 +274,14 @@
 
                 <section id="stationsim-collisions1">
 
-                    <h2>Collisions in StationSim</h2>
+                    <h2>Uncertainty in StationSim</h2>
                     
                     <img class="right" data-src="../figures/paper_figures/2018-ParticleFilterFigs/PF_ABM.png"
                          alt="Diagram of collisions in StationSim"/>
 
-                    <p>Agents move from one side to the other</p>
-                    <p>If a fast agent reaches a slow agent, the try to move round to the left or right</p>
-                    <p class="l2">Random binary decision</p>
-                    <p class="l2">Only source of uncertainty</p>
+                    <p>Only one source of uncertainty: collision avoidance</p>
+                    <p>If a fast agent reaches a slow agent, they try pass to the left or right</p>
+                    <p>Next slides: 2 examples of data assimilation on this simple model</p>
                     <!--<img class="left" style="width:40%;" data-src="../figures/paper_figures/2018-ParticleFilterFigs/crowding-density.png"
                          alt="Diagram of collisions in StationSim"/>
                     <img class="right" style="width:45%;" data-src="../figures/paper_figures/2018-ParticleFilterFigs/crowding-trails.png"
@@ -288,6 +290,7 @@
 
                 </section>
 
+                <!--
                 <section id="pf-results-wiggle-count">
                     <h2>Particle Filter Results</h2>
                     <h3>Exponential increase in complexity</h3>
@@ -295,8 +298,7 @@
                          style="width:80%;"
                          alt="Number of collisions increases exponentially with number of agents" />
                 </section>
-
-
+                -->
 
                 
 
@@ -306,7 +308,7 @@
 
 
                 <section id="particle-filter">
-                    <h2>Particle Filter</h2>
+                    <h2>Example 1: Particle Filter</h2>
                     <p>A 'brute force' ensemble method</p>
                     <p>No Gaussian assumptions</p>
                     <p>Create <i>N</i> realisations of the model ('particles')</p>
@@ -369,10 +371,9 @@
 
                 </section>
 
+                <!--
                 <section id="pf-results-summary">
                     <h2>Particle Filter Results - Summary</h2>
-                    <!--<img class="right" src="../figures/train_station_pedestrian.jpg"
-                                 alt="Image of escalators in a train station" />-->
                     <p>Real-time assimilation of data into a crowd model is possible. But:</p>
                     <p>Very few model parameters &amp; variables are unknown (easy)</p>
                     <p class="l2">It knows entrance gate and time, destination, max speed, etc...</p>
@@ -385,23 +386,25 @@
                     <p class="l2">Opportunities to make more efficient, e.g. 'component set resampling' (Wang &amp;Hu, 2015),
                     or through use of GPU clusters</p>
                 </section>
+                -->
 
                 <section id="ukf">
                     <h2>Example 2: Unscented Kalman Filter</h2>
+                    <p>XXXX</p>
+
+                </section>
+            
+                <section id="ukf-results1">
+                    <h2>UKF Results</h2>
                     <img style="width:80%;" data-src="../figures/paper_figures/2019-UKF/ukf_pairs050.png" />
-
+                </section>
+            
+                <section id="ukf-results2">
+                    <h2>UKF Results</h2>
+                    <img class="left" data-src="../figures/paper_figures/2019-UKF/Mixed_Choropleth.png" />
+                    <img class="right" data-src="../figures/paper_figures/2019-UKF/Unobserved_Choropleth.png" />
                 </section>
 
-                <section id="big_brother" >
-                    <h2>Ethical Implications</h2>
-                    <p>Data Bias</p>
-                    <p class="l2">Need to be very careful: biased data -> biased models</p>
-                    <p class="l2">The digital divide</p>
-                    <p>Tracking People</p>
-                    <p class="l2">Advantage with these methods is we <i>don't need to track people</i></p>
-                    <p class="l2">Models work with counts of flows</p>
-
-                </section>
 
 
 
@@ -412,7 +415,7 @@
                 ************************ BusSim Example *************************
                 ************************************************************ -->
                 <section id="pf-bussim">
-                    <h2>One other example:<br/>Bus Simulation with a Particle Filter</h2>
+                    <h2>Example 3:<br/>Data Assimialtion on a Bus Simulation</h2>
                     <p>Context: simulate bus routes <i>in real time</i></p>
                     <p>We have GPS bus positions, but to make good term forecasts we need to be able to infer other factors</p>
                     <p class="l2">Number of people waiting at bus stops</p>
@@ -447,6 +450,22 @@
                      </video>
                  </section>
 
+                
+                <!-- ************************************************************
+                ******************* Ethics and Future work **********************
+                ************************************************************ -->
+
+                <section id="big_brother" >
+                    <h2>Ethical Implications</h2>
+                    <p>Data Bias</p>
+                    <p class="l2">Need to be very careful: biased data -> biased models</p>
+                    <p class="l2">The digital divide</p>
+                    <p>Tracking People</p>
+                    <p class="l2">Advantage with these methods is we <i>don't need to track people</i></p>
+                    <p class="l2">Models work with counts or aggregate flows</p>
+
+                </section>
+
 
 
                 <!--
@@ -469,6 +488,7 @@
                 </section>
                     -->
 
+            
 
 
 
@@ -487,12 +507,14 @@
 
                 </section>
 
+                <!--
                 <section id="TheTuring1">
                     <img data-src="../figures/turing_introduction.png" alt="Alan Turing Institute: The national institute for data science and AI" />
                 </section>
+                -->
 
 
-
+                <!--
                 <section id="UrbanAnalytics" data-background-image="../figures/turing_urban_analytics.jpg">
 
                     <div class="whitebackground2 fragment">
@@ -514,7 +536,7 @@
                     </div>
 
                 </section>
-
+                -->
 
 
                 <section id="moreinformation1" data-transition="fade"
@@ -533,7 +555,6 @@
                         </a>
                         <p class="l2"><a href="https://www.turing.ac.uk/research/research-projects/uncertainty-agent-based-models-smart-city-forecasts">turing.ac.uk/research/research-projects/uncertainty-agent-based-models-smart-city-forecasts</a></p>
                         <p class="l2">Developing methods that can be used to better understand uncertainty in individual-level models of cities</p>
-
 
                         <p>Bringing the Social City to the Smart City</p>
                         <p class="l2">Using AI and machine learning to understand and simulate cities</p>

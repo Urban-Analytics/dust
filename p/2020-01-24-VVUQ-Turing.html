@@ -152,7 +152,8 @@
 
 
 
-                <section id="dda1" data-background-image="../figures/weather2.jpg" data-transition="fade">
+                <!--<section id="dda1" data-background-image="../figures/weather2.jpg" data-transition="fade">-->
+                <section id="dda1" data-background-image="../figures/flocking.jpg" data-transition="fade">
                     <div class="whitebackground">
                         <h2>Data Assimilation</h2>
                         <p>Used in meteorology and hydrology to constrain models to reality.</p>
@@ -266,7 +267,8 @@
 
 
                 <section id="stationsim-video">
-                    <video controls autoplay width="80%" height="auto" >
+                    <video controls autoplay width="80%" height="auto" 
+                           alt = "Video showing a simulation with agents moving from one end of the 'corridor' to the other">
                         <source src="../videos/StationSim-Videos/stationsim-no_crowding.mp4" type="video/mp4"/>
                          Your browser does not support the video tag.
                     </video>
@@ -325,7 +327,8 @@
                     <h2>Experimental Setup</h2>
                     <p>'Identical twin' experiment: known 'real world' conditions</p>
                     <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/PF_flowchart2.png"
-                         alt="flowchart of the experimental design" />
+                         alt="Flowchart of the experimental design. The model is run once to generate
+                              'pseudo truth' data which are then assumed to be drawn from the real world." />
 
                 </section>
 
@@ -333,13 +336,13 @@
                 <section id="pf-stationsim2-a" data-transition="fade">
                     <h2>Crowd Simulation with a Particle Filter</h2>
                     <img data-src="../figures/pf_animation-static.png"
-                         alt="Animation of bus simulation with data assimilation" />
+                         alt="Animation of a crowding model with data assimilation" />
                 </section>
 
                 <section id="pf-stationsim2-b" data-transition="fade">
                     <h2>Crowd Simulation with a Particle Filter</h2>
                     <img data-src="../figures/pf_animation.gif"
-                         alt="Animation of bus simulation with data assimilation" />
+                         alt="Animation of a crowding model with data assimilation" />
                 </section>
 
 
@@ -352,7 +355,8 @@
                     <h2>Particle Filter Results</h2>
                     <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/ani-10agents-10particles-window100.png"
                          style="width:80%;"
-                         alt="Predictions of the PF with 10 agents and 10 particles" />
+                         alt="Predictions of the PF with 10 agents and 10 particles - most particles
+                              predict the locations of the agents well. " />
                 </section>
 
 
@@ -360,14 +364,17 @@
                     <h2>Particle Filter Results</h2>
                     <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/ani-40agents-10particles-window100.png"
                          style="width:80%;"
-                         alt="Predictions of the PF with 40 agents and 10 particles" />
+                         alt="Predictions of the PF with 40 agents and 10 particles - now the model is 
+                              too complex for only 10 particles to reliably estimate its behaviour." />
                 </section>
 
 
 
                 <section id="pf-results-median_error">
                     <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/median_abs_error.png"
-                         alt="median absolute error change with number of agents and particles" />
+                         alt="median absolute error change with number of agents and particles: greater
+                              complexity caused by larger numbers of agents can be mitigated by increasing
+                              the numbers of particles." />
 
                 </section>
 
@@ -390,19 +397,28 @@
 
                 <section id="ukf">
                     <h2>Example 2: Unscented Kalman Filter</h2>
-                    <p>XXXX</p>
-
+                    <p>Similar to the (very popular) Ensemble Kalman filter</p>
+                    <p class="l2">Should be more efficient</p>
+                    <p class="l2">But assumes Gaussian distributions</p>
+                    <p>A few <i>sigma points</i> are chosen to represent the model state</p>
+                    <p>Then some complicated maths happens ... </p>
                 </section>
             
                 <section id="ukf-results1">
                     <h2>UKF Results</h2>
-                    <img style="width:80%;" data-src="../figures/paper_figures/2019-UKF/ukf_pairs050.png" />
+                    <h3>Observe a proportion of the agents</h3>
+                    <img style="width:80%;" data-src="../figures/paper_figures/2019-UKF/ukf_pairs050.png" 
+                         alt="Results of the UKF. Most agent positions are estimated reasonably well."/>
                 </section>
             
                 <section id="ukf-results2">
                     <h2>UKF Results</h2>
+                    <h3>Observed v.s. Unobserved agents</h3>
                     <img class="left" data-src="../figures/paper_figures/2019-UKF/Mixed_Choropleth.png" />
-                    <img class="right" data-src="../figures/paper_figures/2019-UKF/Unobserved_Choropleth.png" />
+                    <img class="right" data-src="../figures/paper_figures/2019-UKF/Unobserved_Choropleth.png" 
+                         alt="Results of the UKF (2). For agents who we have no information about ('unobserved'),
+                              the algorithm is sometimes able to infer their behaviour from that of agents
+                              who we do have information about."/>
                 </section>
 
 
@@ -415,7 +431,7 @@
                 ************************ BusSim Example *************************
                 ************************************************************ -->
                 <section id="pf-bussim">
-                    <h2>Example 3:<br/>Data Assimialtion on a Bus Simulation</h2>
+                    <h2>Example 3:<br/>Data Assimilation on a Bus Simulation</h2>
                     <p>Context: simulate bus routes <i>in real time</i></p>
                     <p>We have GPS bus positions, but to make good term forecasts we need to be able to infer other factors</p>
                     <p class="l2">Number of people waiting at bus stops</p>
@@ -428,7 +444,8 @@
                 <section id="pf-bussim-video">
                  <h2>Bus Simulation</h2>
                  <video controls autoplay >
-                     <source data-src="../videos/bussim-video.mp4" type="video/mp4"/>
+                     <source data-src="../videos/bussim-video.mp4" type="video/mp4"
+                             alt="Video of the bus simulation. Buses (represented as arrows) move along a 1D track."/>
                       Your browser does not support the video tag.
                  </video>
                  </section>
@@ -445,7 +462,10 @@
                  <section id="pf-bussim-pf-video">
                      <h2>Bus Simulation with a Particle Filter</h2>
                      <video controls autoplay>
-                         <source data-src="../videos/bussim-pf-video.mp4" type="video/mp4"/>
+                         <source data-src="../videos/bussim-pf-video.mp4" type="video/mp4"
+                                 alt="Results of the bus simulation data assimilation. Graph shows buses progress
+                                      moving away from their depot. The particle filter improves the estimate of
+                                      the current system state as well as short-term predictions."/>
                           Your browser does not support the video tag.
                      </video>
                  </section>
@@ -454,6 +474,7 @@
                 <!-- ************************************************************
                 ******************* Ethics and Future work **********************
                 ************************************************************ -->
+                
 
                 <section id="big_brother" >
                     <h2>Ethical Implications</h2>
@@ -463,7 +484,16 @@
                     <p>Tracking People</p>
                     <p class="l2">Advantage with these methods is we <i>don't need to track people</i></p>
                     <p class="l2">Models work with counts or aggregate flows</p>
-
+                </section>
+                
+                <section id="conclusion">
+                    <h2>Conclusions</h2>
+                    <p>(Agent-Based) simulations of urban systems will benefit from being able
+                        to react to up-to-date data</p>
+                    <p>Otherwise uncertainty will cause them to diverge from reality</p>
+                    <p>This work has begin to experiment with some mathematical methods that
+                    might be able to conduct data assimilation on agent-based models.</p>
+                    <p>Ultimately work towards a digital twin of urban flows</p>
                 </section>
 
 
@@ -488,10 +518,7 @@
                 </section>
                     -->
 
-            
-
-
-
+                <!--
                 <section id="digital_twins" data-background-image="../figures/digital_twin_engineering.png">
                     <div class="whitebackground2 fragment">
                         <h2>Towards Digital Twins of Human Systems</h2>
@@ -506,6 +533,9 @@
                     </div>
 
                 </section>
+                --> 
+                
+                
 
                 <!--
                 <section id="TheTuring1">
@@ -566,7 +596,7 @@
 
 
 
-                <section class="title" id="thanks" data-background-image="../figures/shutterstock_615414464-small.jpg">
+                <section class="title" id="thanks" data-background-image="../figures/shutterstock_788458099-small.jpg">
                     <div class="whitebackground2">
                         <a href="https://europa.eu/european-union/index_en">
                             <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;" src="../figures/LOGO_EU.jpg"/>
@@ -575,18 +605,17 @@
                         <a href="http://www.leeds.ac.uk/">
                             <img style="float:right;padding:10px;width:150px; height:auto;" data-src="../figures/uol_logo.gif"/>
                         </a>
-                        <h5>Urban Modelling &amp; Complexity Science<br/>
-                            19-20 September 2019, CASA, London</h5>
+                        <h5 style="font-size:20px">Reliability and Reproducibility in Computational Science <br/>Alan Turing Institute, British Library, London<br/>24 January 2020</h5>
 
                         <hr/>
-                        <h2>Simulating Pedestrian Systems in Real Time using Agent-Based Models</h2>
+                        <h2>Reducing Uncertainty in Agent-Based Simulations through Real-Time Data Assimilation</h2>
                         <hr/>
                         <h3>Nick Malleson</h3>
-                        <h4>Professor of Spatial Science</h4>
-                        <h4>School of Geography, University of Leeds <br/> and Fellow of the Alan Turing Institute</h4>
+                        <h4>Professor of Spatial Science, School of Geography, University of Leeds and Fellow of the Alan Turing Institute</h4>
+                        <h4>Co-authors: Alison Heppenstall, Jon Ward, Robert Clay, Minh Le Kieu</h4>
                         <hr/>
                         <h4 style="text-align:center">These slides: <a href="https://urban-analytics.github.io/dust/presentations.html">http://dust.leeds.ac.uk</a></h4>
-                        <h4 style="text-align:center">The paper: <a href="https://arxiv.org/abs/1909.09397">arxiv.org/abs/1909.09397</a></h4>
+                        <!--<h4 style="text-align:center">The paper: <a href="https://arxiv.org/abs/1909.09397">arxiv.org/abs/1909.09397</a></h4>-->
                     </div>
                 </section>
 

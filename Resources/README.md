@@ -20,6 +20,10 @@ This folder is for other useful resources, not necessarily directly related to t
  - "A Software Carpentry workshop is taught by at least one trained and badged instructor. Over two days, instructors teach our three core topics: the Unix shell, version control with Git, and a programming language (Python or R). Curricula for these lessons in English and Spanish (select lessons only) are below."
  - _Leeds uni also runs this course occasionally_
 
+### [Object-Oriented Design](https://www.coursera.org/learn/object-oriented-design)
+
+ - A free Coursera course on object-orientation. 
+
 
 ## Working with Repositories
 

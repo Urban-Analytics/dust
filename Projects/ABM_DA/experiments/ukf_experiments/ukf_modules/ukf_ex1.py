@@ -7,10 +7,21 @@ Created on Mon Dec  2 11:16:33 2019
 
 """
 import sys
+import numpy as np
+from math import floor
 
+"local imports"
 from ukf_fx import fx
 from ukf_plots import ukf_plots
 import default_ukf_configs 
+
+"""
+try/except here used if running __main__ here. 
+if calling from a parent directory (e.g. ukf_experiments)
+call them there instead with the corresponding file append.
+e.g.     
+sys.path.append("../stationsim")
+"""
 
 try:
     sys.path.append("../../../stationsim")
@@ -18,12 +29,8 @@ try:
     from stationsim_model import Model
 
 except:
-    sys.path.append("../stationsim")
-    from ukf2 import ukf_ss, pickle_main
-    from stationsim_model import Model
+    pass
 
-import numpy as np
-from math import floor
 
 def omission_index(n, sample_size):
     
@@ -74,7 +81,7 @@ def hx1(state, **hx_kwargs):
     index2 = hx_kwargs.pop("index2")
     return  state[index2] 
 
-def obs_key_func(state, model_params, ukf_params):
+def obs_key_func(state, **obs_key_kwargs):
     
     
     """which agents are observed
@@ -99,9 +106,12 @@ def obs_key_func(state, model_params, ukf_params):
         (unobserved,aggregate,gps) for 0, 1, or 2.
     
     """
+    n = obs_key_kwargs["n"]
+    index = obs_key_kwargs["index"]
     
-    key = np.zeros(model_params["pop_total"])
-    key[ukf_params["index"]] +=2
+    key = np.zeros(n)
+    key[index] +=2
+    
     return key
 
 def omission_params(n, prop, model_params, ukf_params):
@@ -135,10 +145,10 @@ def omission_params(n, prop, model_params, ukf_params):
     base_model = Model(**model_params)
 
     ukf_params["prop"] = prop
-    ukf_params["sample_size"]= floor(n * ukf_params["prop"])
-
+    ukf_params["sample_size"]= floor(n * prop)
     
     ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
+    
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = 0.1*np.eye(2 * n)
     ukf_params["r"] = 0.1*np.eye(2 * ukf_params["sample_size"])#sensor noise
@@ -146,10 +156,11 @@ def omission_params(n, prop, model_params, ukf_params):
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"] = {"base_model":base_model} 
     ukf_params["hx"] = hx1
-    ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"], "test": "test"}
-    
+    ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"]}
     ukf_params["obs_key_func"] = obs_key_func
-    ukf_params["pickle_file_name"] =  ex1_pickle_name(n, prop)
+    ukf_params["obs_key_kwargs"] = {"n" : n, "index" : ukf_params["index"]}
+    
+    ukf_params["file_name"] =  ex1_pickle_name(n, prop)
         
     return model_params, ukf_params, base_model
 
@@ -203,7 +214,14 @@ def ex1_plots(instance, destination, prefix, save, animate):
         `save` plots or `animate` whole model run?
     
     """
-    plts = ukf_plots(instance, destination, prefix, save, animate)
+    
+    marker_attributes = {
+    "markers" : {-1 : "o", 0 : "P", 2 : "s"},
+    "colours" : {-1 : "black", 0 : "orangered", 2 : "skyblue"},
+    "labels" :  {-1 :"Pseudo-True Agent Positions" , 0 : "Unobserved Agents", 2 : "Observed Agents"}
+    }
+    
+    plts = ukf_plots(instance, destination, prefix, save, animate, marker_attributes)
 
     obs,preds,truths,nan_array= instance.data_parser()
     obs_key = instance.obs_key_parser()
@@ -261,7 +279,7 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
         
         u = ukf_ss(model_params,ukf_params,base_model)
         u.main()
-        pickle_main(ukf_params["pickle_file_name"],pickle_source, do_pickle, u)
+        pickle_main(ukf_params["file_name"],pickle_source, do_pickle, u)
     
     else:
         "if recalling, load a pickle."
@@ -274,13 +292,13 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
             u  = pickle_main(f_name, source, do_pickle)
  
         model_params, ukf_params = u.model_params, u.ukf_params
-        
+    
     ex1_plots(u, destination, "ukf_", True, False)
 
     return u
     
 if __name__ == "__main__":
-    recall = True #recall previous run
+    recall = False #recall previous run
     do_pickle = True #pickle new run
     pickle_source = "../test_pickles/" #where to load/save pickles from
     destination = "../plots/"

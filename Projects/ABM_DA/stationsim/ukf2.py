@@ -15,11 +15,9 @@ This file has no main. use ukf notebook/modules in experiments folder
 
 #general packages used for filtering
 
-import numpy as np
-"general timer"
+import numpy as np #numpy
 import datetime # for timing experiments
 import pickle # for saving class instances
-import json
 from scipy.stats import chi2 # for adaptive ukf test
 
 def unscented_Mean(sigmas, wm, kf_function, **function_kwargs):
@@ -231,20 +229,15 @@ class ukf:
         "full parameter dictionaries and ABM"
         self.model_params = model_params
         self.ukf_params = ukf_params
+        for key in ukf_params.keys():
+            setattr(self, key, ukf_params[key])
+            
         self.base_model = base_model
         
         "pull parameters from dictionary"
         self.x = self.base_model.get_state(sensor="location") #!!initialise some positions and covariances
         self.n = self.x.shape[0] #state space dimension
-        self.p = ukf_params["p"]
-        self.q = ukf_params["q"]
-        self.r = ukf_params["r"]
-        self.fx = ukf_params["fx"]
-        self.hx = ukf_params["hx"]
-        
-        self.a = ukf_params["a"]
-        self.b = ukf_params["b"]
-        self.k = ukf_params["k"]
+
 
         "MSSP sigma point scaling parameters"
         self.lam = self.a**2*(self.n+self.k) - self.n 
@@ -278,9 +271,8 @@ class ukf:
         
         """
         sigmas = MSSP(self.x, self.p, self.g)
-        fx_kwargs = self.ukf_params["fx_kwargs"]
         nl_sigmas, xhat = unscented_Mean(sigmas, self.wm, self.fx,
-                                         **fx_kwargs )
+                                         **self.fx_kwargs )
         self.sigmas = nl_sigmas
         
         pxx = covariance(nl_sigmas,xhat,self.wc,addition = self.q)
@@ -308,15 +300,25 @@ class ukf:
         """
         
         nl_sigmas, yhat = unscented_Mean(self.sigmas, self.wm,
-                                         self.hx, **self.ukf_params["hx_kwargs"])
+                                         self.hx, **self.hx_kwargs)
         pyy =covariance(nl_sigmas, yhat, self.wc, addition=self.r)
         pxy = covariance(self.sigmas, self.x, self.wc, nl_sigmas, yhat)
         k = np.matmul(pxy,np.linalg.inv(pyy))
  
         "i dont know why `self.x += ...` doesnt work here"
-        self.x = self.x + np.matmul(k,(z-yhat))
-        self.p = self.p - np.linalg.multi_dot([k, pyy, k.T])
+        x = self.x + np.matmul(k,(z-yhat))
+        p = self.p - np.linalg.multi_dot([k, pyy, k.T])
         
+        
+        """adaptive ukf augmentation. one for later."""
+        adaptive = False
+        if adaptive:
+            mu = np.array(z)- np.array(self.hx(self.sigmas[:,0],
+                                               self.model_params,self.ukf_params))
+            if np.sum(np.abs(mu))!=0:
+                x, p = self.fault_test(z, mu, pxy, pyy, self.x, self.p, k, yhat)    
+            
+        "update mean and covariance states"
         self.ps.append(self.p)
         self.xs.append(self.x)
 
@@ -325,143 +327,7 @@ class ukf:
         batch function hopefully coming soon
         """
         return
-    
-#%%
-        
- 
-class adaptive_ukf:
-    
-    """main ukf class with aggregated measurements
-    
-    Parameters
-    ------
-    model_params, ukf_params : dict
-        dictionary of model `model_params` and ukf `ukf_params` parameters
-    init_x : array_like
-        Initial ABM state `init_x`
-    fx,hx: function
-        transitions and measurement functions `fx` `hx`
-    P,Q,R : array_like
-        Noise structures `P` `Q` `R`
-    
-    """
-    
-    def __init__(self, model_params, ukf_params, base_model):
-        
-        
-        """
-        x - state
-        n - state size 
-        p - state covariance
-        fx - transition function
-        hx - measurement function
-        lam - lambda paramter function of tuning parameters a,b,k
-        g - gamma parameter function of tuning parameters a,b,k
-        wm/wc - unscented weights for mean and covariances respectively.
-        q,r -noise structures for fx and hx
-        xs,ps - lists for storage
-        """
-        
-        #init initial state
-        "full parameter dictionaries and ABM"
-        self.model_params = model_params
-        self.ukf_params = ukf_params
-        self.base_model = base_model
-        
-        "pull parameters from dictionary"
-        self.x = self.base_model.get_state(sensor="location") #!!initialise some positions and covariances
-        self.n = self.x.shape[0] #state space dimension
-        self.p = ukf_params["p"]
-        self.q = ukf_params["q"]
-        self.r = ukf_params["r"]
-        self.fx = ukf_params["fx"]
-        self.hx = ukf_params["hx"]
-        
-        self.a = ukf_params["a"]
-        self.b = ukf_params["b"]
-        self.k = ukf_params["k"]
 
-        "MSSP sigma point scaling parameters"
-        self.lam = self.a**2*(self.n+self.k) - self.n 
-        self.g = np.sqrt(self.n+self.lam) #gamma parameter
-        
-        
-        self.phi0 = 0.2
-        self.delta0 = 0.2
-        
-        "unscented mean and covariance weights based on a, b, and k"
-        main_weight =  1/(2*(self.n+self.lam))
-        self.wm = np.ones(((2*self.n)+1))*main_weight
-        self.wm[0] *= 2*self.lam
-        self.wc = self.wm.copy()
-        self.wc[0] += (1-self.a**2+self.b)
-
-        self.xs = []
-        self.ps = []
-
-    def predict(self):
-        
-        
-        """Transitions sigma points forwards using markovian transition function plus noise Q
-        
-        - calculate sigmas using prior mean and covariance P.
-        - forecast sigmas X- for next timestep using transition function Fx.
-        - unscented mean for foreacsting next state.
-        - calculate interim mean state x and covariance P
-        - pass these onto  update function
-        
-        """
-        sigmas = MSSP(self.x, self.p, self.g)
-        nl_sigmas, xhat = unscented_Mean(sigmas, self.wm, 
-                                                 MSSP, self.fx,self.base_model)
-        self.sigmas = nl_sigmas
-        
-        pxx = covariance(nl_sigmas,xhat,self.wc,addition = self.q)
-        
-        self.p = pxx #update Sxx
-        self.x = xhat #update xhat
-    
-    
-    def update(self,z):   
-        
-        
-        """ update forecasts with measurements to get posterior assimilations
-        
-        - nudges X- sigmas with new pxx from predict
-        - calculate measurement sigmas Y = h(X-)
-        - calculate unscented mean of Y, yhat
-        - calculate measured state covariance pyy sing r
-        - calculate cross covariance between X- and Y and Kalman gain (pxy, K)
-        - update x and P
-        - store x and P updates in lists (xs, ps)
-        
-        Parameters
-        ------
-        z : array_like
-            measurements from sensors `z`
-        """
-        
-        nl_sigmas, yhat = unscented_Mean(self.sigmas, self.wm, MSSP, self.hx,self.ukf_params["hx_args"])
-        pyy =covariance(nl_sigmas, yhat, self.wc, addition=self.r)
-        pxy = covariance(self.sigmas, self.x, self.wc, nl_sigmas, yhat)
-        k = np.matmul(pxy,np.linalg.inv(pyy))
-     
-        "i dont know why `self.x += ...` doesnt work here"
-        x = self.x + np.matmul(k,(z-yhat))
-        p = self.p - np.linalg.multi_dot([k, pyy, k.T])
-        
-        mu = np.array(z)- np.array(self.hx(self.sigmas[:,0],self.model_params,self.ukf_params))
-        
-        if np.sum(np.abs(mu))!=0:
-            x, p = self.fault_test(z, mu, pxy, pyy, x, p, k, yhat)
-        
-        self.x = x
-        self.p = p
-        self.ps.append(self.p)
-        self.xs.append(self.x)
-        
-        
-    
     def fault_test(self,z, mu, pxy, pyy, x, p, k, yhat):
         
         
@@ -477,12 +343,16 @@ class adaptive_ukf:
         critical = chi2.ppf(0.8, df = mu.shape[0]) #critical rejection point
         print(psi, critical)
         if psi <= critical :
+            
             "accept null hypothesis. keep q,r"
             pass
+        
         else:
-            eps = z - self.hx(x,self.model_params,self.ukf_params)            
+            
+            "nudge q and r according to estimates. recalculate x and p."
+            eps = z - self.hx(x, **self.hx_kwargs)            
             sigmas = MSSP(x,p,self.g)
-            syy = covariance(self.hx(sigmas, self.model_params, self.ukf_params), yhat,self.wc)
+            syy = covariance(self.hx(sigmas, **self.hx_kwargs), yhat,self.wc)
             delta_1 =  1 - (self.a*critical)/psi
             delta = np.max(self.delta0,delta_1)
             phi_1 =  1 - (self.b*critical)/psi
@@ -499,12 +369,7 @@ class adaptive_ukf:
             p = self.p - np.linalg.multi_dot([k, pyy, k.T])
             
         return x, p
-            
-    def batch(self):
-        """
-        batch function hopefully coming soon
-        """
-        return
+        
      
     
 #%%
@@ -543,12 +408,12 @@ class ukf_ss:
         self.ukf_params = ukf_params # ukf parameters
         self.base_model = base_model #station sim
         
-
-        self.pop_total = self.model_params["pop_total"] #  number of agents
-        self.number_of_iterations = model_params['step_limit'] #  number of batch iterations
-        self.sample_rate = self.ukf_params["sample_rate"] # how often do we assimilate
-        self.obs_key_func = ukf_params["obs_key_func"]  #defines what type of observation each agent has
-
+        for key in model_params.keys():
+            setattr(self, key, model_params[key])
+        for key in ukf_params.keys():
+            setattr(self, key, ukf_params[key])
+        
+       
 
         """lists for various data outputs
         observations
@@ -620,12 +485,13 @@ class ukf_ss:
         - else do nothing
         """
         if step%self.sample_rate == 0:
+            
             state = self.base_model.get_state(sensor="location")
-            if self.ukf_params["bring_noise"]:
-                noise_array=np.ones(self.pop_total*2)
-                noise_array[np.repeat([agent.status!=1 for agent in self.base_model.agents],2)]=0
-                noise_array*=np.random.normal(0,self.ukf_params["noise"],self.pop_total*2)
-                state+=noise_array
+            noise_array=np.ones(self.pop_total*2)
+            noise_array[np.repeat([agent.status!=1 for 
+                                   agent in self.base_model.agents], 2)]=0
+            noise_array*=np.random.normal(0, self.noise, self.pop_total*2)
+            state+=noise_array
                 
             "convert full noisy state to actual sensor observations"
             state = self.ukf.hx(state, **hx_kwargs)
@@ -633,7 +499,7 @@ class ukf_ss:
             self.ukf.update(state)
             
             if self.obs_key_func is not None:
-                key = self.obs_key_func(state,self.model_params, self.ukf_params)
+                key = self.obs_key_func(state,**self.obs_key_kwargs)
                 "force inactive agents to unobserved"
                 key *= [agent.status%2 for agent in self.base_model.agents]
                 self.obs_key.append(key)
@@ -656,12 +522,12 @@ class ukf_ss:
         
         "initialise UKF"
         self.init_ukf(self.ukf_params) 
-        for step in range(self.number_of_iterations-1):
+        for step in range(self.step_limit-1):
             
             "forecast next StationSim state and jump model forwards"
             self.ss_Predict()
             "assimilate forecasts using new model state."
-            self.ss_Update(step, **self.ukf_params["hx_kwargs"])
+            self.ss_Update(step, **self.hx_kwargs)
             
             finished = self.base_model.pop_finished == self.pop_total
             if finished: #break condition
@@ -731,10 +597,10 @@ class ukf_ss:
         """
         obs_key2 = np.vstack(self.obs_key)
         shape = np.vstack(self.truths).shape[0]
-        obs_key = np.zeros((shape,self.pop_total))*np.nan
+        obs_key = np.zeros((shape, self.pop_total))*np.nan
         
         for j in range(int(shape//self.sample_rate)):
-            obs_key[j*self.sample_rate,:] = obs_key2[j,:]
+            obs_key[j*self.sample_rate, :] = obs_key2[j, :]
         
         return obs_key
         
@@ -778,6 +644,8 @@ def depickler(pickle_source, f_name):
     f.close()
     return u
 
+    
+
 class class_dict_to_instance(ukf_ss):
     
     
@@ -788,6 +656,12 @@ class class_dict_to_instance(ukf_ss):
     """
     
     def __init__(self, dictionary):
+        
+        
+        """ take base ukf_ss class and load in attributes for a finished
+        ABM run defined by dictionary
+        """
+        
         for key in dictionary.keys():
             setattr(self, key, dictionary[key])
         
@@ -828,6 +702,7 @@ def pickle_main(f_name, pickle_source, do_pickle, instance = None):
     
     if do_pickle and instance is not None:
         
+        "if given an instance. save it as a class dictionary pickle"
         print(f"Pickling file to dict_{f_name}")
         pickler(instance.__dict__, pickle_source, "dict_" + f_name)
         return
@@ -835,7 +710,7 @@ def pickle_main(f_name, pickle_source, do_pickle, instance = None):
     else:
         file = depickler(pickle_source, f_name)
         print(f"Loading pickle {f_name}")
-
+        "try loading the specified file as a class dict. else an instance."
         if type(file) == dict:
             instance =  class_dict_to_instance(file)
         else: 

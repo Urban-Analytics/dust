@@ -76,7 +76,7 @@ def L2s(truth,preds):
 
 class ukf_plots:
     
-    def __init__(self, filter_class, destination, prefix, save, animate):
+    def __init__(self, filter_class, destination, prefix, save, animate, marker_attributes):
         """class for all plots used in UKF experiments
         
         Parameters
@@ -101,9 +101,10 @@ class ukf_plots:
         
         "markers and colours for pairwise plots"
         "circle, filled plus, filled triangle, and filled square"
-        self.markers = ["o", "P", "^", "s"]
+        self.markers = marker_attributes["markers"]
         "nice little colour scheme that works in greyscale/colourblindness"
-        self.colours = ["black", "orangered", "yellow", "skyblue"]
+        self.colours = marker_attributes["colours"]
+        self.labels = marker_attributes["labels"]
         
         self.destination = destination
         self.prefix = prefix
@@ -198,7 +199,7 @@ class ukf_plots:
             truths2 = truths[i,:]
             preds2 = preds[i,:]
             obs_key2 = self.obs_key[i//self.filter_class.ukf_params["sample_rate"],:]
-            ms = 15 #marker_size
+            ms = 10 #marker_size
             alpha = 1
             f = plt.figure(figsize=(12,8))
             ax = plt.subplot(111)
@@ -207,14 +208,14 @@ class ukf_plots:
             
             "plot true agents and dummies for legend"
             "one scatter for translucent fill. one for opaque edges"
-            ax.scatter(truths2[0::2], truths2[1::2], color=self.colours[0], s= ms**2, marker = self.markers[0],alpha=alpha)
-            ax.scatter(truths2[0::2], truths2[1::2], c="none", s= ms**2, marker = self.markers[0],ec="k",linewidths=1.5)
+            ax.scatter(truths2[0::2], truths2[1::2], color=self.colours[-1], s= ms**2, marker = self.markers[-1],alpha=alpha)
+            ax.scatter(truths2[0::2], truths2[1::2], c="none", s= ms**2, marker = self.markers[-1],ec="k",linewidths=1.5)
 
             for j in range(n):
                     tether_width = ms/5
-                    obs_key3 = int(obs_key2[j]+1)
-                    colour = self.colours[obs_key3]
-                    marker = self.markers[obs_key3]
+                    key = int(obs_key2[j]) #determine marker colour and shape depending on observation type
+                    colour = self.colours[key]
+                    marker = self.markers[key]
                     "one scatter for translucent fill. one for opaque edges"
                     ax.scatter(preds2[(2*j)],preds2[(2*j)+1], c="none", marker = marker, s= ms**2, 
                                        edgecolors="k",linewidths=1.5)
@@ -227,14 +228,11 @@ class ukf_plots:
     
                     
             "dummy markers for consistent legend" 
-            ax.scatter(-1,-1,color=self.colours[0],label = "Truth", s= ms**2,
-                       marker=self.markers[0],edgecolors="k",linewidths=1.5)
-            ax.scatter(-1,-1,color=self.colours[1],label = "Unobserved", s= ms**2,
-                       marker=self.markers[1],edgecolors="k",linewidths=1.5)
-            ax.scatter(-1,-1,color=self.colours[2],label = "Aggregate", s= ms**2,
-                       marker=self.markers[2],edgecolors="k",linewidths=1.5)
-            ax.scatter(-1,-1,color=self.colours[3],label = "GPS",
-                      marker=self.markers[3],edgecolors="k",linewidths=1.5)
+            
+            
+            for key in self.colours.keys():
+                ax.scatter(-1,-1,color=self.colours[key],label = self.labels[key], s= ms**2,
+                           marker=self.markers[key],edgecolors="k",linewidths=1.5)
             
             "put legend outside of plot"
             box = ax.get_position()
@@ -255,6 +253,7 @@ class ukf_plots:
                 plt.show()
                         
             if self.save:
+                plt.tight_layout()
                 f.savefig(file)
                 plt.close()
     
@@ -308,7 +307,7 @@ class ukf_plots:
 
         
         
-    def path_plots(self, data, title):
+    def path_plots(self, data, title, polygons = None):
         
         
         """plot paths taken by agents and their ukf predictions
@@ -319,8 +318,19 @@ class ukf_plots:
         title : str
             `title` of plot 
             e.g. `True` gives title `True Positions`
+            
+            
+        polygons : list
+            list of `polygons` to plot. good for looking at boundaries 
+            where agents jump
         """
         f=plt.figure(figsize=(12,8))
+        
+        if polygons is not None:
+            for poly in polygons:
+                a = poly.boundary.coords.xy
+                plt.plot(a[0],a[1],color='k', alpha = 0.5)
+                
         for i in range(data.shape[1]//2):
             plt.plot(data[:,(2*i)],data[:,(2*i)+1],lw=3)  
             plt.xlim([0,self.filter_class.model_params["width"]])

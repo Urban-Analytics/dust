@@ -733,7 +733,7 @@ def main(experiment_function, source, destination):
 #%%
 if __name__ == "__main__":
     
-    main(ex0_grand,  f"/Users/medrclaa/ukf_config_test/config*030*", "../plots/")
+    #main(ex0_grand,  f"/Users/medrclaa/ukf_config_test/config*030*", "../plots/")
     #main(ex1_grand, "/Users/medrclaa/ukf_results/ukf_*", "../plots/")
     #main(ex1_grand_no_split, "/Users/medrclaa/ukf_results/ukf_*", "../plots/")
 

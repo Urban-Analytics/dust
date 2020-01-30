@@ -23,7 +23,7 @@ except:
     from stationsim_model import Model
 import numpy as np
 
-def obs_key_func(state,model_params,ukf_params):
+def obs_key_func(state,**obs_key_kwargs):
     """categorises agent observation type for a given time step
     0 - unobserved
     1 - aggregate
@@ -32,7 +32,7 @@ def obs_key_func(state,model_params,ukf_params):
     
     """
     
-    key = np.ones(model_params["pop_total"])
+    key = np.ones(obs_key_kwargs["pop_total"])
     
     return key
 
@@ -65,12 +65,10 @@ def aggregate_params(n, bin_size, model_params, ukf_params):
     ukf_params["fx_kwargs"]  = {"base_model" : base_model}
     ukf_params["hx"] = hx2
     ukf_params["hx_kwargs"] = {"poly_list":ukf_params["poly_list"]}
-    
-    
-    
-    
     ukf_params["obs_key_func"] = obs_key_func
-    ukf_params["pickle_file_name"] = ex2_pickle_name(n, bin_size)    
+    ukf_params["obs_key_kwargs"]  = {"pop_total" : n}
+
+    ukf_params["file_name"] = ex2_pickle_name(n, bin_size)    
     
     
     return model_params, ukf_params, base_model
@@ -143,7 +141,14 @@ def ex2_plots(instance, destination, prefix, save, animate):
         `destination to save 
     save, animate : bool
     """
-    plts = ukf_plots(instance, destination, prefix, save, animate)
+    
+    marker_attributes = {
+    "markers" : {-1 : "o", 1 : "^"},
+    "colours" : {-1 : "black", 1 : "yellow"},
+    "labels" :  {-1 :"Pseudo-Truths" , 1 : "Aggregate"}
+    }
+    
+    plts = ukf_plots(instance, destination, prefix, save, animate, marker_attributes)
         
     "pull data and put finished agents to nan"
     obs, preds, truths, nan_array= instance.data_parser()
@@ -158,7 +163,8 @@ def ex2_plots(instance, destination, prefix, save, animate):
     plts.error_hist(truths, preds,"Aggregate")
 
     "remove nan rows to stop plot clipping"
-    plts.path_plots(preds[::instance.sample_rate], "Predicted")
+    plts.path_plots(preds[::instance.sample_rate], "Predicted", 
+                    polygons = instance.ukf_params["poly_list"])
     plts.path_plots(truths, "True")    
     
     
@@ -203,7 +209,7 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
         
         u = ukf_ss(model_params,ukf_params,base_model)
         u.main()
-        pickle_main(ukf_params["pickle_file_name"], pickle_source, do_pickle, u)
+        pickle_main(ukf_params["file_name"], pickle_source, do_pickle, u)
        
     else:
         f_name = ex2_pickle_name(n, bin_size)
@@ -218,9 +224,9 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     return u
        
 if __name__ == "__main__":
-    n = 5
+    n = 10
     bin_size = 25
-    recall = True #  recall previous run
+    recall = False #  recall previous run
     do_pickle = True #  pickle new run
     pickle_source = "../test_pickles/"
     destination  = "../plots/"

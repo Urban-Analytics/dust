@@ -441,7 +441,7 @@ class ukf_plots:
         sm.set_array([])  
         
         for i in plot_range:
-            locs = truths[i//sample_rate,:]
+            locs = truths[i,:]
             counts = poly_count(ukf_params["poly_list"],locs)
             
             f = plt.figure(figsize=(12,8))

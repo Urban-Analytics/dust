@@ -225,7 +225,7 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     return u
        
 if __name__ == "__main__":
-    n = 10
+    n = 5
     bin_size = 25
     recall = False #  recall previous run
     do_pickle = True #  pickle new run

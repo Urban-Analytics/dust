@@ -15,6 +15,7 @@ This file has no main. use ukf notebook/modules in experiments folder
 
 #general packages used for filtering
 
+import os
 import numpy as np #numpy
 import datetime # for timing experiments
 import pickle # for saving class instances
@@ -253,11 +254,7 @@ class ukf:
 
         self.xs = []
         self.ps = []
-
-
-
     
-
     def predict(self, **fx_kwargs):
         
         
@@ -435,7 +432,15 @@ class ukf_ss:
         self.time1 =  datetime.datetime.now()#timer
         self.time2 = None
     
-    def init_ukf(self,ukf_params):
+    @classmethod
+    def set_random_seed(cls, seed=None):
+        """Set a new numpy random seed
+        :param seed: the optional seed value (if None then get one from os.urandom)
+        """
+        new_seed = int.from_bytes(os.urandom(4), byteorder='little') if seed == None else seed
+        np.random.seed(new_seed)
+        
+    def init_ukf(self,ukf_params,seed = None):
         
         
         """initialise ukf with initial state and covariance structures.
@@ -444,14 +449,16 @@ class ukf_ss:
         ------
         ukf_params : dict
             dictionary of various ukf parameters `ukf_params`
-        
+        seed : float
+            fixed `seed` for testing. 
         
         Returns
         ------
         self.ukf : class
             `ukf` class intance for stationsim
         """
-        
+        if seed != None:
+            self.set_random_seed(seed)
         
         self.ukf = ukf(self.model_params, ukf_params, self.base_model)
     

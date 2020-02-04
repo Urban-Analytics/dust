@@ -99,6 +99,7 @@ def hx2(state,**hx_kwargs):
     
     counts = poly_count(poly_list, state)
     
+    
     if np.sum(counts)>0:
         counts /= np.sum(counts)
     return counts

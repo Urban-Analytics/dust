@@ -7,16 +7,12 @@ Created on Mon Dec  2 11:27:06 2019
 """
 import os
 import sys
-
+if os.path.split(os.getcwd())[1] != "ukf_experiments":
+    os.chdir("..")
+    
 import numpy as np
 from math import ceil, log10
-
-try:
-    sys.path.append("..")
-    from ukf_experiments.poly_functions import poly_count
-except:
-    sys.path.append("../experiments/ukf_experiments")
-    from poly_functions import poly_count
+from modules.poly_functions import poly_count
 
     
 "for plots"
@@ -97,7 +93,6 @@ class ukf_plots:
         self.height = filter_class.model_params["height"]
         
         "observation types for pairwise plots"
-        self.obs_key = np.vstack(self.filter_class.obs_key)
         
         "markers and colours for pairwise plots"
         "circle, filled plus, filled triangle, and filled square"
@@ -279,6 +274,8 @@ class ukf_plots:
             plot. 
         """
         
+        self.obs_key = np.vstack(self.filter_class.obs_key)
+
         os.mkdir(self.destination +"output_pairs")
         
         self.pair_frames_main(truths,preds,obs_key,plot_range)
@@ -391,7 +388,6 @@ class ukf_plots:
         """   
         
         ukf_params = self.filter_class.ukf_params
-        sample_rate = ukf_params["sample_rate"]
 
         """Setting up custom colour map. defining bottom value (0) to be black
         and everything else is just cividis
@@ -559,7 +555,10 @@ class ukf_plots:
             plt.plot(a[0],a[1],color='w')
     
 class CompressionNorm(col.Normalize):
+    
     def __init__(self, vleft,vright,vlc,vrc, vmin=None, vmax=None):
+        
+        
         """RCs customised matplotlib diverging norm
         
         The original matplotlib version (DivergingNorm) allowed the user to split their 

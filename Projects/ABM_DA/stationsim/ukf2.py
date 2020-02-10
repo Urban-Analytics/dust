@@ -20,6 +20,7 @@ import numpy as np #numpy
 import datetime # for timing experiments
 import pickle # for saving class instances
 from scipy.stats import chi2 # for adaptive ukf test
+import glob
 
 def unscented_Mean(sigmas, wm, kf_function, **function_kwargs):
     
@@ -711,7 +712,7 @@ def pickle_main(f_name, pickle_source, do_pickle, instance = None):
         
         "if given an instance. save it as a class dictionary pickle"
         print(f"Pickling file to dict_{f_name}")
-        pickler(instance.__dict__, pickle_source, "dict_" + f_name)
+        pickler(instance.__dict__, pickle_source, f_name)
         return
     
     else:
@@ -719,10 +720,62 @@ def pickle_main(f_name, pickle_source, do_pickle, instance = None):
         print(f"Loading pickle {f_name}")
         "try loading the specified file as a class dict. else an instance."
         if type(file) == dict:
+            "removes old ukf function in memory"
+            try:
+                """for converting old files. removes deprecated function that
+                plays havoc with pickle"""
+                file.pop("ukf")
+            except:
+                pass
             instance =  class_dict_to_instance(file)
         else: 
             instance = file
             
         return instance
+ 
     
+    
+def results_converter(source, replace = False):
+    
+    
+    """ old results stored as pickled class instances. want to move over to
+    pickling class dictionaries instead.
+    
+    This is much more robust as it doesnt require functions staying the same
+    under certain scenarios such as a refactor.
+    
+    Paramters
+    ------
+    source : str
+        The `source` directory to load and save pickles to/from
+        
+    replace : bool
+    
+        If True, replace all files with dictionary versions with the same name.
+        Else, return copies of all files with dict_ prefix.
+        
+    Returns
+    -----
+    in same file. returns all files as dictionary pickles instead
+    """
 
+    files = glob.glob(source+"*")
+    "move to location of old ukf/stationsim so pickle does"
+    
+    try:
+        os.chdir("../experiments/ukf_experiments/ukf_old")
+    except:
+        pass
+    
+    for file in files:
+        file = os.path.split(file)[1]
+        u = pickle_main(file, source, True)
+        if replace:
+                os.remove(source+file)
+        else:
+            file = "dict_" + file
+            
+        "check for correct file type ending. old versions have no ending."
+        if file[-4:] != ".pkl":
+            file += ".pkl"
+        u =  pickle_main(file, source, True,instance = u)

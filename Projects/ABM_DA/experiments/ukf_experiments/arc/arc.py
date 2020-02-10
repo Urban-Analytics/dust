@@ -59,19 +59,19 @@ scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiment
 """
 
 import sys
-#path = os.path.join(os.path.dirname(__file__), os.pardir)
-#sys.path.append(path)
+import os
 
-sys.path.append('../../../stationsim')
+if os.path.split(os.getcwd())[1] != "ukf_experiments":
+    os.chdir("..")
 
+sys.path.append('../../stationsim')
 from ukf2 import ukf_ss, pickler
 from stationsim_model import Model
 
-sys.path.append("../ukf_modules")
-import default_ukf_configs
-from ukf_ex0 import ex0_params, ex0_save
-from ukf_ex1 import omission_params
-from ukf_ex2 import aggregate_params
+from modules.ukf_ex0 import ex0_params, ex0_save
+from modules.ukf_ex1 import omission_params
+from modules.ukf_ex2 import aggregate_params
+from modules import default_ukf_configs as configs
 
 import numpy as np
 from os import remove
@@ -142,7 +142,7 @@ def ex0_input(model_params,ukf_params, test):
                             str(float(noise)),
                             str(run_id).zfill(3))
     
-    ukf_params["full_file_name"] = ukf_params["f_name"] + ".npy"
+    ukf_params["file_name"] = ukf_params["f_name"] + ".npy"
     ukf_params["do_pickle"] = False
     
     return model_params, ukf_params, base_model
@@ -197,11 +197,10 @@ def ex1_input(model_params,ukf_params, test):
                                                            model_params, ukf_params)
     
     ukf_params["run_id"] = run_id
-    ukf_params["pickle_file_name"] = "ukf_agents_{}_prop_{}-{}".format(      
+    ukf_params["file_name"] = "ukf_agents_{}_prop_{}-{}".format(      
                             str(n).zfill(3),
                             str(prop),
                             str(run_id).zfill(3))+ ".pkl"
-    ukf_params["full_file_name"] = ukf_params["pickle_file_name"] 
     
     ukf_params["do_pickle"] = True
     
@@ -305,8 +304,8 @@ def main(ex_input,ex_save=None, test = False):
                  "Usage: python run_pf <N>")
             sys.exit(1)
     
-    model_params = default_ukf_configs.model_params
-    ukf_params = default_ukf_configs.ukf_params
+    model_params = configs.model_params
+    ukf_params = configs.ukf_params
     
     model_params, ukf_params, base_model = ex_input(model_params, ukf_params, test)
     
@@ -319,18 +318,18 @@ def main(ex_input,ex_save=None, test = False):
         
     if ukf_params["do_pickle"]:
         #store final class instance via pickle
-        f_name = ukf_params["pickle_file_name"]
-        pickler(u, "../ukf_results/", f_name)
+        f_name = ukf_params["file_name"]
+        pickler(u, "results/", f_name)
     
     else:
         #alternatively save whatever necessary using some ex_save function.
         # requires, the instance and some directory + name to save to.
         f_name = ukf_params["f_name"]
-        ex_save(u, "../ukf_results/", ukf_params["f_name"])
+        ex_save(u, "results/", ukf_params["f_name"])
 
     if test:
         print(f"Test successful. Deleting the saved test file : {f_name}")
-        remove("../ukf_results/" + ukf_params["full_file_name"])
+        remove("results/" + ukf_params["full_file_name"])
     
 if __name__ == '__main__':
     

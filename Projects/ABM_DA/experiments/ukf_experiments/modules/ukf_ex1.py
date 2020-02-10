@@ -7,13 +7,18 @@ Created on Mon Dec  2 11:16:33 2019
 
 """
 import sys
+import os
+"if running this file on its own. this will move cwd up to ukf_experiments."
+if os.path.split(os.getcwd())[1] != "ukf_experiments":
+    os.chdir("..")
+    
 import numpy as np
 from math import floor
 
 "local imports"
-from ukf_fx import fx
-from ukf_plots import ukf_plots
-import default_ukf_configs 
+from modules.ukf_fx import fx
+from modules.ukf_plots import ukf_plots
+import modules.default_ukf_configs as configs
 
 """
 try/except here used if running __main__ here. 
@@ -23,13 +28,10 @@ e.g.
 sys.path.append("../stationsim")
 """
 
-try:
-    sys.path.append("../../../stationsim")
-    from ukf2 import ukf_ss, pickle_main
-    from stationsim_model import Model
+sys.path.append("../../stationsim")
+from ukf2 import ukf_ss, pickle_main
+from stationsim_model import Model
 
-except:
-    pass
 
 
 def omission_index(n, sample_size):
@@ -269,8 +271,8 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
     """
 
     if not recall:
-        model_params = default_ukf_configs.model_params
-        ukf_params = default_ukf_configs.ukf_params
+        model_params = configs.model_params
+        ukf_params = configs.ukf_params
         model_params, ukf_params, base_model = omission_params(n, prop,
                                                                model_params, ukf_params)
         
@@ -298,10 +300,10 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
     return u
     
 if __name__ == "__main__":
-    recall = False #recall previous run
+    recall = True #recall previous run
     do_pickle = True #pickle new run
-    pickle_source = "../test_pickles/" #where to load/save pickles from
-    destination = "../plots/"
+    pickle_source = "pickles/" #where to load/save pickles from
+    destination = "plots/"
     n = 5 #population size
     prop = 0.5 #proportion observed
     

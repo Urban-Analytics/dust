@@ -20,21 +20,19 @@ change to relevant directories
 """
 
 import sys
-sys.path.append("../ukf_old/stationsim")
+import os
+"if running this file on its own. this will move cwd up to ukf_experiments."
+if os.path.split(os.getcwd())[1] != "ukf_experiments":
+    os.chdir("..")
+    
 """import old files. 
 NOTE THIS IS NOT THE MAIN STATIONSIM FILE. IT IS IN UKF_OLD AND
 NEEDS THE OLD CODE TO KEEP PICKLE HAPPY."""
 
-sys.path.append("../ukf_modules")
-from ukf_plots import L2s as L2_parser
+from modules.ukf_plots import L2s as L2_parser
 
-
-try:
-    sys.path.append("../ukf_old")
-    import stationsim.stationsim_model
-except:
-    sys.path.append("ukf_experiments/ukf_old")
-    import stationsim
+sys.path.append("../..")
+from stationsim.ukf2 import pickle_main
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -49,7 +47,6 @@ import glob
 import seaborn as sns
 import pandas as pd
 
-import pickle
 
 #%%
 class grand_plots:
@@ -427,7 +424,7 @@ class grand_plots:
             L2[i] = {} 
             for j in self.p2:
                 "file names for glob to find. note wildcard * is needed"
-                f_name = self.source + f"{keys[0]}_{i}_{keys[1]}_{j}-*"
+                f_name = self.source + f"*{keys[0]}_{i}_{keys[1]}_{j}-*"
                 "find all files with given i and j"
                 files = glob.glob(f_name)
                 "placeholder list for grand medians of UKF runs with parameters i and j"
@@ -435,7 +432,7 @@ class grand_plots:
                 for file in files:
                     "open pickle"
                     f = open(file,"rb")
-                    u = pickle.load(f)
+                    u = pickle_main(os.path.split(file)[1], self.source, True)
                     f.close()
                     "pull raw data"
                     truth, preds = self.depickle_data_parser(u)
@@ -733,10 +730,9 @@ def main(experiment_function, source, destination):
 #%%
 if __name__ == "__main__":
     
-    #main(ex0_grand,  f"/Users/medrclaa/ukf_config_test/config*030*", "../plots/")
-    #main(ex1_grand, "/Users/medrclaa/ukf_results/ukf_*", "../plots/")
-    #main(ex1_grand_no_split, "/Users/medrclaa/ukf_results/ukf_*", "../plots/")
+    #main(ex0_grand,  f"/Users/medrclaa/ukf_config_test/config*030*", "plots/")
+    main(ex1_grand, "/Users/medrclaa/ukf_results/", "plots/")
+    #main(ex1_grand_no_split, "/Users/medrclaa/ex1_results/", "plots/")
 
-    #main(ex2_grand, "/Users/medrclaa/ukf_results_100_1/agg_*", "../plots/")
-    #ex2_grand()
+    #main(ex2_grand, "/Users/medrclaa/100_1_copy/", "plots/")
     

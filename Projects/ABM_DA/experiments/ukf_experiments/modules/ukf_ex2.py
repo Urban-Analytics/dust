@@ -6,21 +6,20 @@ Created on Mon Dec  2 11:19:48 2019
 @author: rob
 """
 import sys
+import os
+"if running this file on its own. this will move cwd up to ukf_experiments."
+if os.path.split(os.getcwd())[1] != "ukf_experiments":
+    os.chdir("..")
 
-from ukf_fx import fx
-from poly_functions import poly_count, grid_poly
-from ukf_plots import ukf_plots
-import default_ukf_configs 
+from modules.ukf_fx import fx
+from modules.poly_functions import poly_count, grid_poly
+from modules.ukf_plots import ukf_plots
+import modules.default_ukf_configs as configs
 
-"can misbehave when importing with ex0/ex1 modules"
-try:
-    sys.path.append("../../../stationsim")
-    from ukf2 import ukf_ss, pickle_main
-    from stationsim_model import Model
-except:
-    sys.path.append("../stationsim")
-    from ukf2 import ukf_ss, pickle_main
-    from stationsim_model import Model
+sys.path.append("../../../stationsim")
+from ukf2 import ukf_ss, pickle_main
+from stationsim_model import Model
+
 import numpy as np
 
 def obs_key_func(state,**obs_key_kwargs):
@@ -98,7 +97,6 @@ def hx2(state,**hx_kwargs):
     poly_list = hx_kwargs["poly_list"]
     
     counts = poly_count(poly_list, state)
-    
     
     if np.sum(counts)>0:
         counts /= np.sum(counts)
@@ -199,8 +197,8 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     """
     
     if not recall:
-        model_params = default_ukf_configs.model_params
-        ukf_params = default_ukf_configs.ukf_params
+        model_params = configs.model_params
+        ukf_params = configs.ukf_params
         
         model_params, ukf_params, base_model = aggregate_params(n,
                                         bin_size, model_params, ukf_params)
@@ -225,11 +223,11 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     return u
        
 if __name__ == "__main__":
-    n = 5
+    n = 30
     bin_size = 25
-    recall = False #  recall previous run
+    recall = True #  recall previous run
     do_pickle = True #  pickle new run
-    pickle_source = "../test_pickles/"
-    destination  = "../plots/"
+    pickle_source = "pickles/"
+    destination  = "plots/"
     u = ex2_main(n, bin_size, recall, do_pickle, pickle_source, destination)
     

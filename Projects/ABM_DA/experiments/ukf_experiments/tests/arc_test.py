@@ -15,12 +15,20 @@ If you only wish to run a single experiment then you  an easily hash the
 other 2 for quicker testing time. 
 """
 
-import arc
 import unittest
-import sys
+import os
 
-sys.path.append("../ukf_modules")
-from ukf_fx import HiddenPrints
+"""
+run file in ukf_experiments. putting test at top level allows the 
+large number of 
+"""
+"if running this file on its own. this will move cwd up to ukf_experiments."
+if os.path.split(os.getcwd())[1] != "ukf_experiments":
+    os.chdir("..")
+    
+import arc.arc as arc
+
+from modules.ukf_fx import HiddenPrints
 
 class Test_arc(unittest.TestCase):
     
@@ -44,14 +52,9 @@ class Test_arc(unittest.TestCase):
         Note that arc_test.py does similar but is actually runnable in 
         arc to check the environment is suitable there. 
         """
-        passed = True
-        try:
-            with HiddenPrints():
-                arc.main(arc.ex0_input, arc.ex0_save, test=True)
-        except: 
-            passed = False
-            
-        self.assertTrue(passed, "ex0 did not pass")
+        with HiddenPrints():
+            arc.main(arc.ex0_input, arc.ex0_save, test=True)
+       
         
     def test_ex1(self):
         
@@ -59,30 +62,18 @@ class Test_arc(unittest.TestCase):
         """another arc module for experiment 1
         We choose n =5 and proportion observed prop = 0.5
         """
-        passed = True
-        try:
-            with HiddenPrints():
-                arc.main(arc.ex1_input, test=True)
-        except: 
-            passed = False
-            
-        self.assertTrue(passed, "ex1 did not pass")
         
+        with HiddenPrints():
+            arc.main(arc.ex1_input, test=True)
+
     def test_ex2(self):
         
         
         """another arc module test for experiment 2
         We choose n = 5 and aggregate square size bin_size = 50
         """
-        
-        passed = True
-        try:
-            with HiddenPrints():
-                arc.main(arc.ex2_input, test=True)
-        except:
-            passed = False
-            
-        self.assertTrue(passed, "ex2 did not pass")
+        with HiddenPrints():
+            arc.main(arc.ex2_input, test=True)
 
     
 if __name__ == '__main__':

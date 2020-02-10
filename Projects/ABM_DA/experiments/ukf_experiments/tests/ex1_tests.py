@@ -5,17 +5,20 @@ Created on Fri Jan 17 15:00:50 2020
 
 @author: medrclaa
 """
-
+import os
+"if running this file on its own. this will move cwd up to ukf_experiments."
+if os.path.split(os.getcwd())[1] != "ukf_experiments":
+    os.chdir("..")
+    
 import numpy as np
 from numpy.testing import assert_array_equal as aae
 import unittest
 import sys
 import math
 
-sys.path.append("ukf_experiments/ukf_modules")
 
-from ukf_ex1 import omission_index, hx1, ex1_main, obs_key_func
-
+from modules.ukf_ex1 import omission_index, hx1, ex1_main, obs_key_func
+from modules import ukf_fx
 
 
 
@@ -169,8 +172,8 @@ class Test_Recall1(unittest.TestCase):
     def setUpClass(cls):
         
         
-        cls.pickle_source = "../test_pickles/" #where to load/save pickles from
-        cls.destination = "../plots/"
+        cls.pickle_source = "pickles/" #where to load/save pickles from
+        cls.destination = "plots/"
         cls.n = 5 #population size
         cls.prop = 0.5 #proportion observed
         cls.recall = True #recall previous run
@@ -184,14 +187,10 @@ class Test_Recall1(unittest.TestCase):
         test whether an experiment 1 pickle can be succesfully recalled
         and its plots generated
         """
-        passed = True
-        try:
-            ex1_main(self.n, self.prop, self.recall, self.do_pickle, self.pickle_source,
-                     self.destination)
-        except:
-            passed = False
-        
-        self.assertTrue(passed, "ex1 recall failed")
+
+        ex1_main(self.n, self.prop, self.recall, self.do_pickle, self.pickle_source,
+                 self.destination)
+  
 
 if __name__ == "__main__":
     test_recall1 = Test_Recall1.setUpClass()

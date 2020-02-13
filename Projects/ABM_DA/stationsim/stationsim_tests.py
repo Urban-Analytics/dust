@@ -7,18 +7,24 @@ Created on Thu Jan  9 11:01:10 2020
 
 Skeleton file for stationsim ABM tests.
 
-This isnt particulaly straightforward as unittesting in python means something 
-different in ABM literature.
+This isnt particulaly straightforward as unit testing has a vaguer meaning
+in ABM literature.
 
-Specifically, unittesting for ABMs is the testing of individual units (agents) 
-and their associated deterministic mechanisms. 
-Often known as white box testing/ micro-level testing.
+Specifically, unit tests for ABMs is the testing of individual units (agents) 
+and their associated deterministic mechanisms (functions). 
+AKA white box testing/ micro-level testing.
 
-To complement this we also have tests similar to python's integration tests for
-ABMs. Referred to as black box/ macro testing these look at testing the environment
-as a whole and the interactions between agents. These are often difficult to 
-properly test due to the stochastic nature of ABMs and this is often done through
-MCMC techniques or heavy seeding.
+Similarly, integration tests in which we test the interaction between multiple 
+functions also have vaguer definitions in ABM literature.
+
+We have two types of integration test known as meso/macro level testings
+(grey/black box).
+ 
+Meso testing typically involves testing groups of agents with the main aim 
+of testing the interactions between agents.
+
+These are often difficult to properly test due to the stochastic nature 
+of ABMs and this is often done through MCMC techniques or heavy seeding.
 
 This file should be for both the micro scale tests for stationsim but also the 
 """
@@ -52,6 +58,9 @@ class Test_Mesos():
     
     
     """
+    Meso testing typically involves testing groups of agents with the main aim 
+    of testing the interactions between agents.
+    
     • There is some simple testing of communication protocols of the elements 
     from their perspective in micro-level. However, communication protocols 
     are more adequately tested during the meso-level testing when each element 

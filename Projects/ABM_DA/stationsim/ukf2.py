@@ -657,10 +657,10 @@ def depickler(pickle_source, f_name):
 class class_dict_to_instance(ukf_ss):
     
     
-    """ build a complete ukf_ss instance from a saved class_dict.
+    """ build a complete ukf_ss instance from a pickled class_dict.
     
-    The main aim of this is to avoid the instability of pickle given
-    changes to code. Theyre also smaller.
+    This class simply inherits the ukf_ss class and adds attributes according
+    to some dictionary 
     """
     
     def __init__(self, dictionary):
@@ -671,6 +671,7 @@ class class_dict_to_instance(ukf_ss):
         """
         
         for key in dictionary.keys():
+            "for items in dictionary set self.key = dictionary[key]"
             setattr(self, key, dictionary[key])
         
 def pickle_main(f_name, pickle_source, do_pickle, instance = None):
@@ -756,11 +757,10 @@ def results_converter(source, replace = False):
         
     Returns
     -----
-    in same file. returns all files as dictionary pickles instead
+    in same folder. returns all files as dictionary pickles instead
     """
 
     files = glob.glob(source+"*")
-    "move to location of old ukf/stationsim so pickle does"
     
     try:
         os.chdir("../experiments/ukf_experiments/ukf_old")

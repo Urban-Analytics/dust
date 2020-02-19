@@ -36,15 +36,18 @@ def unscented_Mean(sigmas, wm, kf_function, **function_kwargs):
     
     Parameters
     ------
-    sigma_function, kf_function : function
+    sigmas, wm : array_like
+        `sigmas` array of sigma points  and `wm` mean weights
+        
+    kf_function : function
         `sigma_function` function defining type of sigmas used and
         `kf_function` defining whether to apply transition of measurement 
         function (f/h) of UKF.
     
     **function_kwargs : kwargs
         `function_kwargs` keyword arguments for kf_function. Varies depending
-        on the experiment so good to be general here. This must be in dictionary form 
-        e.g. {"test":1} then called as necessary in kf_function as 
+        on the experiment so good to be general here. This must be in dictionary 
+        form e.g. {"test":1} then called as necessary in kf_function as 
         test = function_kwargs["test"] = 1
         
         This allows for a generalised set of arguements for any desired
@@ -111,19 +114,20 @@ def covariance(data1, mean1, weight, data2 = None, mean2 = None, addition = None
         
     data2, mean2` : array_like
         `data2` some OTHER array of sigma points and their unscented mean `mean2` 
-        can be same as data1, mean1 for within covariance
+        can be same as data1, mean1 for within sample covariance.
         
     `weight` : array_like
         `weight` sample covariance weightings
     
     addition : array_like
-        some additive noise for the covariance such as the sensor/process noise.
+        `addition` some additive noise for the covariance such as 
+        the sensor/process noise.
         
     Returns 
     ------
     
     covariance_matrix : array_like
-     `covariance_matrix` unscented covariance matrix used in ukf algorithm
+        `covariance_matrix` unscented covariance matrix used in ukf algorithm
         
     """
     
@@ -175,8 +179,12 @@ def MSSP(mean,p,g):
     
     Parameters
     ------
-    mean , P : array_like
-        mean `x` and covariance `P` numpy arrays
+    mean , p : array_like
+        state mean `x` and covariance `p` numpy arrays
+        
+    g : float
+        `g` sigma point scaling parameter. larger g pushes outer sigma points
+        further from the centre sigma.
         
     Returns
     ------
@@ -196,19 +204,15 @@ def MSSP(mean,p,g):
 
 class ukf:
     
-    """main ukf class with aggregated measurements
+    """main ukf class for assimilating sequential data from some ABM
     
     Parameters
     ------
     model_params, ukf_params : dict
         dictionary of model `model_params` and ukf `ukf_params` parameters
-    init_x : array_like
-        Initial ABM state `init_x`
-    fx,hx: function
-        transitions and measurement functions `fx` `hx`
-    P,Q,R : array_like
-        Noise structures `P` `Q` `R`
     
+    base_model : cls
+        `base_model` initalised class instance of desired ABM.
     """
     
     def __init__(self, model_params, ukf_params, base_model):
@@ -267,7 +271,14 @@ class ukf:
         - calculate interim mean state x and covariance P
         - pass these onto  update function
         
+        Parameters
+        ------
+        fx_kwargs : dict
+            keyword arguments for transition function of ABM.
+            This is step for stationsim and requires the current stationsim
+            instance as an arguement to run forwards as an ensemble.
         """
+        
         sigmas = MSSP(self.x, self.p, self.g)
         nl_sigmas, xhat = unscented_Mean(sigmas, self.wm, self.fx,
                                          **self.fx_kwargs )
@@ -278,7 +289,7 @@ class ukf:
         self.p = pxx #update Sxx
         self.x = xhat #update xhat
     
-    def update(self,z):   
+    def update(self,z, **hx_kwargs):   
         
         
         """ update forecasts with measurements to get posterior assimilations
@@ -295,6 +306,8 @@ class ukf:
         ------
         z : array_like
             measurements from sensors `z`
+        hx_kwargs : dict
+        
         """
         
         nl_sigmas, yhat = unscented_Mean(self.sigmas, self.wm,
@@ -381,8 +394,7 @@ class ukf_ss:
     model_params,filter_params,ukf_params : dict
         loads in parameters for the model, station sim filter and general UKF parameters
         `model_params`,`filter_params`,`ukf_params`
-    poly_list : list
-        list of polygons `poly_list`
+
     base_model : method
         stationsim model `base_model`
     """
@@ -473,6 +485,7 @@ class ukf_ss:
         - jump base_model forwards to forecast time
         - update truths list with new positions
         """
+        
         self.ukf.predict() 
         self.forecasts.append(self.ukf.x)
         self.base_model.step()
@@ -492,6 +505,7 @@ class ukf_ss:
             - append lists of ukf assimilations and model observations
         - else do nothing
         """
+        
         if step%self.sample_rate == 0:
             
             state = self.base_model.get_state(sensor="location")
@@ -504,7 +518,7 @@ class ukf_ss:
             "convert full noisy state to actual sensor observations"
             state = self.ukf.hx(state, **hx_kwargs)
                 
-            self.ukf.update(state)
+            self.ukf.update(state, **hx_kwargs)
             
             if self.obs_key_func is not None:
                 key = self.obs_key_func(state,**self.obs_key_kwargs)
@@ -517,6 +531,8 @@ class ukf_ss:
                  
         
     def main(self):
+        
+        
         """main function for applying ukf to gps style station StationSim
         -    initiates ukf
         -    while any agents are still active

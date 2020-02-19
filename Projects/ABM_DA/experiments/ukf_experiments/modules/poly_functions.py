@@ -37,15 +37,15 @@ def poly_count(poly_list,points):
         counts.append(int(len(list(filter(poly.contains,points)))))
     return counts
 
-def grid_poly(width,length,bin_size):
+def grid_poly(width, height, bin_size):
     
     
     """generates complete grid of tesselating square polygons covering corridor in station sim.
    
     Parameters
     -----
-    width,length : float
-        `width` and `length` of StationSim corridor. 
+    width, height : float
+        `width` and `height` of StationSim corridor. 
     
     bin_size : float
      size of grid squares. larger implies fewer squares `bin_size`
@@ -57,7 +57,7 @@ def grid_poly(width,length,bin_size):
     """
     polys = []
     for i in range(int(width/bin_size)):
-        for j in range(int(length/bin_size)):
+        for j in range(int(height/bin_size)):
             bl = [x*bin_size for x in (i,j)]
             br = [x*bin_size for x in (i+1,j)]
             tl = [x*bin_size for x in (i,j+1)]

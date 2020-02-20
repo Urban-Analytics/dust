@@ -3,23 +3,26 @@
 """
 Created on Mon Feb 10 10:49:24 2020
 
-@author: medrclaa
+@author: RC
 
-stationsim spatial validation tests.
-
-testing the proximity of one seeded stationsim run to another
+Validation test for comparing model outputs from python and cpp stationsim.
+We do this as follows:
+- Generate two random samples of models 
+- Calculate corresponding Ripley's K (RK) curves for each model
+- Generate a data frame for the two populations of RK curves
+- Save said frame and analyse using panel regression via R's nlme package
+- Analysis determines whether the two groups are statistically indistinguishable.
 """
 
-from stationsim_model import Model
+from stationsim_model import Model #python version of stationsim
 import numpy as np
 import sys
 import os
-from astropy.stats import RipleysKEstimator
-
+from astropy.stats import RipleysKEstimator # astropy's ripley's K
 import pandas as pd
 
-
-
+import matplotlib.pyplot as plt
+from seaborn import kdeplot
 
 class HiddenPrints:
     
@@ -41,9 +44,9 @@ class HiddenPrints:
 class stationsim_RipleysK():
     
     
+    """ Class for calculating Ripley' K curves on stationsim collisions
+    and saving them as pandas dataframes.
     """
-    """
-
 
     def generate_model_sample(self, n_runs, model_params):
     
@@ -205,10 +208,16 @@ class stationsim_RipleysK():
         
         ids = (np.arange(len(rkes))//num_rs).tolist()
         
+        """ Then prefix every id with the batch number e.g. model 8 from batch 0
+        becomes 0_8 . Allows unique IDs for every model such that panel
+        regression in R can recognise "individuals".
+        """
         
         for i, item in enumerate(ids):
             ids[i] = str(id_number) + "_" + str(item)
         data["ids"] = ids
+        
+        "add a column with just the batch number. batch 0 this is a column of 0s."
         
         split = [id_number] * len(rkes)
         data["split"] = split
@@ -217,15 +226,32 @@ class stationsim_RipleysK():
         
     
     
-    def generate_Control_Frame(self, model_params, n_runs):
+    def generate_Control_Frame(self, models):
         
         
+        """generate a control group of RK curves to compare against
+        
+        - generate models
+        - calculate RK curves of each model's collisions
+        - store values in data frame.
+        - save data frame as a control to load against in main
+        
+        Parameters
+        ------
+        models : list
+            list of finished stationsim `models` with history_collision_locs
+            attribute
+        
+        Returns
+        ------
+        data: array_like
+            assembled RK `data` from our list of models ready for fitting a
+            regression in R. Should have 4 columns as defined above in
+            panel_regression_prep. 
         """
-        """
         
-        models = ssRK.generate_model_sample(n_runs, model_params)
-        rkes, rs = ssRK.ripleysKE(models, model_params)
-    
+        model_params = models[0].params
+        rkes, rs = self.ripleysKE(models, model_params)
         data = ssRK.panel_regression_prep(rkes, rs, 0)
         
         width = model_params["width"]
@@ -240,35 +266,184 @@ class stationsim_RipleysK():
         
         return data
         
-    def generate_Test_Frame(self, model_params, n_runs):
+    def generate_Test_Frame(self, models):
         
         
+        """ Generate frame of test values to compare against
+        
+        Parameters
+        ------
+        models : list
+            list of finished stationsim `models` with history_collision_locs
+            attribute
+        
+        Returns
+        ------
+        data: array_like
+            assembled RK `data` from our list of models ready for fitting a
+            regression in R. Should have 4 columns as defined above in
+            panel_regression_prep. 
         """
-        """
-        
-        models = ssRK.generate_model_sample(n_runs, model_params)
-        rkes, rs = ssRK.ripleysKE(models, model_params)
-    
-        data = ssRK.panel_regression_prep(rkes, rs, 1)
+        model_params = models[0].params
+        rkes, rs = self.ripleysKE(models, model_params)
+        data = self.panel_regression_prep(rkes, rs, 1)
         
         return data
         
     def save_Frame(self, data, f_name):
+        
+        
+        """ Save a pandas data frame
+        
+        Parameters
+        ------
+        data : array_like
+        
+            pandas `data` frame. usually from generate_Control/Test_Frame
+            output
+        
+        f_name : str
+            `f_name` file name
+            
+        
+        """
+        
         data.to_csv(f_name, index = False)
 
     def load_Frame(self, f_name):
+        
+        
+        """ Load a pandas data frame.
+        
+        Parameters
+        ------        
+        f_name : str
+            `f_name` file name
+            
+        Returns
+        ------
+        data : array_like
+        
+            Pandas `data` frame usually from generate_Control/Test_Frame
+            output.
+        """
+        
         return pd.read_csv(f_name)
     
+    def collisions_kde(self, model):
+        
+        
+        """ Plot spread of collisions through stationsim as a KDE plot
+        
+        Parameters
+        ------
+        collisions : list
+            some list of coordinates where `collisions` occur
+        """
+        
+        
+        collisions = np.vstack(model.history_collision_locs)
+        x = collisions[:,0]
+        y = collisions[:,1]
+        
+        f = plt.figure()
+        im = kdeplot(x, y)
+        plt.xlim([0, model.width])
+        plt.ylim([0, model.height])
+        plt.xlabel("StationSim Width")
+        plt.ylabel("StationSim Height")
+        plt.title("KDE of Agent Collisions over StationSim")
     
-    def main(self, n_test_runs, model_params):
+    def spaghetti_RK_Plot(self, data):
+        
+        
+        """plot RK trajectories for several models and control and test batches
+        
+        Parameters
+        ------
+        
+        data : array_like
+            data frame from generate_Control/Test_Frame output
+            
+        """
+        
+        colours = ["black", "orangered"]
+        "0 black for control models"
+        "1 orange for test models"
+        
+        f = plt.figure()
+        for item in set(data["ids"]):
+            sub_data = data.loc[data["ids"] == item]
+            
+            rs = sub_data["x"]
+            rkes = sub_data["y"]
+            split = (sub_data["split"]).values[0]
+            plt.plot(rs,rkes, color = colours[split])
+            
+        plt.plot(-1, -1, alpha = 1, color = colours[0], 
+                 label = "Control Group RKs")
+        plt.plot(-1, -1, alpha = 1, color = colours[1], 
+                 label = "Test Group RKs")
+        plt.xlabel("radius of RK circle")
+        plt.ylabel("RK Score")
+        plt.legend()
+ 
+    def notebook_RK_Plot(self, data1, data2):
+        
+        """PLot for RK notebook showing two extreme examples of RK curves
+        """
+        colours = ["black", "orangered"]
+        "0 black for control models"
+        "1 orange for test models"
+        
+        f = plt.figure()
+       
+        rs1 = data1["x"]
+        rkes1 = data1["y"]
+        plt.plot(rs1,rkes1, color = colours[0], label = "Dispersed Queueing Case")
+         
+        rs2 = data2["x"]
+        rkes2 = data2["y"]
+        plt.plot(rs2,rkes2, color = colours[1], label = "Clustered Queueing Case")
+        
+        plt.xlabel("radius of RK circle")
+        plt.ylabel("RK Score")
+        plt.legend()
+        
+    def main(self, test_models, model_params):
      
+        
+        """Main function for comparing python and cpp outputs.
+        
+        - Check a control file exists given specified model parameters
+        - If it exists, load it. If not, generate one using 100 model runs
+        - Generate control group data frame
+        - Calculate RK curves of test models.
+        - Generate corresponding test group data frame.
+        - concat control and test frames and save for analysis in R
+        using RK_population_modelling.R
+        
+        Parameters
+        ------
+        test_models : list
+            list of finished stationsim `models` with history_collision_locs
+            attribute
+        
+        Returns 
+        ------
+        
+        data : array_like
+            Joined pandas `data` frame for control and test groups.
+        """
+        "generate control file name to load from model parameters"
         width = model_params["width"]
         height = model_params["height"]
         pop_total = model_params["pop_total"]
         gates_speed = model_params["gates_speed"]
-               
+            
         f_name = "RK_csvs/control_" + f"{width}_{height}_{pop_total}_{gates_speed}" + ".csv"
         
+        "try loading said file. if no file make and save one."
         try:
             data_control = self.load_Frame(f_name)
             print("Control data found at: " + f_name)
@@ -276,26 +451,29 @@ class stationsim_RipleysK():
             print("No control frame found for given parameters.")
             print("Generating control frame using large number of models (100).")
             print("This may take a while if you have a large population of agents")
-            data_control = self.generate_Control_Frame(model_params, 100)
-            
-        data_test = self.generate_Test_Frame(model_params, n_test_runs)
+            control_models = ssRK.generate_model_sample(100, model_params)
+            data_control = self.generate_Control_Frame(control_models)
         
+        "generate data frame from test_models"
+        data_test = self.generate_Test_Frame(test_models)
+        
+        "join control and test ferames and save as joined frame."
         data = pd.concat([data_control, data_test])
-        
         f_name = "RK_csvs/joint_" + f"{width}_{height}_{pop_total}_{gates_speed}"
         f_name += ".csv"
         self.save_Frame(data, f_name)
 
-        
+        return data
     
 #%%
 if __name__ == "__main__":
     
+    "specify stationsim params"
     model_params = {
 
     'width': 200,
     'height': 50,
-    'pop_total': 30,
+    'pop_total': 10,
     'gates_speed': 1,
 
     'gates_in': 3,
@@ -315,14 +493,20 @@ if __name__ == "__main__":
     'do_history': True,
     'do_print': True,
     }
-    n = 20
+    """number of model repetitions n. Recommend at least 30 for <50 agents
+     and at least 100 for >50 agents."""
+     
+    n_test_runs = 20
+    "init"
     ssRK = stationsim_RipleysK()
-    ssRK.main(n, model_params)
+    "generate models to test. done in python here but can swap as necessary."
+    "could even reduce this to just each model's collisions"
+    test_models = ssRK.generate_model_sample(n_test_runs, model_params)
+
+    data = ssRK.main(test_models, model_params)
+    ssRK.spaghetti_RK_Plot(data)
     
     
     
-    
-    
-    #data, mod = ssRK.main(n, "", "/Users/medrclaa/dust/Projects/ABM_DA/stationsim/400_50_50_0.01ripleys_k.pkl")
     
 

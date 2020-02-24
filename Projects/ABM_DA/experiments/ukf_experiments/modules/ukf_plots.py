@@ -12,7 +12,7 @@ if os.path.split(os.getcwd())[1] != "ukf_experiments":
     
 import numpy as np
 from math import ceil, log10
-from poly_functions import poly_count
+from modules.poly_functions import poly_count
 
     
 "for plots"

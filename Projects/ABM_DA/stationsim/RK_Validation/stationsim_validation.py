@@ -10,16 +10,17 @@ We do this as follows:
 - Generate two random samples of models 
 - Calculate corresponding Ripley's K (RK) curves for each model
 - Generate a data frame for the two populations of RK curves
-- Save said frame and analyse using panel regression via R's nlme package
+- Save said frame and analyse using panel regression in R.
 - Analysis determines whether the two groups are statistically indistinguishable.
 """
 
-from stationsim_model import Model #python version of stationsim
 import numpy as np
 import sys
 import os
 from astropy.stats import RipleysKEstimator # astropy's ripley's K
 import pandas as pd
+sys.path.append("..")
+from stationsim_model import Model #python version of stationsim
 
 import matplotlib.pyplot as plt
 from seaborn import kdeplot
@@ -48,7 +49,7 @@ class stationsim_RipleysK():
     and saving them as pandas dataframes.
     """
 
-    def generate_model_sample(self, n_runs, model_params):
+    def generate_Model_Sample(self, n_runs, model_params):
     
         
         """ function for generating stationsim model runs to test
@@ -153,7 +154,7 @@ class stationsim_RipleysK():
         return rkes, rs
        
     
-    def panel_regression_prep(self, rkes, rs, id_number):
+    def panel_Regression_Prep(self, rkes, rs, id_number):
         
         
         """ Build the list of model RKEs into a dataframe
@@ -192,7 +193,7 @@ class stationsim_RipleysK():
             assembled RK `data` from our list of models ready for fitting a
             regression in R. Should have 4 columns as defined above. 
         """
-        
+        "preprocessing"
         num_rs = len(rs[0])
         rkes = np.ravel(rkes)
         rs = np.ravel(rs)
@@ -217,7 +218,8 @@ class stationsim_RipleysK():
             ids[i] = str(id_number) + "_" + str(item)
         data["ids"] = ids
         
-        "add a column with just the batch number. batch 0 this is a column of 0s."
+        "add a column with just the batch number. for batch 0 this is a column of 0s."
+        "0 - control group. 1 - test group"
         
         split = [id_number] * len(rkes)
         data["split"] = split
@@ -252,7 +254,7 @@ class stationsim_RipleysK():
         
         model_params = models[0].params
         rkes, rs = self.ripleysKE(models, model_params)
-        data = ssRK.panel_regression_prep(rkes, rs, 0)
+        data = ssRK.panel_Regression_Prep(rkes, rs, 0)
         
         width = model_params["width"]
         height = model_params["height"]
@@ -286,7 +288,7 @@ class stationsim_RipleysK():
         """
         model_params = models[0].params
         rkes, rs = self.ripleysKE(models, model_params)
-        data = self.panel_regression_prep(rkes, rs, 1)
+        data = self.panel_Regression_Prep(rkes, rs, 1)
         
         return data
         
@@ -346,7 +348,7 @@ class stationsim_RipleysK():
         x = collisions[:,0]
         y = collisions[:,1]
         
-        f = plt.figure()
+        plt.figure()
         im = kdeplot(x, y)
         plt.xlim([0, model.width])
         plt.ylim([0, model.height])
@@ -358,7 +360,7 @@ class stationsim_RipleysK():
         
         
         """plot RK trajectories for several models and control and test batches
-        
+
         Parameters
         ------
         
@@ -390,7 +392,20 @@ class stationsim_RipleysK():
  
     def notebook_RK_Plot(self, data1, data2):
         
-        """PLot for RK notebook showing two extreme examples of RK curves
+        """Plot for RK notebook showing two extreme examples of RK curves
+
+        The idea is to have two frames with exactly one model in that show two
+        extreme cases of collisions clustering. We have a tight clustering case
+        in orange with a rapidly increasing RK score and a sparse case with a 
+        shallow linear RK score.
+
+        Parameters
+        ------
+
+        data1, data2 : array_like
+            `data1` and `data2` are two RKE dataframes from generate_Control_Frame.
+            They have a structure specified in said function.
+
         """
         colours = ["black", "orangered"]
         "0 black for control models"
@@ -451,7 +466,7 @@ class stationsim_RipleysK():
             print("No control frame found for given parameters.")
             print("Generating control frame using large number of models (100).")
             print("This may take a while if you have a large population of agents")
-            control_models = ssRK.generate_model_sample(100, model_params)
+            control_models = ssRK.generate_Model_Sample(100, model_params)
             data_control = self.generate_Control_Frame(control_models)
         
         "generate data frame from test_models"
@@ -501,7 +516,7 @@ if __name__ == "__main__":
     ssRK = stationsim_RipleysK()
     "generate models to test. done in python here but can swap as necessary."
     "could even reduce this to just each model's collisions"
-    test_models = ssRK.generate_model_sample(n_test_runs, model_params)
+    test_models = ssRK.generate_Model_Sample(n_test_runs, model_params)
 
     data = ssRK.main(test_models, model_params)
     ssRK.spaghetti_RK_Plot(data)

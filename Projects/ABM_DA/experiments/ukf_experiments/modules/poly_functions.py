@@ -67,5 +67,7 @@ def grid_poly(width, height, bin_size):
     "hashed lines for plots to verify desired grid"
     #for poly in polys:
     #    plt.plot(*poly.exterior.xy)
+    
+    counts.append(int(len(list(filter(poly.contains,points)))))
     return polys
 

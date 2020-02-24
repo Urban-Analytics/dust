@@ -256,7 +256,7 @@ def ex2_input(model_params, ukf_params, test):
                                                             model_params, ukf_params)
     
     ukf_params["run_id"] = run_id
-    ukf_params["pickle_file_name"] = "ukf_agents_{}_bin_{}-{}".format(      
+    ukf_params["pickle_file_name"] = "agg_ukf_agents_{}_bin_{}-{}".format(      
                             str(n).zfill(3),
                             str(bin_size),
                             str(run_id).zfill(3)) + ".pkl"

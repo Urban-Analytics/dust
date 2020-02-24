@@ -16,7 +16,7 @@ from modules.poly_functions import poly_count, grid_poly
 from modules.ukf_plots import ukf_plots
 import modules.default_ukf_configs as configs
 
-sys.path.append("../../../stationsim")
+sys.path.append("../../stationsim")
 from ukf2 import ukf_ss, pickle_main
 from stationsim_model import Model
 
@@ -176,7 +176,7 @@ def ex2_plots(instance, destination, prefix, save, animate):
 def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     
     
-    """main function to run experiment 1
+    """main function to run experiment 2
     
     - build model and ukf dictionary parameters based on n and bin_size
     - initiate Model and ukf_ss based on new dictionaries

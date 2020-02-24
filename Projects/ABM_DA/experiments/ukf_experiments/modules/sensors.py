@@ -9,10 +9,25 @@ Created on Fri Jan  3 10:01:00 2020
 import numpy as np
 import shapely.geometry as geom
 
+def boundary_Polygon(width, height):
+    
+    
+    """generate rectangle that covers all of stationsim as a boundary"""
+    
+    points = np.array([[0, 0], [width, 0], [width, height], [0, height]])
+    poly =  geom.Polygon(points)
+    return poly
+
 class camera_Sensor():
     
-    
-    def polygon_generator(pole, centre, arc, boundary):
+    def __init__(self, pole, centre, arc, boundary):
+        self.pole = pole
+        self.centre = centre
+        self.arc = arc
+        self.boundary = boundary
+        self.polygon = self.generate_Camera_Polygon()
+        
+    def generate_Camera_Polygon(self):
         """construct Polygon object containing cone
 
         Parameters
@@ -43,6 +58,10 @@ class camera_Sensor():
             `segment` polygon arc segment of cameras vision.
 
         """
+        pole = self.pole
+        centre = self.centre
+        arc = self.arc
+        boundary = self.boundary
         
         angle = arc * np.pi*2 # convertion proportion to radians
         diff = centre-pole # difference between centre and pole for angle and radius
@@ -50,7 +69,7 @@ class camera_Sensor():
         centre_angle = np.arctan2(diff[1],diff[0]) # centre angle of arc (midpoint)
         
         #generate points for arc polygon
-        precision = angle/10
+        precision = angle/100
         angle_range = np.arange(centre_angle - angle/2, centre_angle + angle/2 , precision)
         x_range = pole[0] +  r * np.cos(angle_range)
         y_range = pole[1] +  r * np.sin(angle_range)
@@ -65,15 +84,8 @@ class camera_Sensor():
         
         return poly
         
-    
-    def __init__(self, pole, centre, arc, boundary):
-        self.pole = pole
-        self.centre = centre
-        self.arc = arc
-        self.polygon = self.polygon_generator(centre, arc, boundary)
+    def observe(self, state):
         
-        
-    def observe(self, agents):
         """ determine what this camera observes
         
         if an item if in the arc segment polygon take its observations (with noise?)
@@ -82,8 +94,21 @@ class camera_Sensor():
         agents: list
          list of `agent` classes 
         """
+        which_in = []
         
+        state = np.reshape(state, (int(len(state)/2),2))
+    
         
+        for i in range(state.shape[0]):
+            point = geom.Point(state[i,:])    
+            
+            is_in = point.within(self.polygon)
+            if is_in:
+        
+                which_in += [i]
+       
+        return which_in
+         
 class footfall_Sensor():
     """
     count how many people pass through a specified polygon.
@@ -99,7 +124,7 @@ class footfall_Sensor():
         """
         
         self.polygon = polygon
-        self.agents = agents
+        self.agents = 0
         self.footfall_counts = []
         
     def count(self, agents):

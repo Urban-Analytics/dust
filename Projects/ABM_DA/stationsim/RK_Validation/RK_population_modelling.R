@@ -1,8 +1,6 @@
 library(nlme)
-library(ggplot2)
-library(docstring)
-
-
+#library(ggplot2)
+#library(docstring)
 
 load_RK_Data<- function(width, height, pop_total, gate_speed){
   
@@ -124,7 +122,7 @@ spaghetti_plot <- function(data){
   #' This version is much easier to implement than the python one 
   #' and is here incase it becomes more convenient later
   #' @param data some loaded csv containing control/test group RK data
-
+  
   s_plot<- ggplot(data = data, mapping = aes(x = x, y = y,
                                     group = ids)) + 
             geom_line(aes(col = factor(split))) 
@@ -145,6 +143,7 @@ main <- function(width, height, pop_total, gate_speed){
   
   data<- load_RK_Data(width, height, pop_total, gate_speed)
   ps <- compare_RK_Groups(data)
+  print(ps)
   #spaghetti_plot(data)
   return(ps)
 }

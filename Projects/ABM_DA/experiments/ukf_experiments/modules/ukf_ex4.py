@@ -101,18 +101,15 @@ def hx4(state, **hx_kwargs):
     for camera in cameras:
         index += camera.observe(state)
         
+    index = np.array(index)
     index2 = np.repeat(2*index,2) 
+    index2[1::2] = 2*index + 1
     
     return state[index2]
 
-def ex1_pickle_name(n, cameras):
+def ex4_pickle_name(n, cameras):
     pass
     
-    
-
-
-
-
 
 if __name__ == "__main__":
     

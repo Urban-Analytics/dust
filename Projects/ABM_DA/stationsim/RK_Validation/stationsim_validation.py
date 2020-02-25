@@ -98,9 +98,20 @@ class stationsim_RipleysK():
         Parameters
         ------
         
+        models : list
+            list of stationsim `models`
+        
+        model_params : dict
+            `model_params` dictionary of model parameters for the list
+            of models
+            
         Returns 
         ------
         
+        rkes, rs : list
+            lists of radii `rs` and corresponding Ripley's K values `rkes`
+            for a given set of model collisions.
+            
         """
         
         "define area of stationsim."
@@ -189,37 +200,40 @@ class stationsim_RipleysK():
         Returns
         ------
         
-        data: array_like
+        data : array_like
             assembled RK `data` from our list of models ready for fitting a
             regression in R. Should have 4 columns as defined above. 
         """
+        
         "preprocessing"
         num_rs = len(rs[0])
         rkes = np.ravel(rkes)
         rs = np.ravel(rs)
-        
         data = pd.DataFrame([rs, rkes]).T
         
         "rename rs and rkes columns for regression later."
         data.columns = ["x", "y"]
         
         """generate individual model ID numbers. Each model has 10 entries 
-        (per radii) so every 10 entrires belong to the ith model.
+        (10 radii) so every 10 entrires belong to the ith model. Start
+        with a list where every 10 values is one intiger (the model id).
         """
         
         ids = (np.arange(len(rkes))//num_rs).tolist()
         
-        """ Then prefix every id with the batch number e.g. model 8 from batch 0
-        becomes 0_8 . Allows unique IDs for every model such that panel
-        regression in R can recognise "individuals".
+        """ Then prefix every id with the batch number e.g. model 8 from 
+        batch 0 becomes 0_8 . Allows unique IDs for every model such 
+        that panel regression in R can recognise "individuals".
         """
         
         for i, item in enumerate(ids):
             ids[i] = str(id_number) + "_" + str(item)
+            
         data["ids"] = ids
         
-        "add a column with just the batch number. for batch 0 this is a column of 0s."
-        "0 - control group. 1 - test group"
+        """add a column with just the batch number. for batch 0 this 
+        is a column of 0s.
+        0 - control group. 1 - test group"""
         
         split = [id_number] * len(rkes)
         data["split"] = split
@@ -254,7 +268,7 @@ class stationsim_RipleysK():
         
         model_params = models[0].params
         rkes, rs = self.ripleysKE(models, model_params)
-        data = ssRK.panel_Regression_Prep(rkes, rs, 0)
+        data = self.panel_Regression_Prep(rkes, rs, 0)
         
         width = model_params["width"]
         height = model_params["height"]
@@ -466,7 +480,7 @@ class stationsim_RipleysK():
             print("No control frame found for given parameters.")
             print("Generating control frame using large number of models (100).")
             print("This may take a while if you have a large population of agents")
-            control_models = ssRK.generate_Model_Sample(100, model_params)
+            control_models = self.generate_Model_Sample(100, model_params)
             data_control = self.generate_Control_Frame(control_models)
         
         "generate data frame from test_models"

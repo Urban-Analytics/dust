@@ -28,6 +28,7 @@ e.g.
 sys.path.append("../stationsim")
 """
 
+sys.path.append("modules")
 sys.path.append("../../stationsim")
 from ukf2 import ukf_ss, pickle_main
 from stationsim_model import Model
@@ -218,9 +219,9 @@ def ex1_plots(instance, destination, prefix, save, animate):
     """
     
     marker_attributes = {
-    "markers" : {-1 : "o", 0 : "P", 2 : "s"},
-    "colours" : {-1 : "black", 0 : "orangered", 2 : "skyblue"},
-    "labels" :  {-1 :"Pseudo-True Agent Positions" , 0 : "Unobserved Agents", 2 : "Observed Agents"}
+    "markers" : {-1: "o", 0 : "X", 2 : "s"},
+    "colours" : {-1: "black" , 0 : "orangered", 2 : "skyblue"},
+    "labels" :  {-1: "Pseudo-True Positions", 0 : "Unobserved Agents", 2 : "Observed Agents"}
     }
     
     plts = ukf_plots(instance, destination, prefix, save, animate, marker_attributes)
@@ -229,14 +230,16 @@ def ex1_plots(instance, destination, prefix, save, animate):
     obs_key = instance.obs_key_parser()
     ukf_params = instance.ukf_params
     index2 = ukf_params["index2"]
-
+    forecasts = np.vstack(instance.forecasts)
+    
     obs *= nan_array[::instance.sample_rate,index2]
     truths *= nan_array
     preds *= nan_array
+    forecasts*= nan_array
     
     "indices for unobserved agents"
     not_index2 = np.array([i for i in np.arange(truths.shape[1]) if i not in index2])
-    plts.pair_frame(truths, preds, obs_key, 50)
+    plts.pair_frame(truths, preds, obs_key, 50, "plots/")
     plts.error_hist(truths[:,index2], preds[:,index2],"Observed Errors")
     plts.error_hist(truths[:,not_index2], preds[:,not_index2],"Unobserved Errors")
     plts.path_plots(obs, "Observed")
@@ -245,8 +248,9 @@ def ex1_plots(instance, destination, prefix, save, animate):
     plts.path_plots(truths, "True")
 
     if animate:
-        plts.trajectories(truths)
-        plts.pair_frames_animation(truths,preds,range(truths.shape[0]))
+        #plts.trajectories(truths, "plots/")
+        plts.pair_frames(truths, forecasts, obs_key,
+                         truths.shape[0], "plots/")
         
 def ex1_main(n, prop, recall, do_pickle, source, destination):
     
@@ -295,7 +299,7 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
  
         model_params, ukf_params = u.model_params, u.ukf_params
     
-    ex1_plots(u, destination, "ukf_", True, False)
+    ex1_plots(u, destination, "ukf_", True, True)
 
     return u
     
@@ -304,7 +308,7 @@ if __name__ == "__main__":
     do_pickle = True #pickle new run
     pickle_source = "pickles/" #where to load/save pickles from
     destination = "plots/"
-    n = 5 #population size
+    n = 10 #population size
     prop = 0.5 #proportion observed
     
     u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

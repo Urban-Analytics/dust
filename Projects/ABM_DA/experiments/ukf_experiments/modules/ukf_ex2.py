@@ -17,6 +17,7 @@ from modules.ukf_plots import ukf_plots
 import modules.default_ukf_configs as configs
 
 sys.path.append("../../stationsim")
+sys.path.append("modules")
 from ukf2 import ukf_ss, pickle_main
 from stationsim_model import Model
 
@@ -142,9 +143,9 @@ def ex2_plots(instance, destination, prefix, save, animate):
     """
     
     marker_attributes = {
-    "markers" : {-1 : "o", 1 : "^"},
-    "colours" : {-1 : "black", 1 : "yellow"},
-    "labels" :  {-1 :"Pseudo-Truths" , 1 : "Aggregate"}
+    "markers" : {-1 : "o",  1 : "^"},
+    "colours" : {-1 : "yellow", 1 : "yellow"},
+    "labels" :  {-1 :"Pseudo-Truths" , 1 : "Aggregated"}
     }
     
     plts = ukf_plots(instance, destination, prefix, save, animate, marker_attributes)
@@ -152,15 +153,16 @@ def ex2_plots(instance, destination, prefix, save, animate):
     "pull data and put finished agents to nan"
     obs, preds, truths, nan_array= instance.data_parser()
     obs_key = instance.obs_key_parser()
-    ukf_params = instance.ukf_params
-    
+    forecasts = np.vstack(instance.forecasts)
+
     truths *= nan_array
     preds *= nan_array
+    forecasts *= nan_array
     
-    plts.pair_frame(truths, preds, obs_key, 50)
-    plts.heatmap_frame(truths,50)
+    plts.pair_frame(truths, preds, obs_key, 50, "plots/")
+    plts.heatmap_frame(truths,50, "plots/")
     plts.error_hist(truths, preds,"Aggregate")
-
+    
     "remove nan rows to stop plot clipping"
     plts.path_plots(preds[::instance.sample_rate], "Predicted", 
                     polygons = instance.ukf_params["poly_list"])
@@ -169,9 +171,10 @@ def ex2_plots(instance, destination, prefix, save, animate):
     
     if animate:
                 
-        #plts.trajectories(truth)
-        plts.heatmap(truths,ukf_params,truths.shape[0])
-        plts.pair_frames_animation(truths,preds)
+        plts.trajectories(truths, "plots/")
+        plts.heatmap(truths,truths.shape[0], "plots/")
+        plts.pair_frames(truths, forecasts, np.vstack(obs_key), 
+                         truths.shape[0], "plots/")
 
 def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     
@@ -219,7 +222,7 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
             print("dictionary not found. trying to load class")
             u  = pickle_main(f_name, source, do_pickle)
             
-    ex2_plots(u, destination, "agg_ukf_", True, False)
+    ex2_plots(u, destination, "agg_ukf_", True, True)
     return u
        
 if __name__ == "__main__":

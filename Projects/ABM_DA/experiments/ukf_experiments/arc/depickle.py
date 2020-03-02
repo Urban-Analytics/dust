@@ -22,6 +22,8 @@ change to relevant directories
 import sys
 import os
 "if running this file on its own. this will move cwd up to ukf_experiments."
+if os.path.split(os.getcwd())[1] != "ukf_experiments":
+    os.chdir("..")
 
     
 """import old files. 
@@ -36,7 +38,7 @@ sys.path.append("modules")
 sys.path.append("ukf_old")
 
 from ukf2 import pickle_main
-import modules.ukf_fx
+import ukf_fx
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -690,7 +692,7 @@ def ex1_grand_no_split(source, destination):
 def ex2_grand(source, destination):
 
     file_params = {
-            "agents" :  [10, 20, 30],
+            "agents" :  [30, 50, 100],
             "bin" : [5,10,25,50],
             #"source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
             "source" : source,
@@ -718,9 +720,9 @@ def main(experiment_function, source, destination):
 #%%
 if __name__ == "__main__":
     
-    main(ex0_grand,  f"/Users/medrclaa/ukf_config_test/config*030*", "plots/")
+    #main(ex0_grand,  f"/Users/medrclaa/ukf_config_test/config*030*", "plots/")
     #main(ex1_grand, "/Users/medrclaa/ukf_results/ukf*", "plots/")
     #main(ex1_grand_no_split, "/Users/medrclaa/ukf_results/ukf*", "plots/")
 
-    #4main(ex2_grand, "/Users/medrclaa/agg_results/agg_ukf_*", "plots/")
+    main(ex2_grand, "/Users/medrclaa/agg_results/agg_ukf_*", "plots/")
     

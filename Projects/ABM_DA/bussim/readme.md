@@ -1,4 +1,8 @@
-This is an Agent-Based Simulation model of the bus route. 
+This is an Agent-Based Simulation model of the bus route.
 
-Minh Kieu, University of Leeds
+The approach can found in the https://arxiv.org/pdf/1908.08288.pdf by Minh Kieu, Nicolas Malleson and Alison Heppenstall
+to be published at the Royal Society Open Science
 
+Code developed by: Minh Kieu, University of Leeds
+
+Run the notebook BusSim_experiments.ipynb for details

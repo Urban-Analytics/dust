@@ -7,12 +7,14 @@ This code will analyse the modelling results of BusSim and plot it along side a 
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
+import os
+os.chdir("/Users/minhkieu/Documents/Github/dust/Projects/ABM_DA/bussim/")
 
 #Step 1: Load calibration results
 def load_actual_params_IncreaseRate(IncreaseRate):
     #load up a model from a Pickle    
     #with open('C:/Users/geomlk/Dropbox/Minh_UoL/DA/ABM/BusSim/Data/Realtime_data_IncreaseRate_9.pkl','rb') as f2:
-    name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Data/Realtime_data_IncreaseRate_',str(IncreaseRate),'.pkl']
+    name0 = ['./Data/Realtime_data_IncreaseRate_',str(IncreaseRate),'.pkl']
     str1 = ''.join(name0)    
 
     with open(str1, 'rb') as f:
@@ -22,7 +24,7 @@ def load_actual_params_IncreaseRate(IncreaseRate):
 def load_actual_params_maxDemand(maxDemand):
     #load up a model from a Pickle    
     #with open('C:/Users/geomlk/Dropbox/Minh_UoL/DA/ABM/BusSim/Data/Realtime_data_IncreaseRate_9.pkl','rb') as f2:
-    name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Data/Realtime_data_static_maxDemand_',str(maxDemand),'.pkl']
+    name0 = ['./Data/Realtime_data_static_maxDemand_',str(maxDemand),'.pkl']
     str1 = ''.join(name0)    
 
     with open(str1, 'rb') as f:
@@ -62,7 +64,7 @@ def IncreaseRate_analysis(): #this is the code to analyse the simulation results
             "BusAcceleration": 3  # m/s          
         }
         '''run BusSim-deterministic with random parameters'''
-        from BusSim_static_deterministic import Model as Model1
+        from BusSim_deterministic import Model as Model1
         model = Model1(model_params, TrafficSpeed,ArrivalRate,DepartureRate)    
         for time_step in range(int(model.EndTime / model.dt)):
             model.step()
@@ -75,7 +77,7 @@ def IncreaseRate_analysis(): #this is the code to analyse the simulation results
         DepartureRate = np.sort(np.random.uniform(0.05, 0.5,NumberOfStop))
         DepartureRate[0]=0
         TrafficSpeed = np.random.uniform(11, 17)           
-        from BusSim_static_v2 import Model as Model2
+        from BusSim_stochastic import Model as Model2
         model = Model2(model_params, TrafficSpeed,ArrivalRate,DepartureRate)    
         for time_step in range(int(model.EndTime / model.dt)):
             model.step()
@@ -97,7 +99,7 @@ def IncreaseRate_analysis(): #this is the code to analyse the simulation results
             plt.plot([], [], linewidth=1,color='black',linestyle = '-',label='Real-time')
             plt.legend()
             plt.show()
-            name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_do_nothing_IncreaseRate_',str(IncreaseRate),'.pdf']
+            name0 = ['./Figures/Fig_do_nothing_IncreaseRate_',str(IncreaseRate),'.pdf']
             str1 = ''.join(name0)    
             plt.savefig(str1, dpi=200,bbox_inches='tight')
         '''collect outputs data and calculate RMSE'''
@@ -119,7 +121,7 @@ def IncreaseRate_analysis(): #this is the code to analyse the simulation results
  
         plt.legend()
         plt.show()
-        plt.savefig('/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_do_nothing_results.pdf', dpi=200,bbox_inches='tight')
+        plt.savefig('./Figures/Fig_do_nothing_results.pdf', dpi=200,bbox_inches='tight')
 
     return Results
 
@@ -157,7 +159,7 @@ def maxDemand_analysis():
             "BusAcceleration": 3  # m/s          
         }
         '''run BusSim-deterministic with random parameters'''    
-        from BusSim_static_deterministic import Model as Model1
+        from BusSim_deterministic import Model as Model1
         model = Model1(model_params, TrafficSpeed,ArrivalRate,DepartureRate)    
         for time_step in range(int(model.EndTime / model.dt)):
             model.step()
@@ -172,7 +174,7 @@ def maxDemand_analysis():
         TrafficSpeed = np.random.uniform(11, 17)   
         '''run BusSim-stochastic with random parameters'''
     
-        from BusSim_static_v2 import Model as Model2
+        from BusSim_stochastic import Model as Model2
         model = Model2(model_params, TrafficSpeed,ArrivalRate,DepartureRate)    
         for time_step in range(int(model.EndTime / model.dt)):
             model.step()
@@ -198,7 +200,7 @@ def maxDemand_analysis():
         
             plt.legend()
             plt.show()
-            name0 = ['/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_do_nothing_maxDemand_',str(maxDemand),'.pdf']
+            name0 = ['./Figures/Fig_do_nothing_maxDemand_',str(maxDemand),'.pdf']
             str1 = ''.join(name0)    
     
             plt.savefig(str1, dpi=200,bbox_inches='tight')
@@ -224,7 +226,7 @@ def maxDemand_analysis():
  
         plt.legend()
         plt.show()
-        plt.savefig('/Users/minhlkieu/Dropbox/Minh_UoL/DA/ABM/BusSim/Figures/Fig_do_nothing_results_maxDemand.pdf', dpi=200,bbox_inches='tight')
+        plt.savefig('./Figures/Fig_do_nothing_results_maxDemand.pdf', dpi=200,bbox_inches='tight')
 
     return Results    
 if __name__ == '__main__': #main function, just call one of the two evaluation

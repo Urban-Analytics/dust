@@ -1,3 +1,3 @@
-# StationSim-Py
+# Agent-Based Modelling and Data Assimilation
 
-A python version of the station simulation. Used to experiment with a particle filter as a means of doing data assimilation.
+Experiments in developing data assimilation algorithms for ABMs.

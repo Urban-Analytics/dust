@@ -163,12 +163,12 @@ class ukf_plots:
             padded to nearest upper order of 10 of number of iterations.
             """
             number = str(i).zfill(ceil(log10(truths.shape[0])))
-            file = destination + self.prefix + f"output_positions/{number}"
+            file = destination + "output_positions/" + self.prefix + f"_{number}"
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,destination + "output_positions",
-                           destination + f"positions_{self.filter_class.pop_total}_",12)
+        animations.animate(self,destination + "output_positions/",
+                           destination + self.prefix + f"positions_{self.filter_class.pop_total}",12)
     
     def pair_frames_main(self, truths, preds, obs_key, plot_range, destination):
         
@@ -220,20 +220,19 @@ class ukf_plots:
 
             for j in range(n):
                     tether_width = ms/5
-                    if np.nansum(obs_key2 >0):
-                        key = int(obs_key2[j]) #determine marker colour and shape depending on observation type
-                        colour = self.colours[key]
-                        marker = self.markers[key]
-                        "one scatter for translucent fill. one for opaque edges"
-                        ax.scatter(preds2[(2*j)],preds2[(2*j)+1], c="none", marker = marker, s= ms**2, 
-                                           edgecolors="k",linewidths=1.5)
-                        ax.scatter(preds2[(2*j)],preds2[(2*j)+1],color=colour,marker = marker, s= ms**2, 
-                                          alpha=alpha, edgecolors="k")
-                        x = np.array([truths2[(2*j)],preds2[(2*j)]])
-                        y = np.array([truths2[(2*j)+1],preds2[(2*j)+1]])
-                        plt.plot(x,y,linewidth=tether_width+2,color="k",linestyle="-")
-                        plt.plot(x,y,linewidth=tether_width,color="w",linestyle="-")
-        
+                    key = int(obs_key2[j]) #determine marker colour and shape depending on observation type
+                    colour = self.colours[key]
+                    marker = self.markers[key]
+                    "one scatter for translucent fill. one for opaque edges"
+                    ax.scatter(preds2[(2*j)],preds2[(2*j)+1], c="none", marker = marker, s= ms**2, 
+                                       edgecolors="k",linewidths=1.5)
+                    ax.scatter(preds2[(2*j)],preds2[(2*j)+1],color=colour,marker = marker, s= ms**2, 
+                                      alpha=alpha, edgecolors="k")
+                    x = np.array([truths2[(2*j)],preds2[(2*j)]])
+                    y = np.array([truths2[(2*j)+1],preds2[(2*j)+1]])
+                    plt.plot(x,y,linewidth=tether_width+2,color="k",linestyle="-")
+                    plt.plot(x,y,linewidth=tether_width,color="w",linestyle="-")
+    
                     
             "dummy markers for a consistent legend" 
             
@@ -290,8 +289,8 @@ class ukf_plots:
         os.mkdir(save_dir)
         
         self.pair_frames_main(truths,forecasts,obs_key,range(plot_range), save_dir)
-        animations.animate(self,save_dir, destination + 
-                           f"pairwise_gif_{self.filter_class.pop_total}",12)
+        animations.animate(self,save_dir, destination + self.prefix +
+                           f"pairwise_gif_{self.filter_class.pop_total}", 12)
         
     
     def pair_frame(self, truths, forecasts, obs_key, frame_number, destination):
@@ -473,7 +472,7 @@ class ukf_plots:
         os.mkdir(save_dir)
         self.heatmap_main(truths, range(plot_range), save_dir)
         animations.animate(self, save_dir, destination +
-                           f"/heatmap_{self.filter_class.pop_total}_",12)
+                           self.prefix  + f"heatmap_{self.filter_class.pop_total}_",12)
     
     def heatmap_frame(self, truths, frame_number, destination):
         

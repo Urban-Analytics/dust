@@ -502,7 +502,7 @@ if __name__ == "__main__":
 
     'width': 200,
     'height': 50,
-    'pop_total': 10,
+    'pop_total': 30,
     'gates_speed': 1,
 
     'gates_in': 3,
@@ -525,7 +525,7 @@ if __name__ == "__main__":
     """number of model repetitions n. Recommend at least 30 for <50 agents
      and at least 100 for >50 agents."""
      
-    n_test_runs = 20
+    n_test_runs = 10
     "init"
     ssRK = stationsim_RipleysK()
     "generate models to test. done in python here but can swap as necessary."

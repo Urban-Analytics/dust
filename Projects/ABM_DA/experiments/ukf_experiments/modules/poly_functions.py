@@ -68,6 +68,5 @@ def grid_poly(width, height, bin_size):
     #for poly in polys:
     #    plt.plot(*poly.exterior.xy)
     
-    counts.append(int(len(list(filter(poly.contains,points)))))
     return polys
 

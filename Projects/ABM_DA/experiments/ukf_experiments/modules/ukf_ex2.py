@@ -59,7 +59,7 @@ def aggregate_params(n, bin_size, model_params, ukf_params):
         
     ukf_params["p"] = np.eye(2*n) #inital guess at state covariance
     ukf_params["q"] = np.eye(2*n)
-    ukf_params["r"] = np.eye(len(ukf_params["poly_list"]))#sensor noise 
+    ukf_params["r"] = 0.01 * np.eye(len(ukf_params["poly_list"]))#sensor noise 
     
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"]  = {"base_model" : base_model}
@@ -143,9 +143,9 @@ def ex2_plots(instance, destination, prefix, save, animate):
     """
     
     marker_attributes = {
-    "markers" : {-1 : "o",  1 : "^"},
-    "colours" : {-1 : "yellow", 1 : "yellow"},
-    "labels" :  {-1 :"Pseudo-Truths" , 1 : "Aggregated"}
+    "markers" : {-1 : "o", 0 : "X",  1 : "^"},
+    "colours" : {-1 : "black", 0 : "orangered", 1 : "yellow"},
+    "labels" :  {-1 : "Pseudo-Truths" ,0 : "Unobserved", 1 : "Aggregated"}
     }
     
     plts = ukf_plots(instance, destination, prefix, save, animate, marker_attributes)
@@ -171,8 +171,8 @@ def ex2_plots(instance, destination, prefix, save, animate):
     
     if animate:
                 
-        plts.trajectories(truths, "plots/")
-        plts.heatmap(truths,truths.shape[0], "plots/")
+        #plts.trajectories(truths, "plots/")
+        #plts.heatmap(truths,truths.shape[0], "plots/")
         plts.pair_frames(truths, forecasts, np.vstack(obs_key), 
                          truths.shape[0], "plots/")
 
@@ -226,7 +226,7 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     return u
        
 if __name__ == "__main__":
-    n = 30
+    n = 5
     bin_size = 25
     recall = True #  recall previous run
     do_pickle = True #  pickle new run
@@ -234,3 +234,8 @@ if __name__ == "__main__":
     destination  = "plots/"
     u = ex2_main(n, bin_size, recall, do_pickle, pickle_source, destination)
     
+    
+ks = np.dstack(u.ukf.ks)
+for i in range(ks.shape[0]):
+    for j in range(ks.shape[1]):
+        plt.plot(ks[i,j,:])

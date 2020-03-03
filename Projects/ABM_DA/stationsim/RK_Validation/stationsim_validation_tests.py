@@ -6,9 +6,6 @@ Created on Tue Feb 25 14:47:41 2020
 @author: medrclaa
 """
 
-import sys
-sys.path.append("..")
-from stationsim_model import Model
 
 import unittest
 from stationsim_validation import stationsim_RipleysK

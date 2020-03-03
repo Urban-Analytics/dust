@@ -259,7 +259,9 @@ class ukf:
 
         self.xs = []
         self.ps = []
-    
+        
+        self.ks = []
+        
     def predict(self, **fx_kwargs):
         
         
@@ -280,11 +282,11 @@ class ukf:
         """
         
         sigmas = MSSP(self.x, self.p, self.g)
-        nl_sigmas, xhat = unscented_Mean(sigmas, self.wm, self.fx,
+        forecasted_sigmas, xhat = unscented_Mean(sigmas, self.wm, self.fx,
                                          **self.fx_kwargs )
-        self.sigmas = nl_sigmas
+        self.sigmas = forecasted_sigmas
         
-        pxx = covariance(nl_sigmas,xhat,self.wc,addition = self.q)
+        pxx = covariance(forecasted_sigmas,xhat,self.wc,addition = self.q)
         
         self.p = pxx #update Sxx
         self.x = xhat #update xhat
@@ -316,7 +318,9 @@ class ukf:
         pyy =covariance(nl_sigmas, yhat, self.wc, addition=self.r)
         pxy = covariance(self.sigmas, self.x, self.wc, nl_sigmas, yhat)
         k = np.matmul(pxy,np.linalg.inv(pyy))
- 
+        
+        self.ks.append(k)
+        
         "i dont know why `self.x += ...` doesnt work here"
         x = self.x + np.matmul(k,(z-yhat))
         p = self.p - np.linalg.multi_dot([k, pyy, k.T])
@@ -325,8 +329,7 @@ class ukf:
         """adaptive ukf augmentation. one for later."""
         adaptive = False
         if adaptive:
-            mu = np.array(z)- np.array(self.hx(self.sigmas[:,0],
-                                               self.model_params,self.ukf_params))
+            mu = np.array(z)- np.array(self.hx(self.sigmas[:,0], **hx_kwargs))
             if np.sum(np.abs(mu))!=0:
                 x, p = self.fault_test(z, mu, pxy, pyy, self.x, self.p, k, yhat)    
             

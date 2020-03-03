@@ -78,6 +78,11 @@ class stationsim_RipleysK():
         #placeholder list
         models = []
         
+        if model_params["random_seed"] != None:
+            raise Exception("Error: the 'random_seed' parameter is not None\
+            which means that all models generate the same results, which\
+            I'm sure isn't what you want!")
+        
         #supress excessive printing
         with HiddenPrints():
             if single_process:

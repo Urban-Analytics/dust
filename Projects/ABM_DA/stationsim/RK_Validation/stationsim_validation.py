@@ -49,7 +49,7 @@ class stationsim_RipleysK():
     and saving them as pandas dataframes.
     """
 
-    def generate_Model_Sample(self, n_runs, model_params):
+    def generate_Model_Sample(self, n_runs, model_params, single_process = False):
     
         
         """ function for generating stationsim model runs to test
@@ -64,6 +64,10 @@ class stationsim_RipleysK():
             `model_params` dictionary of model parameters  required for 
             stationsim to run. See stationsim_model.py for more details.
             
+        single_process : bool (default False)
+             whether to run the models as a single process or using
+             multiple processes simultaneously.
+            
         Returns
         ------
         models : list
@@ -76,14 +80,45 @@ class stationsim_RipleysK():
         
         #supress excessive printing
         with HiddenPrints():
-            for _ in range(n_runs):
-                #generate model and run til status goes back to 0 (finished)
-                model = Model(**model_params)
-                while model.status == 1:
-                    model.step()
-                models.append(model)
+            if single_process:
+                for _ in range(n_runs):
+                    #generate model and run til status goes back to 0 (finished)
+                    model = Model(**model_params)
+                    while model.status == 1:
+                        model.step()
+                    models.append(model)
+            else:
+                pool = multiprocessing.Pool(processes=numcores)
+                try:
+                    numcores = multiprocessing.cpu_count()
+                    models = pool.map(run_model, [model_params for _ in range(n_runs)])
+                finally: 
+                    pool.close() # Make sure whatever happens the processes are killed
             
         return models
+    
+    def run_model(self, model_params):
+        """
+        Create a new stationsim model using `model_params` and step it
+        until it has finished.
+        
+        
+        Parameters
+        ------
+        model_params : dict
+            `model_params` dictionary of model parameters  required for 
+            stationsim to run. See stationsim_model.py for more details.
+            
+        Returns
+        ------
+        model : StaionSim object
+            the finished model
+        """
+        model = Model(**model_params)
+        while model.status == 1:
+            model.step()
+        return(model)
+        
 
     def ripleysKE(self, models, model_params):
         

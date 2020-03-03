@@ -71,13 +71,13 @@ class stationsim_RipleysK():
             width, height, pop_total, and gate_speed.
         """
         
-        "placeholder list"
+        #placeholder list
         models = []
         
-        "supress excessive printing"
+        #supress excessive printing
         with HiddenPrints():
             for _ in range(n_runs):
-                "generate model and run til status goes back to 0 (finished)"
+                #generate model and run til status goes back to 0 (finished)
                 model = Model(**model_params)
                 while model.status == 1:
                     model.step()

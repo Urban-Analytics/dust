@@ -2,6 +2,8 @@ library(nlme)
 #library(ggplot2)
 #library(docstring)
 
+root.dir <- "~/dust/Projects/ABM_DA/stationsim/RK_Validation/RK_csvs"
+
 load_RK_Data<- function(width, height, pop_total, gate_speed){
   
   #'load csv containing two groups of control and test RK trajectories
@@ -12,13 +14,13 @@ load_RK_Data<- function(width, height, pop_total, gate_speed){
   #'@param gate_speed rate at which agent enter the model
   #'@return loaded csv
   
-  setwd("~/dust/Projects/ABM_DA/stationsim/RK_Validation/RK_csvs")
+  setwd(root.dir)
   
   file<- sprintf("joint_%s_%s_%s_%s.csv", width, height, pop_total,
                  gate_speed)
   data <- read.csv(file)
   data<- groupedData(y ~ x | ids, data) 
-  setwd("~/dust/Projects/ABM_DA/stationsim/RK_Validation/")
+  setwd(root.dir)
   
   #switch back to notebook directory to keep notebook happy.
   return(data)

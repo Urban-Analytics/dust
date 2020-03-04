@@ -17,6 +17,7 @@ We do this as follows:
 import numpy as np
 import sys
 import os
+import multiprocessing
 from astropy.stats import RipleysKEstimator # astropy's ripley's K
 import pandas as pd
 sys.path.append("..")
@@ -78,14 +79,16 @@ class stationsim_RipleysK():
         #placeholder list
         models = []
         
-        if model_params["random_seed"] != None:
+        if n_runs > 1 and model_params["random_seed"] != None:
             raise Exception("Error: the 'random_seed' parameter is not None\
             which means that all models generate the same results, which\
             I'm sure isn't what you want!")
+        elif n_runs < 1:
+            raise Exception("Error: need one or more 'n_runs', not {}".format(n_runs))
         
         #supress excessive printing
         with HiddenPrints():
-            if single_process:
+            if single_process or n_runs == 1:
                 for _ in range(n_runs):
                     #generate model and run til status goes back to 0 (finished)
                     model = Model(**model_params)
@@ -93,16 +96,17 @@ class stationsim_RipleysK():
                         model.step()
                     models.append(model)
             else:
-                pool = multiprocessing.Pool(processes=numcores)
+                pool = multiprocessing.Pool()
                 try:
                     numcores = multiprocessing.cpu_count()
-                    models = pool.map(run_model, [model_params for _ in range(n_runs)])
+                    models = pool.map(stationsim_RipleysK.run_model, [model_params for _ in range(n_runs)])
                 finally: 
                     pool.close() # Make sure whatever happens the processes are killed
             
         return models
     
-    def run_model(self, model_params):
+    @staticmethod
+    def run_model(model_params):
         """
         Create a new stationsim model using `model_params` and step it
         until it has finished.

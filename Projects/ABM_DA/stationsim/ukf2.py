@@ -260,7 +260,7 @@ class ukf:
         self.xs = []
         self.ps = []
         
-        self.ks = []
+        self.mus = []
         
     def predict(self, **fx_kwargs):
         
@@ -318,18 +318,17 @@ class ukf:
         pyy =covariance(nl_sigmas, yhat, self.wc, addition=self.r)
         pxy = covariance(self.sigmas, self.x, self.wc, nl_sigmas, yhat)
         k = np.matmul(pxy,np.linalg.inv(pyy))
-        
-        self.ks.append(k)
-        
+                
         "i dont know why `self.x += ...` doesnt work here"
-        x = self.x + np.matmul(k,(z-yhat))
+        mu = (z-yhat)
+        x = self.x + np.matmul(k, mu)
         p = self.p - np.linalg.multi_dot([k, pyy, k.T])
         
+        self.mus.append(mu)
         
         """adaptive ukf augmentation. one for later."""
         adaptive = False
         if adaptive:
-            mu = np.array(z)- np.array(self.hx(self.sigmas[:,0], **hx_kwargs))
             if np.sum(np.abs(mu))!=0:
                 x, p = self.fault_test(z, mu, pxy, pyy, self.x, self.p, k, yhat)    
             
@@ -353,9 +352,10 @@ class ukf:
         -recalculate new x and p
         
         """
-        sigma = np.linalg.inv((pyy+ self.r))
-        psi = np.linalg.multi_dot([mu.T, sigma, mu])
-        critical = chi2.ppf(0.8, df = mu.shape[0]) #critical rejection point
+        sigma = 0.05
+        
+        psi = np.linalg.multi_dot([mu.T, np.linalg.inv(pyy), mu])
+        critical = chi2.ppf(1 - sigma, df = mu.shape[0]) #critical rejection point
         print(psi, critical)
         if psi <= critical :
             
@@ -364,24 +364,42 @@ class ukf:
         
         else:
             
-            "nudge q and r according to estimates. recalculate x and p."
-            eps = z - self.hx(x, **self.hx_kwargs)            
-            sigmas = MSSP(x,p,self.g)
-            syy = covariance(self.hx(sigmas, **self.hx_kwargs), yhat,self.wc)
-            delta_1 =  1 - (self.a*critical)/psi
-            delta = np.max(self.delta0,delta_1)
-            phi_1 =  1 - (self.b*critical)/psi
-            phi = np.max(self.phi0, phi_1)
+            "update Q"
+            a = 0.95
+            lambd_0 = 0.05
+            lambd_1 =  1 - (a * critical)/psi
             
-            self.q = (1-phi)*self.q + phi*np.linalg.multi_dot([k, mu, mu.T, k.T])
+            lambd = np.max(lambd_0, lambd_1)
+            self.q = (1-lambd)*self.q + lambd*np.linalg.multi_dot([k, mu, mu.T, k.T])
+            
+            "update R"
+            
+            
+            
+            eps = z - self.hx(x, **self.hx_kwargs) 
+            
+            "build new pyy"
+            "generate new sigmas using current estimates of x and p "
+            sigmas  = MSSP(x, p, self.g)
+            nl_sigmas, yhat = unscented_Mean(sigmas, self.wm, self.hx, self.hx_kwargs)
+            syy = covariance(nl_sigmas, yhat, self.wc)
+            b = 0.95
+            delta_0 = 0.05
+            delta_1 =  1 - (b * critical)/psi
+            delta = np.max(delta_0, delta_1)
             self.r = (1-delta)*self.r + delta*(np.linalg.multi_dot([eps, eps.T]) + syy)
             
             print("noises updated")
-            "correct estimates using new noise"
+            "correct estimates of x and P using new noise"
+            "generate covariances and kalman gain"
+            pxx = covariance(sigmas, x, self.wc)
+            pxy = covariance(self.sigmas, x, self.wc, nl_sigmas, yhat)
             pyy  = syy + self.r
             k = np.matmul(pxy,np.linalg.inv(pyy))
-            x = self.x + np.matmul(k,(z-yhat))
-            p = self.p - np.linalg.multi_dot([k, pyy, k.T])
+            
+            "update x and P using new noises"
+            x = self.x + np.matmul(k, mu)
+            p = pxx - np.linalg.multi_dot([k, np.linalg.inv(pxy), k.T])
             
         return x, p
         
@@ -733,22 +751,7 @@ def pickle_main(f_name, pickle_source, do_pickle, instance = None):
     if do_pickle and instance is not None:
         
         "if given an instance. save it as a class dictionary pickle"
-        print(f"Pickling file to {f_name}")
-        instance_dict = instance.__dict__
-        try:
-                """for converting old files. removes deprecated function that
-                plays havoc with pickle"""
-                instance_dict.pop("ukf")
-        except:
-            pass
-        
-        try: 
-            "same thing again but for ukf_aggregate"
-            instance_dict.pop("ukf_aggregate")
-
-        except:
-            pass
-        
+        print(f"Pickling file to {f_name}")        
         pickler(instance.__dict__, pickle_source, f_name)
         return
     

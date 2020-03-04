@@ -59,7 +59,7 @@ def aggregate_params(n, bin_size, model_params, ukf_params):
         
     ukf_params["p"] = np.eye(2*n) #inital guess at state covariance
     ukf_params["q"] = np.eye(2*n)
-    ukf_params["r"] = 0.01 * np.eye(len(ukf_params["poly_list"]))#sensor noise 
+    ukf_params["r"] = np.eye(len(ukf_params["poly_list"]))#sensor noise 
     
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"]  = {"base_model" : base_model}
@@ -226,16 +226,17 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     return u
        
 if __name__ == "__main__":
-    n = 5
+    n = 25
     bin_size = 25
-    recall = True #  recall previous run
+    recall = False #  recall previous run
     do_pickle = True #  pickle new run
     pickle_source = "pickles/"
     destination  = "plots/"
     u = ex2_main(n, bin_size, recall, do_pickle, pickle_source, destination)
     
-    
+""" 
 ks = np.dstack(u.ukf.ks)
 for i in range(ks.shape[0]):
     for j in range(ks.shape[1]):
         plt.plot(ks[i,j,:])
+"""

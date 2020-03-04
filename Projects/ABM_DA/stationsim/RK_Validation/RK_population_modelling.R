@@ -50,13 +50,14 @@ compare_RK_Groups <- function(data, verbose = TRUE){
   #' models using 7 likelihood ratio tests. Each likelihood test has a null
   #' hypothesis to accept the simpler reduced (null) model.
   #' 
-  #' If any of the tests produces a significant p-value >0.05 we conclude 
+  #' If any of the tests produces a significant p-value <0.05 we conclude 
   #' the null model does not perform best and there is evidence of group separation
   #' 
   #' If no p-values are significant we conclude the null model performs best
   #' and we have no evidence of group separation.
   #' 
   #' NOTE: It may be better to use stepwise regression based on AIC here.
+  #' (see cAIC4 package)
   #' Printing the full anova lets one decide either way. 
   #' The lowest AIC score is often taken as the best performing model. 
   #' If null model has lowest AIC assume no evidence for group difference.
@@ -135,7 +136,7 @@ main <- function(width, height, pop_total, gate_speed){
   
   #' main function for comparing two groups of ripley's K stationsim curves
   #' load data
-  #' fit two models with and without difference in group effects
+  #' fit models with and without difference in group effects
   #' determine which model is preferable based on anova between two models.
   #'@param width stationsim model width
   #'@param height stationsim model height

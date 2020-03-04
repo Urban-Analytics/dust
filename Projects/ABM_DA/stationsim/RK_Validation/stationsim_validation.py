@@ -126,7 +126,7 @@ class stationsim_RipleysK():
         model = Model(**model_params)
         while model.status == 1:
             model.step()
-        return(model)
+        return model
         
 
     def ripleysKE(self, models, model_params):
@@ -216,10 +216,10 @@ class stationsim_RipleysK():
         
         Output dataframe has 4 columns
         
-        x: list of radii on which RK is estimates. renamed to x for use 
+        x: list of radii on which RK is estimated. Renamed to x for use 
         in R regression later
         
-        y: RKE estimate corresponding to a given model's collisions and radii. 
+        y: RKE curve corresponding to a given model's collisions and radii. 
         Renamed to y for R regression later
         
         ids: identifies which specific model the row belongs to.

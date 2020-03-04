@@ -5,7 +5,10 @@ Created on Thu Jan  9 11:01:10 2020
 
 @author: medrclaa
 
-Skeleton file for stationsim ABM tests.
+Skeleton file for stationsim ABM tests. 
+This file is currently just the types of testing needed 
+and potential ideas for said tests.
+This is just a placeholder of ideas for now. Feel free to delete.
 
 This isnt particulaly straightforward as unit testing has a vaguer meaning
 in ABM literature.
@@ -26,19 +29,20 @@ of testing the interactions between agents.
 These are often difficult to properly test due to the stochastic nature 
 of ABMs and this is often done through MCMC techniques or heavy seeding.
 
-This file should be for both the micro scale tests for stationsim but also the 
+Black box testing usually tests the entire environment, such as a full stationsimrun 
+and are also highly stochastic. (See RK_Validation for an attempt at this.)
 """
 
 class Test_Micros():
 
     
     """
-    Testing the individual usuaully deterministic mechanisms as with standard unit
+    Testing the individual usually deterministic mechanisms as with standard unit
     testing. These may include:
-    • Testing building blocks of agents like behaviors, knowl- edge base and
-    so forth and their integration inside agents. • Testing building blocks 
-    of simulated environments like non-agent entities, services and so forth
-    and their integration inside simulated environments.
+    • Testing building blocks of agents like behaviors, knowledge base and
+    so forth and their integration inside agents. 
+    • Testing building blocks of simulated environments like non-agent entities, 
+    services and so forth and their integration inside simulated environments.
     • Testing the outputs of agents during their lifetime. An
     output can be a log entry, a message to another agent or
     to the simulated environment.

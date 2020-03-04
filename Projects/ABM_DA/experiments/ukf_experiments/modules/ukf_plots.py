@@ -220,7 +220,11 @@ class ukf_plots:
 
             for j in range(n):
                     tether_width = ms/5
-                    key = int(obs_key2[j]) #determine marker colour and shape depending on observation type
+                    key = obs_key2[j]
+                    if key != np.nan:
+                        key = int() #determine marker colour and shape depending on observation type
+                    else:
+                        key = 0
                     colour = self.colours[key]
                     marker = self.markers[key]
                     "one scatter for translucent fill. one for opaque edges"
@@ -232,7 +236,7 @@ class ukf_plots:
                     y = np.array([truths2[(2*j)+1],preds2[(2*j)+1]])
                     plt.plot(x,y,linewidth=tether_width+2,color="k",linestyle="-")
                     plt.plot(x,y,linewidth=tether_width,color="w",linestyle="-")
-    
+
                     
             "dummy markers for a consistent legend" 
             

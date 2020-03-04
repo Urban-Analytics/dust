@@ -12,6 +12,7 @@ from stationsim_validation import stationsim_RipleysK
 import numpy as np
 from numpy.testing import assert_array_almost_equal as AAAE
 import pandas as pd
+import multiprocessing
 
 class Test_ssRK(unittest.TestCase):
     

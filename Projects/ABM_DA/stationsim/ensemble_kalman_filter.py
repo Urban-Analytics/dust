@@ -13,12 +13,13 @@ import numpy as np
 import pandas as pd
 from filter import Filter
 
+
 # Classes
 class EnsembleKalmanFilter(Filter):
     """
     A class to represent a general EnKF.
     """
-    def __init__(self, model, filter_params, model_params):
+    def __init__(self, model, filter_params, model_params, benchmarking=False):
         """
         Initialise the Ensemble Kalman Filter.
 
@@ -45,23 +46,22 @@ class EnsembleKalmanFilter(Filter):
         self.data_covariance = None
         self.keep_results = False
         self.vis = False
+        self.run_vanilla = False
 
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():
             if not hasattr(self, k):
-                w = 'EnKF received unexpected {0} attribute.'.format(k) 
+                w = 'EnKF received unexpected {0} attribute.'.format(k)
                 warns.warn(w, RuntimeWarning)
             setattr(self, k, v)
 
         # Set up ensemble of models
         self.models = [dcopy(self.base_model) for _ in range(self.ensemble_size)]
-        self.vanilla_models = [dcopy(self.base_model) for _ in
-                               range(self.ensemble_size)]
 
         # Make sure that models have state
         # for m in self.models:
-            # if not hasattr(m, 'state'):
-                # raise AttributeError("Model has no 'state' attribute.")
+        # if not hasattr(m, 'state'):
+        # raise AttributeError("Model has no 'state' attribute.")
 
         # We're going to need H.T very often, so just do it once and store
         self.H_transpose = self.H.T
@@ -85,21 +85,30 @@ class EnsembleKalmanFilter(Filter):
         self.data_ensemble = np.zeros(shape=(self.data_vector_length,
                                              self.ensemble_size))
 
-        self.vanilla_state_ensemble = np.zeros(shape=(self.state_vector_length,
-                                                      self.ensemble_size))
-        self.vanilla_state_mean = None
-
         # Errors stats at update steps
         self.rmse = list()
 
         # Agent to plot individually
         self.agent_number = 6
 
+        # Vanilla params
+        if self.run_vanilla:
+            # Ensemble of vanilla models is always 10 (control variable)
+            self.vanilla_ensemble_size = 10
+            self.vanilla_models = [dcopy(self.base_model) for _ in
+                                   range(self.vanilla_ensemble_size)]
+            self.vanilla_state_mean = None
+            self.vanilla_state_ensemble = np.zeros(shape=(self.state_vector_length,
+                                                          self.vanilla_ensemble_size))
+            self.vanilla_rmse = list()
+            self.vanilla_results = list()
+
         self.update_state_ensemble()
         self.update_state_mean()
+
         self.results = list()
 #        self.results = [self.state_mean]
-        self.vanilla_results = list()
+
         print('Running Ensemble Kalman Filter...')
         print('max_iterations:\t{0}'.format(self.max_iterations))
         print('ensemble_size:\t{0}'.format(self.ensemble_size))
@@ -141,6 +150,13 @@ class EnsembleKalmanFilter(Filter):
 
             # Analysis error
             rmse['analysis'] = self.calculate_rmse(truth, self.state_mean)
+
+            # Vanilla error
+            if self.run_vanilla:
+                rmse['vanilla'] = self.calculate_rmse(
+                        truth,
+                        self.vanilla_state_mean)
+
             self.rmse.append(rmse)
             # print(rmse)
 
@@ -151,7 +167,8 @@ class EnsembleKalmanFilter(Filter):
             # self.update_state_mean()
         self.time += 1
         self.results.append(self.state_mean)
-        self.vanilla_results.append(self.vanilla_state_mean)
+        if self.run_vanilla:
+            self.vanilla_results.append(self.vanilla_state_mean)
 
     def predict(self):
         """
@@ -165,8 +182,9 @@ class EnsembleKalmanFilter(Filter):
         self.base_model.step()
         for i in range(self.ensemble_size):
             self.models[i].step()
-        for i in range(self.ensemble_size):
-            self.vanilla_models[i].step()
+        if self.run_vanilla:
+            for i in range(self.vanilla_ensemble_size):
+                self.vanilla_models[i].step()
 
     def update(self, data):
         """
@@ -199,14 +217,18 @@ class EnsembleKalmanFilter(Filter):
 
         for i in range(self.ensemble_size):
             state_vector = self.models[i].get_state(sensor='location')
-            self.vanilla_state_ensemble[:, i] = state_vector
+
+        if self.run_vanilla:
+            for i in range(self.vanilla_ensemble_size):
+                self.vanilla_state_ensemble[:, i] = state_vector
 
     def update_state_mean(self):
         """
         Update self.state_mean based on the current state ensemble.
         """
         self.state_mean = np.mean(self.state_ensemble, axis=1)
-        self.vanilla_state_mean = np.mean(self.vanilla_state_ensemble, axis=1)
+        if self.run_vanilla:
+            self.vanilla_state_mean = np.mean(self.vanilla_state_ensemble, axis=1)
 
     def update_data_ensemble(self, data):
         """
@@ -286,7 +308,8 @@ class EnsembleKalmanFilter(Filter):
         mean_x, mean_y = self.separate_coords(self.state_mean)
         if len(obs) > 0:
             obs_x, obs_y = self.separate_coords(obs)
-        # vanilla_x, vanilla_y = self.separate_coords(self.vanilla_state_mean)
+        if self.run_vanilla:
+            vanilla_x, vanilla_y = self.separate_coords(self.vanilla_state_mean)
 
         # Plot agents
         plot_width = 8
@@ -300,8 +323,9 @@ class EnsembleKalmanFilter(Filter):
         plt.scatter(mean_x, mean_y, marker='x', label='Ensemble mean')
         if len(obs) > 0:
             plt.scatter(obs_x, obs_y, marker='*', label='Observation')
-        # plt.scatter(vanilla_x, vanilla_y, alpha=0.5, label='mean w/o da',
-                    # color='black')
+        if self.run_vanilla:
+            plt.scatter(vanilla_x, vanilla_y, alpha=0.5, label='mean w/o da',
+                        color='black')
 
         # Plot ensemble members
         # for model in self.models:
@@ -329,7 +353,8 @@ class EnsembleKalmanFilter(Filter):
         mean_x, mean_y = self.separate_coords(self.state_mean)
         if len(obs) > 0:
             obs_x, obs_y = self.separate_coords(obs)
-        # vanilla_x, vanilla_y = self.separate_coords(self.vanilla_state_mean)
+        if self.run_vanilla:
+            vanilla_x, vanilla_y = self.separate_coords(self.vanilla_state_mean)
 
         # Plot agents
         plot_width = 8
@@ -346,8 +371,9 @@ class EnsembleKalmanFilter(Filter):
         if len(obs) > 0:
             plt.scatter(obs_x[self.agent_number],
                         obs_y[self.agent_number], marker='*', label='Observation')
-        # plt.scatter(vanilla_x, vanilla_y, alpha=0.5, label='mean w/o da',
-                    # color='black')
+        if self.run_vanilla:
+            plt.scatter(vanilla_x, vanilla_y, alpha=0.5, label='mean w/o da',
+                        color='black')
 
         x_coords.extend([base_x[self.agent_number], mean_x[self.agent_number],
                          obs_x[self.agent_number]])
@@ -409,7 +435,7 @@ class EnsembleKalmanFilter(Filter):
         if self.keep_results:
             df = pd.DataFrame({'distance_errors': distance_mean_errors,
                                'x_errors': x_mean_errors,
-                               'y_errors': y_mean_errors,})
+                               'y_errors': y_mean_errors})
             self.save_results(df)
 
         # Comparing rmse
@@ -476,7 +502,7 @@ class EnsembleKalmanFilter(Filter):
         """
         plt.figure()
         plt.scatter(range(len(errors_da)), errors_da, label='with')
-        plt.scatter(range(len(errors_vanilla)), errors_vanilla, label='without')
+        plt.scatter(range(len(errors_vanilla)), errors_vanilla, label='w/o')
         plt.xlabel('Time')
         plt.ylabel('MAE')
         plt.legend()

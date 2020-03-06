@@ -35,6 +35,7 @@ def make_truth_data(model_params):
     # Extract agent tracks
     return model.state_history
 
+
 def make_observation_data(truth, noise_mean=0, noise_std=1):
     """
     Add noise to truth data to generate noisy observations.
@@ -46,6 +47,7 @@ def make_observation_data(truth, noise_mean=0, noise_std=1):
         ob = timestep + normal(noise_mean, noise_std, timestep.shape)
         observations.append(ob)
     return observations
+
 
 def run_enkf(model_params, filter_params):
     """
@@ -59,6 +61,7 @@ def run_enkf(model_params, filter_params):
             print('step {0}'.format(i))
         enkf.step()
     return enkf
+
 
 def run_all(pop_size=20, its=300, assimilation_period=50, ensemble_size=10):
     """
@@ -93,11 +96,13 @@ def run_all(pop_size=20, its=300, assimilation_period=50, ensemble_size=10):
                      'H': np.identity(vec_length),
                      'R_vector': OBS_NOISE_STD * np.ones(vec_length),
                      'keep_results': True,
+                     'run_vanilla': False,
                      'vis': True}
 
     # Run enkf and process results
     enkf = run_enkf(model_params, filter_params)
     enkf.process_results()
+
 
 def run_repeat(a=50, e=10, p=20, s=1, N=10, write_json=False):
     """
@@ -125,7 +130,7 @@ def run_repeat(a=50, e=10, p=20, s=1, N=10, write_json=False):
                     'speed_steps': 3,
                     'separation': 4,
                     'max_wiggle': 1,
-                    'step_limit': 300,
+                    'step_limit': 500,
                     'do_history': True,
                     'do_print': False}
 
@@ -154,6 +159,7 @@ def run_repeat(a=50, e=10, p=20, s=1, N=10, write_json=False):
             json.dump(errors, f, ensure_ascii=False, indent=4)
     return errors
 
+
 def run_combos():
     """
     Run the ensemble kalman filter for different combinations of:
@@ -168,6 +174,7 @@ def run_combos():
         for e in ensemble_sizes:
             combo = (20, 300, a, e)
             run_all(*combo)
+
 
 def process_repeat_results(results):
     """
@@ -215,6 +222,7 @@ def process_repeat_results(results):
     observations = make_dataframe(observations, times)
     return forecasts, analyses, observations
 
+
 def make_dataframe(dataset, times):
     """
     make_dataframe
@@ -250,6 +258,7 @@ def make_dataframe(dataset, times):
     d['time'] = times
     return d.set_index('time')
 
+
 def plot_results(dataset):
     """
     plot_results
@@ -277,6 +286,7 @@ def plot_results(dataset):
     plt.xlabel('time')
     plt.ylabel('RMSE')
     plt.show()
+
 
 def plot_all_results(forecast, analysis, observation):
     """
@@ -333,6 +343,7 @@ def plot_all_results(forecast, analysis, observation):
 
     plt.show()
 
+
 def plot_with_errors(forecast, analysis, observation):
     """
     Plot results with errors.
@@ -382,6 +393,7 @@ def plot_with_errors(forecast, analysis, observation):
     plt.savefig('results/figures/all_with_errors.pdf')
 
     plt.show()
+
 
 def run_repeat_combos(resume=True):
     """
@@ -558,7 +570,7 @@ def process_batch(read_time=False, write_time=True):
             p = './results/repeats/{0}'.format(r)
             with open(p) as f:
                 d = json.load(f)
-            
+
             # Reduce to means for forecast, analysis and obs
             forecasts, analyses, observations = process_repeat_results(d)
 
@@ -566,7 +578,7 @@ def process_batch(read_time=False, write_time=True):
             forecast = forecasts['mean'].mean()
             analysis = analyses['mean'].mean()
             observation = observations['mean'].mean()
-            
+
             # Add to output list
             row = {'assimilation_period': ap,
                    'ensemble_size': es,
@@ -606,6 +618,7 @@ def make_all_heatmaps(data):
     plot_heatmap(data, 'ensemble_size', 'population_size')
     # plot_heatmap(data, 'ensemble_size', 'std')
     plot_heatmap(data, 'std', 'population_size')
+
 
 def plot_heatmap(data, var1, var2):
     """
@@ -651,6 +664,7 @@ def plot_heatmap(data, var1, var2):
     plt.tight_layout()
     plt.savefig('./results/figures/{0}_{1}.pdf'.format(var1, var2))
     plt.show()
+
 
 def extract_array(df, var1, var2):
     """
@@ -700,8 +714,8 @@ def extract_array(df, var1, var2):
     a = np.zeros(shape=(len(var1_vals), len(var2_vals)))
     for i, u in enumerate(var1_vals):
         for j, v in enumerate(var2_vals):
-            var1_cond = tdf[var1]==u
-            var2_cond = tdf[var2]==v
+            var1_cond = tdf[var1] == u
+            var2_cond = tdf[var2] == v
             d = tdf[var1_cond & var2_cond]
             a[i][j] = d['analysis'].values[0]
 
@@ -709,6 +723,7 @@ def extract_array(df, var1, var2):
     # output = pd.DataFrame(a.T, index=var2_vals, columns=var1_vals)
     # return a.T, var2_vals, var1_vals
     return output.T
+
 
 def testing():
     """

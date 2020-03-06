@@ -10,10 +10,12 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import queue
+import threading
 from numpy.random import normal
 from os import listdir
+from time import sleep
 sys.path.append('../../stationsim/')
-
 from stationsim_model import Model
 from ensemble_kalman_filter import EnsembleKalmanFilter
 
@@ -402,8 +404,8 @@ def run_repeat_combos(resume=True):
             combos = json.load(json_file)
     else:
         ap = [2, 5, 10, 20, 50]
-        es = [2, 5, 10, 20, 50]
-        pop = [5 * i for i in range(1, 6)]
+        es = [2, 5, 10, 20, 50, 100]
+        pop = [1+(5 * i) for i in range(0, 11)]
         sigma = [0.5 * i for i in range(1, 6)]
 
         combos = list()
@@ -416,21 +418,96 @@ def run_repeat_combos(resume=True):
                         combos.append(t)
 
     i = 0
+    combos.reverse()
     while combos:
         c = combos.pop()
         print('running for {0}'.format(str(c)))
-        run_repeat(*c, write_json=True)
+        run_repeat(*c, N=10, write_json=True)
         if i % 5 == 0:
             with open('results/combos.json', 'w', encoding='utf-8') as f:
                 json.dump(combos, f, ensure_ascii=False, indent=4)
-        if i == 100:
+        if i % 40 == 25:
+            print('Taking a short break.\n\n\n')
+            sleep(30)
+        if i % 200 == 123:
+            print('Taking a long break.\n\n\n')
+            sleep(300)
+        if i == 1000:
             break
         i += 1
-        
+
+
+def run_repeat_combos_mt(num_worker_threads=2):
+    print('getting started with {0} threads'.format(num_worker_threads))
+
+    def do_work():
+        i = 0
+        tn = threading.current_thread().getName()
+        print('starting {0}'.format(tn))
+        while True:
+            item = q.get()
+            if item is None:
+                break
+
+            if i % 40 == 25:
+                print('Taking a short break.\n\n\n')
+                sleep(30)
+            if i % 200 == 123:
+                print('Taking a long break.\n\n\n')
+                sleep(120)
+
+            ts = ''
+            for k, v in item.items():
+                ts = ts + '{0}: {1} '.format(k, v)
+
+            print('{0} is running {1}'.format(tn, ts))
+
+            run_repeat(**item)
+
+            i += 1
+            q.task_done()
+
+    ap = [2, 5, 10, 20, 50]
+    es = [2, 5, 10, 20, 50, 100]
+    pop = [1+(5 * i) for i in range(0, 11)]
+    sigma = [0.5 * i for i in range(1, 6)]
+
+    combos = list()
+
+    for a in ap:
+        for e in es:
+            for p in pop:
+                for s in sigma:
+                    t = {'a': a, 'e': e, 'p': p,
+                         's': s, 'N': 10, 'write_json': True}
+                    # t = (a, e, p, s)
+                    combos.append(t)
+
+    # combos.reverse()
+
+    q = queue.Queue()
+    for c in combos:
+        q.put(c)
+
+    print('{} jobs to complete'.format(len(combos)))
+    threads = list()
+
+    for _ in range(num_worker_threads):
+        t = threading.Thread(target=do_work)
+        threads.append(t)
+        t.start()
+
+    q.join()
+    for _ in range(num_worker_threads):
+        q.put(None)
+    for t in threads:
+        t.join()
+
 
 # run_all(20, 300, 50, 10)
 # run_combos()
 # run_repeat()
+
 
 def process_batch(read_time=False, write_time=True):
     """
@@ -640,12 +717,14 @@ def testing():
     Overall function that wraps around what we want to run at any specific
     time.
     """
-    with open('results/data.json') as json_file:
-        data = json.load(json_file)
-    forecasts, analyses, observations = process_repeat_results(data)
-    plot_all_results(forecasts, analyses, observations)
-    plot_with_errors(forecasts, analyses, observations)
+    # with open('results/data.json') as json_file:
+        # data = json.load(json_file)
+    # forecasts, analyses, observations = process_repeat_results(data)
+    # plot_all_results(forecasts, analyses, observations)
+    # plot_with_errors(forecasts, analyses, observations)
     # run_repeat_combos(resume=True)
+    run_repeat_combos_mt(4)
 
-# testing()
-process_batch(read_time=True)
+
+testing()
+# process_batch(read_time=True)

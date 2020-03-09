@@ -41,8 +41,11 @@ import pickle
 
 #due to import errors from other directories
 
-sys.path.append("..")
-from stationsim.stationsim_model import Model
+try:
+    sys.path.append("../../../stationsim")
+    from stationsim_model import Model
+except:
+    pass
 
 #for plots
 

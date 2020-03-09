@@ -22,8 +22,11 @@ citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
 
 import sys #for print suppression#
 #sys.path.append('../../stationsim')
-sys.path.append('..')
-from stationsim.stationsim_model import Model
+try:
+    sys.path.append('..')
+    from stationsim.stationsim_model import Model
+except:
+    pass
 import numpy as np
 from math import floor,ceil,log10
 import datetime
@@ -45,8 +48,6 @@ from matplotlib.collections import PatchCollection
 from shapely.geometry import Polygon,MultiPoint
 from shapely.prepared import prep
 
-"import other useful things from other ukf file"
-from stationsim.ukf import animations
 
 
 """

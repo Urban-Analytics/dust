@@ -132,6 +132,8 @@ class Agent:
                 if model.do_history:
                     self.history_collisions += 1
                     model.history_collision_locs.append(new_location)
+                    model.history_collision_times.append(model.step_id)
+
             else:
                 break
             # If even the slowest speed results in a colision, then wiggle.
@@ -296,6 +298,7 @@ class Model:
             self.history_state = []
             self.history_wiggle_locs = []
             self.history_collision_locs = []
+            self.history_collision_times = []
             self.steps_taken = []
             self.steps_exped = []
             self.steps_delay = []

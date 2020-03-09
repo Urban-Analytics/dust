@@ -20,11 +20,15 @@ import os
 import multiprocessing
 from astropy.stats import RipleysKEstimator # astropy's ripley's K
 import pandas as pd
+import glob
+import datetime
+
 sys.path.append("..")
 from stationsim_model import Model #python version of stationsim
 
 import matplotlib.pyplot as plt
 from seaborn import kdeplot
+
 
 class HiddenPrints:
     
@@ -43,8 +47,8 @@ class HiddenPrints:
         sys.stdout.close()
         sys.stdout = self._original_stdout
         
+        
 class stationsim_RipleysK():
-    
     
     """ Class for calculating Ripley' K curves on stationsim collisions
     and saving them as pandas dataframes.
@@ -107,6 +111,7 @@ class stationsim_RipleysK():
     
     @staticmethod
     def run_model(model_params):
+        
         """
         Create a new stationsim model using `model_params` and step it
         until it has finished.
@@ -129,8 +134,7 @@ class stationsim_RipleysK():
         return model
         
 
-    def ripleysKE(self, models, model_params):
-        
+    def ripleysKE(self, collisions, width, height):
         
         """ Generate Ripley's K (RK) curve for collisions in StationSim region.
         
@@ -142,13 +146,12 @@ class stationsim_RipleysK():
         Parameters
         ------
         
-        models : list
-            list of stationsim `models`
-        
-        model_params : dict
-            `model_params` dictionary of model parameters for the list
-            of models
+        collisions : list
+            list of model `collisions`
             
+        width, height : float
+            `width` and `height` of stationsim model
+        
         Returns 
         ------
         
@@ -159,12 +162,11 @@ class stationsim_RipleysK():
         """
         
         "define area of stationsim."
-        width = model_params["width"]
-        height = model_params["height"]
-        area = width*height
         
         "init astropy RKE class with stationsim boundaries/area"
-        rke = RipleysKEstimator(area = width * height, 
+        
+        area = width * height
+        rke = RipleysKEstimator(area = area, 
                                 x_max = width, y_max = height,
                                 y_min = 0, x_min = 0)
         
@@ -180,11 +182,11 @@ class stationsim_RipleysK():
         
         "generate the full list of radii for data frame later."
         "just repeats r above for how many models we have"
-        rs = [r]*len(models)
+        rs = [r]*len(collisions)
         
         "placeholder list for RK estimates"
         rkes = []        
-        for i, model in enumerate(models):
+        for i, collision in enumerate(collisions):
             
             """estimate RK curve given model collisions and list of radii
             Note mode arguement here for how to deal with common edge effect problem.
@@ -192,16 +194,15 @@ class stationsim_RipleysK():
             Either none or translation recommended.
             """
             
-            collisions = np.vstack(model.history_collision_locs)
             #rkes.append(rke(collisions, radii=r, mode='none')) 
-            rkes.append(rke(collisions, radii=r, mode='translation'))
+            rkes.append(rke(collision, radii=r, mode='translation'))
             #rkes.append(rke(collisions, radii=r, mode='ohser')) 
             #rkes.append(rke(collisions, radii=r, mode='var-width')) 
             #rkes.append(ke(collisions, radii=r, mode='ripley')) 
             
             "this can take a long time so here's a progess bar"
             
-            print("\r" + str((i+1)/len(models)*100) 
+            print("\r" + str((i+1)/len(collisions)*100) 
                   + "% complete                  ", end = "")
 
         
@@ -210,7 +211,6 @@ class stationsim_RipleysK():
        
     
     def panel_Regression_Prep(self, rkes, rs, id_number):
-        
         
         """ Build the list of model RKEs into a dataframe
         
@@ -285,33 +285,28 @@ class stationsim_RipleysK():
         return data
         
     
-    
-    def generate_Control_Frame(self, models):
-        
+    def generate_Control_Frame(self, collisions, width, height):
         
         """generate a control group of RK curves to compare against
         
-        - generate models
         - calculate RK curves of each model's collisions
         - store values in data frame.
         - save data frame as a control to load against in main
         
         Parameters
         ------
-        models : list
-            list of finished stationsim `models` with history_collision_locs
-            attribute
+        collisions : list
+            list of finished stationsim models `collisions` between agents.
         
         Returns
         ------
         data: array_like
-            assembled RK `data` from our list of models ready for fitting a
+            assembled RK `data` from our list of collisions ready for fitting a
             regression in R. Should have 4 columns as defined above in
             panel_regression_prep. 
         """
         
-        model_params = models[0].params
-        rkes, rs = self.ripleysKE(models, model_params)
+        rkes, rs = self.ripleysKE(collisions)
         data = self.panel_Regression_Prep(rkes, rs, 0)
         
         width = model_params["width"]
@@ -326,32 +321,30 @@ class stationsim_RipleysK():
         
         return data
         
-    def generate_Test_Frame(self, models):
-        
+    
+    def generate_Test_Frame(self, collisions, width, height):
         
         """ Generate frame of test values to compare against
         
         Parameters
         ------
-        models : list
-            list of finished stationsim `models` with history_collision_locs
-            attribute
+        collisions : list
+            list of finished stationsim models `collisions` between agents.
         
         Returns
         ------
         data: array_like
-            assembled RK `data` from our list of models ready for fitting a
+            assembled RK `data` from our list of collisions ready for fitting a
             regression in R. Should have 4 columns as defined above in
             panel_regression_prep. 
         """
-        model_params = models[0].params
-        rkes, rs = self.ripleysKE(models, model_params)
+        rkes, rs = self.ripleysKE(collisions, width, height)
         data = self.panel_Regression_Prep(rkes, rs, 1)
         
         return data
         
+    
     def save_Frame(self, data, f_name):
-        
         
         """ Save a pandas data frame
         
@@ -370,8 +363,8 @@ class stationsim_RipleysK():
         
         data.to_csv(f_name, index = False)
 
+
     def load_Frame(self, f_name):
-        
         
         """ Load a pandas data frame.
         
@@ -390,8 +383,8 @@ class stationsim_RipleysK():
         
         return pd.read_csv(f_name)
     
-    def collisions_kde(self, model):
-        
+    
+    def collisions_kde(self, collisions, width, height):
         
         """ Plot spread of collisions through stationsim as a KDE plot
         
@@ -402,20 +395,19 @@ class stationsim_RipleysK():
         """
         
         
-        collisions = np.vstack(model.history_collision_locs)
         x = collisions[:,0]
         y = collisions[:,1]
         
         plt.figure()
         im = kdeplot(x, y)
-        plt.xlim([0, model.width])
-        plt.ylim([0, model.height])
+        plt.xlim([0, width])
+        plt.ylim([0, height])
         plt.xlabel("StationSim Width")
         plt.ylabel("StationSim Height")
         plt.title("KDE of Agent Collisions over StationSim")
     
+    
     def spaghetti_RK_Plot(self, data):
-        
         
         """plot RK trajectories for several models and control and test batches
 
@@ -448,6 +440,7 @@ class stationsim_RipleysK():
         plt.ylabel("RK Score")
         plt.legend()
  
+    
     def notebook_RK_Plot(self, data1, data2):
         
         """Plot for RK notebook showing two extreme examples of RK curves
@@ -483,9 +476,9 @@ class stationsim_RipleysK():
         plt.ylabel("RK Score")
         plt.legend()
         
-    def main(self, test_models, model_params):
-     
         
+    def main(self, test_collisions, model_params):
+     
         """Main function for comparing python and cpp outputs.
         
         - Check a control file exists given specified model parameters
@@ -498,16 +491,17 @@ class stationsim_RipleysK():
         
         Parameters
         ------
-        test_models : list
-            list of finished stationsim `models` with history_collision_locs
-            attribute
         
+        test_collisions : list
+            list of (nx2) array stationsim model 'collisions'
+            
         Returns 
         ------
         
         data : array_like
             Joined pandas `data` frame for control and test groups.
         """
+        
         "generate control file name to load from model parameters"
         width = model_params["width"]
         height = model_params["height"]
@@ -525,10 +519,10 @@ class stationsim_RipleysK():
             print("Generating control frame using large number of models (100).")
             print("This may take a while if you have a large population of agents")
             control_models = self.generate_Model_Sample(100, model_params)
-            data_control = self.generate_Control_Frame(control_models)
+            data_control = self.generate_Control_Frame(control_models, width, height)
         
-        "generate data frame from test_models"
-        data_test = self.generate_Test_Frame(test_models)
+        "generate data frame from test_collisions"
+        data_test = self.generate_Test_Frame(test_collisions, width, height)
         
         "join control and test ferames and save as joined frame."
         data = pd.concat([data_control, data_test])
@@ -538,6 +532,86 @@ class stationsim_RipleysK():
 
         return data
     
+  
+def collision_Folder_Name(source, parameters):
+    
+    """ name of subfolder to generate sub csvs
+    
+    folder name consists of three parts
+    source - where do collisions come from
+    parameters - list of important stationsim parameters saved into file name
+    unique id - identifier for multiple runs of same parameters. uses hex
+    version of uuid4. This should be universally unique. Perhaps a time stamp
+    would be easier but uuid exists in cpp as well. 
+    
+    Parameters
+    ------
+    source : str
+        which language do collisions come from. python cpp etc.
+        
+    parameters : list
+        List of important parameters from stationsim to load in file name.
+        We use model width, height, pop_total, and gates_speed.
+    
+    Returns
+    ------
+    folder_name : string
+        `folder_name` name of folder to save files to.
+        
+    """
+    parameter_string = ""
+    for item in parameters:
+        parameter_string += str(item) + '_'
+    
+    "uuid provides unique indentifier in string."
+    time_id =  datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+    folder_name = source + "_" + parameter_string + time_id
+    return folder_name
+    
+
+def save_Collision_csvs(collisions, folder_name):
+    
+    """ save model collision csvs
+    
+    Parameters
+    ------
+    collisions : list 
+        list of (nx2) numpy `collisions` arrays.
+        
+    folder_name : string
+        `folder_name` Name of folder csvs are saved to.
+    """
+        
+    os.mkdir(folder_name)
+    for i, collision in enumerate(collisions):
+        file_name = folder_name + "/" + str(i) + ".csv"
+        frame = pd.DataFrame(collision)
+        frame.to_csv(file_name, index = False)
+    
+    
+def load_Collision_csvs(folder_name):
+    
+    """ load model collision csvs
+    
+    Parameters
+    ------
+    folder_name : string
+        `folder_name` Name of folder csvs are saved to.
+        
+    Returns
+    ------
+    collisions : list 
+        list of (nx2) numpy `collisions` arrays.  
+    """
+    
+    collisions = []
+    files = glob.glob(folder_name + "/*")
+    for file in files:
+        data = pd.read_csv(file)
+        collisions.append(np.array(data))
+    
+    return collisions
+
 #%%
 if __name__ == "__main__":
     
@@ -565,6 +639,8 @@ if __name__ == "__main__":
     
     'do_history': True,
     'do_print': True,
+    
+    "random_seed" : None,
     }
     """number of model repetitions n. Recommend at least 30 for <50 agents
      and at least 100 for >50 agents."""
@@ -575,11 +651,19 @@ if __name__ == "__main__":
     "generate models to test. done in python here but can swap as necessary."
     "could even reduce this to just each model's collisions"
     test_models = ssRK.generate_Model_Sample(n_test_runs, model_params)
-
-    data = ssRK.main(test_models, model_params)
+    "convert to collisions"
+    test_collisions = [np.vstack(model.history_collision_locs) for model in test_models]
+    
+    data = ssRK.main(test_collisions, model_params)
     ssRK.spaghetti_RK_Plot(data)
     
     
     
     
+    "example of loading and saving python csvs."
+    """
 
+    save_Collision_csvs(test_collisions, folder_name)
+    
+    loaded_collision = load_Collision_csvs(folder_name)
+    """

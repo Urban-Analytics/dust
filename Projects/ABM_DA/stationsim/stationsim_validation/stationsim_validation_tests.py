@@ -16,8 +16,11 @@ import multiprocessing
 
 class Test_ssRK(unittest.TestCase):
     
+    
     @classmethod
     def setUpClass(cls):
+        
+        "initiate test class with some model parameters and init ssRK"
         
         cls.model_params = {
 
@@ -47,8 +50,8 @@ class Test_ssRK(unittest.TestCase):
         }
         cls.ssRK = stationsim_RipleysK()
     
+    
     def test_generate_Model_Sample(self):
-        
         
         """ test generate_Model_Sample generates a list of stationsim models
         
@@ -74,8 +77,8 @@ class Test_ssRK(unittest.TestCase):
         "assert model has seed 8 by comparing number of collisions"
         self.assertEqual(actual, expected)
 
+
     def test_RipleysKE(self):
-        
         
         """Test if Ripley's K calculation works using seeded model.
         
@@ -102,6 +105,7 @@ class Test_ssRK(unittest.TestCase):
         AAAE(actual_rkes[0].ravel(), expected_rkes)
         AAAE(actual_rs[0].ravel(), expected_rs)
         
+        
     def test_panel_Regression_Prep(self):
         
         """test the pandas dataframe assembly produces the 
@@ -125,6 +129,7 @@ class Test_ssRK(unittest.TestCase):
         expected_data = self.ssRK.load_Frame("RK_csvs/test_panel_regression_prep.csv")
 
         pd.util.testing.assert_frame_equal(actual_data, expected_data)
+        
         
     def test_ssRK_Main(self):
         

@@ -10,6 +10,8 @@ This file is currently just the types of testing needed
 and potential ideas for said tests.
 This is just a placeholder of ideas for now. Feel free to delete.
 
+Ideas from  https://link.springer.com/article/10.1057/jos.2012.26
+
 This isnt particulaly straightforward as unit testing has a vaguer meaning
 in ABM literature.
 

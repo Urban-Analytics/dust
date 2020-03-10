@@ -657,13 +657,3 @@ if __name__ == "__main__":
     data = ssRK.main(test_collisions, model_params)
     ssRK.spaghetti_RK_Plot(data)
     
-    
-    
-    
-    "example of loading and saving python csvs."
-    """
-
-    save_Collision_csvs(test_collisions, folder_name)
-    
-    loaded_collision = load_Collision_csvs(folder_name)
-    """

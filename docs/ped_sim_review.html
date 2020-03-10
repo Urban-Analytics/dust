@@ -1,0 +1,1520 @@
+---
+layout: page
+title: Pedestrian Simualtion Software Review
+tagline: A review of pedestrian simulation software that might be relevant to the project
+---
+
+<p>Author: Thomas Richards, Data Science Intern, Leeds Institute for Data Science (<a href="lida.leeds.ac.uk">LIDA</a>), <a href="leeds.ac.uk">University of Leeds</a>.</p>
+
+<p>See the <a href="./ped_sim_review.pdf">pdf here</a> for a copy of this report with graphics included.</p>
+
+<h1 id="aim">Aim</h1>
+<p>To review a number of different software libraries and platforms that can be used to create agent-based pedestrian simulations, in particular to find a library that will allow us to use data assimilation to update the state of the model at runtime.</p>
+<h1 id="method">Method</h1>
+<p>Search Google, GitHub, SourceForge, Wikipedia etc, and personal suggestions/recommendations.</p>
+<p>Priorities are software which: 1. able to run agent-based pedestrian simulations; 2. is open source; 3. is modular/accessible; 4. Allows run-time intervention (e.g. to add, change, remove agents whilst simulation is running); 4. uses a language popular with the research team, namely Python and/or Java.</p>
+<p>Software that have not been updated or appear to be no longer supported, have no documentation, or are unsuitable have been included in the list so that there is a record they have been checked but may not include much detail.</p>
+<p>Sections for software which was not short listed may be incomplete.</p>
+<h1 id="results">Results</h1>
+<p>Models are given a rating out of three *’s. Note that these ratings indicate the <em>suitability of the software for the research project.</em> They are not a general assessment of the quality of the software; we do not suggest that a library with a high rating is inherently better than one with a low rating, just that it may be more suitable for use in the DUST project. If the authors of the software would like us to amend any inaccuracies or errors with respect to their software we will be happy to. Please contact the Principal Investigator, <a href="https://environment.leeds.ac.uk/geography/staff/1069/dr-nick-malleson">Nick Malleson</a>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>[SL]</th>
+<th>Shortlisted</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>[NE]</td>
+<td>Not explored.</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>= No stars. Could not run or excluded for other reasons</td>
+</tr>
+<tr class="odd">
+<td>*</td>
+<td>= May not start, but potentially promising</td>
+</tr>
+<tr class="even">
+<td>**</td>
+<td>= Looks useful but not ideal</td>
+</tr>
+<tr class="odd">
+<td>***</td>
+<td>= Could be ideal, recommended</td>
+</tr>
+</tbody>
+</table>
+<h1 id="contents">Contents</h1>
+
+<p><a href="#open-source">Open source</a></p>
+<p><a href="#vadere-sl">Vadere ***[SL]</a></p>
+<p><a href="#cromosim-sl">Cromosim **[SL]</a></p>
+<p><a href="#menge-sl">Menge *[SL]</a></p>
+<p><a href="#crowd-dynamics-sl">Crowd Dynamics *[SL]</a></p>
+<p><a href="#pedsim-sl">PEDSIM *[SL]</a></p>
+<p><a href="#jupedsim-sl">JuPedSim [SL]</a></p>
+<p><a href="#jcrowdsimulator-ne">jCrowdSimulator [NE]</a></p>
+<p><a href="#mesa-ne">Mesa [NE]</a></p>
+<p><a href="#rvo2-library-ne">RVO2 Library [NE]</a></p>
+<p><a href="#fire-dynamics-simulator-ne">Fire Dynamics Simulator [NE]</a></p>
+<p><a href="#agents.jl-agent-based-modeling-framework-in-julia-ne">Agents.jl [NE]</a></p>
+<p><a href="#licensed-or-3d">Licensed or 3d</a></p>
+<p><a href="#anylogic-pedestrian-simulation">AnyLogic Pedestrian simulation ***</a></p>
+<p><a href="#incontrol-simulation-software">INCONTROL Simulation Software **/a></p>
+<p><a href="#oasys-massmotion">Oasys MassMotion *</a></p>
+<p><a href="#quadstone-paramics">Quadstone Paramics *</a></p>
+<p><a href="#ucrowds">UCrowds</a></p>
+<p><a href="#crowdsim3d-ne">CrowdSim3D [NE]</a></p>
+<p><a href="#crowdmaster-ne">CrowdMaster [NE]</a></p>
+<p><a href="#crowd.lab-ne">Crowd.lab [NE]</a></p>
+<p><a href="#urho3d-ne">Urho3D [NE]</a></p>
+<p><a href="#golaem-crowd-ne">Golaem Crowd [NE]</a></p>
+<p><a href="#massive-ne">MASSIVE [NE]</a></p>
+<p><a href="#ptv-vissim-ne">PTV Vissim [NE]</a></p>
+<p><a href="#crowdvision-ne">CrowdVision [NE]</a></p>
+<p><a href="#crowd-dynamics-ne">Crowd Dynamics [NE]</a></p>
+<p><a href="#modelling-environmentsengines">Modelling Environments/Engines</a></p>
+<p><a href="#blender-ne">Blender [NE]</a></p>
+<p><a href="#unity-ne">Unity [NE</a></p>
+<p><a href="#netlogo-ne">NetLogo [NE]</a></p>
+<p><a href="#repast-ne">Repast [NE]</a></p>
+<p><a href="#mason-ne">Mason [NE]</a></p>
+<p><a href="#steersuite-ne">SteerSuite [NE]</a></p>
+<p><a href="#crowd-nav-ne">Crowd Nav [NE]</a></p>
+<p><a href="#acrowdsimulationusing-opencl-and-based-on-the-continuum-approach-ne">A crowd simulation using OpenCL [NE]</a></p>
+<p><a href="#template-slne">TEMPLATE ***[SL][NE]</a></p>
+<h1 id="open-source">Open source</h1>
+<h2 id="vadere-sl">Vadere ***[SL]</h2>
+<p>Vadere is built and maintained by the research group of Gerta Köster &lt;<a href="mailto:gerta.koester@hm.edu">gerta.koester@hm.edu</a>&gt; at the Department of Computer Science and Mathematics at the Munich University of Applied Sciences. The platform is open source and available for free. This is the best open source platform I came across, and Gerta seems very responsive and keen to collaborate. Gerta seems very positive that it would be easy to implement dynamic data assimilation and has students working in making it accessible from a software architecture perspective. The software itself is very nice and includes a GUI through which the code seems to be accessible (for simulation, model, topography, events etc). It looks easy to create an environment through the GUI. As the simulation runs, the visuals are clear and you can toggle features such as trajectory, density etc, and generates output files at the end through which you could presumably save data for analysis. Several models are already implemented in the program: optimal steps model, the gradient navigation model, and the social force model. Many examples are can be run straight out of the box.</p>
+<h3 id="url">URL</h3>
+<p><a href="http://www.vadere.org/" class="uri">http://www.vadere.org/</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="http://www.vadere.org/publications/" class="uri">http://www.vadere.org/publications/</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>***</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><img src="media/image1.png" /></p>
+<h3 id="successful-installationtrial-run">Successful installation/trial run?</h3>
+<p>Yes – Linux installation successful</p>
+<h3 id="compatible-operating-systems">Compatible operating systems</h3>
+<p>Windows, OS X and Linux</p>
+<h3 id="language">Language?</h3>
+<p>Java</p>
+<h3 id="d3d">2D/3D?</h3>
+<p>2D</p>
+<h3 id="tutorials">Tutorials?</h3>
+<p>Installation: <a href="https://gitlab.lrz.de/vadere/vadere" class="uri">https://gitlab.lrz.de/vadere/vadere</a></p>
+<p>Tutorials: <a href="http://www.vadere.org/video-tutorials/" class="uri">http://www.vadere.org/video-tutorials/</a></p>
+<h3 id="intended-use">Intended use</h3>
+<p>Simulation of microscopic pedestrian dynamics</p>
+<h3 id="models-implemented">Models implemented</h3>
+<p>Optimal steps model, the gradient navigation model, and the social force model</p>
+<h3 id="command-linegui">Command line/GUI?</h3>
+<p>GUI, code accessible</p>
+<h3 id="intervenechange-parameters-during-simulation">Intervene/change parameters during simulation?</h3>
+<p>Yes</p>
+<h3 id="features">Features</h3>
+<p>Integrates EikMesh (<a href="http://www.vadere.org/the-eikmesh-library/" class="uri">http://www.vadere.org/the-eikmesh-library/</a> ) to generate meshes for spatial discretization of pedestrian dynamics.</p>
+<h3 id="open-to-collaboration">Open to collaboration?</h3>
+<p>Yes</p>
+<h3 id="source">Source</h3>
+<p>SourceFourge</p>
+<h2 id="cromosim-sl">Cromosim **[SL]</h2>
+<p>Cromosim is a Python library for crowd motion simulation maintained by Sylvain Faure &lt;<a href="mailto:sylvain.faure@math.u-psud.fr">sylvain.faure@math.u-psud.fr</a>&gt;. On the surface it seems to be very useful, mainly because if its simplicity of use. There are several very simple example models which run well and seem like they would be easy to integrate with each other and adapt for your purposes. On closer examination the code seems messy and not very well commented. However the examples run well and look like they could be adapted for use in an agent-based model. When you run the example models in Python, some plots are generated of data taken from the simulation (such as sensor crossings – see social force model example: <a href="http://www.cromosim.fr/example_micro.html#social-force-model" class="uri">http://www.cromosim.fr/example_micro.html#social-force-model</a>).</p>
+<h3 id="url-1">URL</h3>
+<p><a href="https://github.com/sylvain-faure/cromosim" class="uri">https://github.com/sylvain-faure/cromosim</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="http://www.cromosim.fr/example_micro.html#social-force-model" class="uri">http://www.cromosim.fr/example_micro.html#social-force-model</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>**</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>**</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>Not contacted</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><img src="media/image2.png" /></p>
+<h3 id="successful-installationtrial-run-1">Successful installation/trial run?</h3>
+<p>Yes on Windows</p>
+<h3 id="language-1">Language?</h3>
+<p>Python</p>
+<h3 id="d3d-1">2D/3D?</h3>
+<p>2D</p>
+<h3 id="tutorials-1">Tutorials?</h3>
+<p>Cellular automata: <a href="http://www.cromosim.fr/example_dom.html" class="uri">http://www.cromosim.fr/example_dom.html</a></p>
+<p>Microscopic simulation: <a href="http://www.cromosim.fr/example_micro.html" class="uri">http://www.cromosim.fr/example_micro.html</a></p>
+<h3 id="intended-use-1">Intended use</h3>
+<p>Crowd motion simulation</p>
+<h3 id="models-implemented-1">Models implemented</h3>
+<p>1D: follow-the-leader</p>
+<p>2D: cellular automata, social forces, granular, compartment model</p>
+<h3 id="command-linegui-1">Command line/GUI?</h3>
+<p>Python code</p>
+<h3 id="intervenechange-parameters-during-simulation-1">Intervene/change parameters during simulation?</h3>
+<p>Seems likely</p>
+<h3 id="open-to-collaboration-1">Open to collaboration?</h3>
+<p>Not contacted but all available on GitHub so plausibly</p>
+<h3 id="source-1">Source </h3>
+<p>GitHub</p>
+<h2 id="menge-sl">Menge *[SL]</h2>
+<p>Menge looks like it would be ideal for building and adapting models with a very modular and accessible design. For example, it can be used to different compare models in the same situation. It allows the comparison of different models. It is only maintained by one person, Sean Curtis, &lt;<a href="mailto:seanc@cs.unc.edu">seanc@cs.unc.edu</a>&gt; in his spare time, and I couldn’t get it installed as there appears to be some quite specific requirements in terms of versions for installation (e.g. Visual studio 2005, 2012). It also runs on C++ which could complicate things unless the user is C-savvy.</p>
+<h3 id="url-2">URL</h3>
+<p><a href="http://gamma.cs.unc.edu/Menge/" class="uri">http://gamma.cs.unc.edu/Menge/</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="http://gamma.cs.unc.edu/Menge/files/MengeTechReport.pdf" class="uri">http://gamma.cs.unc.edu/Menge/files/MengeTechReport.pdf</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>*</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>**</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><img src="media/image3.png" /></p>
+<h3 id="successful-installationtrial-run-2">Successful installation/trial run?</h3>
+<p>No. Failed to build on Linux</p>
+<h3 id="compatible-operating-systems-1">Compatible operating systems</h3>
+<p>Windows with Visual Studio (2005 and 2012)</p>
+<p>Linux (Ubuntu 14) using g++</p>
+<h3 id="language-2">Language?</h3>
+<p>C++, Uses tinyxml to parse XML</p>
+<h3 id="d3d-2">2D/3D?</h3>
+<p>Both</p>
+<h3 id="tutorials-2">Tutorials?</h3>
+<p><a href="http://gamma.cs.unc.edu/Menge/learn/gettingStarted.html" class="uri">http://gamma.cs.unc.edu/Menge/learn/gettingStarted.html</a></p>
+<h3 id="intended-use-2">Intended use</h3>
+<p>Cross-platform, modular framework for crowd simulation</p>
+<h3 id="models-implemented-2">Models implemented</h3>
+<p>Multiple. Includes Behaviour Finite State Machine (BFSM) which may be native model, and particle model.</p>
+<h3 id="command-linegui-2">Command line/GUI?</h3>
+<p>Not specified but states is “framework for simulating crowds and developing novel pedestrian models and techniques”</p>
+<h3 id="intervenechange-parameters-during-simulation-2">Intervene/change parameters during simulation?</h3>
+<p>Should be possible writing plugins</p>
+<h3 id="features-1">Features</h3>
+<p>Users can submit own add-ons</p>
+<h3 id="open-to-collaboration-2">Open to collaboration?</h3>
+<p>Yes</p>
+<h3 id="source-2">Source </h3>
+<p>GitHub</p>
+<h2 id="crowd-dynamics-sl">Crowd Dynamics *[SL]</h2>
+<p>Initially appeared as though it may be useful, but is in early stages of development and failed on installation. The creator (Jaan Tollander, &lt;<a href="mailto:de.tollander@aalto.fi">de.tollander@aalto.fi</a>&gt;) has not updated it and it does not appear to be a priority. Although the software could be installed successfully on the command line, the GUI did not install properly. It is a Python package created in summer 2016 for Systems Analysis Laboratory at Aalto University in Finland. There appears to be plans to integrate it into Anaconda, though this does not appear to have been implemented as yet.</p>
+<h3 id="url-3">URL</h3>
+<p><a href="https://github.com/jaantollander/crowddynamics" class="uri">https://github.com/jaantollander/crowddynamics</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="https://jaantollander.com/crowddynamics/multiagent.html" class="uri">https://jaantollander.com/crowddynamics/multiagent.html</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>**</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>*</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>**</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>*</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><img src="media/image4.png" /></p>
+<h3 id="successful-installationtrial-run-3">Successful installation/trial run?</h3>
+<p>No. Though the Crowd Dynamics software itself appeared to build successfully, the GUI did not and the creator could not get it to run due to apparent compatibility issues and needs to update the code from pyqt4 to pyqt5 but has not done this yet.</p>
+<h3 id="compatible-operating-systems-2">Compatible operating systems</h3>
+<p>Tested (by creator) on Ubuntu 16.04.</p>
+<h3 id="language-3">Language?</h3>
+<p>Python</p>
+<h3 id="d3d-3">2D/3D?</h3>
+<p>2D</p>
+<h3 id="tutorials-3">Tutorials?</h3>
+<p>Incomplete: <a href="https://jaantollander.com/crowddynamics/usage.html" class="uri">https://jaantollander.com/crowddynamics/usage.html</a></p>
+<h3 id="intended-use-3">Intended use</h3>
+<p>A simulation environment written as a Python package for simulation movement of crowds</p>
+<h3 id="models-implemented-3">Models implemented</h3>
+<p>Agent-based models</p>
+<h3 id="command-linegui-3">Command line/GUI?</h3>
+<p>GUI</p>
+<h3 id="intervenechange-parameters-during-simulation-3">Intervene/change parameters during simulation?</h3>
+<p>?</p>
+<h3 id="features-2">Features</h3>
+<p>?</p>
+<h3 id="open-to-collaboration-3">Open to collaboration?</h3>
+<p>?</p>
+<h3 id="source-3">Source </h3>
+<p>GitHub</p>
+<h2 id="pedsim-sl">PEDSIM *[SL]</h2>
+<p>Looks like nice software but could not install. Runs on C++ without additional packages. At current there is no PEDSIM application that allows you to design, run and analyse your own scenario. At this point, PEDSIM is a library, plus some helper applications. This means you basically have to write your own application. You need a C++ compiler and some computer science knowledge. Updated very recently, but no response by email from the creator (Christian Gloor &lt;<a href="mailto:chgloor@silmaril.org">chgloor@silmaril.org</a>&gt;).</p>
+<h3 id="url-4">URL</h3>
+<p><a href="http://pedsim.silmaril.org/" class="uri">http://pedsim.silmaril.org/</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="http://pedsim.silmaril.org/documentation/libpedsim/libpedsim.pdf" class="uri">http://pedsim.silmaril.org/documentation/libpedsim/libpedsim.pdf</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>**</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>*</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>*</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><img src="media/image5.png" /></p>
+<h3 id="successful-installationtrial-run-4">Successful installation/trial run?</h3>
+<p>No, not built on Linux</p>
+<h3 id="compatible-operating-systems-3">Compatible operating systems</h3>
+<p>Linux: tried and tested (by creator)</p>
+<p>Windows: supported on visual studio</p>
+<h3 id="language-4">Language?</h3>
+<p>C++</p>
+<h3 id="d3d-4">2D/3D?</h3>
+<p>2D with 3D capabilities</p>
+<h3 id="tutorials-4">Tutorials?</h3>
+<p>Some examples with videos: <a href="http://pedsim.silmaril.org/examples/" class="uri">http://pedsim.silmaril.org/examples/</a></p>
+<h3 id="intended-use-4">Intended use</h3>
+<p>PEDSIM is a microscopic pedestrian crowd simulation library.</p>
+<h3 id="models-implemented-4">Models implemented</h3>
+<p>Social force, cellular automata details available from documentation: <a href="http://pedsim.silmaril.org/documentation/libpedsim/libpedsim.pdf" class="uri">http://pedsim.silmaril.org/documentation/libpedsim/libpedsim.pdf</a></p>
+<h3 id="command-linegui-4">Command line/GUI?</h3>
+<p>GUI, code accessible</p>
+<h3 id="intervenechange-parameters-during-simulation-4">Intervene/change parameters during simulation?</h3>
+<p>Unknown</p>
+<h3 id="features-3">Features</h3>
+<p>?</p>
+<h3 id="open-to-collaboration-4">Open to collaboration?</h3>
+<p>No response</p>
+<h3 id="source-4">Source </h3>
+<p>SourceFourge</p>
+<h2 id="jupedsim-sl">JuPedSim [SL]</h2>
+<p>Looked promising, but failed on installation. Appears to be a work in progress or in the process of being heavily updated. Written in C++ and Python. From website:</p>
+<p>“The primary goal of JuPedSim is to provide students and researchers with a framework to investigate pedestrian dynamics and focus on research, i.e. development and validation of new models or model features, analysis of experiments and proper visualization of results.”</p>
+<p>Built from 4 core modules.</p>
+<p><a href="https://www.youtube.com/channel/UCKS8w8CUClHEeN4K1SUSMBA" class="uri">https://www.youtube.com/channel/UCKS8w8CUClHEeN4K1SUSMBA</a></p>
+<h3 id="url-5">URL</h3>
+<p><a href="https://github.com/jupedsim/jpscore" class="uri">https://github.com/jupedsim/jpscore</a></p>
+<p><a href="http://www.jupedsim.org/" class="uri">http://www.jupedsim.org/</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="http://www.jupedsim.org/" class="uri">http://www.jupedsim.org/</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>**</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>**</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><img src="media/image6.png" /></p>
+<h3 id="successful-installationtrial-run-5">Successful installation/trial run?</h3>
+<p>Failed to install</p>
+<h3 id="compatible-operating-systems-4">Compatible operating systems</h3>
+<p>Linux, Windows</p>
+<h3 id="language-5">Language?</h3>
+<p>C++, Python</p>
+<h3 id="d3d-5">2D/3D?</h3>
+<p>2D, appears to have 3D implementation for building design etc.</p>
+<h3 id="tutorials-5">Tutorials?</h3>
+<p>Installation: <a href="http://www.jupedsim.org/jupedsim_install_on_linux.html" class="uri">http://www.jupedsim.org/jupedsim_install_on_linux.html</a></p>
+<p>Use: <a href="http://www.jupedsim.org/jpsreport_howto.html" class="uri">http://www.jupedsim.org/jpsreport_howto.html</a></p>
+<h3 id="intended-use-5">Intended use</h3>
+<p>Pedestrian Dynamics for researchers. Validation of new models or model features, analysis of experiments and proper visualization of results</p>
+<h3 id="models-implemented-5">Models implemented</h3>
+<p>Many <a href="http://www.jupedsim.org/jupedsim_publications.html" class="uri">http://www.jupedsim.org/jupedsim_publications.html</a></p>
+<h3 id="command-linegui-5">Command line/GUI?</h3>
+<p>GUI</p>
+<h3 id="intervenechange-parameters-during-simulation-5">Intervene/change parameters during simulation?</h3>
+<p>?</p>
+<h3 id="features-4">Features</h3>
+<h3 id="open-to-collaboration-5">Open to collaboration?</h3>
+<p>Yes</p>
+<h3 id="source-5">Source </h3>
+<p>Crowd Dynamics documentation website (resources section https://jaantollander.com/crowddynamics/resources.html )</p>
+<h2 id="jcrowdsimulator-ne">jCrowdSimulator [NE]</h2>
+<p>Not explored as it was a known quantity; we have used this simulation with success in the past and have had good discussions with the developer about how it might be adapted to allow for dynamic manipulation of the model at run time. Written in Java. Implements the Social Force Model of Helbing et al. (2005) / Helbing et al. 1995.</p>
+<h3 id="url-6">URL</h3>
+<p><a href="https://github.com/FraunhoferIVI/jCrowdSimulator" class="uri">https://github.com/FraunhoferIVI/jCrowdSimulator</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>*</td>
+<td><a href="https://github.com/FraunhoferIVI/jCrowdSimulator/blob/master/Preprint_Meinert_Hahmann_Brausewetter_Kopf.pdf">Click here</a> for German</td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>?</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-6">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-5">Compatible operating systems</h3>
+<p>Java Virtual Machine</p>
+<p>Windows</p>
+<h3 id="language-6">Language?</h3>
+<p>Java</p>
+<h3 id="d3d-6">2D/3D?</h3>
+<p>2D</p>
+<h3 id="tutorials-6">Tutorials?</h3>
+<p>?</p>
+<h3 id="intended-use-6">Intended use</h3>
+<p>Crowd simulation</p>
+<h3 id="models-implemented-6">Models implemented</h3>
+<p>Social Force Model of Helbing et al. (2005) / Helbing et al. 1995</p>
+<h3 id="command-linegui-6">Command line/GUI?</h3>
+<p>?</p>
+<h3 id="intervenechange-parameters-during-simulation-6">Intervene/change parameters during simulation?</h3>
+<p>Can pause</p>
+<h3 id="features-5">Features</h3>
+<p>Multiple crowds, each having an individual route can be simulated simultaneously</p>
+<p>Point/Line/Polygon data can be used to define obstacles</p>
+<p>The outline of crowds can be computed</p>
+<p>Resulting forces within the simulation can be visualised</p>
+<p>The simulation library may be used independently from the user interface</p>
+<h3 id="open-to-collaboration-6">Open to collaboration?</h3>
+<p>?</p>
+<h3 id="source-6">Source </h3>
+<p>Suggestion</p>
+<h2 id="mesa-ne">Mesa [NE]</h2>
+<p>Not explored as it was a known quantity. Mesa is a python library for agent-based modelling rather than a pedestrian simulation in its own right.</p>
+<h3 id="url-7">URL</h3>
+<p><a href="https://mesa.readthedocs.io/en/master/">https://mesa.readthedocs.io/en/master/#</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="https://mesa.readthedocs.io/en/master/">https://mesa.readthedocs.io/en/master/#</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>?</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-7">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-6">Compatible operating systems</h3>
+<p>?</p>
+<h3 id="language-7">Language?</h3>
+<p>Python</p>
+<h3 id="d3d-7">2D/3D?</h3>
+<p>2D</p>
+<h3 id="tutorials-7">Tutorials?</h3>
+<p><a href="https://mesa.readthedocs.io/en/master/">https://mesa.readthedocs.io/en/master/#</a></p>
+<h3 id="intended-use-7">Intended use</h3>
+<p>Agent-based models</p>
+<h3 id="models-implemented-7">Models implemented</h3>
+<p>?</p>
+<h3 id="command-linegui-7">Command line/GUI?</h3>
+<p>Python based, presumably command line</p>
+<h3 id="intervenechange-parameters-during-simulation-7">Intervene/change parameters during simulation?</h3>
+<p>?</p>
+<h3 id="features-6">Features</h3>
+<p>Built-in tools for analysis, browser-based visualization.</p>
+<h3 id="open-to-collaboration-7">Open to collaboration?</h3>
+<p>yes</p>
+<h3 id="source-7">Source </h3>
+<p>Suggestion</p>
+<h2 id="rvo2-library-ne">RVO2 Library [NE]</h2>
+<p>Reciprocal Collision Avoidance for Real-Time Multi-Agent Simulation. An algorithm for interactive navigation and planning of large numbers of agents in two-dimensional (crowded) environments. Does not appear to have been updated since 2016 - not explored in detail for this reason. Was applied in various video games (Warhammer 40K). Might be useful as a library that can be integrated into a pedestrian simulation that we build ourselves.</p>
+<h3 id="url-8">URL</h3>
+<p><a href="http://gamma.cs.unc.edu/RVO2/" class="uri">http://gamma.cs.unc.edu/RVO2/</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="http://gamma.cs.unc.edu/RVO2/documentation/2.0/" class="uri">http://gamma.cs.unc.edu/RVO2/documentation/2.0/</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>**</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>*</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>*</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-8">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-7">Compatible operating systems</h3>
+<p>?</p>
+<h3 id="language-8">Language?</h3>
+<p>C++</p>
+<h3 id="d3d-8">2D/3D?</h3>
+<p>2D, includes 3D implementation</p>
+<h3 id="tutorials-8">Tutorials?</h3>
+<p>?</p>
+<h3 id="intended-use-8">Intended use</h3>
+<p>Crowd simulation, navigating a team of mobile robots, video games, studying natural flocking behavior, traffic engineering, architecture and design, emergency training simulations, etc.</p>
+<h3 id="models-implemented-8">Models implemented</h3>
+<p>Optimal Reciprocal Collision Avoidance (ORCA) formulation for multi-agent simulation: <a href="http://gamma.cs.unc.edu/ORCA/" class="uri">http://gamma.cs.unc.edu/ORCA/</a></p>
+<h3 id="command-linegui-8">Command line/GUI?</h3>
+<p>?</p>
+<h3 id="intervenechange-parameters-during-simulation-8">Intervene/change parameters during simulation?</h3>
+<p>?</p>
+<h3 id="features-7">Features</h3>
+<p>?</p>
+<h3 id="open-to-collaboration-8">Open to collaboration?</h3>
+<p>?</p>
+<h3 id="source-8">Source </h3>
+<p>Crowd Dynamics documentation website (resources section <a href="https://jaantollander.com/crowddynamics/resources.html" class="uri">https://jaantollander.com/crowddynamics/resources.html</a> )</p>
+<h2 id="fire-dynamics-simulator-ne">Fire Dynamics Simulator [NE]</h2>
+<p>Perhaps to specific and not broad enough applications so not explored in detail</p>
+<h3 id="url-9">URL</h3>
+<p><a href="https://github.com/firemodels/fds" class="uri">https://github.com/firemodels/fds</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><p><a href="https://github.com/firemodels/fds/tree/master/Manuals" class="uri">https://github.com/firemodels/fds/tree/master/Manuals</a></p>
+<p><a href="https://drive.google.com/drive/folders/0B_wB1pJL2bFQUlJwMmNfaHlqME0" class="uri">https://drive.google.com/drive/folders/0B_wB1pJL2bFQUlJwMmNfaHlqME0</a></p></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>*</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>*</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>*</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>?</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-9">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-8">Compatible operating systems</h3>
+<p>Windows</p>
+<p>Mac OS</p>
+<p>Linux</p>
+<h3 id="language-9">Language?</h3>
+<p>?</p>
+<h3 id="d3d-9">2D/3D?</h3>
+<p>2D</p>
+<h3 id="tutorials-9">Tutorials?</h3>
+<p>?</p>
+<h3 id="intended-use-9">Intended use</h3>
+<p>Fire Dynamics Simulator (FDS) is a large-eddy simulation (LES) code for low-speed flows, with an emphasis on smoke and heat transport from fires.</p>
+<h3 id="models-implemented-9">Models implemented</h3>
+<p>?</p>
+<h3 id="command-linegui-9">Command line/GUI?</h3>
+<p>?</p>
+<h3 id="intervenechange-parameters-during-simulation-9">Intervene/change parameters during simulation?</h3>
+<p>?</p>
+<h3 id="features-8">Features</h3>
+<p>?</p>
+<h3 id="open-to-collaboration-9">Open to collaboration?</h3>
+<p>Yes</p>
+<h3 id="source-9">Source </h3>
+<p>Crowd Dynamics documentation website (resources section https://jaantollander.com/crowddynamics/resources.html )</p>
+<h2 id="agents.jl-agent-based-modeling-framework-in-julia-ne">Agents.jl: agent-based modeling framework in Julia [NE]</h2>
+<p>Agent-based modelling framework. Presents itself as a competitor to Mesa. Not explored in detail.</p>
+<h3 id="url-10">URL</h3>
+<p><a href="https://github.com/JuliaDynamics/Agents.jl" class="uri">https://github.com/JuliaDynamics/Agents.jl</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="https://juliadynamics.github.io/Agents.jl/dev/mesa/" class="uri">https://juliadynamics.github.io/Agents.jl/dev/mesa/</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>?</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-10">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-9">Compatible operating systems</h3>
+<p>?</p>
+<h3 id="language-10">Language?</h3>
+<p>Julia</p>
+<h3 id="d3d-10">2D/3D?</h3>
+<p>2D</p>
+<h3 id="tutorials-10">Tutorials?</h3>
+<p><a href="https://juliadynamics.github.io/Agents.jl/dev/mesa/" class="uri">https://juliadynamics.github.io/Agents.jl/dev/mesa/</a></p>
+<h3 id="intended-use-10">Intended use</h3>
+<p>It provides a structure and components for quickly implementing agent-based models, run them in batch, collect data, and visualize them.</p>
+<h3 id="models-implemented-10">Models implemented</h3>
+<p>?</p>
+<h3 id="command-linegui-10">Command line/GUI?</h3>
+<h3 id="intervenechange-parameters-during-simulation-10">Intervene/change parameters during simulation?</h3>
+<p>?</p>
+<h3 id="features-9">Features</h3>
+<p>Simple, concise and extendable API for running ABMs.</p>
+<p>Default grids to run the simulations, including simple or toroidal 1D grids, simple or toroidal regular rectangular and triangular 2D grids, and simple or toroidal regular cubic 3D grids with von Neumann or Moore neighbourhoods.</p>
+<p>Allows arbitrary graphs as spaces for the ABMs.</p>
+<p>Several different default schedulers.</p>
+<p>Running the simulations in parallel on multiple cores.</p>
+<p>Automatic data collection in a DataFrame at desired intervals.</p>
+<p>Batch running and batch data collection.</p>
+<p>Visualizing agent distributions on grids.</p>
+<h3 id="open-to-collaboration-10">Open to collaboration?</h3>
+<p>?</p>
+<h3 id="source-10">Source </h3>
+<p>Suggestion</p>
+<h1 id="licensed-or-3d">Licensed or 3d</h1>
+<h2 id="anylogic-pedestrian-simulation">AnyLogic Pedestrian simulation ***</h2>
+<p>Promising, responsive to emails. Draw back may be cost for license. Contact Stuart Rossiter (Head of Technology &amp; Training, DSE Consulting, &lt;<a href="mailto:stuart@dseconsulting.co.uk">stuart@dseconsulting.co.uk</a>&gt;).</p>
+<h3 id="url-11">URL</h3>
+<p><a href="https://www.anylogic.com/airports-stations-shopping-malls/" class="uri">https://www.anylogic.com/airports-stations-shopping-malls/</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>**</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>***</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-11">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-10">Compatible operating systems</h3>
+<p>?</p>
+<h3 id="language-11">Language?</h3>
+<p>Java</p>
+<h3 id="d3d-11">2D/3D?</h3>
+<p>2D and 3D</p>
+<h3 id="tutorials-11">Tutorials?</h3>
+<p>Examples:</p>
+<p><a href="https://www.anylogic.com/features/" class="uri">https://www.anylogic.com/features/</a></p>
+<p><a href="https://www.anylogic.com/resources/libraries/pedestrian-library/" class="uri">https://www.anylogic.com/resources/libraries/pedestrian-library/</a></p>
+<p><a href="https://www.anylogic.com/resources/case-studies/" class="uri">https://www.anylogic.com/resources/case-studies/</a></p>
+<h3 id="intended-use-11">Intended use</h3>
+<p>Pedestrian simulations (primarily industrial applications: evacuation, shopping mall, airport, transport terminal etc. See: <a href="https://cloud.anylogic.com/model/90677dc1-15c5-4bb9-917e-7f6547feceb7?mode=SETTINGS&amp;tab=GENERAL" class="uri">https://cloud.anylogic.com/model/90677dc1-15c5-4bb9-917e-7f6547feceb7?mode=SETTINGS&amp;tab=GENERAL</a> ).</p>
+<h3 id="models-implemented-11">Models implemented</h3>
+<p>Helbing &amp; Molnar (https://arxiv.org/abs/cond-mat/9805244)</p>
+<h3 id="command-linegui-11">Command line/GUI?</h3>
+<p>GUI</p>
+<h3 id="intervenechange-parameters-during-simulation-11">Intervene/change parameters during simulation?</h3>
+<p>Yes</p>
+<h3 id="features-10">Features</h3>
+<p>Can 'enrich' your pedestrian agents with any extra explicitly-designed behaviour you want (and/or move pedestrians in and out of the pedestrian-dynamics physics model where you don't need the detail/accuracy of that movement).</p>
+<p>&gt; Is the source code accessible/is it possible to write modules?</p>
+<p>AnyLogic is a completely extensible Java-based platform. Elements (agents, etc.) you design visually are used to generate and compile Java (which you can view the source code of, though this is not generally useful and this is not editable). Your visually-designed code is still the real 'source code' for the model, but you can add any Java libraries and use those, plus add 'raw' Java classes and interfaces to your models. Agents also have low-level Java constructs (fields, functions/methods, etc.) you can add visually (or as raw Java) for more 'algorithmic' parts of your model logic. (There are visual constructs such as statecharts which are commonly used for modelling many types of agent-based behaviour, including message-based inter-agent communication, plus built-in support for things like agent networks and communication across those networks.)</p>
+<p>&gt; Is it possible to intervene during the simulation and do things such as change parameters/add agents in arbitrary locations?</p>
+<p>Yes you typically have full control to programmatically adjust things during run-time. Some things are harder than others (i.e., require more low-level Java), such as dynamically changing space markup (where you can't directly change it, but you can create new markup dynamically and switch agents to using that). And AnyLogic has some capabilities to more elegantly handle some areas here (e.g., you can dynamically change model parameters, with mechanisms to run 'on change' logic as needed to propagate necessary changes to other parts of the model).</p>
+<p>Stuart Rossiter (Head of Technology &amp; Training, DSE Consulting)</p>
+<h3 id="open-to-collaboration-11">Open to collaboration?</h3>
+<h3 id="source-11">Source </h3>
+<p>Google</p>
+<h2 id="incontrol-simulation-software">INCONTROL Simulation Software **</h2>
+<p>Licensed pedestrian dynamics software. Free trial. Company proud of fact eat Keith Still from MMU endorses it. Pedestrian Dynamics software built on top of the Enterprise Dynamics platform.</p>
+<p>“With Enterprise Dynamics itself we have already established many projects/implementation in which communication is taking place by means of SAP connection, OPC, TCP/IP, Databases, XML, etc. The Pedestrian Dynamics customer starts to be interested in this as well. For example, they want to detect how many people are present in certain areas and change the model accordingly. An other example is that they want to see cameras in the 3D model and be able to double click on it to see the actual footage. We are currently looking at implementing a system to accommodate REST API’s.”</p>
+<p>Contact: Fred Jansma &lt;Fred.Jansma@incontrolsim.com&gt;</p>
+<h3 id="url-12">URL</h3>
+<p><a href="https://www.incontrolsim.com/software/pedestrian-dynamics/" class="uri">https://www.incontrolsim.com/software/pedestrian-dynamics/</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>*</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>***</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-12">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-11">Compatible operating systems</h3>
+<p>?</p>
+<h3 id="language-12">Language?</h3>
+<p>?</p>
+<h3 id="d3d-12">2D/3D?</h3>
+<p>2D and 3D</p>
+<h3 id="tutorials-12">Tutorials?</h3>
+<p>?</p>
+<h3 id="intended-use-12">Intended use</h3>
+<p>Pedestrian simulation environment (Public Transport Hubs, Commercial Venues, Stadiums &amp; Arenas, Public Events, Cities &amp; Infrastructures)</p>
+<h3 id="models-implemented-12">Models implemented</h3>
+<p>“All kinds of academic research is incorporated in the product.”</p>
+<p>To model the infrastructure you can model it manually, or be smart and use a CAD or BIM to generate the infrastructure of the model.</p>
+<h3 id="command-linegui-12">Command line/GUI</h3>
+<p>GUI</p>
+<h3 id="intervenechange-parameters-during-simulation-12">Intervene/change parameters during simulation?</h3>
+<p>Yes. That is one of the strengths of Pedestrian Dynamics. You also don’t have to worry about OD-matrices. We don’t use them. We use goal locations and the agent will figure out how to get there. Pedestrian Dynamics is capable of large amounts of pedestrians in one single model over various 3D levels. We have a proven track record of some of the largest stadiums in the world.</p>
+<h3 id="features-11">Features</h3>
+<p>The simulation platform itself is propriety software. Everything you develop on top of it is readable source code for you and you have the ability to change or add code. You are even able to develop completely new simulation objects/modules. We also have the ability to link DLL’s that uses your own code.</p>
+<h3 id="open-to-collaboration-12">Open to collaboration?</h3>
+<p>Potentially – currently working on similar projects.</p>
+<h3 id="source-12">Source </h3>
+<p>Google</p>
+<h2 id="oasys-massmotion">Oasys MassMotion *</h2>
+<p>Seems to be commercial modelling software for industrial applications (modelling transport ports etc). Claims to be most advanced software available anywhere so should be able useful for any application. Emailed but no response. May be difficult to adapt as is proprietary software.</p>
+<h3 id="url-13">URL</h3>
+<p><a href="https://www.oasys-software.com/products/pedestrian-simulation/massmotion/" class="uri">https://www.oasys-software.com/products/pedestrian-simulation/massmotion/</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>*</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>*</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-13">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-12">Compatible operating systems</h3>
+<p>?</p>
+<h3 id="language-13">Language?</h3>
+<p>?</p>
+<h3 id="d3d-13">2D/3D?</h3>
+<p>Combine 3D and 2D assets – Import BIM files and use their geometry directly or import your 2D CAD files and then develop them into 3D models using MassMotion’s powerful polygon modelling tools.</p>
+<h3 id="tutorials-13">Tutorials?</h3>
+<p>?</p>
+<h3 id="intended-use-13">Intended use</h3>
+<p>Simulations and analysis of large complex models,</p>
+<h3 id="models-implemented-13">Models implemented</h3>
+<p>?</p>
+<h3 id="command-linegui-13">Command line/GUI?</h3>
+<p>GUI</p>
+<h3 id="intervenechange-parameters-during-simulation-13">Intervene/change parameters during simulation?</h3>
+<p>Claims to be most advanced software available anywhere, should be capable.</p>
+<h3 id="features-12">Features</h3>
+<p>Advanced pedestrian simulation and crowd analysis tools. Simulate hundreds of thousands of people within a matter of hours</p>
+<p>Combine 3D and 2D assets</p>
+<p>Enables intelligent agents (virtual pedestrians) to respond dynamically to evolving operational conditions and user-defined triggers</p>
+<p>MassMotion Software Development Kit - Provides direct access to the MassMotion crowd engine for custom behaviours or connections to other software tools.</p>
+<h3 id="open-to-collaboration-13">Open to collaboration?</h3>
+<p>?</p>
+<h3 id="source-13">Source </h3>
+<p>SourceForge</p>
+<h2 id="quadstone-paramics">Quadstone Paramics *</h2>
+<p>Licensed software, both pedestrian and traffic simulation. Not explored in detail. Emailed but no response.</p>
+<p>“Quadstone Paramics is a leading microscopic traffic and pedestrian simulation software used by planning professionals to design efficient, economical, driver and pedestrian friendly transportation infrastructure allowing operational assessment for current and future year traffic conditions, detailed reporting of key MOE’s and high definition presentations to non-technical stake holders.”</p>
+<h3 id="url-14">URL</h3>
+<p><a href="http://www.paramics-online.com/" class="uri">http://www.paramics-online.com/</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>?</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-14">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-13">Compatible operating systems</h3>
+<p>?</p>
+<h3 id="language-14">Language?</h3>
+<p>?</p>
+<h3 id="d3d-14">2D/3D?</h3>
+<p>3D</p>
+<h3 id="tutorials-14">Tutorials?</h3>
+<p>?</p>
+<h3 id="intended-use-14">Intended use</h3>
+<p>Microscopic pedestrian/traffic simulation</p>
+<h3 id="models-implemented-14">Models implemented</h3>
+<p>?</p>
+<h3 id="command-linegui-14">Command line/GUI?</h3>
+<p>GUI</p>
+<h3 id="intervenechange-parameters-during-simulation-14">Intervene/change parameters during simulation?</h3>
+<p>?</p>
+<h3 id="features-13">Features</h3>
+<p>?</p>
+<h3 id="open-to-collaboration-14">Open to collaboration?</h3>
+<p>?</p>
+<h3 id="source-14">Source </h3>
+<p>Wikipedia</p>
+<h2 id="ucrowds">UCrowds </h2>
+<p>3D engine. Presumably licensed. Software library made in C++, with an API written in C. Has 3D plugin for Unity.</p>
+<h3 id="url-15">URL</h3>
+<p><a href="https://www.ucrowds.com/" class="uri">https://www.ucrowds.com/</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>**</td>
+<td><a href="https://www.staff.science.uu.nl/~gerae101/UU_crowd_simulation_publications.html">Click here</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>**</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>*</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>?</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-15">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-14">Compatible operating systems</h3>
+<p>?</p>
+<h3 id="language-15">Language?</h3>
+<p>C++ and C</p>
+<h3 id="d3d-15">2D/3D?</h3>
+<p>2D, 3D plugin for Unity</p>
+<h3 id="tutorials-15">Tutorials?</h3>
+<p>?</p>
+<h3 id="intended-use-15">Intended use</h3>
+<p>Software solution for simulating crowds in big infrastructures, events or virtual worlds.</p>
+<h3 id="models-implemented-15">Models implemented</h3>
+<p>All components described in published scientific papers: <a href="https://www.staff.science.uu.nl/~gerae101/UU_crowd_simulation_publications.html" class="uri">https://www.staff.science.uu.nl/~gerae101/UU_crowd_simulation_publications.html</a></p>
+<h3 id="command-linegui-15">Command line/GUI?</h3>
+<h3 id="intervenechange-parameters-during-simulation-15">Intervene/change parameters during simulation?</h3>
+<p>?</p>
+<h3 id="features-14">Features</h3>
+<p>Features such as social groups, dynamic re-planning when obstacles appear or disappear, density-based crowds, and flow-based movements in crowded situations.</p>
+<h3 id="open-to-collaboration-15">Open to collaboration?</h3>
+<p>?</p>
+<h3 id="source-15">Source </h3>
+<p>Google</p>
+<h2 id="crowdsim3d-ne">CrowdSim3D [NE]</h2>
+<p>A crowd and traffic simulations add-on for Blender. Looks to be used primarily for visual effects. Not explored since 3D excessive (not particularly relevant for our project). Licensed, free demo complete but limited to 25 agents.</p>
+<h3 id="url-16">URL</h3>
+<p><a href="https://www.crowdsim3d.com/">https://www.crowdsim3d.com/#</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="https://www.crowdsim3d.com/docs/" class="uri">https://www.crowdsim3d.com/docs/</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>**</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>***</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-16">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-15">Compatible operating systems</h3>
+<p>?</p>
+<h3 id="language-16">Language?</h3>
+<p>Blender addon</p>
+<h3 id="d3d-16">2D/3D?</h3>
+<p>3D</p>
+<h3 id="tutorials-16">Tutorials?</h3>
+<p><a href="https://www.youtube.com/crowdsim3d" class="uri">https://www.youtube.com/crowdsim3d</a></p>
+<h3 id="intended-use-16">Intended use</h3>
+<p>Crowd and traffic simulations/special effects.</p>
+<h3 id="models-implemented-16">Models implemented</h3>
+<p>“Various algorithms.”</p>
+<h3 id="command-linegui-16">Command line/GUI?</h3>
+<p>Blender addon (GUI)</p>
+<h3 id="intervenechange-parameters-during-simulation-16">Intervene/change parameters during simulation?</h3>
+<p>?</p>
+<h3 id="features-15">Features</h3>
+<p>Place characters in different formations in your scene. Configure the distance, randomness, pattern, area and more.</p>
+<p>Let agents navigate the scene, avoid obstacles and other agents. CrowdSim3D supports various algorithms.</p>
+<p>Automatic animation merging based on the movement of the agent</p>
+<p>Visually program and debug your crowd</p>
+<h3 id="open-to-collaboration-16">Open to collaboration?</h3>
+<p>?</p>
+<h3 id="source-16">Source</h3>
+<p>Suggestion</p>
+<h2 id="crowdmaster-ne">CrowdMaster [NE]</h2>
+<p>Crowd simulator for Blender 3D. Looks to be used primarily for visual effects. Not explored since 3D excessive.</p>
+<h3 id="url-17">URL</h3>
+<p><a href="http://crowdmaster.org/" class="uri">http://crowdmaster.org/</a></p>
+<p><a href="https://github.com/johnroper100/CrowdMaster" class="uri">https://github.com/johnroper100/CrowdMaster</a></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="http://crowdmaster.org/tutorials" class="uri">http://crowdmaster.org/tutorials</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>?</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>?</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-17">Successful installation/trial run?</h3>
+<p>Not attempted</p>
+<h3 id="compatible-operating-systems-16">Compatible operating systems</h3>
+<p>?</p>
+<h3 id="language-17">Language?</h3>
+<p>Blender addon</p>
+<h3 id="d3d-17">2D/3D?</h3>
+<p>3D</p>
+<h3 id="tutorials-17">Tutorials?</h3>
+<p><a href="http://crowdmaster.org/tutorials" class="uri">http://crowdmaster.org/tutorials</a></p>
+<h3 id="intended-use-17">Intended use</h3>
+<p>3D crowd simulation addon for Blender 3D.</p>
+<h3 id="models-implemented-17">Models implemented</h3>
+<p>?</p>
+<h3 id="command-linegui-17">Command line/GUI?</h3>
+<p>Blender addon (GUI)</p>
+<h3 id="intervenechange-parameters-during-simulation-17">Intervene/change parameters during simulation?</h3>
+<p>?</p>
+<h3 id="features-16">Features</h3>
+<p>Node-based interface</p>
+<p>Customizable agent generation</p>
+<p>Powerful animation tools</p>
+<h3 id="open-to-collaboration-17">Open to collaboration?</h3>
+<p>?</p>
+<h3 id="source-17">Source </h3>
+<p>GitHub</p>
+<h2 id="crowd.lab-ne">Crowd.lab [NE]</h2>
+<p>Lightweight crowd simulator engine for Javascript. Not explored since 3D excessive. Example can be viewed in browser. Blender addon. Crowd.js is a lightweight crowd simulator engine for javascript. It is an direct port of a university algorithm in C++ to JavaScript made by Samuel Girardin (http://www.visualiser.fr) using Emscripten.</p>
+<h3 id="url-18">URL</h3>
+<p><a href="http://lo-th.github.io/Crowd.lab/#basic" class="uri">http://lo-th.github.io/Crowd.lab/#basic</a></p>
+<p><a href="https://github.com/lo-th/Crowd.lab" class="uri">https://github.com/lo-th/Crowd.lab</a></p>
+<h3 id="source-18">Source </h3>
+<p>GitHub</p>
+<h2 id="urho3d-ne">Urho3D [NE]</h2>
+<p>Urho3D is a free lightweight, cross-platform 2D and 3D game engine implemented in C++ and released under the MIT license. Greatly inspired by OGRE and Horde3D. Not explored since appears to be primarily for gaming.</p>
+<h3 id="url-19">URL</h3>
+<p><a href="https://urho3d.github.io/" class="uri">https://urho3d.github.io/</a></p>
+<h3 id="source-19">Source </h3>
+<p>SourceForge</p>
+<h2 id="golaem-crowd-ne">Golaem Crowd [NE]</h2>
+<p>Crowd simulation for special effects/visuals (e.g. used in Game of Thrones). Licensed software, free version for schools/universities. Not explored as it seemed excessive/not appropriate. Plug-in for Autodesk Maya (licensed, expensive).</p>
+<h3 id="url-20">URL</h3>
+<p><a href="http://golaem.com/" class="uri">http://golaem.com/</a></p>
+<h3 id="source-20">Source </h3>
+<p>Wikipedia</p>
+<h2 id="massive-ne">MASSIVE [NE]</h2>
+<p>Crowd simulation for special effects (e.g. used in Lord of the Rings). Not explored as it seemed excessive/not appropriate. Also used for architectural modelling</p>
+<h3 id="url-21">URL</h3>
+<p><a href="http://www.massivesoftware.com/" class="uri">http://www.massivesoftware.com/</a></p>
+<h3 id="source-21">Source </h3>
+<p>Wikipedia</p>
+<h2 id="ptv-vissim-ne">PTV Vissim [NE]</h2>
+<p>For traffic simulation, not pedestrian so not explored in detail. Free demo available.</p>
+<h3 id="url-22">URL</h3>
+<p><a href="https://www.ptvgroup.com/en/solutions/products/ptv-vissim/" class="uri">https://www.ptvgroup.com/en/solutions/products/ptv-vissim/</a></p>
+<h3 id="source-22">Source </h3>
+<p>Wikipedia</p>
+<h2 id="crowdvision-ne">CrowdVision [NE]</h2>
+<p>Automated passenger analytics and insights company. Not explored as arrangements to meet them had already been made.</p>
+<h3 id="url-23">URL</h3>
+<p><a href="https://www.crowdvision.com/" class="uri">https://www.crowdvision.com/</a></p>
+<h3 id="source-23">Source </h3>
+<p>Suggestion from Jon Ward</p>
+<h2 id="crowd-dynamics-ne">Crowd Dynamics [NE]</h2>
+<p>Not explored as arrangements to meet them had already been made.</p>
+<h3 id="url-24">URL</h3>
+<p><a href="https://www.crowddynamics.com/" class="uri">https://www.crowddynamics.com/</a></p>
+<h3 id="source-24">Source </h3>
+<p>Suggestion from Jon Ward</p>
+<h1 id="modelling-environmentsengines">Modelling Environments/Engines</h1>
+<h2 id="blender-ne">Blender [NE]</h2>
+<p>Blender is the free and open source 3D creation suite. It supports the entirety of the 3D pipeline—modeling, rigging, animation, simulation, rendering, compositing and motion tracking, video editing and 2D animation pipeline.</p>
+<h3 id="url-25">URL</h3>
+<p><a href="https://www.blender.org/" class="uri">https://www.blender.org/</a></p>
+<h2 id="unity-ne">Unity [NE]</h2>
+<p>Real-time 3D development platform.</p>
+<h3 id="url-26">URL</h3>
+<p><a href="https://unity.com/" class="uri">https://unity.com/</a></p>
+<h2 id="netlogo-ne">NetLogo [NE]</h2>
+<p>Simulation software.</p>
+<h3 id="url-27">URL</h3>
+<p><a href="https://ccl.northwestern.edu/netlogo/" class="uri">https://ccl.northwestern.edu/netlogo/</a></p>
+<h3 id="source-25">Source </h3>
+<p>Mesa documentation</p>
+<h2 id="repast-ne">Repast [NE]</h2>
+<p>Simulation software.</p>
+<h3 id="url-28">URL</h3>
+<p><a href="https://repast.github.io/" class="uri">https://repast.github.io/</a></p>
+<h3 id="source-26">Source </h3>
+<p>Mesa documentation</p>
+<h2 id="mason-ne">Mason [NE]</h2>
+<p>Simulation software.</p>
+<h3 id="url-29">URL</h3>
+<p><a href="https://cs.gmu.edu/~eclab/projects/mason/" class="uri">https://cs.gmu.edu/~eclab/projects/mason/</a></p>
+<h3 id="source-27">Source </h3>
+<p>Mesa documentation</p>
+<h2 id="steersuite-ne">SteerSuite [NE]</h2>
+<p>A suite of test cases, tools, and libraries for steering behaviors. Includes social forces model ( <a href="http://steersuite.eecs.yorku.ca/" class="uri">http://steersuite.eecs.yorku.ca/</a> )</p>
+<h3 id="url-30">URL</h3>
+<p><a href="https://github.com/SteerSuite/Release" class="uri">https://github.com/SteerSuite/Release</a></p>
+<h3 id="source-28">Source </h3>
+<p>GitHub</p>
+<h2 id="crowd-nav-ne">Crowd Nav [NE]</h2>
+<p>Not explored as not updated for 3 years. Runs on SUMO ( <a href="https://www.dlr.de/ts/en/desktopdefault.aspx/tabid-9883/16931_read-41000/" class="uri">https://www.dlr.de/ts/en/desktopdefault.aspx/tabid-9883/16931_read-41000/</a> ).</p>
+<h3 id="url-31">URL</h3>
+<p><a href="https://github.com/Starofall/CrowdNav" class="uri">https://github.com/Starofall/CrowdNav</a></p>
+<h3 id="source-29">Source </h3>
+<p>GitHub</p>
+<h2 id="acrowdsimulationusing-opencl-and-based-on-the-continuum-approach-ne">A crowd simulation using OpenCL™ and based on the continuum approach [NE]</h2>
+<p>May not have been updated since 2011. OpenCL, runs on GPU, doesn't use ABMs. From Masters thesis.</p>
+<h3 id="url-32">URL</h3>
+<p><a href="https://github.com/hduregger/crowd" class="uri">https://github.com/hduregger/crowd</a></p>
+<h3 id="source-30">Source </h3>
+<p>GitHub</p>
+<h2 id="template-slne">TEMPLATE ***[SL][NE]</h2>
+<p>Description</p>
+<h3 id="url-33">URL</h3>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Rating (/3*)</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Documentation:</td>
+<td>***</td>
+<td><a href="http://www.docURL.com">www.docURL.com</a></td>
+</tr>
+<tr class="even">
+<td>Complexity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Accessibility:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Usefulness:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Modularity:</td>
+<td>***</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Maintenance:</td>
+<td>***</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="successful-installationtrial-run-18">Successful installation/trial run?</h3>
+<h3 id="compatible-operating-systems-17">Compatible operating systems</h3>
+<h3 id="language-18">Language?</h3>
+<h3 id="d3d-18">2D/3D?</h3>
+<h3 id="tutorials-18">Tutorials?</h3>
+<h3 id="intended-use-18">Intended use</h3>
+<h3 id="models-implemented-18">Models implemented</h3>
+<h3 id="command-linegui-18">Command line/GUI?</h3>
+<h3 id="intervenechange-parameters-during-simulation-18">Intervene/change parameters during simulation?</h3>
+<h3 id="features-17">Features</h3>
+<h3 id="open-to-collaboration-18">Open to collaboration?</h3>
+<h3 id="source-31">Source </h3>

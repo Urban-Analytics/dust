@@ -200,6 +200,7 @@ def MSSP(mean,p,g):
     sigmas[:,n+1:] -= g*s #'lower' confidence sigmas
     return sigmas 
 
+
 #%%
 
 class ukf:
@@ -249,7 +250,7 @@ class ukf:
         self.lam = self.a**2*(self.n+self.k) - self.n 
         self.g = np.sqrt(self.n+self.lam) #gamma parameter
 
-        
+         
         "unscented mean and covariance weights based on a, b, and k"
         main_weight =  1/(2*(self.n+self.lam))
         self.wm = np.ones(((2*self.n)+1))*main_weight
@@ -456,8 +457,8 @@ class ukf_ss:
         list of observation types for each agents at one time point
         """
         self.obs = []  # actual sensor observations
-        self.ukf_histories = []  
-        self.forecasts=[] 
+        self.ukf_histories = []  #ukf predictions
+        self.forecasts=[] #pure stationsim predictions
         self.truths = []  # noiseless observations
 
         self.full_ps=[]  # full covariances. again used for animations and not error metrics
@@ -513,7 +514,7 @@ class ukf_ss:
         self.base_model.step()
         self.truths.append(self.base_model.get_state(sensor="location"))
 
-    def ss_Update(self,step,**hx_kwargs):
+    def ss_Update(self, step, **hx_kwargs):
         
         
         """ Update step of UKF for stationsim.

@@ -58,6 +58,7 @@ def fx(x, **fx_kwargs):
     #model = pickle.load(f)
     #f.close()
     base_model = fx_kwargs["base_model"]
+    base_model.seed = None
     model = deepcopy(base_model)
     model.set_state(state = x,sensor="location")    
     with HiddenPrints():

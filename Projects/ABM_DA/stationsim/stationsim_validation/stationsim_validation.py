@@ -29,7 +29,6 @@ from stationsim_model import Model #python version of stationsim
 import matplotlib.pyplot as plt
 from seaborn import kdeplot
 
-
 class HiddenPrints:
     
     """stop unnecessary printing from stationsim 
@@ -535,14 +534,16 @@ class stationsim_RipleysK():
   
 def collision_Folder_Name(source, parameters):
     
-    """ name of subfolder to generate sub csvs
+    """ name of subfolder to generate sub csvs into
     
     folder name consists of three parts
     source - where do collisions come from
     parameters - list of important stationsim parameters saved into file name
-    unique id - identifier for multiple runs of same parameters. uses hex
-    version of uuid4. This should be universally unique. Perhaps a time stamp
-    would be easier but uuid exists in cpp as well. 
+    unique id - identifier for multiple runs of same parameters. uses string of 
+    time from datetime.strftime. This should be universally unique. Could also
+    used something like uuid4 for easier crossplatform file generation if you want
+    to save csvs in cpp as well.
+    
     
     Parameters
     ------

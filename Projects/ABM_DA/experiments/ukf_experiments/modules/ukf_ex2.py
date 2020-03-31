@@ -4,7 +4,12 @@
 Created on Mon Dec  2 11:19:48 2019
 
 @author: rob
+
+File for running experiment 2. We observe an aggregate grid square of counts
+for how many agents are within each square as our observations. 
+
 """
+
 import sys
 import os
 "if running this file on its own. this will move cwd up to ukf_experiments."
@@ -99,8 +104,8 @@ def hx2(state,**hx_kwargs):
     
     counts = poly_count(poly_list, state)
     
-    if np.sum(counts)>0:
-        counts /= np.sum(counts)
+    #if np.sum(counts)>0:
+    #    counts /= np.sum(counts)
     return counts
 
 def ex2_pickle_name(n, bin_size):
@@ -201,6 +206,7 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     
     if not recall:
         model_params = configs.model_params
+        model_params["random_seed"] = 8
         ukf_params = configs.ukf_params
         
         model_params, ukf_params, base_model = aggregate_params(n,
@@ -226,7 +232,7 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     return u
        
 if __name__ == "__main__":
-    n = 25
+    n = 5
     bin_size = 25
     recall = False #  recall previous run
     do_pickle = True #  pickle new run
@@ -234,9 +240,3 @@ if __name__ == "__main__":
     destination  = "plots/"
     u = ex2_main(n, bin_size, recall, do_pickle, pickle_source, destination)
     
-""" 
-ks = np.dstack(u.ukf.ks)
-for i in range(ks.shape[0]):
-    for j in range(ks.shape[1]):
-        plt.plot(ks[i,j,:])
-"""

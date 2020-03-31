@@ -55,6 +55,7 @@ from ukf_fx import fx
 import default_ukf_configs as configs
 from poly_functions import grid_poly, poly_count
 import datetime
+from ukf_plots import ukf_plots
 
 """list of functions needed and their purposes
 Sigma Point generator
@@ -248,7 +249,7 @@ class forwards_abcukf():
 
         self.sigmas = sigmas.T.tolist()        
         self.x = np.mean(sigmas, axis = 1)
-        self.p = np.cov(sigmas)
+        self.p = np.cov(sigmas) + self.q
         
     
     
@@ -325,6 +326,9 @@ class backandforwards():
 class abcukf_ss():
 
     def __init__(self, model_params, kf_params):
+        
+        self.model_params = model_params
+        self.kf_params = kf_params
         
         for key in model_params.keys():
             setattr(self, key, model_params[key])
@@ -420,8 +424,8 @@ class abcukf_ss():
 
 if __name__ == "__main__":
     
-    n = 5
-    bin_size = 25 
+    n = 30
+    bin_size = 25
     model_params = configs.model_params
     model_params["pop_total"] = n
     
@@ -458,3 +462,20 @@ if __name__ == "__main__":
     a = np.vstack(abckf.truths)
     b = np.vstack(abckf.ukf_histories)
     res = a[::kf_params["sample_rate"], :] - b
+
+    plts = ukf_plots(abckf, "","",False, False, {"markers":"","colours":"","labels":"", })    
+    
+    plts.path_plots(a, "truth", poly_list)
+    plts.path_plots(b, "prediction", poly_list)
+
+
+    
+"""
+import matplotlib.pyplot as plt
+for i in range(asd2.shape[1]):
+    traj = asd2[:, i]
+    x =  np.array(traj[0][0])
+    y = -1 * np.array(traj[0][1])
+    plt.plot(x,y)
+"""    
+    

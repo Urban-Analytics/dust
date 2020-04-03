@@ -70,7 +70,11 @@ Improbable/NativeModel-keanu/results/*.png
 # ********** stationSim ***********
 Improbable/stationSim-keanu/simulation_outputs/
 
-# ********** **********
+# ********** Ambient population data **********
+Projects/Ambient_Populations/data
+
+
+
 # ********** **********
 # ********** **********
 # ********** **********

@@ -64,16 +64,17 @@ def convert_hour(series):
         pass
     
     if ":" in series.values[0]:
-        return series.apply(lambda x: x.strip().split(":")[0])
+        return pd.to_numeric(series.apply(lambda x: x.strip().split(":")[0]))
     
     # If here then I don't know what to do.
     raise Exception("Unrecognised type of hours: {}".format(series))
     
 # Template for our data frame. Set the type as well (default is OK for 'location')
-template = pd.DataFrame(columns = ["Location", "Date", "Hour", "Count"])
+template = pd.DataFrame(columns = ["Location", "Date", "Hour", "Count", "DateTime"])
 template["Date"] = pd.to_datetime(template["Date"])
 template["Hour"] = pd.to_numeric(template["Hour"])
 template["Count"] = pd.to_numeric(template["Count"])
+template["DateTime"] = pd.to_numeric(template["DateTime"]) # (this one is derived from date and hour)
 
 frames = [] # Build up a load of dataframes then merge them
 total_rows = 0 # For checking that the merge works
@@ -117,14 +118,20 @@ for filename in os.listdir(data_dir):
             hours  = convert_hour(df[hour_col]) # Hours can come in different forms 
             locs   = df[loc_col]
             
-            if False in [len(df) == len(x) for x in [dates, counts, hours, locs]]:
+            # Derive a proper date from the date and hour
+            # (Almost certainly a more efficient way to do this using 'apply' or whatever)
+            dt     = pd.to_datetime(pd.Series( data = [date.replace(hour=hour) for date,hour in zip(dates,hours) ] ) )
+            
+            #df.apply(lambda x: x[date_col].replace(hour = x[hour_col]), axis=1)
+            
+            if False in [len(df) == len(x) for x in [dates, counts, hours, locs, dt]]:
                 raise Exception("One of the dataframe columns does not have enough values")
             total_rows += len(df)
                 
             
             # Create a temporary dataframe to represent the information in that file.
             # Note that consistent column names (defined above) are used
-            frames.append(pd.DataFrame(data={"Location":locs, "Date":dates, "Hour":hours, "Count":counts}))
+            frames.append(pd.DataFrame(data={"Location":locs, "Date":dates, "Hour":hours, "Count":counts, "DateTime":dt}))
         except Exception as e:
             print("Caught exception on file {}".format(filename))
             raise e

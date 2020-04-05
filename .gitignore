@@ -41,13 +41,15 @@ gradle-app.setting
 .gradletasknamecache
 
 
-# ********** FOR IDEA / netbeans  **********
+# ********** FOR IDEA / netbeans / spyder  **********
 
 
 .idea
 .gradle
 nbproject
 *.iml
+
+.spyproject/
 
 
 # ********** Latex **********

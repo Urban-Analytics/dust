@@ -8,9 +8,11 @@ Created on Fri Apr  3 14:40:56 2020
 
 import pandas as pd
 import os
+import numpy as np
 
 
 #%%
+data_dir = "./data/lcc_footfall" # Where to save the csv files
 
 
 # Connect to the Data Mill North page and parse the html
@@ -44,72 +46,102 @@ for link in soup.find_all('a'):
             data = pd.read_csv(csv_url)
             data.to_csv(full_path)
 
-#%%
+#%% Make a big data frame
 
 def convert_hour(series):
     """Assumes the given series represents hours. Works out if they're 
     integers or in the format '03:00:00' and returns them as integers"""
-    if isinstance(series.values[0], numpy.int64) or isinstance(series.values[0], numpy.float64) or isinstance(series.values[0], float):
-        return series
-    elif ":" in series.values[0]:
-        return series.apply(lambda x: x.strip().split(":")[0])
-    else:
-        raise Exception("Unrecognised type of hours: {}".format(series))
     
-# Single data frame. Set the type as well (dfault is OK for 'location')
-data = pd.DataFrame(columns = ["Location", "Date", "Hour", "Count"])
-data["Date"] = pd.to_datetime(data["Date"])
-data["Hour"] = pd.to_numeric(data["Hour"])
-data["Count"] = pd.to_numeric(data["Count"])
+    # If it's a number then just return it
+    if isinstance(series.values[0], np.int64) or isinstance(series.values[0], np.float64) or isinstance(series.values[0], float):
+        return series
+    
+    # If it's a string see if it can be made into a number
+    try:
+        int(series.values[0])
+        return pd.to_numeric(series)
+    except: # If get here then it couldn't be made into an integer
+        pass
+    
+    if ":" in series.values[0]:
+        return series.apply(lambda x: x.strip().split(":")[0])
+    
+    # If here then I don't know what to do.
+    raise Exception("Unrecognised type of hours: {}".format(series))
+    
+# Template for our data frame. Set the type as well (default is OK for 'location')
+template = pd.DataFrame(columns = ["Location", "Date", "Hour", "Count"])
+template["Date"] = pd.to_datetime(template["Date"])
+template["Hour"] = pd.to_numeric(template["Hour"])
+template["Count"] = pd.to_numeric(template["Count"])
 
 frames = [] # Build up a load of dataframes then merge them
+total_rows = 0 # For checking that the merge works
+files = [] # Remember the names of the files we tried to analyse
 failures= [] # Remember which ones didn't work
+
 
 # Read the files in
 for filename in os.listdir(data_dir):
     if filename.endswith(".csv"):
         try:
             #print(filename)
+            files.append(filename)
             df = pd.read_csv(os.path.join(data_dir,filename))
-            # Check the file has the columns that we need
-            has_date = "Date" in df.columns
-            has_count = "Count" in df.columns or "InCount" in df.columns
-            has_hour = "Hour" in df.columns
-            has_loc = "Location" in df.columns or "LocationName" in df.columns
             
-            if False in [has_date, has_count, has_hour, has_loc]:
+            # Check the file has the columns that we need, and work out what the column names are for this file (annoyingly it changes)
+            date_col = "Date" # Doesn't change
+            count_col = "Count" if "Count" in df.columns else "InCount" # Two options
+            hour_col = "Hour" 
+            loc_col = "Location" if "Location" in df.columns else "LocationName"
+            
+            if False in [date_col in df.columns, count_col in df.columns, hour_col in df.columns, loc_col in df.columns]:
                 raise Exception("File '{}' is missing a column. Date? {}, Count? {}, Hour? {}, Location? {}".
-                      format(filename, has_date, has_count, has_hour, has_loc))     
+                      format(filename, date_col in df.columns, count_col in df.columns, hour_col in df.columns, loc_col in df.columns))
+                
+
+            # Check if any of the columns have nans
+            bad_cols = []
+            for x in [date_col, count_col, hour_col, loc_col]:
+                if True in df[x].isnull().values:
+                   bad_cols.append(x)
+            if len(bad_cols)>0:
+                failures.append(filename)
+                print(f"File {filename} has nans in the following columns: '{str(bad_cols)}'. Ignoring it")
+                continue
+
             
             # Create Series' that will represent each column
-            dates  = pd.to_datetime(df["Date"])
-            counts = pd.to_numeric(df["Count"]) if "Count" in df.columns else df["InCount"]
-            # Hours can come in different forms 
-            hours  = convert_hour(df["Hour"]) 
-            locs   = df["Location"] if "Location" in df.columns else df["LocationName"]
+            dates  = pd.to_datetime(df[date_col])
+            counts = pd.to_numeric(df[count_col])
+            hours  = convert_hour(df[hour_col]) # Hours can come in different forms 
+            locs   = df[loc_col]
             
             if False in [len(df) == len(x) for x in [dates, counts, hours, locs]]:
                 raise Exception("One of the dataframe columns does not have enough values")
-            
-            # XXXX HERE
-            # CAN'T CHECK THIS HERE, IT NEEDS TO BE DONE ABOVE, BEFORE TRYING TON 
-            # WORK OUT WHAT TO DO WITH THE HOURS COLUMN
+            total_rows += len(df)
                 
-            # Check if any of the columns have nans
-            for x,y in [("Dates", dates), ("Counts",counts), ("Hours", hours), ("Locs",locs)]:
-                if True in y.isnull():
-                    print("File {} has nans in the '{}' column".format(filename, x))
-                    failures.append(filename)
-                    continue
             
-            # Create a temporary dataframe to represent the information in that file
+            # Create a temporary dataframe to represent the information in that file.
+            # Note that consistent column names (defined above) are used
             frames.append(pd.DataFrame(data={"Location":locs, "Date":dates, "Hour":hours, "Count":counts}))
         except Exception as e:
             print("Caught exception on file {}".format(filename))
             raise e
             
+
+# Finally megre the frames into one big one
+merged_frames = pd.concat(frames)
+if total_rows != len(merged_frames):
+    raise Exception(f"The number of rows in the individual files {total_rows} does \
+not match those in the final dataframe {len(merged_frames)}.")
+
+df = template.append(merged_frames)            
+print(f"Finished. Made a dataframe with {len(df)} rows. {len(failures)}/{len(files)} files could not be read.")
         
-        
-        
+
+#%%
+
+
         
         

@@ -1,5 +1,10 @@
 # Particle Filter
 '''
+
+This function has originally been written by Kevin Minors, an intern at the University of Leeds
+
+It has been adapted to work with the BusSim models
+
 A particle filter designed to work with agent base models.
 model requires: agents2state(), state2agents()
 model requests: boundaries, agents[:].active

@@ -1,6 +1,15 @@
-# Unscented Kalman Filter
+## Unscented Kalman Filter
 
-This folder contains the codes used to run Rob's experiments on the StationSim Unscented Kalman Filter ukf.py.
+This folder contains the code used to run Rob's experiments on StationSim using the Unscented Kalman Filter. We have several sub folders which we describe here.
+
+#Modules
+
+Folder contains code to run individual experiments. We have code for experiments 0-2 with 3-4 being experimental/unused as well as several other files needed for these to run. We also code for plotting ukf results and other miscellanious ideas such as agent clustering.
+
+#Arc
+
+For running multiple ukf experiments at once using the ARC3 HPC at Leeds. We also have code to parse multiple experiments
+into summary plots.
 
 To run the experiments, use the [`run_ukf.py`](./run_pf.py) file. That script expects a single integer commandline input which corresponds to a particular configuration (number of agents,proportion of agents observed). These are specified in the script itself. E.g. to run experiment 17:
 

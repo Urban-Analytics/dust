@@ -13,19 +13,19 @@ Given the appropriate directories e.g.
 scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
 """
 import os
+import sys
+sys.path.append('../../../stationsim')
+sys.path.append("../modules")
 
-if os.path.split(os.getcwd())[1] != "ukf_experiments":
-    os.chdir("..")
 import numpy as np
-from modules import default_ukf_configs as configs
-from modules.ukf_ex2 import aggregate_params
-from modules.ukf_ex1 import omission_params
-from modules.ukf_ex0 import ex0_params, ex0_save
+import default_ukf_configs as configs
+from ukf_ex2 import aggregate_params
+from ukf_ex1 import omission_params
+from ukf_ex0 import ex0_params, ex0_save
 from stationsim_model import Model
 from ukf2 import ukf_ss, pickler
-import sys
 
-sys.path.append('../../stationsim')
+
 
 
 # %%
@@ -308,12 +308,12 @@ def main(ex_input, ex_save, test=False):
     # or pickles the whole ukf class for experiment 1,2 using `pickle_save`
     
     f_name = ukf_params["file_name"]
-    ex_save(u, "results/", ukf_params["file_name"])
+    ex_save(u, "../results/", ukf_params["file_name"])
 
     #delete any test files that were saved for tidiness.
     if test:
         print(f"Test successful. Deleting the saved test file : {f_name}")
-        os.remove("results/" + ukf_params["file_name"])
+        os.remove("../results/" + ukf_params["file_name"])
 
 
 if __name__ == '__main__':

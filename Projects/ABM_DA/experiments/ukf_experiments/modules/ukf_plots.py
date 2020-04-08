@@ -7,12 +7,11 @@ Created on Mon Dec  2 11:27:06 2019
 """
 import os
 import sys
-if os.path.split(os.getcwd())[1] != "ukf_experiments":
-    os.chdir("..")
+sys.path.append("../modules")
     
 import numpy as np
 from math import ceil, log10
-from modules.poly_functions import poly_count
+from poly_functions import poly_count
 
     
 "for plots"

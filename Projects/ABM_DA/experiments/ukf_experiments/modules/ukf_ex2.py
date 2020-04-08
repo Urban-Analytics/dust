@@ -12,17 +12,16 @@ for how many agents are within each square as our observations.
 
 import sys
 import os
-"if running this file on its own. this will move cwd up to ukf_experiments."
-if os.path.split(os.getcwd())[1] != "ukf_experiments":
-    os.chdir("..")
 
-from modules.ukf_fx import fx
-from modules.poly_functions import poly_count, grid_poly
-from modules.ukf_plots import ukf_plots
-import modules.default_ukf_configs as configs
+sys.path.append("../../../stationsim")
+sys.path.append("../modules")
 
-sys.path.append("../../stationsim")
-sys.path.append("modules")
+from ukf_fx import fx
+from poly_functions import poly_count, grid_poly
+from ukf_plots import ukf_plots
+import default_ukf_configs as configs
+
+
 from ukf2 import ukf_ss, pickle_main, batch_save, batch_load
 from stationsim_model import Model
 
@@ -208,7 +207,7 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
         
                 
         model_params = configs.model_params
-        model_params["random_seed"] = 8
+        #model_params["random_seed"] = 8
         ukf_params = configs.ukf_params
         
         model_params, ukf_params, base_model = aggregate_params(n,
@@ -260,7 +259,7 @@ if __name__ == "__main__":
     bin_size = 5
     recall = False #  recall previous run
     do_pickle = True #  pickle new run
-    pickle_source = "pickles/"
-    destination  = "plots/"
+    pickle_source = "../pickles/"
+    destination  = "../plots/"
     u = ex2_main(n, bin_size, recall, do_pickle, pickle_source, destination)
     

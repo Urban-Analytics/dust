@@ -23,17 +23,17 @@ We require a natural number for this rate 1, 2, 3, ...
 
 import sys
 import os
-"if running this file on its own. this will move cwd up to ukf_experiments."
-if os.path.split(os.getcwd())[1] != "ukf_experiments":
-    os.chdir("..")
+
+sys.path.append("../modules")
+sys.path.append("../../../stationsim")
     
 "import required modules"
-from modules.ukf_fx import fx
-from modules.ukf_plots import L2s
-import modules.default_ukf_configs
+from ukf_fx import fx
+from ukf_plots import L2s
+import default_ukf_configs
 
 "can misbehave when importing with ex1/ex2 modules as well"
-sys.path.append("../../stationsim")
+
 from ukf2 import ukf_ss
 from stationsim_model import Model
 

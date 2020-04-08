@@ -8,28 +8,19 @@ Created on Mon Dec  2 11:16:33 2019
 """
 import sys
 import os
-"if running this file on its own. this will move cwd up to ukf_experiments."
-if os.path.split(os.getcwd())[1] != "ukf_experiments":
-    os.chdir("..")
-    
+
+sys.path.append("modules")
+sys.path.append("../../../stationsim")
+
 import numpy as np
 from math import floor
 
 "local imports"
-from modules.ukf_fx import fx
-from modules.ukf_plots import ukf_plots
-import modules.default_ukf_configs as configs
+from ukf_fx import fx
+from ukf_plots import ukf_plots
+import default_ukf_configs as configs
 
-"""
-try/except here used if running __main__ here. 
-if calling from a parent directory (e.g. ukf_experiments)
-call them there instead with the corresponding file append.
-e.g.     
-sys.path.append("../stationsim")
-"""
 
-sys.path.append("modules")
-sys.path.append("../../stationsim")
 from ukf2 import ukf_ss, pickle_main
 from stationsim_model import Model
 

@@ -28,9 +28,13 @@ def gain_element_plot(gains):
     """
     f = plt.figure()
     
-    for i in range(gains.shape[0]):
-        for j in range(gains.shape[1]):
-            plt.plot(gains[i,j,:])    
+    if len(gains.shape)>1:
+        for i in range(gains.shape[0]):
+            for j in range(gains.shape[1]):
+                #if j%2==1:
+                plt.plot(gains[i,j,]) 
+    else:
+        plt.plot(gains)
 
 
 def data_extraction(u):
@@ -57,6 +61,7 @@ def main(f_name):
     u = pickle_main(f_name, "pickles/", True)
     
     ks, mus, kmus = data_extraction(u)
+    gain_element_plot(ks[0,0,:])
     gain_element_plot(ks)
     gain_element_plot(mus)
     gain_element_plot(kmus)
@@ -65,8 +70,8 @@ def main(f_name):
     
 if __name__ == "__main__":
     
-    n = 20
-    bin_size = 25
+    n = 10
+    bin_size = 50
     prop = 1.0
     
     f_name = f"agg_ukf_agents_{n}_bin_{bin_size}.pkl"  
@@ -74,7 +79,7 @@ if __name__ == "__main__":
     
     ks, mus, kmus = main(f_name)
 
-    k = ks[:,:,100]
-    mu = mus[:,:,100]
-    kmu = kmus[:,:,100]
+    k = ks[:,:,10]
+    mu = mus[:,:,10]
+    kmu = kmus[:,:,10]
     

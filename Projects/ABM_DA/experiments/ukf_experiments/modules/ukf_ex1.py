@@ -240,8 +240,9 @@ def ex1_plots(instance, destination, prefix, save, animate):
     "indices for unobserved agents"
     not_index2 = np.array([i for i in np.arange(truths.shape[1]) if i not in index2])
     plts.pair_frame(truths, preds, obs_key, 50, "plots/")
-    #plts.error_hist(truths[:,index2], preds[:,index2],"Observed Errors")
-    #plts.error_hist(truths[:,not_index2], preds[:,not_index2],"Unobserved Errors")
+    plts.error_hist(truths[:,index2], preds[:,index2],"Observed Errors")
+    if len(not_index2)>0:
+        plts.error_hist(truths[:,not_index2], preds[:,not_index2],"Unobserved Errors")
     plts.path_plots(obs, "Observed")
     "remove nan rows to stop plot clipping"
     plts.path_plots(preds[::instance.sample_rate], "Predicted")
@@ -299,12 +300,12 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
  
         model_params, ukf_params = u.model_params, u.ukf_params
     
-    ex1_plots(u, destination, "ukf_", True, False)
+    ex1_plots(u, destination, "ukf_", True, True)
 
     return u
     
 if __name__ == "__main__":
-    recall = False #recall previous run
+    recall = True #recall previous run
     do_pickle = True #pickle new run
     pickle_source = "pickles/" #where to load/save pickles from
     destination = "plots/"

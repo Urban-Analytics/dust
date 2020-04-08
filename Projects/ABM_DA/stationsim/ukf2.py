@@ -20,7 +20,8 @@ import numpy as np  # numpy
 import datetime  # for timing experiments
 import pickle  # for saving class instances
 from scipy.stats import chi2  # for adaptive ukf test
-
+from stationsim_model import Model
+from copy import deepcopy
 
 def unscented_Mean(sigmas, wm, kf_function, **function_kwargs):
     """calculate unscented transform estimate for forecasted/desired means
@@ -253,9 +254,14 @@ class ukf:
 
         self.xs = []
         self.ps = []
-
-        self.ks = []
-        self.mus = []
+        
+        self.verbose = True
+        if self.verbose:
+            self.pxxs = []
+            self.pxys = []
+            self.pyys = []
+            self.ks = []
+            self.mus = []
 
     def predict(self, **fx_kwargs):
         """Transitions sigma points forwards using markovian transition function plus noise Q
@@ -277,13 +283,16 @@ class ukf:
 
         sigmas = MSSP(self.x, self.p, self.g)
         forecasted_sigmas, xhat = unscented_Mean(sigmas, self.wm, self.fx,
-                                                 **self.fx_kwargs)
+                                                 **fx_kwargs)
         self.sigmas = forecasted_sigmas
 
         pxx = covariance(forecasted_sigmas, xhat, self.wc, addition=self.q)
 
         self.p = pxx  # update Sxx
         self.x = xhat  # update xhat
+
+        if self.verbose:
+            self.pxxs.append(pxx)
 
     def update(self, z, **hx_kwargs):
         """ update forecasts with measurements to get posterior assimilations
@@ -313,13 +322,11 @@ class ukf:
 
         "i dont know why `self.x += ...` doesnt work here"
         mu = (z-yhat)
-        x = self.x + np.matmul(k, mu)
+        self.x = self.x + np.matmul(k, mu)
+        
         p = self.p - np.linalg.multi_dot([k, pyy, k.T])
 
-        gain_test = True
-        if gain_test:
-            self.ks.append(k)
-            self.mus.append(mu)
+        
 
         """adaptive ukf augmentation. one for later."""
         adaptive = False
@@ -328,6 +335,12 @@ class ukf:
                 x, p = self.fault_test(
                     z, mu, pxy, pyy, self.x, self.p, k, yhat)
 
+        if self.verbose:
+            self.pxys.append(pxy)
+            self.pyys.append(pyy)
+            self.ks.append(k)
+            self.mus.append(mu)
+            
         "update mean and covariance states"
         self.ps.append(self.p)
         self.xs.append(self.x)
@@ -415,7 +428,7 @@ class ukf_ss:
         stationsim model `base_model`
     """
 
-    def __init__(self, model_params, ukf_params, base_model):
+    def __init__(self, model_params, ukf_params, base_model, truths = None):
         """
         *_params - loads in parameters for the model, station sim filter and general UKF parameters
         base_model - initiate stationsim 
@@ -458,7 +471,11 @@ class ukf_ss:
         "timer"
         self.time1 = datetime.datetime.now()  # timer
         self.time2 = None
+        
+        "save the initial stationsim for batch purposes."
 
+    
+    '''
     @classmethod
     def set_random_seed(cls, seed=None):
         """Set a new numpy random seed
@@ -468,6 +485,7 @@ class ukf_ss:
         new_seed = int.from_bytes(os.urandom(
             4), byteorder='little') if seed == None else seed
         np.random.seed(new_seed)
+    '''
 
     def init_ukf(self, ukf_params, seed=None):
         """initialise ukf with initial state and covariance structures.
@@ -485,8 +503,8 @@ class ukf_ss:
             `ukf` class intance for stationsim
             
         """
-        if seed != None:
-            self.set_random_seed(seed)
+        #if seed != None:
+        #    self.set_random_seed(seed)
 
         self.ukf = ukf(self.model_params, ukf_params, self.base_model)
 
@@ -500,8 +518,13 @@ class ukf_ss:
         
         """
 
-        self.ukf.predict()
+        self.ukf.predict(**{"base_model":self.base_model})
         self.forecasts.append(self.ukf.x)
+        #if self.batch:
+        #        self.ukf.base_model.set_state(self.batch_truths[step],
+        #        "if batch update stationsim with new truths after step"
+        #                                      sensor = "location")
+        
         self.base_model.step()
         self.truths.append(self.base_model.get_state(sensor="location"))
 
@@ -538,8 +561,8 @@ class ukf_ss:
                 #force inactive agents to unobserved
                 key *= [agent.status % 2 for agent in self.base_model.agents]
                 self.obs_key.append(key)
-
-            self.base_model.set_state(self.ukf.x, sensor = "location")
+                
+            
             self.ukf_histories.append(self.ukf.x)  # append histories
             self.obs.append(state)
 
@@ -559,7 +582,12 @@ class ukf_ss:
         #initialise UKF
         self.init_ukf(self.ukf_params)
         for step in range(self.step_limit-1):
-
+            
+            #if self.batch:
+            #    if self.base_model.step_id == len(self.batch_truths):
+            #        break
+            #        print("ran out of truths. maybe batch model ended too early.")
+                    
             #forecast next StationSim state and jump model forwards
             self.ss_Predict()
             #assimilate forecasts using new model state.
@@ -568,7 +596,7 @@ class ukf_ss:
             finished = self.base_model.pop_finished == self.pop_total
             if finished:  # break condition
                 break
-
+            
             # elif np.nansum(np.isnan(self.ukf.x)) == 0:
             #    print("math error. try larger values of alpha else check fx and hx.")
             #    break
@@ -633,6 +661,36 @@ class ukf_ss:
 
         return obs_key
 
+
+def batch_save(model_params, n, seed):
+    "save a stationsim model to use later in a batch"
+
+    model_params["random_seed"] = seed
+    model_params["pop_total"] = n
+    base_model = Model(**model_params)
+    "copy start of model for saving in batch later."
+    "needed so we dont assign new random speeds"
+    start_model = deepcopy(base_model)
+    
+    while base_model.status == 1:
+        base_model.step()
+        
+    
+    truths = base_model.history_state
+    for i in range(len(truths)):
+        truths[i] = np.ravel(truths[i])
+    
+    batch_pickle = [truths, start_model]
+    n = model_params["pop_total"]
+    
+    pickler(batch_pickle, "pickles/", f"batch_test_{n}_{seed}.pkl")
+
+def batch_load(file_name):
+    "load a stationsim model to use as a batch for ukf"
+    batch_pickle = depickler("pickles/", file_name)
+    truths = batch_pickle[0]
+    start_model = batch_pickle[1]
+    return truths, start_model
 
 def pickler(instance, pickle_source, f_name):
     """save ukf run as a pickle

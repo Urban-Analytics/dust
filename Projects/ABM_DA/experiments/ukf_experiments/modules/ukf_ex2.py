@@ -23,7 +23,7 @@ import modules.default_ukf_configs as configs
 
 sys.path.append("../../stationsim")
 sys.path.append("modules")
-from ukf2 import ukf_ss, pickle_main
+from ukf2 import ukf_ss, pickle_main, batch_save, batch_load
 from stationsim_model import Model
 
 import numpy as np
@@ -63,8 +63,8 @@ def aggregate_params(n, bin_size, model_params, ukf_params):
               model_params["height"],ukf_params["bin_size"])
         
     ukf_params["p"] = np.eye(2*n) #inital guess at state covariance
-    ukf_params["q"] = np.eye(2*n)
-    ukf_params["r"] = np.eye(len(ukf_params["poly_list"]))#sensor noise 
+    ukf_params["q"] = 1 * np.eye(2*n)
+    ukf_params["r"] = 0.001 * np.eye(len(ukf_params["poly_list"]))#sensor noise 
     
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"]  = {"base_model" : base_model}
@@ -104,8 +104,8 @@ def hx2(state,**hx_kwargs):
     
     counts = poly_count(poly_list, state)
     
-    #if np.sum(counts)>0:
-    #    counts /= np.sum(counts)
+    if np.sum(counts)>0:
+        counts /= np.sum(counts)
     return counts
 
 def ex2_pickle_name(n, bin_size):
@@ -205,6 +205,8 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     """
     
     if not recall:
+        
+                
         model_params = configs.model_params
         model_params["random_seed"] = 8
         ukf_params = configs.ukf_params
@@ -212,12 +214,34 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
         model_params, ukf_params, base_model = aggregate_params(n,
                                         bin_size, model_params, ukf_params)
         
+        batch = False
+        ukf_params["batch"] = batch
+        if batch:
+            print("WARNING: Batch set to true and will not generate a random model each time.")
+            try:
+                seed = 50
+                file_name =   f"batch_test_{n}_{seed}.pkl"
+                batch_truths, batch_start_model = batch_load(file_name)
+                print("batch data found.")
+            except:
+                print("no model found. generating one with given seed")
+                file_name =   f"batch_test_{n}_{seed}.pkl"
+                batch_save(model_params, n, seed)
+                batch_truths, batch_start_model = batch_load(file_name)
+                print("new model generated.")
+                new_seed = int.from_bytes(os.urandom(4), byteorder='little') if seed == None else seed
+                np.random.seed(new_seed)
+            
+            
+            base_model = batch_start_model    
+
         print(f"Population: {n}")
         print(f"Square grid size: {bin_size}")
         
         u = ukf_ss(model_params,ukf_params,base_model)
         u.main()
-        pickle_main(ukf_params["file_name"], pickle_source, do_pickle, u)
+        if do_pickle:
+            pickle_main(ukf_params["file_name"], pickle_source, do_pickle, u)
        
     else:
         f_name = ex2_pickle_name(n, bin_size)
@@ -228,12 +252,12 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
             print("dictionary not found. trying to load class")
             u  = pickle_main(f_name, source, do_pickle)
             
-    ex2_plots(u, destination, "agg_ukf_", True, True)
+    ex2_plots(u, destination, "agg_ukf_", True, False)
     return u
        
 if __name__ == "__main__":
-    n = 5
-    bin_size = 25
+    n = 20
+    bin_size = 5
     recall = False #  recall previous run
     do_pickle = True #  pickle new run
     pickle_source = "pickles/"

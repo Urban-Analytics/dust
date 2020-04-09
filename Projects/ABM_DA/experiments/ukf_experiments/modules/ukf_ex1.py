@@ -298,8 +298,8 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
 if __name__ == "__main__":
     recall = True #recall previous run
     do_pickle = True #pickle new run
-    pickle_source = "pickles/" #where to load/save pickles from
-    destination = "plots/"
+    pickle_source = "../pickles/" #where to load/save pickles from
+    destination = "../plots/"
     n = 5 #population size
     prop = 1.0 #proportion observed
     

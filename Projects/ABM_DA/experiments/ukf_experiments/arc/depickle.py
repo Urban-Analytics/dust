@@ -45,8 +45,11 @@ scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiment
 
 "if running this file on its own. this will move working directory up to ukf_experiments."
 import os
-if os.path.split(os.getcwd())[1] != "ukf_experiments":
-    os.chdir("..")
+import sys
+sys.path.append("../../../stationsim/")
+sys.path.append("../..")
+sys.path.append("../modules")
+sys.path.append("../ukf_old")
 import pandas as pd
 import seaborn as sns
 import glob
@@ -60,20 +63,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ukf_fx import HiddenPrints
 from ukf2 import pickle_main
-from modules.ukf_plots import L2s as L2_parser
-import sys
-import os
-
+from ukf_plots import L2s as L2_parser
 
 
 """
 path appends to keep pickle happy when loading in older experiments.
 """
 
-sys.path.append("../../stationsim/")
-sys.path.append("../..")
-sys.path.append("modules")
-sys.path.append("ukf_old")
 
 
 "import ukf and transition function fx"
@@ -729,8 +725,8 @@ def ex1_grand_no_split(source, destination):
 def ex2_grand(source, destination):
 
     file_params = {
-        "agents":  [30, 50, 100],
-        "bin": [5, 10, 25, 50],
+        "agents":  [10, 20],
+        "bin": [10, 25],
         # "source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
         "source": source,
         "destination": destination,
@@ -760,9 +756,9 @@ def main(experiment_function, source, destination):
 # %%
 if __name__ == "__main__":
 
-    main(ex0_grand,  f"/Users/medrclaa/ukf_config_test/config*030*", "plots/")
-    main(ex1_grand, "/Users/medrclaa/ukf_results/ukf*", "plots/")
-    #main(ex1_grand_no_split, "/Users/medrclaa/ukf_results/ukf*", "plots/")
+    #main(ex0_grand,  f"/Users/medrclaa/ukf_config_test/config*030*", "../plots/")
+    #main(ex1_grand, "/Users/medrclaa/ukf_results/ukf*", "../plots/")
+    #main(ex1_grand_no_split, "/Users/medrclaa/ukf_results/ukf*", "../plots/")
 
-    main(ex2_grand, "/Users/medrclaa/agg_results/agg_ukf_*", "plots/")
+    main(ex2_grand, "/Users/medrclaa/new_aggregate_results/agg_ukf*", "../plots")
 

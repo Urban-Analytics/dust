@@ -255,7 +255,7 @@ class ukf:
         self.xs = []
         self.ps = []
         
-        self.verbose = True
+        self.verbose = False
         if self.verbose:
             self.pxxs = []
             self.pxys = []
@@ -335,6 +335,8 @@ class ukf:
                 x, p = self.fault_test(
                     z, mu, pxy, pyy, self.x, self.p, k, yhat)
 
+        """record various data for diagnostics. Warning this makes the pickles
+        rather large"""
         if self.verbose:
             self.pxys.append(pxy)
             self.pyys.append(pyy)

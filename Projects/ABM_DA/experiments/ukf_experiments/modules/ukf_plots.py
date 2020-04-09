@@ -380,7 +380,7 @@ class ukf_plots:
         
         n= self.filter_class.model_params["pop_total"]
         n_prop = n*(1-np.tanh(n/ukf_params["bin_size"])**2)
-        norm =CompressionNorm(1e-5,0.9*n_prop,0.1,0.9,1e-8,n)
+        norm =CompressionNorm(1e-15,0.9*n_prop,0.1,0.9,1e-16,n)
 
         sm = cm.ScalarMappable(norm = norm,cmap=cmap)
         sm.set_array([])  

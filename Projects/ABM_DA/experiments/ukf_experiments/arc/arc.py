@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+WHATEVER YOU DO MAKE SURE YOU USE SCIPY<1.21 
+or you cant depickle the experiments.
+
 This file allows you to repeat multiple experiments in paralllel 
 of the ukf on stationsim using Leeds' arc3 HPC cluster.
 
@@ -11,6 +14,29 @@ scp remote_file_source* local_file_destination.
 Given the appropriate directories e.g.
 
 scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
+
+===========
+ARC4 Version
+===========
+
+New version of the above for arc4 using a conda environment for my sanity.
+Use the standard means of cloning the git but use this venv instead.
+
+module load anaconda
+conda create -p /nobackup/medrclaa/ukf_py python=3 numpy scipy matplotlib shapely imageio seaborn
+source activate /nobackup/medrclaa/ukf_py
+
+
+Extract files using usual scp commands
+If we are accessing arc remotely we have two remote servers to go through 
+and so use proxy jump. 
+https://superuser.com/questions/276533/scp-files-via-intermediate-host
+With the format:
+
+scp -oProxyJump=user@remote-access.leeds.ac.uk
+e.g.
+scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/results/agg* /Users/medrclaa/new_aggregate_results
+
 """
 import os
 import sys
@@ -198,7 +224,7 @@ def ex2_input(model_params, ukf_params, test):
 
     """
 
-    num_age = [10, 20, 30]  # 10 to 30 agent population by 10
+    num_age = [10, 20, 30, 50]  # 10 to 30 agent population by 10
     # unitless grid square size (must be a factor of 100 and 200)
     bin_size = [5, 10, 25, 50]
     run_id = np.arange(0, 30, 1)  # 30 runs
@@ -319,8 +345,8 @@ def main(ex_input, ex_save, test=False):
 if __name__ == '__main__':
     test = True
     print("warning test set to true. if youre running an experiment, it wont go well.")
-    main(ex0_input, ex0_save, test)
-    main(ex1_input, pickle_save, test)
+    #main(ex0_input, ex0_save, test)
+    #main(ex1_input, pickle_save, test)
     main(ex2_input, pickle_save, test)
 
 

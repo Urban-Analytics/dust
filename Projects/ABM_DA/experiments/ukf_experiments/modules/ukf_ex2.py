@@ -163,8 +163,8 @@ def ex2_plots(instance, destination, prefix, save, animate):
     preds *= nan_array
     forecasts *= nan_array
     
-    plts.pair_frame(truths, preds, obs_key, 50, "plots/")
-    plts.heatmap_frame(truths,50, "plots/")
+    plts.pair_frame(truths, preds, obs_key, 50, destination)
+    plts.heatmap_frame(truths,50, destination)
     plts.error_hist(truths, preds,"Aggregate")
     
     "remove nan rows to stop plot clipping"
@@ -178,7 +178,7 @@ def ex2_plots(instance, destination, prefix, save, animate):
         #plts.trajectories(truths, "plots/")
         #plts.heatmap(truths,truths.shape[0], "plots/")
         plts.pair_frames(truths, forecasts, np.vstack(obs_key), 
-                         truths.shape[0], "plots/")
+                         truths.shape[0], destination)
 
 def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     
@@ -207,7 +207,7 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
         
                 
         model_params = configs.model_params
-        #model_params["random_seed"] = 8
+        model_params["random_seed"] = 15
         ukf_params = configs.ukf_params
         
         model_params, ukf_params, base_model = aggregate_params(n,
@@ -256,8 +256,8 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
        
 if __name__ == "__main__":
     n = 20
-    bin_size = 5
-    recall = False #  recall previous run
+    bin_size = 2
+    recall = True #  recall previous run
     do_pickle = True #  pickle new run
     pickle_source = "../pickles/"
     destination  = "../plots/"

@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-#give a file name with path to whereever you've save it
+#give a file name with the path to whereever you've saved the .mat file e.g.
 file_name = "trajectoriesNew/trajectoriesnew.mat"
 #load file with loadmat you get 4 values. you only really want trks
 file = loadmat(file_name)
@@ -61,13 +61,15 @@ for i in range(100):
     #column names. ith agent columns 0 and 1 for x and y positions.
     x_column = f"{i}_0"
     y_column = f"{i}_1"
-    #build new dataframe with x, y, and indices
+    #build new dataframe with x, y, and time indices
     new_columns = pd.DataFrame(np.hstack([x,y]), columns = [x_column, y_column], index = times)
-    #add new agents data to main data frame
+    #add new agent's data to main data frame
     traj_frame = pd.concat([traj_frame, new_columns], axis = 1, sort = False)
 
-
-#then plot every pair of columns from pandas frame to get a plot of trajectories
+"""
+Then to plot the pandas frame we simply plot every 2 
+columns as x y positions in matplotlib.
+"""
     
     
 for i in range(int(traj_frame.shape[1]/2)):

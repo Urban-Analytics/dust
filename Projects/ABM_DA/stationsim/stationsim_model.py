@@ -251,13 +251,14 @@ class Model:
 
             'gates_in': 3,
             'gates_out': 2,
-            'gates_space': 1,
+            'gates_space': 1, # Distance around gate that will cause the agent to leave the simulation
             'gates_speed': 1,
 
-            'speed_min': .2,
+            # Agent maximum speed is chosen when the agent is created and drawn from a normal distribution
+            'speed_min': .2, # No speeds can be below this
             'speed_mean': 1,
             'speed_std': 1,
-            'speed_steps': 3,
+            'speed_steps': 3, #
 
             'separation': 5,
             'max_wiggle': 1,

@@ -1,9 +1,9 @@
 ---
 layout: post
 title: "Special Issue: Innovations in Spatial ABMs"
-tagline: "Announcing a new special issue: "Innovations in Agent-Based Modelling of Spatial Systems"
+tagline: "New special issue: Innovations in Agent-Based Modelling of Spatial Systems"
 category: announce
-tags: [abm, data assimilation, pedestrian simulation]
+tags: [abm, gis, special issue]
 ---
 
 <figure style="width:40%;float:right; padding: 1em;" >

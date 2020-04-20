@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Special Issue: Innovations in Spatial ABMs"
-tagline: Announcing a new special issue: "Innovations in Agent-Based Modelling of Spatial Systems"
+tagline: "Announcing a new special issue: "Innovations in Agent-Based Modelling of Spatial Systems"
 category: announce
 tags: [abm, data assimilation, pedestrian simulation]
 ---

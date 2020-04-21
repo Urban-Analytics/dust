@@ -401,6 +401,9 @@ class Model:
         return np.array([np.full(n, x), np.linspace(0, y, n+2)[1:-1]]).T
 
     def set_station(self):
+        """Allows to manually set a station (e.g. 'Grand_Central') rather than
+        automatically generating a station from parameters like number of
+        gates, gate size, etc."""
         if(self.station == 'Grand_Central'):
             self.width = 200
             self.height = 400

@@ -8,8 +8,8 @@ The script
 '''
 
 import sys
-sys.path.append('../../stationsim_gcs')
-from stationsim_gcs.stationsim_gcs_model import Model
+sys.path.append('../../stationsim')
+from stationsim.stationsim_gcs_model import Model
 from time import strftime
 id = strftime('%y%m%d_%H%M%S')
 

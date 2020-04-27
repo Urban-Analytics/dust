@@ -557,6 +557,7 @@ class ukf_ss:
             state = self.ukf.hx(state, **hx_kwargs)
 
             self.ukf.update(state, **hx_kwargs)
+            self.base_model.set_state(self.ukf.x, sensor = "location")
 
             if self.obs_key_func is not None:
                 key = self.obs_key_func(state, **self.obs_key_kwargs)

@@ -26,7 +26,7 @@ class Agent:
         '''
         Initialise a new agent.
 
-        Desctiption:
+        Description:
             Creates a new agent and gives it a randomly chosen exit,
             and desired speed.
             All agents start with active state 0 ('not started').
@@ -318,7 +318,7 @@ class Model:
     '''
     def __init__(self, unique_id=None, **kwargs):
         '''
-        Create a new model, reading parameters from a keyword arguement
+        Create a new model, reading parameters from a keyword argument
         dictionary.
         '''
         self.unique_id = unique_id

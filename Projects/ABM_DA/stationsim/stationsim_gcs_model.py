@@ -562,10 +562,10 @@ class Model:
             state = [(agent.status, *agent.location, agent.speed) for agent in
                      self.agents]
             state = np.append(self.step_id, np.ravel(state))
-        elif sensor is 'location':
+        elif sensor == 'location':
             state = [agent.location for agent in self.agents]
             state = np.ravel(state)
-        elif sensor is 'location2D':
+        elif sensor == 'location2D':
             state = [agent.location for agent in self.agents]
         return state
 
@@ -579,11 +579,11 @@ class Model:
             for i, agent in enumerate(self.agents):
                 agent.status = int(state[i, 0])
                 agent.location = state[i, 1:]
-        elif sensor is 'location':
+        elif sensor == 'location':
             state = np.reshape(state, (self.pop_total, 2))
             for i, agent in enumerate(self.agents):
                 agent.location = state[i, :]
-        elif sensor is 'location2D':
+        elif sensor == 'location2D':
             for i, agent in enumerate(self.agents):
                 agent.location = state[i, :]
 

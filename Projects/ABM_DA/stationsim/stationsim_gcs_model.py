@@ -596,6 +596,7 @@ class Model:
             state = np.ravel(state)
         elif sensor is 'location2D':
             state = [agent.location for agent in self.agents]
+
         return state
 
     def set_state(self, state, sensor=None):

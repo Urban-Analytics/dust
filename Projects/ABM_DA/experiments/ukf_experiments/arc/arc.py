@@ -169,10 +169,12 @@ def ex1_input(model_params, ukf_params, test):
     param_list = [(x, y, z) for x in num_age for y in props for z in run_id]
 
     if not test:
+        "assign parameters according to task array"
         n = param_list[int(sys.argv[1])-1][0]
         prop = param_list[int(sys.argv[1])-1][1]
         run_id = param_list[int(sys.argv[1])-1][2]
     else:
+        "if testing use these parameters for a single quick run."
         n = 5
         prop = 0.5
         run_id = "test"

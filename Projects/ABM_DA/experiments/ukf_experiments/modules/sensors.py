@@ -9,25 +9,36 @@ Created on Fri Jan  3 10:01:00 2020
 import numpy as np
 import shapely.geometry as geom
 
-def boundary_Polygon(width, height):
+def generate_Camera_Rect(bl, tl, tr, br, boundary = None):
     
+    """ Generate a square polygon 
     
-    """generate rectangle that covers all of stationsim as a boundary"""
+    Parameters
+    ------
+    br, br, tl, tr : `array_like`
+    bottom left `bl`, bottom right `br`, top left `tl`, and top right `tr`.
+    Basically, where are the corners of the square
     
-    points = np.array([[0, 0], [width, 0], [width, height], [0, height]])
+    boundary : `Polygon`
+        indicate if this square is a boundary. If no arguement is given,
+        the polygon generated does not try and intersect with some boundary.
+        Useful for generating the boundary itself for example, where we have 
+        nothing to bound on yet, but we can still use the same function later
+        for generating square shaped cameras as well.
+    Returns
+    ------
+    poly : `Polygon`
+        square polygon with defined corners.
+    """
+    
+    points = np.array([bl, tl, tr, br])
     poly =  geom.Polygon(points)
+    if boundary is not None:
+        poly = poly.intersection(boundary) #cut off out of bounds areas
+
     return poly
 
-class camera_Sensor():
-    
-    def __init__(self, pole, centre, arc, boundary):
-        self.pole = pole
-        self.centre = centre
-        self.arc = arc
-        self.boundary = boundary
-        self.polygon = self.generate_Camera_Polygon()
-        
-    def generate_Camera_Polygon(self):
+def generate_Camera_Cone(pole, centre, arc, boundary):
         """construct Polygon object containing cone
 
         Parameters
@@ -50,19 +61,16 @@ class camera_Sensor():
             between pole and centre.
                
         boundary : Polygon
-             `boundary` of ABM topography. E.g. rectangular corridor for stationsim.
+             `boundary` of ABM topography. E.g. rectangular corridor for 
+             stationsim. Indicates where to cut off polygons as theyve reached the end
 
         Returns
         -------
-        segment : Polygon
-            `segment` polygon arc segment of cameras vision.
+        poly : Polygon
+            `poly` polygon arc segment of the cameras vision.
 
         """
-        pole = self.pole
-        centre = self.centre
-        arc = self.arc
-        boundary = self.boundary
-        
+   
         angle = arc * np.pi*2 # convertion proportion to radians
         diff = centre-pole # difference between centre and pole for angle and radius
         r = np.linalg.norm(diff) # arc radius
@@ -83,6 +91,24 @@ class camera_Sensor():
         poly = poly.intersection(boundary) #cut off out of bounds areas
         
         return poly
+
+class camera_Sensor():
+    
+    def __init__(self, polygons):
+        """init the camera using some polygon
+        !!maybe extend this to a list of polygons
+
+        Parameters
+        ----------
+        polygons : `Polygon`
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.polygons = polygons
         
     def observe(self, state):
         
@@ -102,9 +128,8 @@ class camera_Sensor():
         for i in range(state.shape[0]):
             point = geom.Point(state[i,:])    
             
-            is_in = point.within(self.polygon)
+            is_in = point.within(self.polygons)
             if is_in:
-        
                 which_in += [i]
        
         return which_in

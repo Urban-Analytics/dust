@@ -75,7 +75,7 @@ def hx1(state, **hx_kwargs):
     index2 = hx_kwargs.pop("index2")
     return  state[index2] 
 
-def obs_key_func(state, **obs_key_kwargs):
+def obs_key_func(state, **hx_kwargs):
     
     
     """which agents are observed
@@ -100,8 +100,8 @@ def obs_key_func(state, **obs_key_kwargs):
         (unobserved,aggregate,gps) for 0, 1, or 2.
     
     """
-    n = obs_key_kwargs["n"]
-    index = obs_key_kwargs["index"]
+    n = hx_kwargs["n"]
+    index = hx_kwargs["index"]
     
     key = np.zeros(n)
     key[index] +=2
@@ -150,9 +150,9 @@ def omission_params(n, prop, model_params, ukf_params):
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"] = {"base_model":base_model} 
     ukf_params["hx"] = hx1
-    ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"]}
+    ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"], "n" : n,
+                               "index" : ukf_params["index"],}
     ukf_params["obs_key_func"] = obs_key_func
-    ukf_params["obs_key_kwargs"] = {"n" : n, "index" : ukf_params["index"]}
     
     ukf_params["file_name"] =  ex1_pickle_name(n, prop)
         
@@ -217,13 +217,18 @@ def ex1_plots(instance, destination, prefix, save, animate):
     
     plts = ukf_plots(instance, destination, prefix, save, animate, marker_attributes)
 
-    obs,preds,truths,nan_array= instance.data_parser()
+
+    truths = instance.truth_parser(instance)
+    nan_array= instance.nan_array_parser(truths, instance.base_model)
     obs_key = instance.obs_key_parser()
+    obs = instance.obs_parser(instance, True, truths, obs_key)
+    preds = instance.preds_parser(instance, True, truths)
+    
     ukf_params = instance.ukf_params
     index2 = ukf_params["index2"]
     forecasts = np.vstack(instance.forecasts)
     
-    obs *= nan_array[::instance.sample_rate,index2]
+    obs *= nan_array
     truths *= nan_array
     preds *= nan_array
     forecasts*= nan_array
@@ -301,6 +306,6 @@ if __name__ == "__main__":
     pickle_source = "../pickles/" #where to load/save pickles from
     destination = "../plots/"
     n = 5 #population size
-    prop = 1.0 #proportion observed
+    prop = 0.2 #proportion observed
     
     u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

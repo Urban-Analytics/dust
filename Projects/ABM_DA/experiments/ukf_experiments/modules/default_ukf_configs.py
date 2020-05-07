@@ -33,7 +33,7 @@ do_ bools for saving plotting and animating data.
 model_params = {
 
 'width': 50,
-'height': 100,
+'height': 50,
 
 'gates_in': 3,
 'gates_out': 2,
@@ -68,7 +68,7 @@ not 100% sure what kappa does. think its a bias parameter.
 """
 
 ukf_params = {      
-   
+
 'sample_rate' : 5,
 "bring_noise" : True,
 "noise" : 0.5,
@@ -78,4 +78,9 @@ ukf_params = {
 "b": 2,
 "k": 0,
 
+"fx_kwargs_update_function": None,
+"fx_update_args": [],
+"hx_kwargs_update_function": None,
+"hx_update_args": [],
+"obs_key_kwargs_update_function": None,
 }

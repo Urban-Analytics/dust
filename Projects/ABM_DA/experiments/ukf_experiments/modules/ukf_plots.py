@@ -195,16 +195,20 @@ class ukf_plots:
         sample_rate = self.filter_class.ukf_params["sample_rate"]
         
         for i in plot_range:
-            "extract rows of tables"
-            "stagger animations so we only get new plots when new obs come in"
-            "makes it chunky but I think "
-            truths2 = truths[i - i%sample_rate,:]
-            preds2 = preds[i - i%sample_rate,:]
-            obs_key2 = obs_key[i - i%sample_rate,:]
+            #loop over each specific time point
+            hold = False
+            if hold:
+                truths2 = truths[i - i%sample_rate, :]
+                preds2 = preds[i - i%sample_rate, :]
+                obs_key2 = obs_key[i - i%sample_rate, :]
+            else:
+                truths2 = truths[i, :]
+                preds2 = preds[i, :]
+                obs_key2 = obs_key[i - i%sample_rate,:]
             ms = 10 #marker_size
             alpha = 1
             
-            f = plt.figure(figsize = (16,12))
+            f = plt.figure(figsize = (12,8))
             ax = plt.subplot(111)
             plt.xlim([0,self.width])
             plt.ylim([0,self.height])
@@ -217,14 +221,18 @@ class ukf_plots:
                        c="none", s= ms**2, marker = self.markers[-1],ec="k",
                        linewidths=1.5)
 
+            #plot truth, prediction and tether for each agent
             for j in range(n):
+                    #choose tether width and get observation type from obs_key2
                     tether_width = ms/5
-                    key = obs_key2[j]                        
+                    key = obs_key2[j]       
+                    #stop error being thrown when agent not observed
                     if np.nansum(obs_key2) == 0 :
                         continue
+                    #choose colours and shape from observation type
                     colour = self.colours[key]
                     marker = self.markers[key]
-                    "one scatter for translucent fill. one for opaque edges"
+                    #one scatter for translucent fill. one for opaque edges
                     ax.scatter(preds2[(2*j)],preds2[(2*j)+1], c="none", marker = marker,
                                s= ms**2, edgecolors="k",linewidths=1.5)
                     ax.scatter(preds2[(2*j)],preds2[(2*j)+1],color=colour,marker = marker,
@@ -235,24 +243,32 @@ class ukf_plots:
                     plt.plot(x,y,linewidth=tether_width,color="w", linestyle="-")
 
                     
-            "dummy markers for a consistent legend" 
+            #plotting list of polygons in which observed for ex4
+            
+            if self.filter_class.ukf_params["cameras"] is not None:
+                cameras = self.filter_class.ukf_params["cameras"]
+                polygons = [camera.polygons for camera in cameras]
+                self.plot_polygons(ax, polygons)
+                
+            
+            #dummy markers for a consistent legend
             
             for key in self.colours.keys():
                 ax.scatter(-1,-1,color=self.colours[key],label = self.labels[key], s= ms**2,
                            marker=self.markers[key],edgecolors="k",linewidths=1.5)
             
-            "put legend outside of plot"
+            #put legend outside of plot
             box = ax.get_position()
             ax.set_position([box.x0, box.y0 + box.height * 0.1,
                              box.width, box.height * 0.9])
             
             ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12),
                       ncol=2)
-            "labelling"
+            #labelling
             plt.xlabel("corridor width")
             plt.ylabel("corridor height")
             #plt.title("True Positions vs UKF Predictions")
-            "save frame and close plot else struggle for RAM"
+            #save frame and close plot else struggle for RAM
             number =  str(i).zfill(ceil(log10(truths.shape[0]))) #zfill names files such that sort() does its job properly later
             file = destination + self.prefix + f"pairs{number}"
             
@@ -265,8 +281,6 @@ class ukf_plots:
                 plt.close()
     
     def pair_frames(self, truths, forecasts, obs_key, plot_range, destination):
-        
-        
         """ pairwise animation of ukf predictions and true measurements over ABM run
         
         - using pair frames_main above plot an animation for the entire ABM run
@@ -291,7 +305,7 @@ class ukf_plots:
         
         self.pair_frames_main(truths,forecasts,obs_key,range(plot_range), save_dir)
         animations.animate(self,save_dir, destination + self.prefix +
-                           f"pairwise_gif_{self.filter_class.pop_total}", 12)
+                           f"pairwise_gif_{self.filter_class.pop_total}", 6)
         
     
     def pair_frame(self, truths, forecasts, obs_key, frame_number, destination):
@@ -557,16 +571,13 @@ class ukf_plots:
 
         if self.save:
             j.savefig(self.destination + f"{title}_Agent_Hist.pdf")        
-    def plot_polygons(self):
-        """little function to plot polygons of poly_list"""
-        
-        
-        poly_list = self.filter_class.ukf_params["poly_list"]
-        f,ax = plt.subplots()
+            
+    def plot_polygons(self,ax, poly_list):
+        """little function to plot shapely polygons of poly_list"""
         
         for poly in poly_list:
-            a = poly.boundary.coords.xy
-            plt.plot(a[0],a[1],color='w')
+            ax.fill(*poly.exterior.xy, color = "blue", alpha=0.5)
+            #plt.plot(*poly.exterior.xy)
     
 class CompressionNorm(col.Normalize):
     

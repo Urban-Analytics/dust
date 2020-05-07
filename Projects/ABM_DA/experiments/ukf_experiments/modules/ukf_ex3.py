@@ -10,7 +10,7 @@ THIS IS JUST A PROOF OF CONCEPT FOR NOW. IGNORE IT
 """
 
 import sys
-sys.path.append("../..")
+sys.path.append("../../..")
 from stationsim.ukf2 import fx
 from ukf_ex1 import omission_index
 

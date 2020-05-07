@@ -1,7 +1,7 @@
 '''
 StationSim - GrandCentral version
     author: patricia-ternes
-    created: 30/04/2020
+    created: 07/05/2020
 '''
 
 import warnings
@@ -94,7 +94,7 @@ class Agent:
                 self.gate_out = np.random.randint(self.model.gates_out)
             '''
         else:
-        	self.gate_out = np.random.randint(self.model.gates_out) + self.model.gates_in
+            self.gate_out = np.random.randint(self.model.gates_out) + self.model.gates_in
 
     def step(self, time):
         '''
@@ -361,7 +361,7 @@ class Model:
 
             'gates_in': 3,
             'gates_out': 2,
-            'gates_space': 1,
+            'gates_space': 1.0,
             'gates_speed': 100,  # new default value
 
             'speed_min': .2,
@@ -507,7 +507,7 @@ class Model:
             [agent.activate() for agent in self.agents]
 
             t = 1.0
-            while (t>=0):
+            while (t>0):
                 collisionTable, tmin = self.get_collisionTable()
                 if (tmin > t):
                     [agent.step(t) for agent in self.agents]
@@ -521,10 +521,10 @@ class Model:
                     [self.agents[i].set_wiggle() for i in wiggleTable]
                     self.total_time += tmin
 
-                if self.do_history:
-                    state = self.get_state('location2D')
-                    self.history_state.append(state)
-                    [agent.history() for agent in self.agents]
+            if self.do_history:
+                state = self.get_state('location2D')
+                self.history_state.append(state)
+                [agent.history() for agent in self.agents]
 
             self.step_id += 1
         else:
@@ -564,6 +564,8 @@ class Model:
         try:
             tmin = min(collisionTable)
             tmin = tmin[0]
+            if tmin <= 1.0e-10:
+                tmin = 0.02
         except:
             tmin = 1.0e300
 
@@ -596,7 +598,12 @@ class Model:
             state = np.ravel(state)
         elif sensor is 'location2D':
             state = [agent.location for agent in self.agents]
-
+        elif sensor is 'locationVel':
+            state0 = [agent.location for agent in self.agents]
+            state0 = np.ravel(state0)
+            state1 = [agent.speed for agent in self.agents]
+            state1 = np.ravel(state1)
+            state = [state0, state1]
         return state
 
     def set_state(self, state, sensor=None):
@@ -616,6 +623,12 @@ class Model:
         elif sensor is 'location2D':
             for i, agent in enumerate(self.agents):
                 agent.location = state[i, :]
+        elif sensor is 'locationVel':
+            state0 = np.reshape(state[0], (self.pop_total, 2))
+            state1 = np.reshape(state[1], (self.pop_total, 1))
+            for i, agent in enumerate(self.agents):
+                agent.location = state0[i, :]
+                agent.speed = state1[i, :]
 
     # TODO: Deprecated, update PF
     def agents2state(self, do_ravel=True):

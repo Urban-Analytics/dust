@@ -18,9 +18,15 @@ Crols, T., and N. Malleson (2019) Quantifying the Ambient Population Using Hourl
 
 ## Preprints
 
-Malleson, N., Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew A. West, Alison Heppenstall (2019) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. _Preprint_: [arXiv:1909.09397 [cs.MA]](https://arxiv.org/abs/1909.09397).
+Tang, D. (2020). Finding the Maximum-a-Posteriori Behaviour of Agents in an Agent-Based Model. [ArXiv:2005.02096 [Cs]](http://arxiv.org/abs/2005.02096).
 
-Kieu, Le-Minh, N. Malleson, and A. Heppenstall (2019) Dealing with Uncertainty in Agent-Based Models for Short-Term Predictions’. _Preprint_ [arXiv:1908.08288 [cs.MA]](https://arxiv.org/abs/1908.08288).
+Tang, D. (2020) Decentralised, Privacy-Preserving Bayesian Inference for Mobile Phone Contact Tracing’, 2020. [arXiv: 2005.05086 [cs.CY]](https://arxiv.org/abs/2005.05086).
+
+Tang, D. (2019). Data Assimilation in Agent-Based Models Using Creation and Annihilation Operators. [ArXiv:1910.09442 [Cs]](https://arxiv.org/abs/1910.09442).
+
+Malleson, N., Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew A. West, Alison Heppenstall (2019) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. [arXiv:1909.09397 [cs.MA]](https://arxiv.org/abs/1909.09397).
+
+Kieu, Le-Minh, N. Malleson, and A. Heppenstall (2019) Dealing with Uncertainty in Agent-Based Models for Short-Term Predictions’.  [arXiv:1908.08288 [cs.MA]](https://arxiv.org/abs/1908.08288).
 
 ## Conference proceedings
 

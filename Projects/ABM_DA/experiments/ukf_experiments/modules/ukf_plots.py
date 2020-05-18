@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Dec  2 11:27:06 2019
-
-@author: rob
+File in which all single run ukf plots are generated.
 """
 import os
 import sys
@@ -12,54 +10,46 @@ sys.path.append("../modules")
 import numpy as np
 from math import ceil, log10
 from poly_functions import poly_count
-
-    
-"for plots"
-#from seaborn import kdeplot  # will be back shortly when diagnostic plots are better
-"general plotting"
+#general plotting
 import matplotlib.pyplot as plt 
-
-"for heatmap plots"
+#from seaborn import kdeplot
+#for heatmap plots
 import matplotlib.cm as cm
 import matplotlib.colors as col
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.patches as mpatches
 from matplotlib.collections import PatchCollection
-"for rendering animations"
+#for rendering animations
 import imageio 
 from shutil import rmtree
-
+from default_ukf_configs import marker_attributes as marker_attributes
 
 plt.rcParams.update({'font.size':20})  # make plot font bigger
 
 
-def L2s(truth,preds):
-        
-    
+def L2s(truth, preds):
     """L2 distance errors between measurements and ukf predictions
     
-    finds L2 (euclidean) distance at each time step and agent.
-    Provides numpy array whose columns represent one agent
-    and rows represent one time point respectively.
-    
-    Can be used to compare any two sets of trajectories in the right form
-    
+    Finds L2 (euclidean) distance between each agents truth and preds.
+    Assembled into a matrix such that each column follows an agent 
+    over time and each row looks at all agents for a given time 
+    point.
+        
     Parameters
     ------
     truth, preds: array_like
         `truth` true positions and `preds` ukf arrays to compare
-        
     Returns
     ------
-    
     distances : array_like
         matrix of L2 `distances` between truth and preds over time and agents.
     """
     
-    "placeholder"
+    #placeholder note half as many columns from collapsing 2d vectors into scalars
     distances = np.ones((truth.shape[0],int(truth.shape[1]/2)))*np.nan
 
     #loop over each agent
+    #loop over each time point for each agent
     #!!theres probably a better way to do this with apply_along_axis etc.
     for i in range(int(truth.shape[1]/2)):
             #pull one agents xy coords
@@ -67,7 +57,7 @@ def L2s(truth,preds):
             preds2 = preds[:,(2*i):((2*i)+2)]
             #residual difference
             res = truth2-preds2
-            #loop over xy coords to get L2 value for ith agent at jth time
+            #loop over each row to get distance at each time point for given agent
             for j in range(res.shape[0]):
                 distances[j,i]=np.linalg.norm(res[j,:]) 
                 
@@ -75,7 +65,8 @@ def L2s(truth,preds):
 
 class ukf_plots:
     
-    def __init__(self, filter_class, destination, prefix, save, animate, marker_attributes):
+    def __init__(self, filter_class, destination, prefix, save, animate,
+                 marker_attributes = marker_attributes):
         """class for all plots used in UKF experiments
         
         Parameters
@@ -89,18 +80,16 @@ class ukf_plots:
             
         save, animate : bool
             `save` plots or `animate` who ABM run?
-            
         """
         self.filter_class=filter_class
         self.width = filter_class.model_params["width"]
         self.height = filter_class.model_params["height"]
         
-        "observation types for pairwise plots"
         
-        "markers and colours for pairwise plots"
-        "circle, filled plus, filled triangle, and filled square"
+        #markers and colours for pairwise plots
+        # determined in the experiment module
+        #!!create some default markers
         self.markers = marker_attributes["markers"]
-        "nice little colour scheme that works in greyscale/colourblindness"
         self.colours = marker_attributes["colours"]
         self.labels = marker_attributes["labels"]
         
@@ -227,7 +216,7 @@ class ukf_plots:
                     tether_width = ms/5
                     key = obs_key2[j]       
                     #stop error being thrown when agent not observed
-                    if np.nansum(obs_key2) == 0 :
+                    if np.isnan(obs_key2[j]):
                         continue
                     #choose colours and shape from observation type
                     colour = self.colours[key]
@@ -244,10 +233,10 @@ class ukf_plots:
 
                     
             #plotting list of polygons in which observed for ex4
-            
-            if self.filter_class.ukf_params["cameras"] is not None:
+            ukf_keys = self.filter_class.ukf_params.keys()
+            if 'cameras' in ukf_keys:
                 cameras = self.filter_class.ukf_params["cameras"]
-                polygons = [camera.polygons for camera in cameras]
+                polygons = [camera.polygon for camera in cameras]
                 self.plot_polygons(ax, polygons)
                 
             

@@ -21,7 +21,7 @@ from ukf2 import pickle_main
 from ukf_ex2 import *
 from ukf_ex1 import *
 
-def gain_element_plot(gains):
+def gain_element_plot(gains, ylabel):
     
     """plot elementwise trajectories of kalman gain (k*mu) for analysis
     
@@ -35,6 +35,8 @@ def gain_element_plot(gains):
                 plt.plot(gains[i,j,]) 
     else:
         plt.plot(gains)
+    plt.xlabel("number of assimilations over time")
+    plt.ylabel(ylabel)
 
 
 def data_extraction(u):
@@ -61,10 +63,10 @@ def main(f_name):
     u = pickle_main(f_name, "pickles/", True)
     
     ks, mus, kmus = data_extraction(u)
-    gain_element_plot(ks[0,0,:])
-    gain_element_plot(ks)
-    gain_element_plot(mus)
-    gain_element_plot(kmus)
+    gain_element_plot(ks[0,0,:], "single kalman gain")
+    gain_element_plot(ks, "ks")
+    gain_element_plot(mus, "mus")
+    gain_element_plot(kmus, "kmus")
     
     return ks, mus, kmus
     

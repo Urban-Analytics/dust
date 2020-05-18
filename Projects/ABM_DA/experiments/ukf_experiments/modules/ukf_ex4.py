@@ -11,38 +11,41 @@ of cone like cameras only
 
 import sys
 import os
+import numpy as np
+
 from ukf_fx import fx
 from sensors import camera_Sensor, generate_Camera_Rect, generate_Camera_Cone
 from ukf_plots import ukf_plots
 import default_ukf_configs as configs
-import numpy as np
+
 sys.path.append("../../../stationsim")
 from ukf2 import ukf_ss, pickle_main
 from stationsim_model import Model
 
 
 def obs_key_func(state, **hx_kwargs):
+    """categorises agent observation types for a given time step
     
-    """categorises agent observation type for a given time step
-    0 - unobserved
-    1 - aggregate
-    2 - gps style observed
-    
-    For ex4 this assumes observed if within a camera and 0 otherwise
+    For this experiment an agent is observed (2)
+    if within a camera and (0) otherwise.
     
     Parameters
     ------
     state : array_like
         true ABM `state` as a ravelled vector where every 2 entries represent
-        an xy coordinate.
+        an xy coordinate. This is a default parameter for all obs_key_functions
+        and isnt used in this case. This is due to the obs_key depending
+        on the state of the true ABM rather than the state of the sigma point.
     
-    obs_key_kwargs : kwargs
-        generic `obs_key_kwargs` for the obs_key_func. Varies by experiment.
+    hx_kwargs : kwargs
+        generalised `hx_kwargs` for the obs_key_func. Varies by experiment.
         
     Returns
     ------
-    
+    key `array_like`
+        row of 0s and 2s indicating each agents observation type
     """
+    
     n = hx_kwargs["n"]
     index = hx_kwargs["index"]
     
@@ -52,48 +55,48 @@ def obs_key_func(state, **hx_kwargs):
     return key
 
 def cone_params(n, cameras, model_params, ukf_params):
+    """update ukf_params with fx/hx and their parameters for experiment 4
     
-    
-    """update ukf_params with fx/hx and their parameters for experiment 2
-    
+    -add ground truth stationsim model base_model
     Parameters
     ------
     n : int
         `n` population total
         
     cameras: list
-        list of camera_Sensor sensor objects.
+        list of camera_Sensor objects. Each camera has a polygon it observes.
     
-    model_params, ukf_params : dict
-        
+    model_params, ukf_params : `dict`
+        default stationsim `model_params` and ukf `ukf_params` parameter 
+        dictionaries to be updated for the experiment to run.
     Returns
     ------
-    model_params, ukf_params : dict
+    model_params, ukf_params : `dict`
+        updated default stationsim `model_params` and ukf `ukf_params` 
+        dictionaries
+    base_model : `class`
+        initiated stationsim model `base_model` used as the ground truth.
     """
-    
+    #stationsim truth model
     model_params["pop_total"] = n
     base_model = Model(**model_params)
-    
+    #cameras
     ukf_params["cameras"] = cameras
-        
-    ukf_params["p"] = 0.01 * np.eye(2*n) #inital guess at state covariance
-    ukf_params["q"] = 0.01 * np.eye(2*n) #process noise
+    #noise structures
+    ukf_params["p"] = 0.1 * np.eye(2*n) #inital guess at state covariance
+    ukf_params["q"] = 0.01* np.eye(2*n) #process noise
     "sensor noise here dynamically updated depending on how many agents in the cameras."
-    ukf_params["r"] = 0.01 * np.eye(2*n)#sensor noise 
-    
+    ukf_params["r"] = 0.01* np.eye(2*n)#sensor noise 
+    #kalman functions
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"]  = {"base_model" : base_model}
     ukf_params["hx"] = hx4
     ukf_params["hx_kwargs"] = {"cameras": cameras, "n": n,}
     ukf_params["obs_key_func"] = obs_key_func
-
-    ukf_params["file_name"] = """ex4_pickle_name(n, cameras)    """
-
     ukf_params["hx_kwargs_update_function"] = hx4_kwargs_updater
-    
+    #pickle file name
+    ukf_params["file_name"] = ex4_pickle_name(n)
     return model_params, ukf_params, base_model
-
-
     
 def hx4_kwargs_updater(state, *hx_update_args, **hx_kwargs):
     """update the hx_kwargs dictionary with a new observed index for the new obsevation state.
@@ -143,13 +146,12 @@ def hx4(state, **hx_kwargs):
         new_state = state[index2]
     return new_state
 
-def ex4_pickle_name(n, cameras):
-    pass
+def ex4_pickle_name(n):
+    f_name = f"rect_agents_{n}.pkl"
+    return f_name
     
 
 def ex4_plots(instance, destination, prefix, save, animate):
-    
-    
     """do plots for experiment 1
     
     - extract truths, obs, ukf predictions (preds), and forecasts
@@ -166,24 +168,19 @@ def ex4_plots(instance, destination, prefix, save, animate):
     
     instance : class
         uks_ss class `instance` after completed run.
-    plot_dir, prefix : str
-        `plot_dir` where to save the plot to e.g. "" for this directory or 
+    destination, prefix : str
+        `destination` where to save the plot to e.g. "" for this directory or 
         "ukf_results/ for ukf_results"
         `prefix` puts some prefix in front of various picture file names.
         e.g. "ukf_" or "agg_ukf_" so you can differentiate them and not overwrite
         them
     save , animate : bool
-        `save` plots or `animate` whole model run?
+        `save` plots or `animate` whole model run? Animations can take a long
+        time and a lot of ram for larger models.
     
     """
     
-    marker_attributes = {
-    "markers" : {-1: "o", 0 : "X", 2 : "s"},
-    "colours" : {-1: "black" , 0 : "orangered", 2 : "skyblue"},
-    "labels" :  {-1: "Pseudo-True Positions", 0 : "Unobserved Agents", 2 : "Observed Agents"}
-    }
-    
-    plts = ukf_plots(instance, destination, prefix, save, animate, marker_attributes)
+    plts = ukf_plots(instance, destination, prefix, save, animate)
 
     truths = instance.truth_parser(instance)
     preds = instance.preds_parser(instance, True, truths)
@@ -209,13 +206,27 @@ def ex4_plots(instance, destination, prefix, save, animate):
                          truths.shape[0], "../plots/")
 
 
-def cone_main():
-    camera_poles = [np.array([10,0]), np.array([40,0])]
-    camera_centres = [np.array([10,100]), np.array([40,100])]
-    camera_arcs = [0.0625]*2
-    width = model_params["width"]
-    height = model_params["height"]
-    boundary = generate_Camera_Square(np.array([0, 0]), 
+def cone_main(width, height):
+    """
+    
+
+    Parameters
+    ----------
+    width, height : float
+        `width` and `height` of corridor
+        
+    Returns
+    -------
+    cameras : list
+        list of camera_Sensor objects with cone observations
+    """
+    # where cameras are
+    camera_poles = [np.array([20,0]), np.array([30,0])]
+    # where cameras are facing
+    camera_centres = [np.array([40,100]), np.array([10,100])]
+    #how wide are the cameras. 
+    camera_arcs = [1/10]*2
+    boundary = generate_Camera_Rect(np.array([0, 0]), 
                                 np.array([0, height]),
                                 np.array([width, height]), 
                                 np.array([width, 0]))
@@ -240,52 +251,83 @@ def generate_Rect_Coords(n_poly, poly_width, width, height):
         width and height of corridor in which rectangles are generated
     Returns
     -------
-    None.
+    bls, tls, trs, brs : `array_like`
+        bottom left `bls` top left `tls` top rights `trs` 
+        and bottom rights `brs`. Each are nx2 numpy arrays of coordinates
+        indicating the corresponding corner of each rectangle.
     """
     if n_poly*poly_width > width:
         print("warning polygons overlap. may effect results.")
         
+    #generate left and right edge x coordinates of all rectangles
     left_xs = np.linspace(0, width-poly_width,n_poly)
     right_xs = left_xs+poly_width
+    #generate top and bottom edge y coordinates of all rectangles
     down_ys = np.zeros(n_poly)
     up_ys = down_ys + height
+    #stack these 4 columns into 4x2 coordinates.
+    #each row the four corners. e.g. bls is the bottom left corner of a rectangle.
     bls = np.vstack([left_xs, down_ys]).T
     tls = np.vstack([left_xs, up_ys]).T
     trs = np.vstack([right_xs, up_ys]).T
     brs = np.vstack([right_xs, down_ys]).T
     return bls, tls, trs, brs
     
-def square_main():
-    width = model_params["width"]
-    height = model_params["height"]
-    n_poly = 5
-    poly_width = 5
+def square_main(n_poly, poly_width, width, height):
+    """Main function for assembling rectangle cameras evenly over a corridor
     
-    camera_bls, camera_tls, camera_trs, camera_brs = generate_Rect_Coords(n_poly, poly_width, width, height)
+    Parameters
+    ----------
+    n_poly, poly_width : int
+        How many rectangles `n_poly` and how wide `poly_width`
+    width, height: float
+        `width` and `height` of rectangular corridor
+
+    Returns
+    -------
+    cameras : list
+        list of camera_Sensor objects with rectangular observed polygons 
+        according to n_poly and poly_width.
+    """
+
+    #generate rectangle coordinates based on n_poly and poly_width
+    bls, tls, trs, brs = generate_Rect_Coords(n_poly, poly_width,
+                                              width, height)
     boundary = generate_Camera_Rect(np.array([0, 0]), 
                                 np.array([0, height]),
                                 np.array([width, height]), 
                                 np.array([width, 0]))
     
     cameras = []
-    for i in range(len(camera_bls)):
-        polygon = generate_Camera_Rect(camera_bls[i], camera_tls[i], 
-                                    camera_trs[i], camera_brs[i], boundary)
+    #loop over number of polygons.
+    #extract the ith corner from each list, make a polygon
+    #and init a camera with it
+    for i in range(len(bls)):
+        polygon = generate_Camera_Rect(bls[i], tls[i], 
+                                    trs[i], brs[i], boundary)
         cameras.append(camera_Sensor(polygon))
     return cameras
 
 if __name__ == "__main__":
     
+    #load default params
     model_params = configs.model_params
     ukf_params = configs.ukf_params
-    n = 5
+    width = model_params["width"]
+    height = model_params["height"]
+    #change these
+    #population number of rectangles, and rectangle width
+    n = 10
+    n_poly = 5
+    poly_width = 12
     
-    
-    #cameras = cone_main()
-    cameras = square_main()
+    #generate cameras
+    cameras = cone_main(width, height)
+    #cameras = square_main(n_poly, poly_width, width, height)
+    #generate ukf parameters based on cameras and population total
     model_params, ukf_params , base_model = cone_params(n, cameras, 
                                                         model_params, ukf_params)
-    
+    #initiatie and run ukf class
     u = ukf_ss(model_params,ukf_params,base_model)
     u.main()
     

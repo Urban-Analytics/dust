@@ -1,4 +1,4 @@
-f#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Mon Dec  2 11:19:48 2019
@@ -155,7 +155,10 @@ def ex2_plots(instance, destination, prefix, save, animate):
     plts = ukf_plots(instance, destination, prefix, save, animate, marker_attributes)
         
     "pull data and put finished agents to nan"
-    obs, preds, truths, nan_array= instance.data_parser()
+    truths = instance.truth_parser(instance)
+    obs = instance.obs_parser(instance, True, truths)
+    preds = instance.preds_parser(instance, True, truths)
+    nan_array= instance.nan_array_parser(instance, truths, instance.base_model)
     obs_key = instance.obs_key_parser()
     forecasts = np.vstack(instance.forecasts)
 

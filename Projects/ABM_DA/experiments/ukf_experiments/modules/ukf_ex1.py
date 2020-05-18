@@ -209,13 +209,7 @@ def ex1_plots(instance, destination, prefix, save, animate):
     
     """
     
-    marker_attributes = {
-    "markers" : {-1: "o", 0 : "X", 2 : "s"},
-    "colours" : {-1: "black" , 0 : "orangered", 2 : "skyblue"},
-    "labels" :  {-1: "Pseudo-True Positions", 0 : "Unobserved Agents", 2 : "Observed Agents"}
-    }
-    
-    plts = ukf_plots(instance, destination, prefix, save, animate, marker_attributes)
+    plts = ukf_plots(instance, destination, prefix, save, animate)
 
 
     truths = instance.truth_parser(instance)
@@ -306,6 +300,6 @@ if __name__ == "__main__":
     pickle_source = "../pickles/" #where to load/save pickles from
     destination = "../plots/"
     n = 5 #population size
-    prop = 0.2 #proportion observed
+    prop = 0.5 #proportion observed
     
     u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

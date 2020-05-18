@@ -1,101 +1,119 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan  3 10:01:00 2020
-
-@author: medrclaa
+A file containing all the imitation sensors used in applying the ukf
+to stationsim
 """
 
 import numpy as np
 import shapely.geometry as geom
 
 def generate_Camera_Rect(bl, tl, tr, br, boundary = None):
-    
     """ Generate a square polygon 
     
     Parameters
     ------
     br, br, tl, tr : `array_like`
     bottom left `bl`, bottom right `br`, top left `tl`, and top right `tr`.
-    Basically, where are the corners of the square
+    Basically, where are the corners of the rectangle.
     
     boundary : `Polygon`
-        indicate if this square is a boundary. If no arguement is given,
-        the polygon generated does not try and intersect with some boundary.
-        Useful for generating the boundary itself for example, where we have 
-        nothing to bound on yet, but we can still use the same function later
-        for generating square shaped cameras as well.
+        indicate if this rectangle is a boundary. If no arguement is given,
+        the polygon generated does is not an intersect with some boundary.
+        This arguement is None when we generate a boundary and is usually
+        stationsims dimensions if we wish to cut off some square cameras
+        accordingly.
     Returns
     ------
     poly : `Polygon`
         square polygon with defined corners.
     """
     
+    #build array of coordinates for shapely to read
     points = np.array([bl, tl, tr, br])
+    #build polygon
     poly =  geom.Polygon(points)
+    #take the intersect with some bounadary else return it as is
     if boundary is not None:
         poly = poly.intersection(boundary) #cut off out of bounds areas
-
+        
     return poly
 
 def generate_Camera_Cone(pole, centre, arc, boundary):
         """construct Polygon object containing cone
 
+        I'd recommend knowing how polar coordinates work before reading this 
+        code. Particualy converting cartesian to polar and back.
         Parameters
         ------
         
         pole : array_like
             `pole` central point where the camera is. 
-            The vision arc segment is centered about this point.
+            The vision arc segment originates about this point.
             
         centre : array_like
             `centre` indicates from the pole where the camera is facing.
             The distance of this point away from the pole also determines
-            the radius of the cameras vision arc. Further away implies more 
-            vision
+            the radius of the cameras vision arc. Further away implies a 
+            larger more radius and a long field of vision.
             
         arc: float
-            We choose a number 0 < `arc` <= 1 that determines how wide the vision 
+            We choose a number 0 < x <= 1 that determines how wide the vision 
             segment is. For example, if we choose arc = 0.25, the camera would form
-            a quarter circle of vision centered about the line drawn
-            between pole and centre.
-               
+            be a quarter circle of vision.
+            
         boundary : Polygon
              `boundary` of ABM topography. E.g. rectangular corridor for 
-             stationsim. Indicates where to cut off polygons as theyve reached the end
+             stationsim. Indicates where to cut off polygons if they're out of
+             bounds.
 
         Returns
         -------
         poly : Polygon
             `poly` polygon arc segment of the cameras vision.
-
         """
-   
-        angle = arc * np.pi*2 # convertion proportion to radians
-        diff = centre-pole # difference between centre and pole for angle and radius
-        r = np.linalg.norm(diff) # arc radius
-        centre_angle = np.arctan2(diff[1],diff[0]) # centre angle of arc (midpoint)
+        # convert arc from a proportion of a circle to radians
+        angle = arc * np.pi*2 
+        # difference between centre and pole.
+        # determines which the radius and direction the camera points.
+        diff = centre-pole 
+        # arc radius
+        r = np.linalg.norm(diff) 
+        # angle the camera points in radians anticlockswise about east.
+        centre_angle = np.arctan2(diff[1],diff[0]) 
         
-        #generate points for arc polygon
+        # generate points for arc polygon
+        # precision is how many points. more points means higher resolution
+        # set to 100 can easily be less or more
         precision = angle/100
-        angle_range = np.arange(centre_angle - angle/2, centre_angle + angle/2 , precision)
+        
+        #start to build coordinates
+        #start by finding out the angle of each polygon point about east
+
+        angle_range = np.arange(centre_angle - angle/2,
+                                centre_angle + angle/2 , precision)
+        #convert these angles into x,y coordinates using the radius of the
+        #camera r and the standard formula for polar to cartesian conversion
         x_range = pole[0] +  r * np.cos(angle_range)
         y_range = pole[1] +  r * np.sin(angle_range)
-    
+        
         if arc < 1:
             # if camera isnt a complete circle add central point to polygon
+            # this essentially closes the loop making it a proper circle segment.
             x_range = np.append(x_range, pole[0])
             y_range = np.append(y_range, pole[1])
   
+        #stack x and y coorindates and build polygon
         poly = geom.Polygon(np.column_stack([x_range,y_range]))
+        #intersect with boundary to remove out of bounds elements.
         poly = poly.intersection(boundary) #cut off out of bounds areas
         
         return poly
 
 class camera_Sensor():
     
-    def __init__(self, polygons):
-        """init the camera using some polygon
+    def __init__(self, polygon):
+        """init the camera using a single polygon
         !!maybe extend this to a list of polygons
 
         Parameters
@@ -108,17 +126,24 @@ class camera_Sensor():
         None.
 
         """
-        self.polygons = polygons
+        self.polygon = polygon
         
     def observe(self, state):
+        """ determine what this camera observes of a given state
         
-        """ determine what this camera observes
+        if an item if in the arc segment polygon take its observations 
+        !!with noise?
         
-        if an item if in the arc segment polygon take its observations (with noise?)
         Parameters
         ------
         agents: list
          list of `agent` classes 
+        
+        Returns
+        ------
+        which_in : list
+        a list of the same shape a state indicating 1 if an agent is within a 
+        cameras vision and 0 otherwise.
         """
         which_in = []
         
@@ -128,12 +153,14 @@ class camera_Sensor():
         for i in range(state.shape[0]):
             point = geom.Point(state[i,:])    
             
-            is_in = point.within(self.polygons)
+            is_in = point.within(self.polygon)
             if is_in:
                 which_in += [i]
        
         return which_in
          
+    
+"WIP. Not yet working."
 class footfall_Sensor():
     """
     count how many people pass through a specified polygon.

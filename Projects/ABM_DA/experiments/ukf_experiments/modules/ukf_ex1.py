@@ -27,8 +27,6 @@ from stationsim_model import Model
 
 
 def omission_index(n, sample_size):
-    
-    
     """randomly pick agents without replacement to observe 
     
     Parameters 
@@ -55,8 +53,6 @@ def omission_index(n, sample_size):
 
 
 def hx1(state, **hx_kwargs):
-    
-    
     """Measurement function for ex1 taking observed subset of agent positions
     
     - take full desired state X of all agent observations.
@@ -72,7 +68,8 @@ def hx1(state, **hx_kwargs):
     state : array_like
         `state` actual observed state
     """
-    index2 = hx_kwargs.pop("index2")
+    
+    index2 = hx_kwargs["index2"]
     return  state[index2] 
 
 def obs_key_func(state, **hx_kwargs):

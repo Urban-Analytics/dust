@@ -27,16 +27,24 @@ from stationsim_model import Model
 
 import numpy as np
 
-def obs_key_func(state,**obs_key_kwargs):
+def obs_key_func(state,**hx_kwargs):
     """categorises agent observation type for a given time step
     0 - unobserved
     1 - aggregate
     2 - gps style observed
     
-    
+    Parameters
+    --------
+    state : array_like
+        Desired state (e.g. full state of agent based model) on which we wish
+        to test the obs_key on. Generally this is only used if the obs key
+        is calculated dynamically 
+        
+    hx_kwargs : dict
+        key word arguments from the observation function used to 
     """
-    
-    key = np.ones(obs_key_kwargs["pop_total"])
+    n = hx_kwargs["pop_total"]
+    key = np.ones(n)
     
     return key
 
@@ -68,9 +76,8 @@ def aggregate_params(n, bin_size, model_params, ukf_params):
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"]  = {"base_model" : base_model}
     ukf_params["hx"] = hx2
-    ukf_params["hx_kwargs"] = {"poly_list":ukf_params["poly_list"]}
+    ukf_params["hx_kwargs"] = {"poly_list" : ukf_params["poly_list"], "pop_total": n}
     ukf_params["obs_key_func"] = obs_key_func
-    ukf_params["obs_key_kwargs"]  = {"pop_total" : n}
 
     ukf_params["file_name"] = ex2_pickle_name(n, bin_size)    
     
@@ -156,9 +163,9 @@ def ex2_plots(instance, destination, prefix, save, animate):
         
     "pull data and put finished agents to nan"
     truths = instance.truth_parser(instance)
-    obs = instance.obs_parser(instance, True, truths)
+    #obs = instance.obs_parser(instance, True, truths)
     preds = instance.preds_parser(instance, True, truths)
-    nan_array= instance.nan_array_parser(instance, truths, instance.base_model)
+    nan_array= instance.nan_array_parser(truths, instance.base_model)
     obs_key = instance.obs_key_parser()
     forecasts = np.vstack(instance.forecasts)
 
@@ -258,9 +265,9 @@ def ex2_main(n, bin_size, recall, do_pickle, source, destination):
     return u
        
 if __name__ == "__main__":
-    n = 20
-    bin_size = 2
-    recall = True #  recall previous run
+    n = 5
+    bin_size = 25
+    recall = False #  recall previous run
     do_pickle = True #  pickle new run
     pickle_source = "../pickles/"
     destination  = "../plots/"

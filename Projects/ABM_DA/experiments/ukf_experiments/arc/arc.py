@@ -3,7 +3,7 @@
 """
 WHATEVER YOU DO MAKE SURE YOU USE SCIPY<1.21 
 or you cant depickle the experiments.
-
+!!todo solve this
 This file allows you to repeat multiple experiments in paralllel 
 of the ukf on stationsim using Leeds' arc3 HPC cluster.
 
@@ -28,9 +28,14 @@ source activate /nobackup/medrclaa/ukf_py
 
 
 Extract files using usual scp commands
-If we are accessing arc remotely we have two remote servers to go through 
-and so use proxy jump. 
+If we are accessing arc remotely we have two remote servers 
+(one with virtually no storage) to go through so use proxy jump to avoid being
+excommunicated by the arc team.
+
+Shamelessly stolen from :
+
 https://superuser.com/questions/276533/scp-files-via-intermediate-host
+
 With the format:
 
 scp -oProxyJump=user@remote-access.leeds.ac.uk
@@ -38,8 +43,10 @@ e.g.
 scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/results/agg* /Users/medrclaa/new_aggregate_results
 
 """
+
 import os
 import sys
+import logging
 sys.path.append('../../../stationsim')
 sys.path.append("../modules")
 
@@ -50,9 +57,6 @@ from ukf_ex1 import omission_params
 from ukf_ex0 import ex0_params, ex0_save
 from stationsim_model import Model
 from ukf2 import ukf_ss, pickler
-
-
-
 
 # %%
 def ex0_input(model_params, ukf_params, test):
@@ -254,21 +258,6 @@ def ex2_input(model_params, ukf_params, test):
 
     return model_params, ukf_params, base_model
 
-def pickle_save(u, destination, f_name):
-    """save ukf class instances as pickles for experiment 1 and 2
-    
-    Parameters
-    ------
-    u : cls
-        Some finished ukf_ss class `u` from which we wish to save information.
-    
-    destination, f_name : str
-        The `destination` where any files are saved and the file name `f_name`.
-    """
-    
-    pickler(u, destination, f_name)
-
-
 def main(ex_input, ex_save, test=False):
     """main function for running ukf experiments in arc.
 
@@ -346,9 +335,10 @@ def main(ex_input, ex_save, test=False):
 
 if __name__ == '__main__':
     test = True
-    print("warning test set to true. if youre running an experiment, it wont go well.")
+    if test:
+        print("warning test set to true. if youre running an experiment, it wont go well.")
     #main(ex0_input, ex0_save, test)
-    #main(ex1_input, pickle_save, test)
-    main(ex2_input, pickle_save, test)
+    main(ex1_input, pickler, test)
+    #main(ex2_input, pickler, test)
 
 

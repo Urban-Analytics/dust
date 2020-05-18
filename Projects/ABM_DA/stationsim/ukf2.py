@@ -20,27 +20,47 @@ import numpy as np  # numpy
 import datetime  # for timing experiments
 import pickle  # for saving class instances
 from scipy.stats import chi2  # for adaptive ukf test
-from stationsim_model import Model
+import logging
 from copy import deepcopy
 import multiprocessing
 
+from stationsim_model import Model
+
+"shamelessly stolen functions for multiprocessing np.apply_along_axis"
+
 def unpacking_apply_along_axis(all_args):
     (func1d, axis, arr, kwargs) = all_args    
-    """
-    Like numpy.apply_along_axis(), but with arguments in a tuple
-    instead.
-
+    """wrap all args as multiprocessing.pool only takes one argument.
+    
     This function is useful with multiprocessing.Pool().map(): (1)
     map() only handles functions that take a single argument, and (2)
     this function can generally be imported from a module, as required
     by map().
+    
+    Parameters
+    ------
+    all_args : tuple
+        `all_args` all arguments for np.apply_along_axis.
+    
+        
+    Returns
+    single_arg : func
+        `single_arg` wrapped to a single argument
     """
-    return np.apply_along_axis(func1d, axis, arr, **kwargs)
+    single_arg = np.apply_along_axis(func1d, axis, arr, **kwargs)
+    return single_arg
 
 def parallel_apply_along_axis(func1d, axis, arr, **kwargs):
-    """
-    Like numpy.apply_along_axis(), but takes advantage of multiple
-    cores.
+    """Like numpy.apply_along_axis(), but takes advantage of multiple cores.
+    
+    Parameters
+    ------
+    func1d : func
+        function that takes a 1 dimensional argument
+    axis : int
+        which `axis` to slice and apply func1d on. E.g. if axis = 0 
+        on a 2d array we take a full slice of the 0th axis (every row)
+        and then a single column looping over the other axis (columns)
     """        
     # Effective axis where apply_along_axis() will be applied by each
     # worker (any non-zero axis number would work, so as to allow the use
@@ -101,10 +121,11 @@ def unscented_Mean(sigmas, wm, kf_function, **function_kwargs):
 
     """
 
-    "calculate either forecasted sigmas X- or measured sigmas Y with f/h"
+    #calculate either forecasted sigmas X- or measured sigmas Y with f/h
     #nl_sigmas = np.apply_along_axis(kf_function, 0, sigmas, **function_kwargs)
+    #now with multiprocessing
     nl_sigmas = parallel_apply_along_axis(kf_function, 0, sigmas, **function_kwargs).T
-    "calculate unscented mean using non linear sigmas and MSSP mean weights"
+    #calculate unscented mean using non linear sigmas and MSSP mean weights
     xhat = np.dot(nl_sigmas, wm)  # unscented mean for predicitons
 
     return nl_sigmas, xhat
@@ -599,8 +620,10 @@ class ukf_ss:
             noise_array *= np.random.normal(0, self.noise, self.pop_total*2)
             state += noise_array
 
-            """if hx function arguements need updating it is done here. for example if observed index changes as 
-            with experiment 4 we update it here such that the ukf takes the correct subset."""
+            """if hx function arguements need updating it is done here. 
+            for example if observed index changes as 
+            with experiment 4 we update it here such 
+            0that the ukf takes the correct subset."""
             if self.hx_kwargs_update_function is not None:
                 #update measurement function hx_kwargs if necessary
                 hx_kwargs = self.hx_kwargs_update_function(state, *self.hx_update_args, **hx_kwargs)
@@ -616,7 +639,8 @@ class ukf_ss:
             if self.obs_key_func is not None:
                 key = self.obs_key_func(state, **self.hx_kwargs)
                 #force inactive agents to unobserved
-                key *= [agent.status % 2 for agent in self.base_model.agents]
+                #removed for now.put back in if we do variable dimensions of desired state
+                #key *= [agent.status % 2 for agent in self.base_model.agents]
                 self.obs_key.append(key)
                 
             
@@ -638,6 +662,7 @@ class ukf_ss:
 
         #initialise UKF
         self.init_ukf(self.ukf_params)
+        logging.info("ukf start")
         for step in range(self.step_limit-1):
             
             #if self.batch:
@@ -649,17 +674,17 @@ class ukf_ss:
             self.ss_Predict()
             #assimilate new values
             self.ss_Update(step, **self.hx_kwargs)
-
+            
+            if step%100 == 0 :
+                logging.info(f"Iterations: {step}")
             finished = self.base_model.pop_finished == self.pop_total
             if finished:  # break condition
+                logging.info("ukf broken early. all agents finished")
                 break
-            
-            # elif np.nansum(np.isnan(self.ukf.x)) == 0:
-            #    print("math error. try larger values of alpha else check fx and hx.")
-            #    break
 
         self.time2 = datetime.datetime.now()  # timer
-        print(self.time2-self.time1)
+        logging.info(f"ukf timed out. max iterations {self.step_limit} of stationsim reached")
+        logging.info(f"Time Elapsed: {self.time2-self.time1}")
 
     """List of static methods for extracting numpy array data 
     """
@@ -751,6 +776,9 @@ class ukf_ss:
         -------
         obs : "array_like"
             numpy array of observations `obs` from observed state.
+            
+        !!todo issues aligning obs_key and observations dimensions
+        e.g. trying to fit a 1x4 observation into 1x6 index
         """
         
         raw_obs = self.obs
@@ -765,7 +793,7 @@ class ukf_ss:
             obs = np.zeros((truths.shape[0], self.pop_total*2))*np.nan
 
             #fill in every sample_rate rows with ukf predictions
-            for i in range(len(raw_obs)):
+            for i in range(1, len(raw_obs)):
                 index = np.where(obs_key[i*self.sample_rate, :]==2)
                 index2 = 2*np.repeat(index,2)
                 index2[1::2]+=1

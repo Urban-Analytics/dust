@@ -43,10 +43,10 @@ e.g.
 scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/results/agg* /Users/medrclaa/new_aggregate_results
 
 """
+import logging
 
 import os
 import sys
-import logging
 sys.path.append('../../../stationsim')
 sys.path.append("../modules")
 
@@ -118,14 +118,11 @@ def ex0_input(model_params, ukf_params, test):
                                                       model_params, ukf_params)
 
     ukf_params["run_id"] = run_id
-
-    ukf_params["f_name"] = "config_agents_{}_rate_{}_noise_{}-{}".format(
+    ukf_params["file_name"] = "config_agents_{}_rate_{}_noise_{}-{}".format(
         str(n).zfill(3),
         str(float(sample_rate)),
         str(float(noise)),
-        str(run_id).zfill(3))
-
-    ukf_params["file_name"] = ukf_params["f_name"] + ".npy"
+        str(run_id).zfill(3)) + ".npy"
     ukf_params["do_pickle"] = False
 
     return model_params, ukf_params, base_model    
@@ -304,9 +301,11 @@ def main(ex_input, ex_save, test=False):
 
     model_params, ukf_params, base_model = ex_input(
         model_params, ukf_params, test)
-
+    
+    logging.basicConfig(filename = ukf_params["file_name"]+ ".log", level = logging.INFO)
     verbose = True
     "more info on ukf parameters."
+    
     if test:
         "no info when testing. easier to read."
         verbose = False
@@ -325,6 +324,7 @@ def main(ex_input, ex_save, test=False):
     # or pickles the whole ukf class for experiment 1,2 using `pickle_save`
     
     f_name = ukf_params["file_name"]
+    print(f"saving to {f_name}")
     ex_save(u, "../results/", ukf_params["file_name"])
 
     #delete any test files that were saved for tidiness.

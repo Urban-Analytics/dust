@@ -41,13 +41,15 @@ gradle-app.setting
 .gradletasknamecache
 
 
-# ********** FOR IDEA / netbeans  **********
+# ********** FOR IDEA / netbeans / spyder  **********
 
 
 .idea
 .gradle
 nbproject
 *.iml
+
+.spyproject/
 
 
 # ********** Latex **********
@@ -70,7 +72,11 @@ Improbable/NativeModel-keanu/results/*.png
 # ********** stationSim ***********
 Improbable/stationSim-keanu/simulation_outputs/
 
-# ********** **********
+# ********** Ambient population data **********
+Projects/Ambient_Populations/data
+
+
+
 # ********** **********
 # ********** **********
 # ********** **********

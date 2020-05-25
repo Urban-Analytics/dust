@@ -114,6 +114,7 @@ class EnsembleKalmanFilter(Filter):
         print('ensemble_size:\t{0}'.format(self.ensemble_size))
         print('assimilation_period:\t{0}'.format(self.assimilation_period))
 
+
     def step(self):
         """
         Step the filter forward by one time-step.
@@ -129,16 +130,17 @@ class EnsembleKalmanFilter(Filter):
         self.update_state_mean()
         if self.time % self.assimilation_period == 0:
             # Construct observations
-            base_state = self.base_model.history_state[-1]
-            truth = np.ravel(base_state)
+            truth = self.base_model.get_state(sensor='location')
+            # base_state = self.base_model.history_state[-1]
+            # truth = np.ravel(base_state)
             noise = np.random.normal(0, self.R_vector, truth.shape)
             data = truth + noise
 
-            if self.vis:
-                self.plot_model('before_update_{0}'.format(self.time), data)
-                self.plot_model2('before_update_{0}'.format(self.time), data)
+            # if self.vis:
+                # self.plot_model('before_update_{0}'.format(self.time), data)
+                # self.plot_model2('before_update_{0}'.format(self.time), data)
 
-            # Calculating errors
+            # Calculating prior and likelihood errors
             rmse = {'time': self.time}
             rmse['obs'] = self.calculate_rmse(truth, data)
             rmse['forecast'] = self.calculate_rmse(truth, self.state_mean)
@@ -160,15 +162,21 @@ class EnsembleKalmanFilter(Filter):
             self.rmse.append(rmse)
             # print(rmse)
 
-            if self.vis:
-                self.plot_model('after_update_{0}'.format(self.time), data)
-                self.plot_model2('after_update_{0}'.format(self.time), data)
+            # if self.vis:
+                # self.plot_model('after_update_{0}'.format(self.time), data)
+                # self.plot_model2('after_update_{0}'.format(self.time), data)
         # else:
             # self.update_state_mean()
         self.time += 1
         self.results.append(self.state_mean)
         if self.run_vanilla:
             self.vanilla_results.append(self.vanilla_state_mean)
+
+        print('time: {0}, base: {1}'.format(self.time,
+            self.base_model.pop_active))
+        print('time: {0}, models: {1}'.format(self.time, [m.pop_active for m in
+            self.models]))
+
 
     def predict(self):
         """
@@ -185,6 +193,7 @@ class EnsembleKalmanFilter(Filter):
         if self.run_vanilla:
             for i in range(self.vanilla_ensemble_size):
                 self.vanilla_models[i].step()
+
 
     def update(self, data):
         """
@@ -207,6 +216,7 @@ class EnsembleKalmanFilter(Filter):
         X = self.state_ensemble + gain_matrix @ diff
         self.state_ensemble = X
 
+
     def update_state_ensemble(self):
         """
         Update self.state_ensemble based on the states of the models.
@@ -215,12 +225,13 @@ class EnsembleKalmanFilter(Filter):
             state_vector = self.models[i].get_state(sensor='location')
             self.state_ensemble[:, i] = state_vector
 
-        for i in range(self.ensemble_size):
-            state_vector = self.models[i].get_state(sensor='location')
+        # for i in range(self.ensemble_size):
+            # state_vector = self.models[i].get_state(sensor='location')
 
         if self.run_vanilla:
             for i in range(self.vanilla_ensemble_size):
                 self.vanilla_state_ensemble[:, i] = state_vector
+
 
     def update_state_mean(self):
         """
@@ -229,6 +240,7 @@ class EnsembleKalmanFilter(Filter):
         self.state_mean = np.mean(self.state_ensemble, axis=1)
         if self.run_vanilla:
             self.vanilla_state_mean = np.mean(self.vanilla_state_ensemble, axis=1)
+
 
     def update_data_ensemble(self, data):
         """
@@ -242,6 +254,7 @@ class EnsembleKalmanFilter(Filter):
             x[:, i] = data + np.random.normal(0, self.R_vector, len(data))
         self.data_ensemble = x
 
+
     def update_models(self):
         """
         Update individual model states based on state ensemble.
@@ -249,6 +262,7 @@ class EnsembleKalmanFilter(Filter):
         for i in range(self.ensemble_size):
             state_vector = self.state_ensemble[:, i]
             self.models[i].set_state(state_vector, sensor='location')
+
 
     def make_ensemble_covariance(self):
         """
@@ -258,6 +272,7 @@ class EnsembleKalmanFilter(Filter):
         b = np.ones(shape=(1, self.ensemble_size))
         A = self.state_ensemble - 1/self.ensemble_size * a @ b
         return 1/(self.ensemble_size - 1) * A @ A.T
+
 
     def make_gain_matrix(self):
         """
@@ -290,6 +305,7 @@ class EnsembleKalmanFilter(Filter):
         diff = state_covariance + self.data_covariance
         return C @ self.H_transpose @ np.linalg.inv(diff)
 
+
     @staticmethod
     def separate_coords(arr):
         """
@@ -298,111 +314,6 @@ class EnsembleKalmanFilter(Filter):
         """
         return arr[::2], arr[1::2]
 
-    def plot_model(self, title_str, obs=[]):
-        """
-        Plot base_model, observations and ensemble mean for each agent.
-        """
-        # Get coords
-        base_state = self.base_model.get_state(sensor='location')
-        base_x, base_y = self.separate_coords(base_state)
-        mean_x, mean_y = self.separate_coords(self.state_mean)
-        if len(obs) > 0:
-            obs_x, obs_y = self.separate_coords(obs)
-        if self.run_vanilla:
-            vanilla_x, vanilla_y = self.separate_coords(self.vanilla_state_mean)
-
-        # Plot agents
-        plot_width = 8
-        aspect_ratio = self.base_model.height / self.base_model.width
-        plot_height = round(aspect_ratio * plot_width)
-        plt.figure(figsize=(plot_width, plot_height))
-        plt.xlim(0, self.base_model.width)
-        plt.ylim(0, self.base_model.height)
-        # plt.title(title_str)
-        plt.scatter(base_x, base_y, label='Ground truth')
-        plt.scatter(mean_x, mean_y, marker='x', label='Ensemble mean')
-        if len(obs) > 0:
-            plt.scatter(obs_x, obs_y, marker='*', label='Observation')
-        if self.run_vanilla:
-            plt.scatter(vanilla_x, vanilla_y, alpha=0.5, label='mean w/o da',
-                        color='black')
-
-        # Plot ensemble members
-        # for model in self.models:
-            # xs, ys = self.separate_coords(model.state)
-            # plt.scatter(xs, ys, s=1, color='red')
-
-        # Finish fig
-        plt.legend()
-        plt.xlabel('x-position')
-        plt.ylabel('y-position')
-        plt.savefig('./results/{0}.eps'.format(title_str))
-        plt.show()
-
-    def plot_model2(self, title_str, obs=[]):
-        """
-        Plot base_model and ensemble members for a single agent.
-        """
-        # List of all plotted coords
-        x_coords = list()
-        y_coords = list()
-
-        # Get coords
-        base_state = self.base_model.get_state(sensor='location')
-        base_x, base_y = self.separate_coords(base_state)
-        mean_x, mean_y = self.separate_coords(self.state_mean)
-        if len(obs) > 0:
-            obs_x, obs_y = self.separate_coords(obs)
-        if self.run_vanilla:
-            vanilla_x, vanilla_y = self.separate_coords(self.vanilla_state_mean)
-
-        # Plot agents
-        plot_width = 8
-        aspect_ratio = self.base_model.height / self.base_model.width
-        plot_height = round(aspect_ratio * plot_width)
-        plt.figure(figsize=(plot_width, plot_height))
-        plt.xlim(0, self.base_model.width)
-        plt.ylim(0, self.base_model.height)
-        # plt.title(title_str)
-        plt.scatter(base_x[self.agent_number],
-                    base_y[self.agent_number], label='Ground truth')
-        plt.scatter(mean_x[self.agent_number],
-                    mean_y[self.agent_number], marker='x', label='Ensemble mean')
-        if len(obs) > 0:
-            plt.scatter(obs_x[self.agent_number],
-                        obs_y[self.agent_number], marker='*', label='Observation')
-        if self.run_vanilla:
-            plt.scatter(vanilla_x, vanilla_y, alpha=0.5, label='mean w/o da',
-                        color='black')
-
-        x_coords.extend([base_x[self.agent_number], mean_x[self.agent_number],
-                         obs_x[self.agent_number]])
-        y_coords.extend([base_y[self.agent_number], mean_y[self.agent_number],
-                         obs_y[self.agent_number]])
-
-        # Plot ensemble members
-        for i, model in enumerate(self.models):
-            state_vector = model.get_state(sensor='location')
-            xs, ys = self.separate_coords(state_vector)
-            if i == 0:
-                plt.scatter(xs[self.agent_number], ys[self.agent_number],
-                            s=1, color='red', label='Ensemble members')
-            else:
-                plt.scatter(xs[self.agent_number], ys[self.agent_number],
-                            s=1, color='red')
-            x_coords.append(xs[self.agent_number])
-            y_coords.append(ys[self.agent_number])
-
-        # Finish fig
-        plt.legend()
-        plt.xlabel('x-position')
-        plt.ylabel('y-position')
-        plt.xlim(x_coords[0]-5, x_coords[0]+5)
-        plt.ylim(y_coords[0]-5, y_coords[0]+5)
-        # plt.xlim(min(x_coords)-1, max(x_coords)+1)
-        # plt.ylim(min(y_coords)-1, max(y_coords)+1)
-        plt.savefig('./results/{0}_single.eps'.format(title_str))
-        plt.show()
 
     def process_results(self):
         """
@@ -417,6 +328,9 @@ class EnsembleKalmanFilter(Filter):
         truth = [np.ravel(x) for x in base_states]
         without = list()
 
+        # print('base', len(base_states))
+        # print('model', len(self.results))
+
         for i, result in enumerate(self.results):
             distance_error, x_error, y_error = self.make_errors(result, truth[i])
             x_mean_errors.append(np.mean(x_error))
@@ -427,9 +341,9 @@ class EnsembleKalmanFilter(Filter):
             wo, j, k = self.make_errors(result, truth[i])
             without.append(np.mean(wo))
 
-        if self.vis:
-            self.plot_results(distance_mean_errors, x_mean_errors, y_mean_errors)
-            self.plot_results2(distance_mean_errors, without)
+        # if self.vis:
+            # self.plot_results(distance_mean_errors, x_mean_errors, y_mean_errors)
+            # self.plot_results2(distance_mean_errors, without)
 
         # Save results to csv if required
         if self.keep_results:
@@ -451,6 +365,7 @@ class EnsembleKalmanFilter(Filter):
             plt.savefig('./results/rmse_comparison.eps')
             plt.show()
 
+
     def save_results(self, data):
         """
         Utility method to save the results of a filter run.
@@ -464,6 +379,7 @@ class EnsembleKalmanFilter(Filter):
         data_path = general_path.format(params_string)
         print('Writing filter results to {0}.'.format(data_path))
         data.to_csv(data_path, index=False)
+
 
     @classmethod
     def make_errors(cls, result, truth):
@@ -479,34 +395,6 @@ class EnsembleKalmanFilter(Filter):
 
         return distance_error, x_error, y_error
 
-    @staticmethod
-    def plot_results(distance_errors, x_errors, y_errors):
-        """
-        Method to plot the evolution of errors in the filter.
-        """
-        plt.figure()
-        plt.scatter(range(len(distance_errors)), distance_errors,
-                    label='$\mu$', s=1)
-        plt.scatter(range(len(x_errors)), x_errors, label='$\mu_x$', s=1)
-        plt.scatter(range(len(y_errors)), y_errors, label='$\mu_y$', s=1)
-        plt.xlabel('Time')
-        plt.ylabel('MAE')
-        plt.legend()
-        plt.savefig('./results/errors.eps')
-        plt.show()
-
-    @staticmethod
-    def plot_results2(errors_da, errors_vanilla):
-        """
-        Method to plot the evolution of errors for abm with da vs w/o da.
-        """
-        plt.figure()
-        plt.scatter(range(len(errors_da)), errors_da, label='with')
-        plt.scatter(range(len(errors_vanilla)), errors_vanilla, label='w/o')
-        plt.xlabel('Time')
-        plt.ylabel('MAE')
-        plt.legend()
-        plt.show()
 
     @classmethod
     def calculate_rmse(cls, ground_truth, data):

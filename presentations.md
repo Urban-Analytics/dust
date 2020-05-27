@@ -8,6 +8,8 @@ tagline: Presentations about, or relating to, the surf project
 
 **2020**
 
+  - [Building cities from slime mould, agents and quantum field theory](https://underline.io/lecture/60-building-cities-from-slime-mould,-agents-and-quantum-field-theory). Keynote presentation by [Alison Heppenstall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) to AAMAS 2020. [Abstract (pdf)]({{site.baseurl}}/papers/2020-AAMAS-Heppenstall.pdf).
+
   - [Reducing Uncertainty in Agent-Based Simulations through Real-Time Data Assimilation]({{site.baseurl}}/p/2020-01-24-VVUQ-Turing.html). Presentation to the [Reliability and Reproducibility in Computational Science](https://www.turing.ac.uk/events/reliability-and-reproducibility-computational-science) workshop at the [Alan Turing Institute](https://www.turing.ac.uk/), London, 24 Jan 2020.
 
 **2019**

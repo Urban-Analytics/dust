@@ -1,7 +1,7 @@
 '''
 StationSim - GrandCentral version
     author: patricia-ternes
-    created: 07/05/2020
+    created: 27/05/2020
 '''
 
 import warnings
@@ -56,7 +56,8 @@ class Agent:
         self.speeds = np.arange(speed_max, model.speed_min, - model.speed_step)
         self.speed = np.random.choice((self.speeds))
         # Others
-        self.steps_activate = np.random.exponential(model.gates_speed)
+
+        self.steps_activate = self.unique_id * 25.0 / model.birth_rate
 
         # History
         if model.do_history:
@@ -74,25 +75,17 @@ class Agent:
         '''
         if (self.model.station == 'Grand_Central'):
             if (self.gate_in == 0):
-                self.gate_out = np.random.choice( (1, 2, 3, 4, 5, 6, 7, 8, 9))
-            elif (self.gate_in == 1 or self.gate_in == 2):
-                self.gate_out = np.random.choice( (0, 3, 4, 5, 6, 7, 8, 9))
-            elif (self.gate_in == 3 or self.gate_in == 4):
-                self.gate_out = np.random.choice( (0, 1, 2, 5, 6, 7, 8, 9))
-            else:
-                self.gate_out = np.random.choice( (0, 1, 2, 3, 4))
+                self.gate_out = np.random.random_integers(1, 10)
+                #self.gate_out = np.random.choice( (1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
-            '''
-            Use this while statement if exit gates at same side of 
-            entrance gate are allowed. With the above if statement, this
-            while statement never will be access, so if needed, comment
-            the above if statement.
-            '''
-            '''
-            while (self.gate_out == self.gate_in or
-                   self.gate_out >= len(self.model.gates_locations)):
-                self.gate_out = np.random.randint(self.model.gates_out)
-            '''
+            elif (self.gate_in == 1 or self.gate_in == 2):
+                self.gate_out = np.random.choice( (0, 3, 4, 5, 6, 7, 8, 9, 10))
+            elif (self.gate_in == 3 or self.gate_in == 4 or self.gate_in == 5 or self.gate_in == 6):
+                self.gate_out = np.random.choice( (0, 1, 2, 7, 8, 9, 10))
+            else:
+                self.gate_out = np.random.random_integers(0, 6)
+                #self.gate_out = np.random.choice( (0, 1, 2, 3, 4, 5, 6))
+
         else:
             self.gate_out = np.random.randint(self.model.gates_out) + self.model.gates_in
 
@@ -141,15 +134,25 @@ class Agent:
             It is necessary to ensure that the agent has a distance from
             the station wall compatible with its own size.
         '''
-        perturb = self.model.gates_space * np.random.uniform(-10, +10)
+        wd = self.model.gates_width[gate] / 2.0
+        perturb = np.random.uniform(-wd, +wd)
         if(self.model.gates_locations[gate][0] == 0):
-            return self.model.gates_locations[gate] + [1.05*self.size, perturb]
+            new_location = self.model.gates_locations[gate] + [1.05*self.size, perturb]
         elif(self.model.gates_locations[gate][0] == self.model.width):
-            return self.model.gates_locations[gate] + [-1.05*self.size, perturb]
+            new_location = self.model.gates_locations[gate] + [-1.05*self.size, perturb]
         elif(self.model.gates_locations[gate][1] == 0):
-            return self.model.gates_locations[gate] + [perturb, 1.05*self.size]
+            new_location = self.model.gates_locations[gate] + [perturb, 1.05*self.size]
         else:
-            return self.model.gates_locations[gate] + [perturb, -1.05*self.size]
+            new_location = self.model.gates_locations[gate] + [perturb, -1.05*self.size]
+        
+        '''
+            As there are gates near the corners it is possible to create 
+            a position outside the station. To fix this, rebound:
+        '''
+        if not self.model.is_within_bounds(self, new_location):
+            new_location = self.model.re_bound(self, new_location)
+
+        return new_location
 
     @staticmethod
     def distance(loc1, loc2):
@@ -211,7 +214,7 @@ class Agent:
             normal_direction = self.get_normal_direction(direction)
             new_location = self.location +\
                 normal_direction *\
-                np.random.normal(self.size, self.size/2.0)
+                np.random.normal(self.size, self.size)
 
             # Rebound
             if not self.model.is_within_bounds(self, new_location):
@@ -227,6 +230,16 @@ class Agent:
             neighbouring_agents = self.model.tree.query_ball_point(new_location,
                                                               self.size*1.1)
             dist = self.distance(new_location, self.model.clock.location)
+            if (dist > (self.size + self.model.clock.size)):
+                 if (neighbouring_agents == [] or neighbouring_agents == [self.unique_id]):
+                    self.location = new_location
+                    # wiggle_map
+                    if self.model.do_history:
+                        self.history_wiggles += 1
+                        self.model.history_wiggle_locs.append(new_location)
+                    break
+
+            '''
             if ((neighbouring_agents == [] or
                     neighbouring_agents == [self.unique_id]) and
                     (dist > (self.size + self.model.clock.size))):
@@ -237,6 +250,7 @@ class Agent:
                     self.history_wiggles += 1
                     self.model.history_wiggle_locs.append(new_location)
                 break
+            '''
 
     def deactivate(self):
         '''
@@ -355,14 +369,13 @@ class Model:
         params = {
             'pop_total': 100,
             'agent_size': 1.0,  # new parameter
+            'birth_rate': 1.0,  # new parameter
 
             'width': 400,
             'height': 200,
-
             'gates_in': 3,
             'gates_out': 2,
             'gates_space': 1.0,
-            'gates_speed': 100,  # new default value
 
             'speed_min': .2,
             'speed_mean': 1,
@@ -371,7 +384,7 @@ class Model:
 
             'separation': 5,  # just used in animation
 
-            'step_limit': 3600,
+            'step_limit': 10000,
 
             'do_history': True,
             'do_print': True,
@@ -382,6 +395,7 @@ class Model:
             'station': None  # None or Grand_Central  # new parameter
 
         }
+
         if len(kwargs) == 0:
             warnings.warn(
                 "No parameters have been passed to the model; using the "
@@ -402,7 +416,6 @@ class Model:
 
         # Initialise station
         self.set_station()
-        self.boundaries = np.array([[0, 0], [self.width, self.height]])
 
         # Initialise agents
         self.agents = [Agent(self, unique_id) for unique_id in
@@ -434,25 +447,40 @@ class Model:
         number of gates, gate size, etc.
         '''
         if(self.station == 'Grand_Central'):
-            self.width = 200
-            self.height = 400
+            self.width = 740  # 53 m
+            self.height = 700  # 50 m
+            self.boundaries = np.array([[0, 0], [self.width, self.height]])
             self.gates_locations =\
-                np.array([[0, self.height/2],  # south side
-                          [20, self.height], [170, self.height],  # west side
-                          [20, 0], [170, 0],  # east side
-                          [self.width, 60], [self.width, 125],  # north side
-                          [self.width, 200], [self.width, 275],  # north side
-                          [self.width, 340]])  # north side
+                np.array([[0, 275],  # gate 0
+                          [125, 700],   # gate 1
+                          [577.5 , 700],  # gate 2
+                          [740, 655],  # gate 3
+                          [740, 475],  # gate 4
+                          [740, 265],   # gate 5
+                          [740, 65],   # gate 6
+                          [647.5, 0],   # gate 7
+                          [462.5, 0],   # gate 8
+                          [277.5, 0],   # gate 9
+                          [92.5, 0]])   # gate 10
+
+            self.gates_width = [250, 250, 245, 90, 150, 150, 120, 185, 185, 185, 185]
+
             self.gates_in = len(self.gates_locations)
             self.gates_out = len(self.gates_locations)
             self.clock = Agent(self, self.pop_total)
-            self.clock.size = 10.0
-            self.clock.location = [self.width/2.0, self.height/2.0]
+            self.clock.size = 56.0  # 4 m
+            self.clock.location = [370, 275] # 26.4 m, 20 m
             self.clock.speed = 0.0
+            self.agent_size = 7.0  # 0.5 m
+            self.speed_mean = 0.839236  # pixel / frame
+            self.speed_std = 0.349087  # pixel / frame
+            self.gates_space = 28.0  # 2 m
         else:
             self.gates_locations = np.concatenate([
                 Model._gates_init(0, self.height, self.gates_in),
                 Model._gates_init(self.width, self.height, self.gates_out)])
+            self.gates_width = [20 for _ in range (len(self.gates_locations))]
+            self.boundaries = np.array([[0, 0], [self.width, self.height]])
             # create a clock outside the station.
             self.clock = Agent(self, self.pop_total)
             self.clock.speed = 0.0
@@ -465,8 +493,8 @@ class Model:
                 )
 
     def is_within_bounds(self, agent, loc):
-        return all((self.boundaries[0] + agent.size) < loc) and\
-               all(loc < (self.boundaries[1] - agent.size))
+        return all((self.boundaries[0] + agent.size*2.0) < loc) and\
+               all(loc < (self.boundaries[1] - agent.size*2.0))
 
     def re_bound(self, agent, loc):
         return np.clip(loc, self.boundaries[0] + agent.size*1.1,

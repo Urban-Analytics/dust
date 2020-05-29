@@ -30,7 +30,7 @@ Kieu, Le-Minh, N. Malleson, and A. Heppenstall (2019) Dealing with Uncertainty i
 
 _For a full list of conference presentations, see the [presentations](./presentations.html) page._
 
-Heppenstall, A. and **N. Malleson** (2020). Building cities from slime mould, agents and quantum field theory. AAMAS 2020 (in press). [Abstract (pdf)]({{site.baseurl}}/papers/2020-AAMAS-Heppenstall.pdf). [Presentation](https://underline.io/lecture/60-building-cities-from-slime-mould,-agents-and-quantum-field-theory). [DOI: 10.5555/3398761.3398765](https://dl.acm.org/doi/abs/10.5555/3398761.3398765).
+Heppenstall, A. and **N. Malleson** (2020). Building cities from slime mould, agents and quantum field theory. In [Proceedings of AAMAS 2020](http://www.ifaamas.org/Proceedings/aamas2020/). [Abstract (pdf)]({{site.baseurl}}/papers/2020-AAMAS-Heppenstall.pdf). [Presentation](https://underline.io/lecture/60-building-cities-from-slime-mould,-agents-and-quantum-field-theory). [DOI: 10.5555/3398761.3398765](https://dl.acm.org/doi/abs/10.5555/3398761.3398765).
 
 Malleson, N., Jonathan A. Ward, A. Heppenstall, M. Adcock, D. Tang, J. Coello, and T. Crols. (2018). Understanding Input Data Requirements and Quantifying Uncertainty for Successfully Modelling ‘Smart’ Cities. In _3rd International Workshop on Agent-Based Modelling of Urban Systems_ (ABMUS), of the International Conference on Autonomous Agents and Multiagent Systems ([AAMAS 2018](http://celweb.vuse.vanderbilt.edu/aamas18/home/)). 10-15 July, Stockholm, Sweden. [[Full abstract (pdf)](https://urban-analytics.github.io/dust/p/2018-07-15-abmus-da-abstract.pdf)]. [[Slides (html)](https://urban-analytics.github.io/dust/p/2018-07-15-abmus-da.html)].
 

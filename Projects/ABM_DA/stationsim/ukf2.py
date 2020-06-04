@@ -24,7 +24,7 @@ import logging
 from copy import deepcopy
 import multiprocessing
 
-from stationsim_model import Model
+#from stationsim_model import Model
 
 "shamelessly stolen functions for multiprocessing np.apply_along_axis"
 
@@ -225,7 +225,7 @@ def covariance(data1, mean1, weight, data2=None, mean2=None, addition=None):
 
 
 def MSSP(mean, p, g):
-    """sigma point calculations based on current mean x and covariance P
+    """merwe's scaled sigma point calculations based on current mean x and covariance P
 
     - calculate square root of P 
     - generate empty sigma frame with each column as mean
@@ -260,8 +260,7 @@ def MSSP(mean, p, g):
 # %%
 
 class ukf:
-
-    """main ukf class for assimilating sequential data from some ABM
+    """main ukf class for assimilating data from some ABM
 
     Parameters
     ------
@@ -613,7 +612,7 @@ class ukf_ss:
 
         if step % self.sample_rate == 0:
 
-            state = self.base_model.get_state(sensor="location")
+            state = self.base_model.get_state(sensor="location").astype(float)
             noise_array = np.ones(self.pop_total*2)
             noise_array[np.repeat([agent.status != 1 for
                                    agent in self.base_model.agents], 2)] = 0
@@ -684,7 +683,10 @@ class ukf_ss:
 
         self.time2 = datetime.datetime.now()  # timer
         logging.info(f"ukf timed out. max iterations {self.step_limit} of stationsim reached")
-        logging.info(f"Time Elapsed: {self.time2-self.time1}")
+        time = self.time2-self.time1
+        time = f"Time Elapsed: {time}"
+        print(time)
+        logging.info(time)
 
     """List of static methods for extracting numpy array data 
     """
@@ -793,7 +795,7 @@ class ukf_ss:
             obs = np.zeros((truths.shape[0], self.pop_total*2))*np.nan
 
             #fill in every sample_rate rows with ukf predictions
-            for i in range(1, len(raw_obs)):
+            for i in range(len(raw_obs)):
                 index = np.where(obs_key[i*self.sample_rate, :]==2)
                 index2 = 2*np.repeat(index,2)
                 index2[1::2]+=1
@@ -823,16 +825,15 @@ class ukf_ss:
         nan_array = np.ones(truths.shape)*np.nan
         for i, agent in enumerate(base_model.agents):
             #find which rows are  NOT (None, None). Store in index.
-            array = np.array(agent.history_locations)
-            index = ~np.equal(array, None)[:, 0]
+            array = np.array(agent.history_locations[:truths.shape[0]])
+            in_model = np.where(array!=None)
             #set anything in index to 1. I.E which agents are still in model to 1.
-            nan_array[index, 2*i:(2*i)+2] = 1
+            nan_array[in_model, 2*i:(2*i)+2] = 1
             
         return nan_array
 
     def obs_key_parser(self):
         """extract obs_key
-
         """
         obs_key2 = np.vstack(self.obs_key)
         shape = np.vstack(self.truths).shape[0]
@@ -842,7 +843,6 @@ class ukf_ss:
             obs_key[j*self.sample_rate, :] = obs_key2[j, :]
 
         return obs_key
-
 
 def batch_save(model_params, n, seed):
     "save a stationsim model to use later in a batch"

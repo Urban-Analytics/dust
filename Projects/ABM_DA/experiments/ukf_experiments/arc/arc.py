@@ -47,215 +47,16 @@ import logging
 
 import os
 import sys
-sys.path.append('../../../stationsim')
-sys.path.append("../modules")
 
-import numpy as np
+sys.path.append("../modules")
 import default_ukf_configs as configs
-from ukf_ex2 import aggregate_params
-from ukf_ex1 import omission_params
-from ukf_ex0 import ex0_params, ex0_save
-from stationsim_model import Model
-from ukf2 import ukf_ss, pickler
+
+sys.path.append("../../../stationsim")
+from ukf2 import ukf_ss
 
 # %%
-def ex0_input(model_params, ukf_params, test):
-    """Update the model and ukf parameter dictionaries so that experiment 0 runs.
 
-    
-    - Define some lists of populations `num_age`, a list of proportions observed 
-    `prop`. We also generate a list of unique experiment ids for each 
-    population/proportion pair.
-    - Construct a cartesian product list containing all unique combinations 
-    of the above 3 parameters (sample_rate/noise/run_id).
-    - Let arc's test array functionality choose some element of the above 
-    product list as parameters for an individual experiment.
-    - Using these parameters update model_params and ukf_params using 
-    ex1_params.
-    - Also add `run_id`, `file_name` to ukf_params required for arc run.
-    - Output updated dictionaries.
-
-    Parameters
-    ------
-
-    model_params, ukf_params : dict
-        dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf.
-
-    test : bool
-        If we're testing this function change the file name slightly.
-        
-    Returns
-    ------
-
-    model_params, ukf_params : dict
-        updated dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf. 
-
-    """
-
-    n = 5  # 10 to 30 agent population by 10
-
-    sample_rate = [1, 2, 5, 10]  # how often to assimilate with ukf
-    # list of gaussian noise standard deviations
-    noise = [0, 0.25, 0.5, 1, 2, 5]
-    run_id = np.arange(0, 30, 1)  # 30 runs
-
-    param_list = [(x, y, z)
-                  for x in sample_rate for y in noise for z in run_id]
-
-    if not test:
-        sample_rate = param_list[int(sys.argv[1])-1][0]
-        noise = param_list[int(sys.argv[1])-1][1]
-        run_id = param_list[int(sys.argv[1])-1][2]
-
-    else:
-        sample_rate = 10
-        noise = 5
-        run_id = "test"
-
-    model_params, ukf_params, base_model = ex0_params(n, noise, sample_rate,
-                                                      model_params, ukf_params)
-
-    ukf_params["run_id"] = run_id
-    ukf_params["file_name"] = "config_agents_{}_rate_{}_noise_{}-{}".format(
-        str(n).zfill(3),
-        str(float(sample_rate)),
-        str(float(noise)),
-        str(run_id).zfill(3)) + ".npy"
-    ukf_params["do_pickle"] = False
-
-    return model_params, ukf_params, base_model    
-
-def ex1_input(model_params, ukf_params, test):
-    """Update the model and ukf parameter dictionaries so that experiment 1 runs.
-
-    
-    - Define some lists of populations `num_age`, a list of proportions observed 
-    `prop`. We also generate a list of unique experiment ids for each 
-    population/proportion pair.
-    - Construct a cartesian product list containing all unique combinations 
-    of the above 3 parameters (pop/prop/run_id).
-    - Let arc's test array functionality choose some element of the above 
-    product list as parameters for an individual experiment.
-    - Using these parameters update model_params and ukf_params using 
-    ex1_params.
-    - Also add `run_id`, `file_name` to ukf_params required for arc run.
-    - Output updated dictionaries.
-
-    Parameters
-    ------
-
-    model_params, ukf_params : dict
-        dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf.
-
-    test : bool
-        If we're testing this function change the file name slightly.
-        
-    Returns
-    ------
-
-    model_params, ukf_params : dict
-        updated dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf. 
-
-    """
-
-    num_age = [10, 20, 30]  # 10 to 30 agent population by 10
-    # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
-    props = [0.25, 0.5, 0.75, 1]
-    run_id = np.arange(0, 30, 1)  # 30 runs
-
-    param_list = [(x, y, z) for x in num_age for y in props for z in run_id]
-
-    if not test:
-        "assign parameters according to task array"
-        n = param_list[int(sys.argv[1])-1][0]
-        prop = param_list[int(sys.argv[1])-1][1]
-        run_id = param_list[int(sys.argv[1])-1][2]
-    else:
-        "if testing use these parameters for a single quick run."
-        n = 5
-        prop = 0.5
-        run_id = "test"
-
-    model_params, ukf_params, base_model = omission_params(n, prop,
-                                                           model_params, ukf_params)
-
-    ukf_params["run_id"] = run_id
-    ukf_params["file_name"] = "ukf_agents_{}_prop_{}-{}".format(
-        str(n).zfill(3),
-        str(prop),
-        str(run_id).zfill(3)) + ".pkl"
-
-    return model_params, ukf_params, base_model
-
-
-def ex2_input(model_params, ukf_params, test):
-    """Update the model and ukf parameter dictionaries so that experiment 2 runs.
-
-    
-    - Define some lists of populations `num_age`, a list of aggregate squares 
-    `bin_size`. We also generate a list of unique experiment ids for each 
-    population/grid_square pair.
-    - Construct a cartesian product list containing all unique combinations 
-    of the above 3 parameters (pop/bin_size/run_id).
-    - Let arc's test array functionality choose some element of the above 
-    product list as parameters for an individual experiment.
-    - Using these parameters update model_params and ukf_params using 
-    ex2_params.
-    - Also add `run_id`, `file_name` to ukf_params required for arc run.
-    - Output updated dictionaries.
-
-    Parameters
-    ------
-
-    model_params, ukf_params : dict
-        dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf.
-
-    test : bool
-        If we're testing this function change the file name slightly.
-        
-    Returns
-    ------
-
-    model_params, ukf_params : dict
-        updated dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf. 
-
-    """
-
-    num_age = [10, 20, 30, 50]  # 10 to 30 agent population by 10
-    # unitless grid square size (must be a factor of 100 and 200)
-    bin_size = [5, 10, 25, 50]
-    run_id = np.arange(0, 30, 1)  # 30 runs
-
-    param_list = [(x, y, z) for x in num_age for y in bin_size for z in run_id]
-
-    if not test:
-        n = param_list[int(sys.argv[1])-1][0]
-        bin_size = param_list[int(sys.argv[1])-1][1]
-        run_id = param_list[int(sys.argv[1])-1][2]
-
-    else:
-        n = 5
-        bin_size = 50
-        run_id = "test2"
-
-    model_params, ukf_params, base_model = aggregate_params(n, bin_size,
-                                                            model_params, ukf_params)
-
-    ukf_params["run_id"] = run_id
-    ukf_params["file_name"] = "agg_ukf_agents_{}_bin_{}-{}".format(
-        str(n).zfill(3),
-        str(bin_size),
-        str(run_id).zfill(3)) + ".pkl"
-
-    return model_params, ukf_params, base_model
-
-def main(ex_input, ex_save, test=False):
+def main(ex_input, test=False):
     """main function for running ukf experiments in arc.
 
     Runs an instance of ukf_ss for some experiment and associated parameters.
@@ -289,6 +90,7 @@ def main(ex_input, ex_save, test=False):
 
     """
 
+    # If not testing abort the run if no set of parameters are specified
     if not test:
 
         if len(sys.argv) != 2:
@@ -296,24 +98,19 @@ def main(ex_input, ex_save, test=False):
                   "Usage: python run_pf <N>")
             sys.exit(1)
 
+    # Load in default parameters for stationsim and ukf
     model_params = configs.model_params
     ukf_params = configs.ukf_params
 
+    # Update model parameters  for given experiment using ex_input
     model_params, ukf_params, base_model = ex_input(
         model_params, ukf_params, test)
     
+    # Start logging incase run fails. Specify filename and logging level.
     logging.basicConfig(filename = ukf_params["file_name"]+ ".log", level = logging.INFO)
-    verbose = True
-    "more info on ukf parameters."
     
-    if test:
-        "no info when testing. easier to read."
-        verbose = False
-        
-    if verbose:
-        
-        print("UKF params: " + str(ukf_params))
-        print("Model params: " + str(model_params))
+    print("UKF params: " + str(ukf_params))
+    print("Model params: " + str(model_params))
 
     # init and run ukf
     u = ukf_ss(model_params, ukf_params, base_model)
@@ -323,22 +120,13 @@ def main(ex_input, ex_save, test=False):
     #e.g. saves numpy array of grand medians for ex0 using `ex0_save`
     # or pickles the whole ukf class for experiment 1,2 using `pickle_save`
     
-    f_name = ukf_params["file_name"]
-    print(f"saving to {f_name}")
-    ex_save(u, "../results/", ukf_params["file_name"])
+    ex_save = ukf_params["save_function"]
+    ex_save(u, ukf_params["file_destination"], ukf_params["file_name"])
 
     #delete any test files that were saved for tidiness.
     if test:
+        f_name = ukf_params["file_name"]
         print(f"Test successful. Deleting the saved test file : {f_name}")
-        os.remove("../results/" + ukf_params["file_name"])
-
-
-if __name__ == '__main__':
-    test = True
-    if test:
-        print("warning test set to true. if youre running an experiment, it wont go well.")
-    #main(ex0_input, ex0_save, test)
-    main(ex1_input, pickler, test)
-    #main(ex2_input, pickler, test)
+        os.remove(ukf_params["file_destination"] + ukf_params["file_name"])
 
 

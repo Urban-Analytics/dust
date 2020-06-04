@@ -39,7 +39,7 @@ from stationsim_model import Model
 
 import numpy as np
 
-def ex0_params(n, noise, sample_rate, model_params, ukf_params):
+def benchmark_params(n, noise, sample_rate, model_params, ukf_params):
     
     
     """update ukf_params with fx/hx and their parameters for experiment 1
@@ -79,7 +79,7 @@ def ex0_params(n, noise, sample_rate, model_params, ukf_params):
     ukf_params["fx_kwargs"] = {"base_model": base_model}
     ukf_params["hx"] = hx0    
     ukf_params["hx_kwargs"] = {}
-    ukf_params["obs_key_func"] = None
+    ukf_params["obs_key_func"] = obs_key_0
     
     ukf_params["file_name"] = f"config_agents_{n}_rate_{sample_rate}_noise_{noise}"
     
@@ -101,6 +101,8 @@ def hx0(state, **hx_kwargs):
     
     return state
 
+def obs_key_0(state, **hx_params):
+    return 2 * np.ones(int(state.shape[0]/2))
 
 def ex0_save(instance,source,f_name):
     
@@ -123,11 +125,15 @@ def ex0_save(instance,source,f_name):
     
     
     """
-    
-    obs, preds, truths,nan_array= instance.data_parser()
+
+    truths = instance.truth_parser(instance)
+    nan_array= instance.nan_array_parser(truths, instance.base_model)
+    obs_key = instance.obs_key_parser()
+    obs = instance.obs_parser(instance, True, truths, obs_key)
+    preds = instance.preds_parser(instance, True, truths)
     forecasts = np.vstack(instance.forecasts)
 
-    obs *= nan_array[::instance.sample_rate]
+    obs *= nan_array
     truths *= nan_array
     preds *= nan_array
     forecasts *= nan_array
@@ -135,7 +141,9 @@ def ex0_save(instance,source,f_name):
     truths = truths[::instance.sample_rate,:]
     preds = preds[::instance.sample_rate,:]
     forecasts = forecasts[::instance.sample_rate,:]
-
+    obs = obs[::instance.sample_rate,:]
+    
+    
     obs_error = np.nanmedian(np.nanmedian(L2s(truths,obs),axis=0))
     forecast_error = np.nanmedian(np.nanmedian(L2s(truths,forecasts),axis=0))
     ukf_error =  np.nanmedian(np.nanmedian(L2s(truths,preds),axis=0))
@@ -143,7 +151,9 @@ def ex0_save(instance,source,f_name):
     mean_array = np.array([obs_error, forecast_error, ukf_error])
     print ("obs", "forecast", "ukf")
     print(mean_array)
-    np.save(source + f_name, mean_array)
+    f_name = source + f_name
+    print(f"saving to {f_name}")
+    np.save(f_name, mean_array)
     
 def ex0_main(n, noise, sampling_rate):
     
@@ -159,14 +169,17 @@ def ex0_main(n, noise, sampling_rate):
     model_params = default_ukf_configs.model_params
     ukf_params = default_ukf_configs.ukf_params
     
-    model_params, ukf_params, base_model = ex0_params(n, noise, sampling_rate, model_params,
-                                                      ukf_params)
+    model_params, ukf_params, base_model = benchmark_params(n, 
+                                                            noise, 
+                                                            sampling_rate, 
+                                                            model_params,
+                                                            ukf_params)
     print(model_params)
     print(ukf_params)
     
     u = ukf_ss(model_params,ukf_params,base_model)
     u.main()
-    ex0_save(u, "../ukf_results/", ukf_params["file_name"])
+    ex0_save(u, "../results/", ukf_params["file_name"])
   
 #%%  
     

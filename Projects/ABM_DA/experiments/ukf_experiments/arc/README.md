@@ -6,7 +6,7 @@ To perform experiments using the UKF on stationsim we employ the use of the ARC4
 
 This allows for much faster parallel running of multiple experiments but requires some initial set up.
 
-This readme will introduce how we set up a conda environment in ARC4 as well as the two files `arc.py` and `arc.sh` used to define and run large scale ukf runs. The python script `arc.py` sets up and runs an individual experiment on stationsim using the ukf, some experiment module, and its associated parameters. We also have a bash script `arc.sh` which coordinates the running of multiple experiments at once using a task array.
+This readme will introduce how we set up a conda environment in ARC4 as well as the two files `arc.py` and `arc.sh` used to define and run large scale ukf experiments. The python script `arc.py` sets up and runs an individual ukf experiments on stationsim using the some experiment module and its associated parameters. We also have a bash script `arc.sh` which coordinates the running of multiple experiments at once using a task array.
 
 (https://arc.leeds.ac.uk/using-the-systems/why-have-a-scheduler/advanced-sge-task-arrays/)
 
@@ -44,72 +44,71 @@ pip install shapely
 
 ## ARC4 Setup Guide
 
-Using ARC4 over ARC3 is preferable mainly due to its ability to use conda environments. This section shows how to get onto ARC4 from some local bash terminal (linux/mac etc.).
+Using ARC4 over ARC3 is preferable mainly due to its ability to use conda environments. This section shows how to get onto ARC4 from some local mac terminal (or any bash terminal, just be warned the directories will be different).
 
 We have an example initialisation in ARC4 below which we will break down here. 
 
-- First, we log onto ARC4 using ssh. This is either done directly if on site at Leeds or via remote access if not.
-- The personal user storage is fairly small and so we then create and move to our own /nobackup folder on ARC4 with significantly more (albeit not backed up) storage. 
-- We clone our dust repository into nobackup and then move. Note we place the environment into a new folder in the users /nobackup as to save space in the users backed up (and very small) base directory.
-- We then build a conda virtual environment. Note this is built outside of the git repo so if you wish to reuse the same conda environment and reclone the repo for new experiments you can. Just ignore this and the next step again in the future. 
-- We then activate the environment and load any desired packages into conda either via conda install or in the original environment command.
-- Finally we move to the arc subdirectory in which we perform our experiments.
+1 First, we log onto ARC4 using ssh. This is either done directly if on site at Leeds or via remote access if not.
+2 The personal user storage is fairly small and so we then create and move to our own /nobackup folder on ARC4 with significantly more (albeit not backed up) storage. 
+3 We clone our dust repository into /nobackup.
+4 We then build a conda virtual environment. Note this is built outside of the git repo so if you wish to reuse the same conda environment and reclone the repo for new experiments you can. Just ignore steps 4 and 5 again in the future. Note we also place the environment into the user's /nobackup for space.
+5 We then activate the environment and load any desired packages into conda either via `conda install` or in the command to originally create the environment.
+6 Finally we move to the arc subdirectory in which we perform our experiments.
 
 ```
-Example initialisation. Note to use this yourself change all instances of medrclaa to your own Leeds username.
+Example initialisation. To use this yourself change all instances of <medrclaa> to your own Leeds username.
 
-#log in to arc4 using ssh.
-#note if not on site at Leeds we also need to log in via remote-access
-#ssh medrclaa@remote-access.leeds.ac.uk
+# log in to arc4 using ssh.
+# note if not on site at Leeds we also need to log in via remote-access
+# ssh medrclaa@remote-access.leeds.ac.uk
 ssh medrclaa@arc4.leeds.ac.uk
 
-#move to /nobackup
-#if no directory in /nobackup create one with 
+# move to /nobackup
+# if no directory in /nobackup create one with 
 # mkdir /nobackup/medrclaa
 cd /nobackup/medrclaa
-#clone dust repo into nobackup
+# clone dust repo into nobackup
 git clone https://github.com/Urban-Analytics/dust/
 
 # load anaconda
 module load python anaconda
-#create virtual environment. Note this is technically outside the git clone and does not need to be run again if you wish. #You can keep this or rebuild it every time you rerun this experiment/ import a new git clone. Also note the -p argument
-#to save the environment in /nobackup for space reasons.
-#Also note we can automatically load packages by naming them at the end of this line
+# Create virtual environment. Note this is technically outside the git clone and does not need to be run again for future work if you wish.
+#Note we can automatically load packages by naming them at the end of this line
 conda create -p /nobackup/medrclaa/ukf_py python=3 numpy matplotlib scipy shapely imageio seaborn
 #activate the conda environment.
 source activate /nobackup/medrclaa/ukf_py
 
-#move to ukf experiments folder
+#move to ukf arc experiments folder
 cd /nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/arc
 
-#we can then load in python packages as desired using conda e.g.
+# we can then load in python packages as desired using conda e.g.
 conda install shapely
-#or pip at your own risk e.g. 
+# or pip at your own risk e.g. 
 pip install imageio-ffmpeg
 ```
 
 ## Running an Example Experiment in ARC4
 
-We are now ready to run experiments given some experiment module. We use the module for ukf experiment 1 (see `ukf_ex1.py` in modules), as an example. Say we wish to run experiments for 5 and 10 agent populations, 0.5 and 1.0 (50% and 100%) proportion observed, and 20 repetitions for each pop and prop pair. We go into `arc.py` and change the inputs for the `ex1_input` function as follows:
+We are now ready to run experiments given some experiment module. We use the module for ukf experiment 1 (see `ukf_ex1.py` in modules for details). This module has two key parameters, namely the agent population (`num_age`) and the proportion of agents observed (`props`). Say we wish to run experiments for 5 and 10 agent populations, 0.5 and 1.0 (50% and 100%) proportion observed. If we also wish to run 20 repeat experiments for each `num_age` and `props` pair we also introduce a third `run_id` parameter giving each repeated experiment a unique intiger id.  We go into `arc.py` and change the inputs for the `ex1_input` function as follows:
 
 ```
 #open text editor, given we are in the `arc` folder.
 nano arc.py 
 
-#default experiment parameters:
+#default experiment parameters: 10, 20, and 30 agents, 25%, 50%, 75%, and 100% observed and 30 repeats
 
 170     num_age = [10,20,30]# 10 to 30 by 10
 171     props = [0.25,0.5,0.75,1] #.25 to 1 by .25
 172     run_id = np.arange(0,30,1) #30 runs
 
-#new desired parameters:
+#new desired parameters: 5 and 10 agents, 50 and 100% observed, 20 repeats
 
 170     num_age = [5,10] # 5 to 10 by 5
 171     props = [0.5,1.0] #.5 to 1 by .5
 172     run_id = np.arange(0,20,1) #20 runs
 ```
 
-With our new parameters defined we now calculate the total number of experiments. This is simply multiplying the length of each parameter list (num_age, props, and run_id) together to get the number of unique experiment combinations. In this case we have N = 2x2x20 = 80 experiments and must update `arc.sh` with this number such that it exactly the right number of experiments. If this number is say 2 it will only run the first 2 experiments and ignore the remaining 78. Likewise, if we choose 82 runs we will have two dead runs that can throw errors unneccesarily.
+With our new parameters defined we now calculate the total number of experiments. This is simply multiplying the length of each parameter list (num_age, props, and run_id) together to get the number of unique experiment combinations. In this case we have N = 2x2x20 = 80 experiments and must update `arc.sh` with this number such that it runs exactly the right number of experiments. If this number is say 2 it will only run the first 2 experiments and ignore the remaining 78. Likewise, if we choose 82 runs we will have two dead runs that can throw errors unneccesarily.
 
 ```
 nano arc.sh #open text editor
@@ -124,17 +123,17 @@ becomes
 Now everything is ready to run the experiment in arc. To do this we use the simple command `qsub`.
 
 ```
-qsub arc_ukf.sh
+qsub arc.sh
 ```
-
+!!discuss arc.sh script.
 This initiates the job which comes with several useful commands and outputs.
 
 ```
 qstat - gives various progress diagnostics for all running jobs.
-qdel <job_id> - cancel current job with given id.
+qdel <job_id> - cancel current job with given job_id.
 ```
 
-We can also check the active progress or errors of any individual experiment using the .o (observed) and .e (errors) files generated for each experiment. For example, if we ran the all 80 experiments above and wish to check upon the first one (index starts at 1 here.) we do the following:
+We can also check the active progress or errors of any individual experiment using the .o (output) and .e (errors) files generated for each experiment. For example, if we ran the all 80 experiments above and wish to check upon the first one (index starts at 1 here.) we do the following:
 
 ```
 # call desired .o or .e file using format
@@ -153,7 +152,7 @@ nano arc.sh.o.1373131.1
 ## disk   = 1G (per slot)
 
 UKF params: {'Sensor_Noise': 1, 'Process_Noise': 1, 'sample_rate': 1, 'do_restr$
-Model params: {'pop_total': 10, 'width': 200, 'height': 100, 'gates_in': 3, 'ga$
+Model params: {'pop_total': 5, 'width': 200, 'height': 100, 'gates_in': 3, 'ga$
         Iteration: 0/3600
         Iteration: 100/3600
         Iteration: 200/3600
@@ -167,7 +166,7 @@ Model params: {'pop_total': 10, 'width': 200, 'height': 100, 'gates_in': 3, 'ga$
 nano arc.sh.e.1373131.1
 OMP: Warning #181: GOMP_CPU_AFFINITY: ignored because KMP_AFFINITY has been def$
 
-# For the record this error will always occur and generally means the experiment succeded. I don't know why it occurs.
+# This error will always occur and generally means the experiment succeded. I don't know why.
 
 ```
 
@@ -178,10 +177,10 @@ This downloads all files to local to be processed by `depickle.py`.
 If you want to build your own arc experiment module, I strongly suggest you first look at the `ukf_modules` readme for information on how to build an experiment module first. These modules are very similar with only a small number of additions. The main aim here is to take the default parameter dictionaries for stationsim and the ukf defined in `default_ukf_configs` and append them with parameters necessary to run your desired experiment. I am going to use experiment 1 as an example of how to build an arc module script on top of the existing experiment module.
 
 arc requisites are:
-- some ukf experiment module e.g. `ukf_ex1.py`
-- some list of experiments. each item in the list provides certain parameters to the experiment module 
-        e.g. population proportion and run_id for for experiment 1
-- 
+- Some ukf experiment module e.g. `ukf_ex1.py`
+- Some parameters relevant to the experiment module and wish to vary. For example, experiment 1 above varies
+        agent population, proportion observed, and a run_id. 
+- Some means of saving data from a ukf run and a file name. 
 
 We define the overall arc function with the model_params and ukf_params as inputs:
 
@@ -247,4 +246,24 @@ scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/no
 
 ## Depickle
 
-!!todo explain how depickle module is built
+With some experiments finished in arc we now wish to extract the results to a local machine for post-hoc analysis as necessary.
+To extract data from the ukf_experiments/results folder from arc to a local machine we use scp.
+
+`scp remote_file_source* local_file_destination.
+# Given the appropriate directories e.g.
+scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.`
+
+If we are accessing arc remotely we have two remote servers (one with virtually no storage) to go through so use proxy jump (shamelessly stolen from https://superuser.com/questions/276533/scp-files-via-intermediate-host) to avoid being
+excommunicated by the arc team. 
+
+scp -oProxyJump=user@remote-access.leeds.ac.uk remote_file_source* local_file_destination.
+e.g.
+scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/results/agg* /Users/medrclaa/new_aggregate_results
+
+With data on a local machine we can now process this using `depickle.py`. Data can be extracted in a number of ways, for experiment 1 we unpickle entire ukf classes, extract the assimilated and true positions, and measure the euclidean distance between them in a distance matrix. Each column of this matrix will represent the distance between truth and assimilation for a single agent over time. Likewise, each row of the matrix provides the distances of all agents for a given time point. For general analysis we take the median error of each agent (column) as well as the grand median (median of median agent errors) of an individual ukf run.  
+
+We use two types of plots for ukf experiment 1. First, a choropleth plot takes another median of grand medians for each population and proportion pair. We had 20 repeats for each pair so would take a median of 20 results. We plot these scalar accuracy values for each pair in a choropleth to see how the ukf performs as we vary these parameters. We can also use boxplots, made by seaborn's `catplot`, where we plot a boxplot of these 20 grand medians for each parameter pair. These results give more detail than the choropleths including iqr bands and outliers.
+
+!! add example plots
+
+These are just one example of the visualisation that can be done. For a further example look at experiment 0 for its parsing of numpy arrays and 3d choropleths instead.

@@ -41,6 +41,12 @@ scp remote_file_source* local_file_destination.
 Given the appropriate directories e.g.
 
 scp medrclaa@arc3.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg* /home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/.
+
+or the proxy jump version via remote access
+
+scp -oProxyJump=user@remote-access.leeds.ac.uk
+e.g.
+scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/results/agg* /Users/medrclaa/new_aggregate_results
 """
 
 "if running this file on its own. this will move working directory up to ukf_experiments."
@@ -453,6 +459,7 @@ class grand_plots:
             "sub dictionary for parameter i"
             L2[i] = {}
             for j in self.p2:
+                print(i, j)
                 "file names for glob to find. note wildcard * is needed"
                 f_name = self.source + f"*{keys[0]}_*{i}_{keys[1]}_*{j}-*"
                 "find all files with given i and j"
@@ -663,8 +670,8 @@ def ex1_restrict(distances, instance, *args):
 def ex1_grand(source, destination):
 
     file_params = {
-        "agents":  [10, 20, 30],
-        "prop": [0.25, 0.5, 0.75, int(1)],
+        "agents":  [30, 50, 100, 200],
+        "prop": [0.25, 0.5, int(1)],
         # "source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
         "source": source,
         "destination": destination
@@ -757,8 +764,8 @@ def main(experiment_function, source, destination):
 if __name__ == "__main__":
 
     #main(ex0_grand,  f"/Users/medrclaa/ukf_config_test/config*030*", "../plots/")
-    #main(ex1_grand, "/Users/medrclaa/ukf_results/ukf*", "../plots/")
+    main(ex1_grand, "/Users/medrclaa/scalability_results/ukf*", "../plots/")
     #main(ex1_grand_no_split, "/Users/medrclaa/ukf_results/ukf*", "../plots/")
 
-    main(ex2_grand, "/Users/medrclaa/new_aggregate_results/agg_ukf*", "../plots")
+    #main(ex2_grand, "/Users/medrclaa/new_aggregate_results/agg_ukf*", "../plots")
 

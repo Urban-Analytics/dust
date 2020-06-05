@@ -125,7 +125,7 @@ def ex0_input(model_params, ukf_params, test):
     return model_params, ukf_params, base_model    
 
 if __name__ == '__main__':
-    test = True
+    test = False
     if test:
         print("Test set to true. If you're running an experiment, it wont go well.")
     arc_main(ex0_input, test)

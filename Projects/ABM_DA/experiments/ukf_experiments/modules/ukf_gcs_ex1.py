@@ -224,10 +224,10 @@ def ex1_plots(instance, destination, prefix, save, animate):
     forecasts*= nan_array
     
     #cut off the initial 0s
-    truths = truths[1:,:]
-    preds = preds[1:, :]
-    forecasts = forecasts[1:, :]
-    obs = obs[1:, :]
+    truths[0,:]*=np.nan
+    preds[0,:]*=np.nan
+    forecasts[0,:]*=np.nan
+    obs[0,:]*=np.nan
     
     
     "indices for unobserved agents"
@@ -304,7 +304,7 @@ if __name__ == "__main__":
     do_pickle = True #pickle new run
     pickle_source = "../pickles/" #where to load/save pickles from
     destination = "../plots/"
-    n = 5 #population size
-    prop = 0.25 #proportion observed
+    n = 30 #population size
+    prop = 0.5 #proportion observed
     
     u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

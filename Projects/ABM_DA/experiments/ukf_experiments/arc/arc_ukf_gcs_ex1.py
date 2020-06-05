@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Fri Jun  5 17:04:57 2020
 
-"""splitting up old arc.py file into individual experiment runs for clarity.
+@author: medrclaa
+"""
+
+"""alternate version of arc_ukf_ex1.py for new stationsim.
 
 ===========
 ARC4 Version
@@ -38,7 +43,7 @@ import numpy as np
 from arc import main as arc_main
 
 sys.path.append("../modules")
-from ukf_ex1 import omission_params
+from ukf_gcs_ex1 import omission_params
 
 sys.path.append('../../../stationsim')
 from ukf2 import pickler
@@ -110,7 +115,7 @@ def ex1_input(model_params, ukf_params, test):
     ukf_params["save_function"] = pickler
     # File name and destination of numpy file saved in `ex0_save`
     ukf_params["file_destination"] = "../results" 
-    ukf_params["file_name"] = "ukf_agents_{}_prop_{}-{}".format(
+    ukf_params["file_name"] = "ukf_gcs_agents_{}_prop_{}-{}".format(
         str(n).zfill(3),
         str(prop),
         str(run_id).zfill(3)) + ".pkl"
@@ -119,7 +124,7 @@ def ex1_input(model_params, ukf_params, test):
 
 
 if __name__ == '__main__':
-    test = False
+    test = True
     if test:
         print("Test set to true. If you're running an experiment, it wont go well.")
     arc_main(ex1_input, test)

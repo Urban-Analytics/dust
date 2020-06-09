@@ -36,93 +36,106 @@ e.g.
 scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/results/agg* /Users/medrclaa/new_aggregate_results
 
 """
-import logging
-import os
 import sys
 import numpy as np
-from arc import main as arc_main
+from arc import arc
 
 sys.path.append("../modules")
 from ukf_ex2 import aggregate_params
+import default_ukf_configs as configs
 
 sys.path.append('../../../stationsim')
-from ukf2 import pickler
+from ukf2 import ukf_ss, pickler
 
 # %%
-def ex2_input(model_params, ukf_params, test):
-    """Update the model and ukf parameter dictionaries so that experiment 2 runs.
 
-    
-    - Define some lists of populations `num_age`, a list of aggregate squares 
-    `bin_size`. We also generate a list of unique experiment ids for each 
-    population/grid_square pair.
-    - Construct a cartesian product list containing all unique combinations 
-    of the above 3 parameters (pop/bin_size/run_id).
-    - Let arc's test array functionality choose some element of the above 
-    product list as parameters for an individual experiment.
-    - Using these parameters update model_params and ukf_params using 
-    ex2_params.
-    - Also add `run_id`, `file_name` to ukf_params required for arc run.
-    - Output updated dictionaries.
+def ex2_parameters(parameter_lists, test):
+    """let the arc task array choose experiment parameters to run
 
     Parameters
-    ------
-
-    model_params, ukf_params : dict
-        dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf.
-
+    ----------
     test : bool
-        If we're testing this function change the file name slightly.
+        if test is true we choose some simple parameters to run on arc.
+        this is to test the file works and produces results before running 
+        a larger batch of jobs to have none of them succeed and 400 abort
+        emails.
         
+    parameter_lists : list
+        `parameter_lists` is a list of lists where each element of the list
+        is some set of experiment parameters we wish to run. E.g. this may be
+        [10, 1.0, 1] for the first experiment running with 10 agents 100% 
+        observed.
+
     Returns
-    ------
-
-    model_params, ukf_params : dict
-        updated dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf. 
-
+    -------
+    n, run_id : int
+        agent population `n` and unique `run_id` for each n and prop.
+    prop : float
+        proportion of agents observed `prop`
     """
-
-    num_age = [10, 20, 30, 50]  # 10 to 30 agent population by 10
-    # unitless grid square size (must be a factor of 100 and 200)
-    bin_size = [5, 10, 25, 50]
-    run_id = np.arange(0, 30, 1)  # 30 runs
-
-    param_list = [(x, y, z) for x in num_age for y in bin_size for z in run_id]
-
+    
     if not test:
-        n = param_list[int(sys.argv[1])-1][0]
-        bin_size = param_list[int(sys.argv[1])-1][1]
-        run_id = param_list[int(sys.argv[1])-1][2]
+        n = parameter_lists[int(sys.argv[1])-1][0]
+        bin_size = parameter_lists[int(sys.argv[1])-1][1]
+        run_id = parameter_lists[int(sys.argv[1])-1][2]
 
     else:
         n = 5
         bin_size = 50
         run_id = "test2"
+        
+    return n, bin_size, run_id
 
-    model_params, ukf_params, base_model = aggregate_params(n, bin_size,
-                                                            model_params, ukf_params)
-    # One additional parameter outside of the experiment module for the run id
-    ukf_params["run_id"] = run_id
+def arc_ex2_main(parameter_lists, test):
+    """main function to run ukf experiment 1 on arc.
     
-    # Save function 
-    # Function saves required data from finished ukf instance. 
-    # For ukf_ex1 we pickle the whole ukf_ss class using ukf2.pickler.
-    
-    ukf_params["save_function"] = pickler
-    # File name and destination of numpy file saved in `ex0_save`
-    ukf_params["file_destination"] = "../results" 
-    ukf_params["file_name"] = "agg_ukf_agents_{}_bin_{}-{}".format(
+    Parameters
+    ----------
+    parameter_lists : list
+        `parameter_lists` is a list of lists where each element of the list
+        is some set of experiment parameters we wish to run. E.g. this may be
+        [10, 1.0, 1] for the first experiment running with 10 agents 100% 
+        observed.
+    test : bool
+        if test is true we choose some simple parameters to run on arc.
+        this is to test the file works and produces results before running 
+        a larger batch of jobs to have none of them succeed and 400 abort
+        emails.
+    """
+    # load in default params
+    ukf_params = configs.ukf_params
+    model_params = configs.model_params
+    # load in experiment 1 parameters
+    n, bin_size, run_id = ex2_parameters(parameter_lists, test)
+    # update model and ukf parameters for given experiment and its' parameters
+    model_params, ukf_params, base_model =  aggregate_params(n, 
+                                                            bin_size, 
+                                                            model_params, 
+                                                            ukf_params)
+
+    destination = "../results" 
+    file_name = "agg_ukf_agents_{}_bin_{}-{}".format(
         str(n).zfill(3),
         str(bin_size),
         str(run_id).zfill(3)) + ".pkl"
 
-    return model_params, ukf_params, base_model
-
+    # initiate arc class
+    ex2_arc = arc(ukf_params, model_params, base_model, test)
+    # run ukf_ss filter for arc class
+    u = ex2_arc.arc_main(ukf_ss, file_name)
+    # save entire ukf class as a pickle
+    ex2_arc.arc_save(pickler, destination, file_name)
+    
 if __name__ == '__main__':
     test = True
     if test:
         print("Test set to true. If you're running an experiment, it wont go well.")
-    arc_main(ex2_input, test)
+    num_age = [10, 20, 30, 50]  # 10 to 30 agent population by 10
+    # unitless grid square size (must be a factor of 100 and 200)
+    bin_size = [5, 10, 25, 50]
+    run_id = np.arange(0, 30, 1)  # 30 runs
+
+    parameter_lists = [(x, y, z) for x in num_age for y in bin_size for z in run_id]
+
+    arc_ex2_main(parameter_lists, test)
 

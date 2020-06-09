@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Jun  5 17:04:57 2020
-
-@author: medrclaa
-"""
-
-"""alternate version of arc_ukf_ex1.py for new stationsim.
+"""splitting up old arc.py file into individual experiment runs for clarity.
 
 ===========
 ARC4 Version
@@ -36,95 +30,114 @@ e.g.
 scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/results/agg* /Users/medrclaa/new_aggregate_results
 
 """
-import logging
-import os
 import sys
 import numpy as np
-from arc import main as arc_main
+
+from arc import arc
 
 sys.path.append("../modules")
 from ukf_gcs_ex1 import omission_params
+import default_ukf_configs as configs
 
 sys.path.append('../../../stationsim')
-from ukf2 import pickler
+from ukf2 import pickler, ukf_ss
 
 # %%
 
-def ex1_input(model_params, ukf_params, test):
-    """Update the model and ukf parameter dictionaries so that experiment 1 runs.
-
-    
-    - Define some lists of populations `num_age`, a list of proportions observed 
-    `props`. We also generate a list of unique experiment ids for each repeat of a 
-    population/proportion pair.
-    - Construct a cartesian product list containing all unique combinations 
-    of the above 3 parameters (pop/prop/run_id).
-    - Let arc's test array functionality choose some element of the above 
-    product list as parameters for an individual experiment.
-    - Using these parameters update model_params and ukf_params using 
-    ex1_params.
-    - Also add `run_id`, `file_name` to ukf_params required for arc run.
-    - Output updated dictionaries.
+def ex1_parameters(parameter_lists, test):
+    """let the arc task array choose experiment parameters to run
 
     Parameters
-    ------
-
-    model_params, ukf_params : dict
-        dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf.
-
+    ----------
     test : bool
-        If we're testing this function change the file name slightly.
+        if test is true we choose some simple parameters to run on arc.
+        this is to test the file works and produces results before running 
+        a larger batch of jobs to have none of them succeed and 400 abort
+        emails.
         
+    parameter_lists : list
+        `parameter_lists` is a list of lists where each element of the list
+        is some set of experiment parameters we wish to run. E.g. this may be
+        [10, 1.0, 1] for the first experiment running with 10 agents 100% 
+        observed.
+
     Returns
-    ------
-
-    model_params, ukf_params : dict
-        updated dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf. 
-
+    -------
+    n, run_id : int
+        agent population `n` and unique `run_id` for each n and prop.
+    prop : float
+        proportion of agents observed `prop`
     """
-
-    num_age = [10, 20, 30]  # 10 to 30 agent population by 10
-    # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
-    props = [0.25, 0.5, 0.75, 1]
-    run_id = np.arange(0, 30, 1)  # 30 runs
-
-    param_list = [(x, y, z) for x in num_age for y in props for z in run_id]
-
+    
     if not test:
         "assign parameters according to task array"
-        n = param_list[int(sys.argv[1])-1][0]
-        prop = param_list[int(sys.argv[1])-1][1]
-        run_id = param_list[int(sys.argv[1])-1][2]
+        n = parameter_lists[int(sys.argv[1])-1][0]
+        prop = parameter_lists[int(sys.argv[1])-1][1]
+        run_id = parameter_lists[int(sys.argv[1])-1][2]
     else:
         "if testing use these parameters for a single quick run."
         n = 5
         prop = 0.5
         run_id = "test"
+        
+    return n, prop, run_id
 
-    model_params, ukf_params, base_model = omission_params(n, prop,
-                                                           model_params, ukf_params)
-    # One additional parameter outside of the experiment module for the run id
-    ukf_params["run_id"] = run_id
+
+def arc_ex1_main(parameter_lists, test):
+    """main function to run ukf experiment 1 on arc.
     
-    # Save function 
-    # Function saves required data from finished ukf instance. 
-    # For ukf_ex1 we pickle the whole ukf_ss class using ukf2.pickler.
-    
-    ukf_params["save_function"] = pickler
-    # File name and destination of numpy file saved in `ex0_save`
-    ukf_params["file_destination"] = "../results" 
-    ukf_params["file_name"] = "ukf_gcs_agents_{}_prop_{}-{}".format(
+    Parameters
+    ----------
+    parameter_lists : list
+        `parameter_lists` is a list of lists where each element of the list
+        is some set of experiment parameters we wish to run. E.g. this may be
+        [10, 1.0, 1] for the first experiment running with 10 agents 100% 
+        observed.
+    test : bool
+        if test is true we choose some simple parameters to run on arc.
+        this is to test the file works and produces results before running 
+        a larger batch of jobs to have none of them succeed and 400 abort
+        emails.
+    """
+    # load in default params
+    ukf_params = configs.ukf_params
+    model_params = configs.model_params
+    # load in experiment 1 parameters
+    n, prop, run_id = ex1_parameters(parameter_lists, test)
+    # update model and ukf parameters for given experiment and its' parameters
+    model_params, ukf_params, base_model =  omission_params(n, 
+                                                            prop, 
+                                                            model_params, 
+                                                            ukf_params)
+    #file name to save results to
+    file_name = "ukf_agents_{}_prop_{}-{}".format(
         str(n).zfill(3),
         str(prop),
         str(run_id).zfill(3)) + ".pkl"
-
-    return model_params, ukf_params, base_model
-
+    #where to save the file
+    destination = "../results" 
+    
+    # initiate arc class
+    ex1_arc = arc(ukf_params, model_params, base_model, test)
+    # run ukf_ss filter for arc class
+    u = ex1_arc.arc_main(ukf_ss, file_name)
+    # save entire ukf class as a pickle
+    ex1_arc.arc_save(pickler, destination, file_name)
 
 if __name__ == '__main__':
-    test = True
+    
+    #if testing set to True. if running batch experiments set to False
+    test = False
     if test:
         print("Test set to true. If you're running an experiment, it wont go well.")
-    arc_main(ex1_input, test)
+
+    # agent populations from 10 to 30
+    num_age = [10, 20, 30]  
+    # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
+    props = [0.25, 0.5, 0.75, 1]
+    # how many experiments per population and proportion pair. 30 by default.
+    run_id = np.arange(0, 30, 1)
+    #cartesian product list giving all combinations of experiment parameters.
+    param_list = [(x, y, z) for x in num_age for y in props for z in run_id]
+    
+    arc_ex1_main(param_list, test)

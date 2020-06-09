@@ -36,51 +36,115 @@ e.g.
 scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/results/agg* /Users/medrclaa/new_aggregate_results
 
 """
-import logging
-import os
+
 import sys
 import numpy as np
-from arc import main as arc_main
+from arc import arc
 
 sys.path.append("../modules")
+import default_ukf_configs as configs
 from ukf_ex0 import benchmark_params, ex0_save
 
-# %%
-def ex0_input(model_params, ukf_params, test):
-    """Update the model and ukf dictionaries so that experiment 0 runs on arc.
+sys.path.append('../../../stationsim')
+from ukf2 import ukf_ss
 
-    
-    - Define some lists of populations `num_age`, a list of proportions observed 
-    `prop`. We also generate a list of unique experiment ids for each 
-    population/proportion pair.
-    - Construct a cartesian product list containing all unique combinations 
-    of the above 3 parameters (sample_rate/noise/run_id).
-    - Let arc's test array functionality choose some element of the above 
-    product list as parameters for an individual experiment.
-    - Using these parameters update model_params and ukf_params using 
-    ex1_params.
-    - Also add `run_id`, `file_name` to ukf_params required for arc run.
-    - Output updated dictionaries.
+# %%
+
+def ex0_parameters(parameter_lists, test):
+    """let the arc task array choose experiment parameters to run
 
     Parameters
-    ------
-
-    model_params, ukf_params : dict
-        dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf.
-
+    ----------
     test : bool
-        If we're testing this function change the file name slightly.
+        if test is true we choose some simple parameters to run on arc.
+        this is to test the file works and produces results before running 
+        a larger batch of jobs to have none of them succeed and 400 abort
+        emails.
         
+    parameter_lists : list
+        `parameter_lists` is a list of lists where each element of the list
+        is some set of experiment parameters we wish to run. E.g. this may be
+        [10, 1.0, 1] for the first experiment running with 10 agents 100% 
+        observed.
+
     Returns
-    ------
-
-    model_params, ukf_params : dict
-        updated dictionaries of parameters `model_params` for stationsim 
-        and `ukf_params` for the ukf. 
-
+    -------
+    sample_rate, run_id : int
+        `sample_rate` how often we assimilate and unique `run_id` for each n and prop.
+    noise : float
+        `noise` standard deviation of gaussian noise added to observations
     """
+    
+    if not test:
+        sample_rate = parameter_lists[int(sys.argv[1])-1][0]
+        noise = parameter_lists[int(sys.argv[1])-1][1]
+        run_id = parameter_lists[int(sys.argv[1])-1][2]
+        
+    #If testing use some fast test parameters.
+    else:
+        sample_rate = 10
+        noise = 5
+        run_id = "test"
+        
+    return sample_rate, noise, run_id
 
+
+def arc_ex0_main(n, parameter_lists, test):
+    """main function to run ukf experiment 0 on arc.
+    
+    - load in deault params
+    - choose experiment params using taks array
+    - update default parameters using benchmark_params and chosen parameters
+    - generate filename to save to
+    - initatiate arc class and run ukf
+    - save results to numpy files
+    
+    Parameters
+    ----------
+    n : int
+        `n` number of agents
+    parameter_lists : list
+        `parameter_lists` is a list of lists where each element of the list
+        is some set of experiment parameters we wish to run. E.g. this may be
+        [10, 1.0, 1] for the first experiment running with 10 agents 100% 
+        observed.
+    test : bool
+        if test is true we choose some simple parameters to run on arc.
+        this is to test the file works and produces results before running 
+        a larger batch of jobs to have none of them succeed and 400 abort
+        emails.
+    """
+    # load in default params
+    ukf_params = configs.ukf_params
+    model_params = configs.model_params
+    # load in experiment 1 parameters
+    sample_rate, noise, run_id = ex0_parameters(parameter_lists, test)
+    # update model and ukf parameters for given experiment and its' parameters
+    model_params, ukf_params, base_model =  benchmark_params(n, 
+                                                             noise, 
+                                                             sample_rate, 
+                                                             model_params, 
+                                                             ukf_params)
+    #file name to save results to
+    file_name = "config_agents_{}_rate_{}_noise_{}-{}".format(
+        str(n).zfill(3),
+        str(float(sample_rate)),
+        str(float(noise)),
+        str(run_id).zfill(3)) + ".npy"
+    destination = "../results"
+    
+    # initiate arc class
+    ex0_arc = arc(ukf_params, model_params, base_model, test)
+    # run ukf_ss filter for arc class
+    u = ex0_arc.arc_main(ukf_ss, file_name)
+    # save entire ukf class as a pickle
+    ex0_arc.arc_save(ex0_save, destination, file_name)
+
+if __name__ == '__main__':
+    test = False
+    if test:
+        print("Test set to true. If you're running an experiment, it wont go well.")
+        
     # Lists of parameters to vary over
     n = 10 # 10 to 30 agent population by 10
     sample_rate = [1, 2, 5, 10]  # assimilation rates 
@@ -89,43 +153,6 @@ def ex0_input(model_params, ukf_params, test):
 
     # Assemble lists into grand list of all combinations. 
     # Each experiment will use one item of this list.
-    param_list = [(x, y, z)
+    parameter_lists = [(n, x, y, z)
                   for x in sample_rate for y in noise for z in run_id]
-
-    # Let task array choose experiment parameters
-    if not test:
-        sample_rate = param_list[int(sys.argv[1])-1][0]
-        noise = param_list[int(sys.argv[1])-1][1]
-        run_id = param_list[int(sys.argv[1])-1][2]
-        
-    #If testing use some fast test parameters.
-    else:
-        sample_rate = 10
-        noise = 5
-        run_id = "test"
-
-    # Update model and ukf parameter dictionaries so experiment 0 runs
-    # See `uk_ex0.py` for more details
-    model_params, ukf_params, base_model = benchmark_params(n, noise, sample_rate,
-                                                      model_params, ukf_params)
-    
-    # These also need adding and aren't in the main experiment module
-    # Unique run id
-    ukf_params["run_id"] = run_id
-    # Function saves required data from finished ukf instance. A numpy array in this case.
-    ukf_params["save_function"] = ex0_save
-    # File name and destination of numpy file saved in `ex0_save`
-    ukf_params["file_destination"] = "../results"
-    ukf_params["file_name"] = "config_agents_{}_rate_{}_noise_{}-{}".format(
-        str(n).zfill(3),
-        str(float(sample_rate)),
-        str(float(noise)),
-        str(run_id).zfill(3)) + ".npy"
-
-    return model_params, ukf_params, base_model    
-
-if __name__ == '__main__':
-    test = False
-    if test:
-        print("Test set to true. If you're running an experiment, it wont go well.")
-    arc_main(ex0_input, test)
+    arc_ex0_main(n, parameter_lists, test)

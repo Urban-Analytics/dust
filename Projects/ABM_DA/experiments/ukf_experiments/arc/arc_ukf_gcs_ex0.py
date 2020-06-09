@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Thu Jun  4 14:16:25 2020
+
+@author: medrclaa
+"""
 
 """splitting up old arc.py file into individual experiment runs for clarity.
 
@@ -31,21 +36,21 @@ e.g.
 scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/results/agg* /Users/medrclaa/new_aggregate_results
 
 """
+
 import sys
 import numpy as np
-
 from arc import arc
 
 sys.path.append("../modules")
-from ukf_ex1 import omission_params
 import default_ukf_configs as configs
+from ukf_gcs_ex0 import benchmark_params, ex0_save
 
 sys.path.append('../../../stationsim')
-from ukf2 import pickler, ukf_ss
+from ukf2 import ukf_ss
 
 # %%
 
-def ex1_parameters(parameter_lists, test):
+def ex0_parameters(parameter_lists, test):
     """let the arc task array choose experiment parameters to run
 
     Parameters
@@ -64,31 +69,40 @@ def ex1_parameters(parameter_lists, test):
 
     Returns
     -------
-    n, run_id : int
-        agent population `n` and unique `run_id` for each n and prop.
-    prop : float
-        proportion of agents observed `prop`
+    sample_rate, run_id : int
+        `sample_rate` how often we assimilate and unique `run_id` for each n and prop.
+    noise : float
+        `noise` standard deviation of gaussian noise added to observations
     """
     
     if not test:
-        "assign parameters according to task array"
-        n = parameter_lists[int(sys.argv[1])-1][0]
-        prop = parameter_lists[int(sys.argv[1])-1][1]
+        sample_rate = parameter_lists[int(sys.argv[1])-1][0]
+        noise = parameter_lists[int(sys.argv[1])-1][1]
         run_id = parameter_lists[int(sys.argv[1])-1][2]
+        
+    #If testing use some fast test parameters.
     else:
-        "if testing use these parameters for a single quick run."
-        n = 5
-        prop = 0.5
+        sample_rate = 50
+        noise = 2
         run_id = "test"
         
-    return n, prop, run_id
+    return sample_rate, noise, run_id
 
 
-def arc_ex1_main(parameter_lists, test):
-    """main function to run ukf experiment 1 on arc.
+def arc_ex0_main(n, parameter_lists, test):
+    """main function to run ukf experiment 0 on arc.
+    
+    - load in deault params
+    - choose experiment params using taks array
+    - update default parameters using benchmark_params and chosen parameters
+    - generate filename to save to
+    - initatiate arc class and run ukf
+    - save results to numpy files
     
     Parameters
     ----------
+    n : int
+        `n` number of agents
     parameter_lists : list
         `parameter_lists` is a list of lists where each element of the list
         is some set of experiment parameters we wish to run. E.g. this may be
@@ -104,42 +118,41 @@ def arc_ex1_main(parameter_lists, test):
     ukf_params = configs.ukf_params
     model_params = configs.model_params
     # load in experiment 1 parameters
-    n, prop, run_id = ex1_parameters(parameter_lists, test)
+    sample_rate, noise, run_id = ex0_parameters(parameter_lists, test)
     # update model and ukf parameters for given experiment and its' parameters
-    model_params, ukf_params, base_model =  omission_params(n, 
-                                                            prop, 
-                                                            model_params, 
-                                                            ukf_params)
+    model_params, ukf_params, base_model =  benchmark_params(n, 
+                                                             noise, 
+                                                             sample_rate, 
+                                                             model_params, 
+                                                             ukf_params)
     #file name to save results to
-    file_name = "ukf_agents_{}_prop_{}-{}".format(
+    file_name = "gcs_config_agents_{}_rate_{}_noise_{}-{}".format(
         str(n).zfill(3),
-        str(prop),
-        str(run_id).zfill(3)) + ".pkl"
-    #where to save the file
-    destination = "../results" 
+        str(float(sample_rate)),
+        str(float(noise)),
+        str(run_id).zfill(3)) + ".npy"
+    destination = "../results/"
     
     # initiate arc class
-    ex1_arc = arc(ukf_params, model_params, base_model, test)
+    ex0_arc = arc(ukf_params, model_params, base_model, test)
     # run ukf_ss filter for arc class
-    u = ex1_arc.arc_main(ukf_ss, file_name)
+    u = ex0_arc.arc_main(ukf_ss, file_name)
     # save entire ukf class as a pickle
-    ex1_arc.arc_save(pickler, destination, file_name)
+    ex0_arc.arc_save(ex0_save, destination, file_name)
 
 if __name__ == '__main__':
-    
-    #if testing set to True. if running batch experiments set to False
-    test = True
+    test = False
     if test:
         print("Test set to true. If you're running an experiment, it wont go well.")
+        
+    # Lists of parameters to vary over
+    n = 30 # 10 to 30 agent population by 10
+    sample_rate = [1, 2, 5, 10]  # assimilation rates 
+    noise = [0, 0.25, 0.5, 1, 2, 5] #gaussian observation noise standard deviation
+    run_id = np.arange(0, 30, 1)  # 30 repeats for each combination of the above parameters
 
-    # agent populations from 10 to 30
-    num_age = [10, 20, 30]  
-    # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
-    props = [0.25, 0.5, 0.75, 1]
-    # how many experiments per population and proportion pair. 30 by default.
-    run_id = np.arange(0, 30, 1)
-    #cartesian product list giving all combinations of experiment parameters.
-    param_list = [(x, y, z) for x in num_age for y in props for z in run_id]
-    
-    arc_ex1_main(param_list, test)
-
+    # Assemble lists into grand list of all combinations. 
+    # Each experiment will use one item of this list.
+    parameter_lists = [(n, x, y, z)
+                  for x in sample_rate for y in noise for z in run_id]
+    arc_ex0_main(n, parameter_lists, test)

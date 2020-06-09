@@ -48,85 +48,87 @@ import logging
 import os
 import sys
 
-sys.path.append("../modules")
-import default_ukf_configs as configs
-
-sys.path.append("../../../stationsim")
-from ukf2 import ukf_ss
-
 # %%
 
-def main(ex_input, test=False):
-    """main function for running ukf experiments in arc.
-
-    Runs an instance of ukf_ss for some experiment and associated parameters.
-    Either pickles the run or saves some user defined aspect of said run.
-
-    - define some input experiment for arc
-    - update model_params and ukf_params dictionaries for said experiment
-    - run ukf_ss with said parameters
-    - pickle or save metrics when run finishes.
-
-    Parameters
-    ------
-    ex_input : func
-        `ex_input` some experiment input that updates the default model_params
-        and ukf_params dicitonaries with items needed for filter to run given
-        experiment.
-
-    ex_save : func
-        Function `ex_save` some user provided functions that saves aspects
-        from the ukf run of interest. The function requires some ukf_ss class 
-        `u`, some destination to save any files `destination`, and a file name
-        to save `file_name. For example, for experiment 0 we save a numpy 
-        array of 3 grand medians in a numpy array. For experiments 1 and 2 we 
-        pickle the entire ukf class as a class dictionary.
+class arc():
+    
+    def __init__(self, filter_params, model_params, base_model, test = False):
+        """load in updated parameters and model so DA algorithm runs
         
-    test : bool
-        if true run a `test` for the given input and save functions.
-        This does not use the task arrays of the arc system but ensures
-        that the 2 functions work before running any experiment and wasting
-        time.
-
-    """
-
-    # If not testing abort the run if no set of parameters are specified
-    if not test:
-
-        if len(sys.argv) != 2:
-            print("I need an integer to tell me which experiment to run. \n\t"
-                  "Usage: python run_pf <N>")
-            sys.exit(1)
-
-    # Load in default parameters for stationsim and ukf
-    model_params = configs.model_params
-    ukf_params = configs.ukf_params
-
-    # Update model parameters  for given experiment using ex_input
-    model_params, ukf_params, base_model = ex_input(
-        model_params, ukf_params, test)
+        Parameters
+        ----------
+        filter_params, model_params : dict
+            dictionaries of `model_params` model parameters and `filter_params` 
+            DA filter parameters
+        base_model : class
+            `base_model` some base model to run the DA algorithm on. 
+            stationsim for now.
+        test : bool
+            if `test` is true we choose some simple parameters to run on arc.
+            this is to test the file works and produces results before running 
+            a larger batch of jobs to have none of them succeed and 400 abort
+            emails.
+        """
+        
+        self.filter_params = filter_params
+        self.model_params = model_params
+        self.base_model = base_model
+        self.test = test
+        
+    def arc_main(self, filter_function, file_name):
+        """ main function for running experiments on arc
+        
+        - load updated filter and model parameters and model.
+        - init model with the above
+        - run model  via .main() method.
+        
+        Parameters
+        ----------
+        filter_function : cls
+            `filter_function` class that applies some DA algorithm. Needs an init
+            that loads model_params, filter_params, base_model
+        file_name : TYPE
+            DESCRIPTION.
+        """
+        # If not testing abort the run if no set of parameters are specified        
+        if not self.test:
     
-    # Start logging incase run fails. Specify filename and logging level.
-    logging.basicConfig(filename = ukf_params["file_name"]+ ".log", level = logging.INFO)
+            if len(sys.argv) != 2:
+                print("I need an integer to tell me which experiment to run. \n\t"
+                      "Usage: python run_pf <N>")
+                sys.exit(1)
+        
+        # Start logging incase run fails. Specify filename and logging level.
+        logging.basicConfig(filename = file_name, level = logging.INFO)
+        
+        print("Filter params: " + str(self.filter_params))
+        print("Model params: " + str(self.model_params))
     
-    print("UKF params: " + str(ukf_params))
-    print("Model params: " + str(model_params))
-
-    # init and run ukf
-    u = ukf_ss(model_params, ukf_params, base_model)
-    u.main()
-
-    #save data using specified save function
-    #e.g. saves numpy array of grand medians for ex0 using `ex0_save`
-    # or pickles the whole ukf class for experiment 1,2 using `pickle_save`
+        # init and run ukf
+        self.u = filter_function(self.model_params, self.filter_params, self.base_model)
+        self.u.main()
+        return self.u
+        #save data using specified save function
+        #e.g. saves numpy array of grand medians for ex0 using `ex0_save`
+        # or pickles the whole ukf class for experiment 1,2 using `pickle_save`
+        
+        
+    def arc_save(self, ex_save, destination,file_name):
+        """save some data from an experiment for analysis
+        
+        Parameters
+        ----------
+        ex_save : func
+            `ex_save` function that takes finished DA algorithm class u and saves some 
+            data from it.
+        destination , file_name : str
+            `destination` where the data is saved to and `file_name` the file name
+        """
+        ex_save(self.u, destination, file_name)
     
-    ex_save = ukf_params["save_function"]
-    ex_save(u, ukf_params["file_destination"], ukf_params["file_name"])
-
-    #delete any test files that were saved for tidiness.
-    if test:
-        f_name = ukf_params["file_name"]
-        print(f"Test successful. Deleting the saved test file : {f_name}")
-        os.remove(ukf_params["file_destination"] + ukf_params["file_name"])
+        #delete any test files that were saved for tidiness.
+        if self.test:
+            print(f"Test successful. Deleting the saved test file : {file_name}")
+            os.remove(destination + file_name)
 
 

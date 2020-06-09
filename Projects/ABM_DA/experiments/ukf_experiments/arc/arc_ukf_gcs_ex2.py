@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Tue Jun  9 15:24:41 2020
+
+@author: medrclaa
+"""
 
 """splitting up old arc.py file into individual experiment runs for clarity.
 
@@ -33,19 +38,18 @@ scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/no
 """
 import sys
 import numpy as np
-
 from arc import arc
 
 sys.path.append("../modules")
-from ukf_ex1 import omission_params
+from ukf_gcs_ex2 import aggregate_params
 import default_ukf_configs as configs
 
 sys.path.append('../../../stationsim')
-from ukf2 import pickler, ukf_ss
+from ukf2 import ukf_ss, pickler
 
 # %%
 
-def ex1_parameters(parameter_lists, test):
+def ex2_parameters(parameter_lists, test):
     """let the arc task array choose experiment parameters to run
 
     Parameters
@@ -71,20 +75,18 @@ def ex1_parameters(parameter_lists, test):
     """
     
     if not test:
-        "assign parameters according to task array"
         n = parameter_lists[int(sys.argv[1])-1][0]
-        prop = parameter_lists[int(sys.argv[1])-1][1]
+        bin_size = parameter_lists[int(sys.argv[1])-1][1]
         run_id = parameter_lists[int(sys.argv[1])-1][2]
+
     else:
-        "if testing use these parameters for a single quick run."
         n = 5
-        prop = 0.5
-        run_id = "test"
+        bin_size = 50
+        run_id = "test2"
         
-    return n, prop, run_id
+    return n, bin_size, run_id
 
-
-def arc_ex1_main(parameter_lists, test):
+def arc_ex2_main(parameter_lists, test):
     """main function to run ukf experiment 1 on arc.
     
     Parameters
@@ -104,42 +106,35 @@ def arc_ex1_main(parameter_lists, test):
     ukf_params = configs.ukf_params
     model_params = configs.model_params
     # load in experiment 1 parameters
-    n, prop, run_id = ex1_parameters(parameter_lists, test)
+    n, bin_size, run_id = ex2_parameters(parameter_lists, test)
     # update model and ukf parameters for given experiment and its' parameters
-    model_params, ukf_params, base_model =  omission_params(n, 
-                                                            prop, 
+    model_params, ukf_params, base_model =  aggregate_params(n, 
+                                                            bin_size, 
                                                             model_params, 
                                                             ukf_params)
-    #file name to save results to
-    file_name = "ukf_agents_{}_prop_{}-{}".format(
-        str(n).zfill(3),
-        str(prop),
-        str(run_id).zfill(3)) + ".pkl"
-    #where to save the file
-    destination = "../results" 
-    
-    # initiate arc class
-    ex1_arc = arc(ukf_params, model_params, base_model, test)
-    # run ukf_ss filter for arc class
-    u = ex1_arc.arc_main(ukf_ss, file_name)
-    # save entire ukf class as a pickle
-    ex1_arc.arc_save(pickler, destination, file_name)
 
-if __name__ == '__main__':
+    destination = "../results" 
+    file_name = "agg_ukf_agents_{}_bin_{}-{}".format(
+        str(n).zfill(3),
+        str(bin_size),
+        str(run_id).zfill(3)) + ".pkl"
+
+    # initiate arc class
+    ex2_arc = arc(ukf_params, model_params, base_model, test)
+    # run ukf_ss filter for arc class
+    u = ex2_arc.arc_main(ukf_ss, file_name)
+    # save entire ukf class as a pickle
+    ex2_arc.arc_save(pickler, destination, file_name)
     
-    #if testing set to True. if running batch experiments set to False
-    test = True
+if __name__ == '__main__':
+    test = False
     if test:
         print("Test set to true. If you're running an experiment, it wont go well.")
+    num_age = [10, 20, 30, 50]  # 10 to 30 agent population by 10
+    # unitless grid square size (must be a factor of 100 and 200)
+    bin_size = [5, 10, 25, 50]
+    run_id = np.arange(0, 30, 1)  # 30 runs
 
-    # agent populations from 10 to 30
-    num_age = [10, 20, 30]  
-    # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
-    props = [0.25, 0.5, 0.75, 1]
-    # how many experiments per population and proportion pair. 30 by default.
-    run_id = np.arange(0, 30, 1)
-    #cartesian product list giving all combinations of experiment parameters.
-    param_list = [(x, y, z) for x in num_age for y in props for z in run_id]
-    
-    arc_ex1_main(param_list, test)
+    parameter_lists = [(x, y, z) for x in num_age for y in bin_size for z in run_id]
 
+    arc_ex2_main(parameter_lists, test)

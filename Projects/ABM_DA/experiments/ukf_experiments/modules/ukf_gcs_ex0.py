@@ -22,18 +22,22 @@ We require a natural number for this rate 1, 2, 3, ...
 """
 
 import sys
-import numpy as np
+import os
 
 sys.path.append("../modules")
-# import required modules
+sys.path.append("../../../stationsim")
+    
+"import required modules"
 from ukf_fx import fx
 from ukf_plots import L2s
-import default_ukf_configs
+import default_ukf_configs as configs
 
-sys.path.append("../../../stationsim")
+"can misbehave when importing with ex1/ex2 modules as well"
+
 from ukf2 import ukf_ss
-from stationsim_model import Model
+from stationsim_gcs_model import Model
 
+import numpy as np
 
 def benchmark_params(n, noise, sample_rate, model_params, ukf_params):
     
@@ -84,7 +88,7 @@ def benchmark_params(n, noise, sample_rate, model_params, ukf_params):
 def hx0(state, **hx_kwargs):
     
     
-    """ null transition function does nothing for hx. two states are the same.
+    """ null transition function does nothing for ex0 hx. two states are the same.
     
     Parameters
     ------
@@ -98,7 +102,24 @@ def hx0(state, **hx_kwargs):
     return state
 
 def obs_key_0(state, **hx_params):
-    return 2 * np.ones(int(state.shape[0]/2))
+    """obs_key is constantly 2s (observed) for ex0
+    
+    Parameters
+    ----------
+    state : array_like
+        `state` vector of agent positions
+    **hx_params : kwargs
+        `hx_params` some keyword arguements for transition function hx
+        to calculate observation key.
+
+    Returns
+    -------
+    obs_key : array_like
+        vector indicating observation status of each agent (0, 1, or 2).
+
+    """
+    obs_key = 2 * np.ones(int(state.shape[0]/2))
+    return obs_key
 
 def ex0_save(instance,source,f_name):
     
@@ -162,8 +183,8 @@ def ex0_main(n, noise, sampling_rate):
     - run stationsim with ukf filtering
     """
     
-    model_params = default_ukf_configs.model_params
-    ukf_params = default_ukf_configs.ukf_params
+    model_params = configs.model_params
+    ukf_params = configs.ukf_params
     
     model_params, ukf_params, base_model = benchmark_params(n, 
                                                             noise, 
@@ -180,11 +201,7 @@ def ex0_main(n, noise, sampling_rate):
 #%%  
     
 if __name__ == "__main__":
-    n= 10
-    noise = 0.5
-    sampling_rate = 5    
+    n= 20
+    noise = 5.0
+    sampling_rate = 50    
     ex0_main(n,  noise, sampling_rate)
-    
-    
-    
-    

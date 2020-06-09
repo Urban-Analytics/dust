@@ -50,7 +50,7 @@ from ukf2 import ukf_ss
 
 # %%
 
-def ex0_parameters(parameter_lists, test):
+def ex0_parameters(n, parameter_lists, test):
     """let the arc task array choose experiment parameters to run
 
     Parameters
@@ -118,7 +118,7 @@ def arc_ex0_main(n, parameter_lists, test):
     ukf_params = configs.ukf_params
     model_params = configs.model_params
     # load in experiment 1 parameters
-    sample_rate, noise, run_id = ex0_parameters(parameter_lists, test)
+    sample_rate, noise, run_id = ex0_parameters(n, parameter_lists, test)
     # update model and ukf parameters for given experiment and its' parameters
     model_params, ukf_params, base_model =  benchmark_params(n, 
                                                              noise, 
@@ -153,6 +153,6 @@ if __name__ == '__main__':
 
     # Assemble lists into grand list of all combinations. 
     # Each experiment will use one item of this list.
-    parameter_lists = [(n, x, y, z)
+    parameter_lists = [(x, y, z)
                   for x in sample_rate for y in noise for z in run_id]
     arc_ex0_main(n, parameter_lists, test)

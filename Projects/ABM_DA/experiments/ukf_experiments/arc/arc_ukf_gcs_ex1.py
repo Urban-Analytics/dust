@@ -115,7 +115,7 @@ def arc_ex1_main(parameter_lists, test):
         str(prop),
         str(run_id).zfill(3)) + ".pkl"
     #where to save the file
-    destination = "../results" 
+    destination = "../results/" 
     
     # initiate arc class
     ex1_arc = arc(ukf_params, model_params, base_model, test)

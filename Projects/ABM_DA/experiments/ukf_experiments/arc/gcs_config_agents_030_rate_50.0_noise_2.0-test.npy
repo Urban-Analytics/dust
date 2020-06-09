@@ -1,0 +1,7 @@
+INFO:root:ukf start
+INFO:root:Iterations: 0
+INFO:root:Iterations: 100
+INFO:root:Iterations: 200
+INFO:root:ukf broken early. all agents finished
+INFO:root:ukf timed out. max iterations 3600 of stationsim reached
+INFO:root:Time Elapsed: 0:03:02.563859

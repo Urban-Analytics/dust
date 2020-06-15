@@ -6,24 +6,24 @@ Python script for running experiments with the enkf.
 
 # Imports
 import numpy as np
-from run_utils import *
+from experiment_utils import Modeller
 
 np.random.seed(42)
 
 # Functions
-def testing():
-    """
-    Testing function
+# def testing():
+    # """
+    # Testing function
 
-    Overall function that wraps around what we want to run at any specific
-    time.
-    """
+    # Overall function that wraps around what we want to run at any specific
+    # time.
+    # """
     # with open('results/data.json') as json_file:
         # data = json.load(json_file)
     # forecasts, analyses, observations = process_repeat_results(data)
     # plot_all_results(forecasts, analyses, observations)
     # plot_with_errors(forecasts, analyses, observations)
-    run_repeat_combos(resume=True)
+    # run_repeat_combos(resume=True)
     # run_repeat_combos_mt(4)
 
 
@@ -31,5 +31,5 @@ def testing():
 # process_batch(read_time=True)
 
 # d = {'station': 'Grand_Central'}
-run_all(pop_size=5, its=3600)
+Modeller.run_all(its=3600, assimilation_period=20)
 

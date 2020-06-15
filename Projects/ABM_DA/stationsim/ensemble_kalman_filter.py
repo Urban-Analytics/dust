@@ -87,6 +87,7 @@ class EnsembleKalmanFilter(Filter):
 
         # Errors stats at update steps
         self.rmse = list()
+        self.forecast_error = list()
 
         # Agent to plot individually
         self.agent_number = 6
@@ -128,11 +129,14 @@ class EnsembleKalmanFilter(Filter):
         self.predict()
         self.update_state_ensemble()
         self.update_state_mean()
+        truth = self.base_model.get_state(sensor='location')
+
+        forecast_error = {'time': self.time,
+                          'error': self.calculate_rmse(truth, self.state_mean)}
+        self.forecast_error.append(forecast_error)
+
         if self.time % self.assimilation_period == 0:
             # Construct observations
-            truth = self.base_model.get_state(sensor='location')
-            # base_state = self.base_model.history_state[-1]
-            # truth = np.ravel(base_state)
             noise = np.random.normal(0, self.R_vector, truth.shape)
             data = truth + noise
 
@@ -155,12 +159,10 @@ class EnsembleKalmanFilter(Filter):
 
             # Vanilla error
             if self.run_vanilla:
-                rmse['vanilla'] = self.calculate_rmse(
-                        truth,
-                        self.vanilla_state_mean)
+                rmse['vanilla'] = self.calculate_rmse(truth,
+                                                      self.vanilla_state_mean)
 
             self.rmse.append(rmse)
-            # print(rmse)
 
             # if self.vis:
                 # self.plot_model('after_update_{0}'.format(self.time), data)
@@ -172,10 +174,10 @@ class EnsembleKalmanFilter(Filter):
         if self.run_vanilla:
             self.vanilla_results.append(self.vanilla_state_mean)
 
-        print('time: {0}, base: {1}'.format(self.time,
-            self.base_model.pop_active))
-        print('time: {0}, models: {1}'.format(self.time, [m.pop_active for m in
-            self.models]))
+        # print('time: {0}, base: {1}'.format(self.time,
+            # self.base_model.pop_active))
+        # print('time: {0}, models: {1}'.format(self.time, [m.pop_active for m in
+            # self.models]))
 
 
     def predict(self):

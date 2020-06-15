@@ -468,29 +468,48 @@ class Model:
         '''
         Iterate model forward one step.
         '''
+        # Why? Does this do anything?
         if self.step_id == 0:
             state = self.get_state('location2D')
 
+        # If there are still agents in the model
+        # AND we are within the time limit
+        # AND?
+        # What is status supposed to represent here?
+        # Do we need it?
+        # Or is is just a proxy for the other conditions?
         if self.pop_finished < self.pop_total and\
                 self.step_id < self.step_limit and self.status == 1:
             if self.do_print and self.step_id % 100 == 0:
                 print(f'\tIteration: {self.step_id}/{self.step_limit}')
 
+            # Go through each agent, and activate the ones that should be active
+            # by now
             [agent.activate() for agent in self.agents]
 
+            # Make a table of the potential collisions
+            # if the soonest collision is not inside a single iteration
+            # then just step every agent by 1 timestep
             collisionTable, tmin = self.get_collisionTable()
             if (tmin > 1.0):
                 [agent.step(1) for agent in self.agents]
                 self.total_time += 1
+            # Otherwise, step them slightly less than the time to the next
+            # collision
+            # find the agents that would be about to collide
+            # make them wiggle to avoid the collision.
             else:
+                # Why specifically 0.98?
                 tmin *= 0.98  # stop just before the collision
                 [agent.step(tmin) for agent in self.agents]
+                # Find agents that would collide, and make them wiggle
                 wiggleTable = self.get_wiggleTable(collisionTable, tmin)
                 [self.agents[i].set_wiggle() for i in wiggleTable]
                 self.total_time += tmin
 
             if self.do_history:
-                if (self.total_time % 1.0 <= 1 and 
+                # total_time % 1.0 <= 1 for all total_time!
+                if (self.total_time % 1.0 <= 1 and
                         int(self.total_time) not in self.time_save):
                     self.time_save.append(int(self.total_time))
                     state = self.get_state('location2D')
@@ -506,7 +525,7 @@ class Model:
     # information about next collision
     def get_collisionTable(self):
         '''
-        Returns the time of next colision (tmin) and a table with 
+        Returns the time of next colision (tmin) and a table with
         information about every possible colision:
         - collisionTable[0]: collision time
         - collisionTable[1]: agent agent.unique_id

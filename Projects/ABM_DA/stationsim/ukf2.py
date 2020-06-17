@@ -665,6 +665,7 @@ class ukf_ss:
 
         #initialise UKF
         self.init_ukf(self.ukf_params)
+        self.base_model.step()
         logging.info("ukf start")
         for step in range(self.step_limit-1):
             

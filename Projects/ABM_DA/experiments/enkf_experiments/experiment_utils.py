@@ -68,8 +68,9 @@ class Modeller():
         enkf = cls.run_enkf(model_params, filter_params)
 
         # Plotting
+        ap = filter_params['assimilation_period']
         Visualiser.plot_error_timeseries(enkf, True)
-        Visualiser.plot_forecast_error_timeseries(enkf, True)
+        Visualiser.plot_forecast_error_timeseries(enkf, True, ap)
 
     @classmethod
     def run_combos(cls):
@@ -856,25 +857,38 @@ class Visualiser():
     @staticmethod
     def plot_error_timeseries(enkf, do_save=False):
         results = pd.DataFrame(enkf.rmse)
-        plt.figure()
+        plt.figure(figsize=(8, 8))
         plt.plot(results['time'], results['obs'], label='observations')
         plt.plot(results['time'], results['forecast'], label='filter_forecast')
         plt.plot(results['time'], results['analysis'], label='filter_analysis')
         plt.plot(results['time'], results['vanilla'], label='vanilla')
+
         plt.legend()
+
         if do_save:
             plt.savefig('results/figures/error_timeseries.pdf')
         else:
             plt.show()
 
-    @staticmethod
-    def plot_forecast_error_timeseries(enkf, do_save=False):
-        forecast_results = pd.DataFrame(enkf.forecast_error)
-        plt.figure(figsize=(10, 10))
-        plt.scatter(forecast_results['time'], forecast_results['error'], s=0.5)
+    @classmethod
+    def plot_forecast_error_timeseries(cls, enkf, do_save=False, period=None):
+        results = pd.DataFrame(enkf.forecast_error)
+        plt.figure(figsize=(8, 8))
+        plt.scatter(results['time'], results['error'], s=0.75)
         plt.xlabel('iteration')
         plt.ylabel('forecast rmse')
+
+        if period is not None:
+            assimilation_ticks = cls.__make_assimilation_ticks(results['time'],
+                                                               period)
+            for t in assimilation_ticks:
+                plt.axvline(t, linestyle='dotted', color='black', alpha=0.25)
         if do_save:
             plt.savefig('results/figures/forecast_timeseries.pdf')
         else:
             plt.show()
+
+    @staticmethod
+    def __make_assimilation_ticks(times, period):
+        ticks = [time for time in times if time % period == 0]
+        return ticks

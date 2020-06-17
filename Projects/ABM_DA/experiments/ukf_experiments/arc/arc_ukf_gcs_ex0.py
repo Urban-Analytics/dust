@@ -42,7 +42,7 @@ import numpy as np
 from arc import arc
 
 sys.path.append("../modules")
-import default_ukf_configs as configs
+import default_ukf_gcs_configs as configs
 from ukf_gcs_ex0 import benchmark_params, ex0_save
 
 sys.path.append('../../../stationsim')

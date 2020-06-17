@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-WHATEVER YOU DO MAKE SURE YOU USE SCIPY<1.21 
+WORTH HAVING SCIPY<1.21 IF DEALING WITH OLD DATA.
+
 or you cant depickle the experiments.
 !!todo solve this
 This file allows you to repeat multiple experiments in paralllel 
@@ -92,14 +93,13 @@ class arc():
         """
         # If not testing abort the run if no set of parameters are specified        
         if not self.test:
-    
             if len(sys.argv) != 2:
                 print("I need an integer to tell me which experiment to run. \n\t"
                       "Usage: python run_pf <N>")
                 sys.exit(1)
         
         # Start logging incase run fails. Specify filename and logging level.
-        logging.basicConfig(filename = file_name, level = logging.INFO)
+        logging.basicConfig(filename = file_name + '.log', level = logging.INFO)
         
         print("Filter params: " + str(self.filter_params))
         print("Model params: " + str(self.model_params))
@@ -107,6 +107,7 @@ class arc():
         # init and run ukf
         self.u = filter_function(self.model_params, self.filter_params, self.base_model)
         self.u.main()
+        
         return self.u
         #save data using specified save function
         #e.g. saves numpy array of grand medians for ex0 using `ex0_save`

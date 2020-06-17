@@ -19,7 +19,7 @@ sys.path.append("../modules")
 from ukf_fx import fx
 from poly_functions import poly_count, grid_poly
 from ukf_plots import ukf_plots
-import default_ukf_configs as configs
+import default_ukf_gcs_configs as configs
 
 
 from ukf2 import ukf_ss, pickle_main, batch_save, batch_load

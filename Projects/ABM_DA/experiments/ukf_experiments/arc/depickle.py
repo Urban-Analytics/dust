@@ -633,8 +633,8 @@ class grand_plots:
 def ex0_grand(source, destination):
     n = 30  # population size
     file_params = {
-        "rate":  [1.0, 2.0, 5.0, 10.0],
-        "noise": [0., 0.25, 0.5, 1.0, 2.0, 5.0],
+        "rate":  [1.0, 5.0, 10.0, 25.0],
+        "noise": [0., 0.5, 1.0, 2.0, 5.0, 10],
         # "source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
         "source": source,
         "destination": destination,
@@ -645,7 +645,7 @@ def ex0_grand(source, destination):
     L2_frame, best_array = g_plts.numpy_extractor(L2)
     g_plts.comparison_choropleth(n, L2_frame, best_array,
                                  "Observation Noise Standard Deviation",
-                                 "Data Assimilation Window", "")
+                                 "Data Assimilation Window", "bench")
     g_plts.comparisons_3d(n, L2_frame, best_array)
 
 
@@ -763,8 +763,8 @@ def main(experiment_function, source, destination):
 # %%
 if __name__ == "__main__":
 
-    #main(ex0_grand,  f"/Users/medrclaa/ukf_config_test/config*030*", "../plots/")
-    main(ex1_grand, "/Users/medrclaa/scalability_results/ukf*", "../plots/")
+    main(ex0_grand,  f"/Users/medrclaa/gcs_results/gcs*", "../plots/")
+    #main(ex1_grand, "/Users/medrclaa/scalability_results/ukf*", "../plots/")
     #main(ex1_grand_no_split, "/Users/medrclaa/ukf_results/ukf*", "../plots/")
 
     #main(ex2_grand, "/Users/medrclaa/new_aggregate_results/agg_ukf*", "../plots")

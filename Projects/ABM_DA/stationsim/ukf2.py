@@ -26,7 +26,10 @@ import multiprocessing
 
 #from stationsim_model import Model
 
-"shamelessly stolen functions for multiprocessing np.apply_along_axis"
+"""
+shamelessly stolen functions for multiprocessing np.apply_along_axis
+https://stackoverflow.com/questions/45526700/easy-parallelization-of-numpy-apply-along-axis
+"""
 
 def unpacking_apply_along_axis(all_args):
     (func1d, axis, arr, kwargs) = all_args    
@@ -82,7 +85,7 @@ def parallel_apply_along_axis(func1d, axis, arr, **kwargs):
     return np.concatenate(individual_results)
 
 def unscented_Mean(sigmas, wm, kf_function, **function_kwargs):
-    """calculate unscented transform estimate for forecasted/desired means
+    """calculate unscented tmean  estimate for some sample of agent positions
 
     -calculate sigma points using sigma_function 
         (e.g Merwe Scaled Sigma Points (MSSP) or 
@@ -528,7 +531,8 @@ class ukf_ss:
 
         self.full_ps = []  # full covariances. again used for animations and not error metrics
         self.obs_key = []  # which agents are observed (0 not, 1 agg, 2 gps)
-
+        self.status_key = []
+        
         "timer"
         self.time1 = datetime.datetime.now()  # timer
         self.time2 = None
@@ -671,6 +675,7 @@ class ukf_ss:
                     
             #forecast next StationSim state and jump model forwards
             self.ss_Predict()
+            self.status_key.append([agent.status for agent in self.base_model.agents])
             #assimilate new values
             self.ss_Update(step, **self.hx_kwargs)
             
@@ -682,7 +687,8 @@ class ukf_ss:
                 break
 
         self.time2 = datetime.datetime.now()  # timer
-        logging.info(f"ukf timed out. max iterations {self.step_limit} of stationsim reached")
+        if not finished:
+            logging.info(f"ukf timed out. max iterations {self.step_limit} of stationsim reached")
         time = self.time2-self.time1
         time = f"Time Elapsed: {time}"
         print(time)
@@ -807,8 +813,7 @@ class ukf_ss:
             obs = raw_obs
         return obs
         
-    @staticmethod
-    def nan_array_parser(truths, base_model):
+    def nan_array_parser(self, truths, base_model):
         """ Indicate when an agent leaves the model to ignore any outputs.
         
         Returns
@@ -823,13 +828,20 @@ class ukf_ss:
         """
         
         nan_array = np.ones(truths.shape)*np.nan
-        for i, agent in enumerate(base_model.agents):
+        status_array = np.vstack(self.status_key)
+        
+        #for i, agent in enumerate(base_model.agents):
             #find which rows are  NOT (None, None). Store in index.
-            array = np.array(agent.history_locations[:truths.shape[0]])
-            in_model = np.where(array!=None)
+        #    array = np.array(agent.history_locations[:truths.shape[0]])
+        #    in_model = np.where(array!=None)
             #set anything in index to 1. I.E which agents are still in model to 1.
-            nan_array[in_model, 2*i:(2*i)+2] = 1
-            
+        #    nan_array[in_model, 2*i:(2*i)+2] = 1
+        rows = np.repeat(np.where(status_array == 1)[0],2)
+        columns = np.repeat(2 * np.where(status_array == 1)[1], 2)
+        columns[::2]+=1
+        
+        nan_array[rows, columns] = 1
+        
         return nan_array
 
     def obs_key_parser(self):

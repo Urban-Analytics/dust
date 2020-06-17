@@ -74,7 +74,7 @@ ukf_params = {
 "noise" : 0.5,
 "do_batch" : False,
 
-"a": 0.9,
+"a": 1.0,
 "b": 2,
 "k": 0,
 

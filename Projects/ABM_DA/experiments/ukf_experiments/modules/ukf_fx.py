@@ -15,8 +15,8 @@ from copy import deepcopy
 class HiddenPrints:
     
     
-    """stop repeating printing from stationsim 
-    We get a low of `iterations : X` prints as it jumps back 
+    """stop repeat printing from stationsim 
+    We get a lot of `iterations : X` prints as it jumps back 
     and forth over every 100th step. This stops that.
     https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
     """
@@ -57,10 +57,10 @@ def fx(x, **fx_kwargs):
     #f = open(f"temp_pickle_model_ukf_{self.time1}","rb")
     #model = pickle.load(f)
     #f.close()
-    base_model = fx_kwargs["base_model"]
-    base_model.seed = None
-    model = deepcopy(base_model)
-    model.set_state(state = x,sensor="location")    
+    model = fx_kwargs["base_model"]
+    model.seed = None
+    #model = deepcopy(base_model)
+    model.set_state(state = x, sensor="location")    
     with HiddenPrints():
         model.step() #step model with print suppression
     state = model.get_state(sensor="location")

@@ -17,7 +17,7 @@ from math import floor
 "local imports"
 from ukf_fx import fx
 from ukf_plots import ukf_plots
-import default_ukf_configs as configs
+import default_ukf_gcs_configs as configs
 
 
 from ukf2 import ukf_ss, pickle_main
@@ -131,25 +131,35 @@ def omission_params(n, prop, model_params, ukf_params):
         parameters ready to use in ukf_ss
     """
     
+    #finish model params and initiate base_model
+    #population
     model_params["pop_total"] = n
+    #model type either None or Grand_Central
+    model_params["station"] = "Grand_Central"
+    #load in station gcs model with given model params (default + pop/station)
     base_model = Model(**model_params)
 
+    #experiment 1 specific parameters
     ukf_params["prop"] = prop
     ukf_params["sample_size"]= floor(n * prop)
-    
     ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
     
+    #noise structures
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
-    ukf_params["q"] = 0.01 * np.eye(2 * n)
-    ukf_params["r"] = 0.01 * np.eye(2 * ukf_params["sample_size"])#sensor noise
+    ukf_params["q"] = np.eye(2 * n) # process noise
+    ukf_params["r"] = np.eye(2 * ukf_params["sample_size"])# sensor noise
     
+    # Kalman functions and their experiment specific kwargs
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"] = {"base_model":base_model} 
     ukf_params["hx"] = hx1
     ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"], "n" : n,
                                "index" : ukf_params["index"],}
+    
+    # function to say how each agent is observed for plotting
     ukf_params["obs_key_func"] = obs_key_func
     
+    # what to save experiment as. This is a default and is often overwritten.
     ukf_params["file_name"] =  ex1_pickle_name(n, prop)
         
     return model_params, ukf_params, base_model
@@ -171,7 +181,7 @@ def ex1_pickle_name(n, prop):
         return `f_name` file name to save pickle as
     """
     
-    f_name = f"ukf_agents_{n}_prop_{prop}.pkl"
+    f_name = f"ukf_gcs_agents_{n}_prop_{prop}.pkl"
     return f_name
 
 
@@ -210,6 +220,7 @@ def ex1_plots(instance, destination, prefix, save, animate):
 
     truths = instance.truth_parser(instance)
     nan_array= instance.nan_array_parser(truths, instance.base_model)
+    nan_array[0, :] = np.nan
     obs_key = instance.obs_key_parser()
     obs = instance.obs_parser(instance, True, truths, obs_key)
     preds = instance.preds_parser(instance, True, truths)
@@ -224,21 +235,23 @@ def ex1_plots(instance, destination, prefix, save, animate):
     forecasts*= nan_array
     
     #cut off the initial 0s
-    truths[0,:]*=np.nan
-    preds[0,:]*=np.nan
-    forecasts[0,:]*=np.nan
-    obs[0,:]*=np.nan
-    
+    truths[np.where(truths == 0)] = np.nan
+    preds[np.where(truths == 0)] = np.nan
+    forecasts[np.where(truths== 0)] = np.nan
+    obs[np.where(truths == 0)] = np.nan
+
     
     "indices for unobserved agents"
     not_index2 = np.array([i for i in np.arange(truths.shape[1]) if i not in index2])
     plts.pair_frame(truths, preds, obs_key, 10, destination)
-    plts.error_hist(truths[:,index2], preds[:,index2],"Observed Errors")
+    
+    plts.error_hist(truths[:,index2], preds[:,index2], "Observed Errors")
     if len(not_index2)>0:
-        plts.error_hist(truths[:,not_index2], preds[:,not_index2],"Unobserved Errors")
+        plts.error_hist(truths[:,not_index2], preds[:,not_index2], "Unobserved Errors")
+    
     plts.path_plots(obs, "Observed")
     "remove nan rows to stop plot clipping"
-    plts.path_plots(preds[::instance.sample_rate], "Predicted")
+    plts.path_plots(preds[::instance.sample_rate, :], "Predicted")
     plts.path_plots(truths, "True")
 
     if animate:
@@ -295,16 +308,16 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
  
         model_params, ukf_params = u.model_params, u.ukf_params
     
-    ex1_plots(u, destination, "ukf_gcs_", True, True)
+    ex1_plots(u, destination, "ukf_gcs_", True, False)
 
     return u
     
 if __name__ == "__main__":
-    recall = False #recall previous run
+    recall = True #recall previous run
     do_pickle = True #pickle new run
     pickle_source = "../pickles/" #where to load/save pickles from
     destination = "../plots/"
-    n = 10 #population size
-    prop = 0.5 #proportion observed
+    n = 5 #population size
+    prop = 1.0 #proportion observed
     
     u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

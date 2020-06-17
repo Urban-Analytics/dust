@@ -30,7 +30,7 @@ sys.path.append("../../../stationsim")
 "import required modules"
 from ukf_fx import fx
 from ukf_plots import L2s
-import default_ukf_configs as configs
+import default_ukf_gcs_configs as configs
 
 "can misbehave when importing with ex1/ex2 modules as well"
 
@@ -40,9 +40,7 @@ from stationsim_gcs_model import Model
 import numpy as np
 
 def benchmark_params(n, noise, sample_rate, model_params, ukf_params):
-    
-    
-    """update ukf_params with fx/hx and their parameters for experiment 1
+    """update ukf_params with fx/hx and their parameters for experiment 0
     
     - assign population size, observation noise, and sampling/assimilation rate
     - assign initial covariance p as well as sensor and process noise (q,r)
@@ -68,12 +66,15 @@ def benchmark_params(n, noise, sample_rate, model_params, ukf_params):
     model_params["pop_total"] = n
     ukf_params["noise"] = noise
     ukf_params["sample_rate"] = sample_rate
-    
+    model_params["station"] = "Grand_Central"
     base_model = Model(**model_params)
 
-    ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
+    #inital guess at state covariance
+    ukf_params["p"] = np.eye(2 * n) 
+    #process noise
     ukf_params["q"] = np.eye(2 * n)
-    ukf_params["r"] = np.eye(2 * n)#sensor noise
+    #sensor noise
+    ukf_params["r"] = np.eye(2 * n)
     
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"] = {"base_model": base_model}
@@ -201,7 +202,7 @@ def ex0_main(n, noise, sampling_rate):
 #%%  
     
 if __name__ == "__main__":
-    n= 20
-    noise = 5.0
+    n= 5
+    noise = 0.25
     sampling_rate = 50    
     ex0_main(n,  noise, sampling_rate)

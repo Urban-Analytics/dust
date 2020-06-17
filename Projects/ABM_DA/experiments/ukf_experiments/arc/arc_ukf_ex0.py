@@ -131,7 +131,7 @@ def arc_ex0_main(n, parameter_lists, test):
         str(float(sample_rate)),
         str(float(noise)),
         str(run_id).zfill(3)) + ".npy"
-    destination = "../results"
+    destination = "../results/"
     
     # initiate arc class
     ex0_arc = arc(ukf_params, model_params, base_model, test)
@@ -153,6 +153,6 @@ if __name__ == '__main__':
 
     # Assemble lists into grand list of all combinations. 
     # Each experiment will use one item of this list.
-    parameter_lists = [(n, x, y, z)
+    parameter_lists = [(x, y, z)
                   for x in sample_rate for y in noise for z in run_id]
     arc_ex0_main(n, parameter_lists, test)

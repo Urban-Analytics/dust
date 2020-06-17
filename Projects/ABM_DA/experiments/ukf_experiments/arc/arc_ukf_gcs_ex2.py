@@ -113,8 +113,8 @@ def arc_ex2_main(parameter_lists, test):
                                                             model_params, 
                                                             ukf_params)
 
-    destination = "../results" 
-    file_name = "agg_ukf_agents_{}_bin_{}-{}".format(
+    destination = "../results/" 
+    file_name = "gcs_agg_ukf_agents_{}_bin_{}-{}".format(
         str(n).zfill(3),
         str(bin_size),
         str(run_id).zfill(3)) + ".pkl"

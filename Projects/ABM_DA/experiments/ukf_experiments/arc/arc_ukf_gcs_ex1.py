@@ -110,7 +110,7 @@ def arc_ex1_main(parameter_lists, test):
                                                             model_params, 
                                                             ukf_params)
     #file name to save results to
-    file_name = "ukf_agents_{}_prop_{}-{}".format(
+    file_name = "gcs_ukf_agents_{}_prop_{}-{}".format(
         str(n).zfill(3),
         str(prop),
         str(run_id).zfill(3)) + ".pkl"

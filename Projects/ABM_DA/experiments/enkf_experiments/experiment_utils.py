@@ -119,22 +119,25 @@ class Modeller():
         N : int
             The number of times we want to run the ABM-DA.
         """
-        model_params = {'width': 200,
-                        'height': 100,
-                        'pop_total': p,
-                        'gates_in': 3,
-                        'gates_space': 2,
-                        'gates_speed': 4,
-                        'gates_out': 2,
-                        'speed_min': .1,
-                        'speed_mean': 1,
-                        'speed_std': 1,
-                        'speed_steps': 3,
-                        'separation': 4,
-                        'max_wiggle': 1,
-                        'step_limit': 500,
-                        'do_history': True,
+        model_params = {'pop_total': pop_size,
+                        'station': 'Grand_Central',
                         'do_print': False}
+        # model_params = {'width': 200,
+                        # 'height': 100,
+                        # 'pop_total': p,
+                        # 'gates_in': 3,
+                        # 'gates_space': 2,
+                        # 'gates_speed': 4,
+                        # 'gates_out': 2,
+                        # 'speed_min': .1,
+                        # 'speed_mean': 1,
+                        # 'speed_std': 1,
+                        # 'speed_steps': 3,
+                        # 'separation': 4,
+                        # 'max_wiggle': 1,
+                        # 'step_limit': 500,
+                        # 'do_history': True,
+                        # 'do_print': False}
 
         OBS_NOISE_STD = s
         vec_length = 2 * model_params['pop_total']

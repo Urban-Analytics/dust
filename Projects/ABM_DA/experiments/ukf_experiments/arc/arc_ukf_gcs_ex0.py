@@ -82,8 +82,8 @@ def ex0_parameters(n, parameter_lists, test):
         
     #If testing use some fast test parameters.
     else:
-        sample_rate = 50
-        noise = 2
+        sample_rate = 25
+        noise = 1
         run_id = "test"
         
     return sample_rate, noise, run_id
@@ -146,7 +146,7 @@ if __name__ == '__main__':
         print("Test set to true. If you're running an experiment, it wont go well.")
         
     # Lists of parameters to vary over
-    n = 30 # 10 to 30 agent population by 10
+    n = 5 # 10 to 30 agent population by 10
     sample_rate = [1, 2, 5, 10]  # assimilation rates 
     noise = [0, 0.25, 0.5, 1, 2, 5] #gaussian observation noise standard deviation
     run_id = np.arange(0, 30, 1)  # 30 repeats for each combination of the above parameters

@@ -41,7 +41,7 @@ model_params = {
 'gates_speed': 1,
 
 'speed_min': .2,
-'speed_mean': 1,
+'speed_mean': 2,
 'speed_std': 1,
 'speed_steps': 3,
 
@@ -69,12 +69,12 @@ not 100% sure what kappa does. think its a bias parameter.
 
 ukf_params = {      
 
-'sample_rate' : 20,
+'sample_rate' : 5,
 "bring_noise" : True,
 "noise" : 0.5,
 "do_batch" : False,
 
-"a": 0.7,
+"a": 0.9,
 "b": 2,
 "k": 0,
 

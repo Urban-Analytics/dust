@@ -57,9 +57,8 @@ def fx(x, **fx_kwargs):
     #f = open(f"temp_pickle_model_ukf_{self.time1}","rb")
     #model = pickle.load(f)
     #f.close()
-    model = fx_kwargs["base_model"]
-    model.seed = None
-    #model = deepcopy(base_model)
+    base_model = fx_kwargs["base_model"]
+    model = deepcopy(base_model)
     model.set_state(state = x, sensor="location")    
     with HiddenPrints():
         model.step() #step model with print suppression

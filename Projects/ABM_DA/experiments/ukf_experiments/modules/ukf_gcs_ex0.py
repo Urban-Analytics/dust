@@ -72,9 +72,9 @@ def benchmark_params(n, noise, sample_rate, model_params, ukf_params):
     #inital guess at state covariance
     ukf_params["p"] = np.eye(2 * n) 
     #process noise
-    ukf_params["q"] = np.eye(2 * n)
+    ukf_params["q"] = 0.05 * np.eye(2 * n)
     #sensor noise
-    ukf_params["r"] = np.eye(2 * n)
+    ukf_params["r"] = 0.01 * np.eye(2 * n)
     
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"] = {"base_model": base_model}
@@ -202,7 +202,7 @@ def ex0_main(n, noise, sampling_rate):
 #%%  
     
 if __name__ == "__main__":
-    n= 5
-    noise = 0.25
-    sampling_rate = 50    
+    n= 30
+    noise = 2
+    sampling_rate = 10    
     ex0_main(n,  noise, sampling_rate)

@@ -146,8 +146,8 @@ def omission_params(n, prop, model_params, ukf_params):
     
     #noise structures
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
-    ukf_params["q"] = np.eye(2 * n) # process noise
-    ukf_params["r"] = np.eye(2 * ukf_params["sample_size"])# sensor noise
+    ukf_params["q"] = 0.05 * np.eye(2 * n) # process noise
+    ukf_params["r"] = 0.01 * np.eye(2 * ukf_params["sample_size"])# sensor noise
     
     # Kalman functions and their experiment specific kwargs
     ukf_params["fx"] = fx
@@ -308,7 +308,7 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
  
         model_params, ukf_params = u.model_params, u.ukf_params
     
-    ex1_plots(u, destination, "ukf_gcs_", True, False)
+    ex1_plots(u, destination, "ukf_gcs_", True, True)
 
     return u
     
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     do_pickle = True #pickle new run
     pickle_source = "../pickles/" #where to load/save pickles from
     destination = "../plots/"
-    n = 5 #population size
+    n = 10 #population size
     prop = 1.0 #proportion observed
     
     u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

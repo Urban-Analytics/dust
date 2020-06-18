@@ -24,6 +24,16 @@ import logging
 from copy import deepcopy
 import multiprocessing
 
+
+from itertools import repeat
+
+def starmap_with_kwargs(pool, fn, sigmas, kwargs_iter):
+    args_for_starmap = zip(repeat(fn), sigmas, kwargs_iter)
+    return pool.starmap(apply_args_and_kwargs, args_for_starmap)
+
+def apply_args_and_kwargs(fn, sigmas, kwargs):
+    return fn(sigmas, **kwargs)
+
 #from stationsim_model import Model
 
 """
@@ -84,54 +94,7 @@ def parallel_apply_along_axis(func1d, axis, arr, **kwargs):
 
     return np.concatenate(individual_results)
 
-def unscented_Mean(sigmas, wm, kf_function, **function_kwargs):
-    """calculate unscented tmean  estimate for some sample of agent positions
 
-    -calculate sigma points using sigma_function 
-        (e.g Merwe Scaled Sigma Points (MSSP) or 
-        central difference sigma points (CDSP)) 
-    - apply kf_function to sigma points (usually transition function or 
-        measurement function.) to get an array of transformed sigma points.
-    - calculate weighted mean of transformed points to get unscented mean.
-
-    Parameters
-    ------
-    sigmas, wm : array_like
-        `sigmas` array of sigma points  and `wm` mean weights
-
-    kf_function : function
-        `sigma_function` function defining type of sigmas used and
-        `kf_function` defining whether to apply transition of measurement 
-        function (f/h) of UKF.
-
-    **function_kwargs : kwargs
-        `function_kwargs` keyword arguments for kf_function. Varies depending
-        on the experiment so good to be general here. This must be in dictionary 
-        form e.g. {"test":1} then called as necessary in kf_function as 
-        test = function_kwargs["test"] = 1
-
-        This allows for a generalised set of arguements for any desired
-        function. Typically we use Kalman filter measurement and transition functions.
-        Any function could be used as long as it takes some vector of 1d agent inputs and
-        returns a 1d output.
-
-    Returns 
-    ------
-
-    sigmas, nl_sigmas, xhat : array_like
-        raw `sigmas` from sigma_function, projected non-linear `nl_sigmas`, 
-        and the unscented mean of `xhat` of said projections.
-
-    """
-
-    #calculate either forecasted sigmas X- or measured sigmas Y with f/h
-    #nl_sigmas = np.apply_along_axis(kf_function, 0, sigmas, **function_kwargs)
-    #now with multiprocessing
-    nl_sigmas = parallel_apply_along_axis(kf_function, 0, sigmas, **function_kwargs).T
-    #calculate unscented mean using non linear sigmas and MSSP mean weights
-    xhat = np.dot(nl_sigmas, wm)  # unscented mean for predicitons
-
-    return nl_sigmas, xhat
 
 
 def covariance(data1, mean1, weight, data2=None, mean2=None, addition=None):
@@ -274,7 +237,7 @@ class ukf:
         `base_model` initalised class instance of desired ABM.
     """
 
-    def __init__(self, model_params, ukf_params, base_model):
+    def __init__(self, model_params, ukf_params, base_models, pool):
         """
         x - state
         n - state size 
@@ -296,7 +259,8 @@ class ukf:
         for key in ukf_params.keys():
             setattr(self, key, ukf_params[key])
 
-        self.base_model = base_model
+        self.base_models = base_models
+        self.base_model = deepcopy(base_models[0])
 
         "pull parameters from dictionary"
         # !!initialise some positions and covariances
@@ -317,6 +281,8 @@ class ukf:
         self.xs = []
         self.ps = []
         
+        self.pool = pool
+        
         self.verbose = True
         if self.verbose:
             self.pxxs = []
@@ -324,8 +290,71 @@ class ukf:
             self.pyys = []
             self.ks = []
             self.mus = []
-
-    def predict(self, **fx_kwargs):
+            
+    def unscented_Mean(self, sigmas, wm, kf_function, function_kwargs):
+        """calculate unscented tmean  estimate for some sample of agent positions
+    
+        -calculate sigma points using sigma_function 
+            (e.g Merwe Scaled Sigma Points (MSSP) or 
+            central difference sigma points (CDSP)) 
+        - apply kf_function to sigma points (usually transition function or 
+            measurement function.) to get an array of transformed sigma points.
+        - calculate weighted mean of transformed points to get unscented mean.
+    
+        Parameters
+        ------
+        sigmas, wm : array_like
+            `sigmas` array of sigma points  and `wm` mean weights
+    
+        kf_function : function
+            `sigma_function` function defining type of sigmas used and
+            `kf_function` defining whether to apply transition of measurement 
+            function (f/h) of UKF.
+    
+        **function_kwargs : kwargs
+            `function_kwargs` keyword arguments for kf_function. Varies depending
+            on the experiment so good to be general here. This must be in dictionary 
+            form e.g. {"test":1} then called as necessary in kf_function as 
+            test = function_kwargs["test"] = 1
+    
+            This allows for a generalised set of arguements for any desired
+            function. Typically we use Kalman filter measurement and transition functions.
+            Any function could be used as long as it takes some vector of 1d agent inputs and
+            returns a 1d output.
+    
+        Returns 
+        ------
+    
+        sigmas, nl_sigmas, xhat : array_like
+            raw `sigmas` from sigma_function, projected non-linear `nl_sigmas`, 
+            and the unscented mean of `xhat` of said projections.
+    
+        """
+    
+        #calculate either forecasted sigmas X- or measured sigmas Y with f/h
+        #nl_sigmas = np.apply_along_axis(kf_function, 0, sigmas, **function_kwargs)
+        #now with multiprocessing
+        #nl_sigmas = parallel_apply_along_axis(kf_function, 0, sigmas, **function_kwargs).T
+        #calculate unscented mean using non linear sigmas and MSSP mean weights
+                
+        n_sigmas = sigmas.shape[1]
+        sigmas_iter = [sigmas[:, i] for i in range(n_sigmas)]
+        
+        nl_sigmas = starmap_with_kwargs(self.pool, 
+                                        kf_function, 
+                                        sigmas_iter, 
+                                        function_kwargs)
+        #nl_sigmas = self.pool.starmap(kf_function, list(zip( \
+        #    range(n_sigmas),  # Particle numbers (in integer)
+        #    [sigma for sigma in sigmas],
+        #    function_kwargs  # Number of iterations to step each particle (an integer)
+        #)))
+        nl_sigmas = np.vstack(nl_sigmas).T
+        xhat = np.dot(nl_sigmas, wm)  # unscented mean for predicitons
+    
+        return nl_sigmas, xhat
+    
+    def predict(self, fx_kwargs):
         """Transitions sigma points forwards using markovian transition function plus noise Q
 
         - calculate sigmas using prior mean and covariance P.
@@ -344,8 +373,10 @@ class ukf:
         """
 
         sigmas = MSSP(self.x, self.p, self.g)
-        forecasted_sigmas, xhat = unscented_Mean(sigmas, self.wm, self.fx,
-                                                 **fx_kwargs)
+        forecasted_sigmas, xhat = self.unscented_Mean(sigmas, 
+                                                      self.wm, 
+                                                      self.fx,
+                                                      fx_kwargs)
         self.sigmas = forecasted_sigmas
 
         pxx = covariance(forecasted_sigmas, xhat, self.wc, addition=self.q)
@@ -356,7 +387,7 @@ class ukf:
         if self.verbose:
             self.pxxs.append(pxx)
 
-    def update(self, z, **hx_kwargs):
+    def update(self, z, hx_kwargs):
         """ update forecasts with measurements to get posterior assimilations
 
         - nudges X- sigmas with new pxx from predict
@@ -375,8 +406,8 @@ class ukf:
 
         """
 
-        nl_sigmas, yhat = unscented_Mean(self.sigmas, self.wm,
-                                         self.hx, **self.hx_kwargs)
+        nl_sigmas, yhat = self.unscented_Mean(self.sigmas, self.wm,
+                                         self.hx, hx_kwargs)
         self.r = np.eye(yhat.shape[0])
         pyy = covariance(nl_sigmas, yhat, self.wc, addition=self.r)
         pxy = covariance(self.sigmas, self.x, self.wc, nl_sigmas, yhat)
@@ -452,7 +483,7 @@ class ukf:
             #build new pyy
             #generate new sigmas using current estimates of x and p 
             sigmas = MSSP(x, p, self.g)
-            nl_sigmas, yhat = unscented_Mean(
+            nl_sigmas, yhat = self.unscented_Mean(
                 sigmas, self.wm, self.hx, self.hx_kwargs)
             syy = covariance(nl_sigmas, yhat, self.wc)
             b = 0.95
@@ -515,6 +546,14 @@ class ukf_ss:
         for key in ukf_params.keys():
             setattr(self, key, ukf_params[key])
 
+
+        self.base_models = [deepcopy(self.base_model)] * int((2 * 2 * self.pop_total) + 1)
+        self.fx_kwargs = []
+        for i in range(len(self.base_models)):
+            self.fx_kwargs.append({"base_model" : self.base_models[i]})
+
+        self.pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
+
         """lists for various data outputs
         observations
         ukf assimilations
@@ -571,7 +610,7 @@ class ukf_ss:
         #if seed != None:
         #    self.set_random_seed(seed)
 
-        self.ukf = ukf(self.model_params, ukf_params, self.base_model)
+        self.ukf = ukf(self.model_params, ukf_params, self.base_models, self.pool)
 
     def ss_Predict(self):
         """ Forecast step of UKF for stationsim.
@@ -590,7 +629,7 @@ class ukf_ss:
             #self.fx_kwargs_update_function(*update_fx_args)
 
 
-        self.ukf.predict(**{"base_model":self.base_model})
+        self.ukf.predict(self.fx_kwargs)
         self.forecasts.append(self.ukf.x)
         #if self.batch:
         #        self.ukf.base_model.set_state(self.batch_truths[step],
@@ -633,10 +672,11 @@ class ukf_ss:
                 self.hx_kwargs = hx_kwargs
                 self.ukf.hx_kwargs = hx_kwargs
 
+            hx_kwargs_iter = [hx_kwargs] * (4 * (self.pop_total) + 1)
             #convert full noisy state to actual sensor observations
-            new_state = self.ukf.hx(state, **hx_kwargs)
+            new_state = self.ukf.hx(state, **self.hx_kwargs)
 
-            self.ukf.update(new_state, **self.hx_kwargs)
+            self.ukf.update(new_state, hx_kwargs_iter)
             #self.base_model.set_state(self.ukf.x, sensor = "location")
                 
             if self.obs_key_func is not None:
@@ -665,7 +705,6 @@ class ukf_ss:
 
         #initialise UKF
         self.init_ukf(self.ukf_params)
-        self.base_model.step()
         logging.info("ukf start")
         for step in range(self.step_limit-1):
             
@@ -694,7 +733,12 @@ class ukf_ss:
         time = f"Time Elapsed: {time}"
         print(time)
         logging.info(time)
-
+        
+        self.pool.close()
+        self.pool.join()
+        self.ukf.pool = None
+        self.pool = None
+        
     """List of static methods for extracting numpy array data 
     """
     @staticmethod

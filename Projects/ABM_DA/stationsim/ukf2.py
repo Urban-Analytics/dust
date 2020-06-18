@@ -540,6 +540,8 @@ class ukf_ss:
         self.model_params = model_params  # stationsim parameters
         self.ukf_params = ukf_params  # ukf parameters
         self.base_model = base_model  # station sim
+        for i in range(5):
+            self.base_model.step()
 
         for key in model_params.keys():
             setattr(self, key, model_params[key])
@@ -705,8 +707,9 @@ class ukf_ss:
 
         #initialise UKF
         self.init_ukf(self.ukf_params)
+
         logging.info("ukf start")
-        for step in range(self.step_limit-1):
+        for step in range(self.step_limit):
             
             #if self.batch:
             #    if self.base_model.step_id == len(self.batch_truths):
@@ -714,8 +717,8 @@ class ukf_ss:
             #        print("ran out of truths. maybe batch model ended too early.")
                     
             #forecast next StationSim state and jump model forwards
-            self.ss_Predict()
             self.status_key.append([agent.status for agent in self.base_model.agents])
+            self.ss_Predict()
             #assimilate new values
             self.ss_Update(step, **self.hx_kwargs)
             

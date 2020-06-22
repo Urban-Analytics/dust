@@ -304,6 +304,34 @@ class Modeller():
         # for t in threads:
             # t.join()
 
+    @staticmethod
+    def run_for_endtime():
+        # Current
+        pop = [2, 5, 10, 20, 50, 100]
+        N = 250
+
+        endtimes = dict()
+
+        i = 0
+        for p in pop:
+            e = list()
+            for _ in range(N):
+                if i % 200 == 123:
+                    print('taking a quick break')
+                    sleep(30)
+
+                model_params = {'pop_total': p,
+                                'station': 'Grand_Central',
+                                'do_print': False}
+                m = Model(unique_id=i, **model_params)
+                for t in range(4000):
+                    m.step()
+                e.append(m.max_time)
+                i += 1
+            endtimes[p] = e
+
+        Visualiser.plot_endtimes(endtimes)
+
 
 class Processor():
     def __init__(self):
@@ -915,3 +943,14 @@ class Visualiser():
     def __make_assimilation_ticks(times, period):
         ticks = [time for time in times if time % period == 0]
         return ticks
+
+
+    @staticmethod
+    def plot_endtimes(data):
+        for population_size, times in data.items():
+            plt.figure(figsize=(8, 8))
+            plt.hist(times, bins=20)
+            plt.title(f'Population = {population_size}')
+            plt.xlabel('Endtime (iterations)')
+            plt.ylabel('Frequency')
+            plt.savefig(f'results/figures/endtimes_{population_size}.pdf')

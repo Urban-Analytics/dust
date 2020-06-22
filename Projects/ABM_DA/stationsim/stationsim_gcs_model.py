@@ -478,6 +478,7 @@ class Model:
         # What is status supposed to represent here?
         # Do we need it?
         # Or is is just a proxy for the other conditions?
+        # It's also in the else statement, so maybe redundant?
         if self.pop_finished < self.pop_total and\
                 self.step_id < self.step_limit and self.status == 1:
             if self.do_print and self.step_id % 100 == 0:
@@ -518,9 +519,10 @@ class Model:
 
             self.step_id += 1
         else:
-            if self.do_print and self.status == 1:
+            # if self.do_print and self.status == 1:
                 print(f'StationSim {self.unique_id} - Everyone made it!')
                 self.status = 0
+                self.max_time = max(self.time_save)
 
     # information about next collision
     def get_collisionTable(self):

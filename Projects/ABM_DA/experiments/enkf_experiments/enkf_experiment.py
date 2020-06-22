@@ -32,4 +32,5 @@ np.random.seed(42)
 
 # d = {'station': 'Grand_Central'}
 # Modeller.run_all(its=3600, pop_size=10)
-Modeller.run_repeat_combos(resume=False)
+# Modeller.run_repeat_combos(resume=False)
+Modeller.run_for_endtime()

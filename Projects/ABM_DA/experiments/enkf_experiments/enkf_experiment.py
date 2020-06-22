@@ -31,4 +31,5 @@ np.random.seed(42)
 # process_batch(read_time=True)
 
 # d = {'station': 'Grand_Central'}
-Modeller.run_all(its=3600, pop_size=100)
+# Modeller.run_all(its=3600, pop_size=10)
+Modeller.run_repeat_combos(resume=False)

@@ -1,7 +1,7 @@
 """
-run.py
+experiment_utils.py
 author: ksuchak1990
-A collection of functions for running the enkf.
+A collection of classes and functions for running the enkf.
 """
 
 # Imports
@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from os import listdir
 import pandas as pd
+from pathlib import Path
 import queue
 import threading
 import sys
@@ -68,9 +69,10 @@ class Modeller():
         enkf = cls.run_enkf(model_params, filter_params)
 
         # Plotting
-        ap = filter_params['assimilation_period']
-        Visualiser.plot_error_timeseries(enkf, True)
-        Visualiser.plot_forecast_error_timeseries(enkf, True, ap)
+        Visualiser.plot_error_timeseries(enkf, model_params,
+                                         filter_params, True)
+        Visualiser.plot_forecast_error_timeseries(enkf, model_params,
+                                                  filter_params, True)
 
     @classmethod
     def run_combos(cls):
@@ -119,7 +121,7 @@ class Modeller():
         N : int
             The number of times we want to run the ABM-DA.
         """
-        model_params = {'pop_total': pop_size,
+        model_params = {'pop_total': p,
                         'station': 'Grand_Central',
                         'do_print': False}
         # model_params = {'width': 200,
@@ -142,7 +144,7 @@ class Modeller():
         OBS_NOISE_STD = s
         vec_length = 2 * model_params['pop_total']
 
-        filter_params = {'max_iterations': model_params['step_limit'],
+        filter_params = {'max_iterations': 3600,
                          'assimilation_period': a,
                          'ensemble_size': e,
                          'state_vector_length': vec_length,
@@ -153,18 +155,27 @@ class Modeller():
                          'vis': False}
 
         errors = list()
+        forecast_errors = list()
         for i in range(N):
             print('Running iteration {0}'.format(i+1))
             enkf = cls.run_enkf(model_params, filter_params)
             errors.append(enkf.rmse)
+            forecast_errors.append(enkf.forecast_error)
 
         if write_json:
-            fname = 'data_{0}__{1}__{2}__{3}'.format(a, e,
-                                                     p, s).replace('.', '_')
-            with open('results/repeats/{0}.json'.format(fname),
-                      'w', encoding='utf-8') as f:
-                json.dump(errors, f, ensure_ascii=False, indent=4)
-        return errors
+            dir_name = f'a{a}__e{e}__p{p}__s{s}'.replace('.', '_')
+            full_dir = f'results/repeats/{dir_name}/'
+            Path(full_dir).mkdir(parents=True, exist_ok=True)
+            fname1 = f'{full_dir}/errors.json'
+            fname2 = f'{full_dir}/forecast_errors.json'
+            
+            with open(fname1, 'w', encoding='utf-8') as f:
+                json.dump(errors, f, ensure_ascii=False, indent=2)
+
+            with open(fname2, 'w', encoding='utf-8') as f:
+                json.dump(forecast_errors, f, ensure_ascii=False, indent=2)
+
+        return errors, forecast_errors
 
     @classmethod
     def run_repeat_combos(cls, resume=True):
@@ -187,10 +198,17 @@ class Modeller():
             with open('results/combos.json') as json_file:
                 combos = json.load(json_file)
         else:
+            # Current
             ap = [2, 5, 10, 20, 50]
-            es = [2, 5, 10, 20, 50, 100]
-            pop = [1+(5 * i) for i in range(0, 11)]
+            es = [2, 5, 10, 20, 50]
+            pop = [2, 5, 10, 20, 50]
             sigma = [0.5 * i for i in range(1, 6)]
+
+            # Old
+            # ap = [2, 5, 10, 20, 50]
+            # es = [2, 5, 10, 20, 50, 100]
+            # pop = [1+(5 * i) for i in range(0, 11)]
+            # sigma = [0.5 * i for i in range(1, 6)]
 
             combos = list()
 
@@ -858,7 +876,7 @@ class Visualiser():
         plt.show()
 
     @staticmethod
-    def plot_error_timeseries(enkf, do_save=False):
+    def plot_error_timeseries(enkf, model_params, filter_params, do_save=False):
         results = pd.DataFrame(enkf.rmse)
         plt.figure(figsize=(8, 8))
         plt.plot(results['time'], results['obs'], label='observations')
@@ -874,14 +892,16 @@ class Visualiser():
             plt.show()
 
     @classmethod
-    def plot_forecast_error_timeseries(cls, enkf, do_save=False, period=None):
+    def plot_forecast_error_timeseries(cls, enkf, model_params, filter_params,
+                                       do_save=False, plot_period=True):
         results = pd.DataFrame(enkf.forecast_error)
         plt.figure(figsize=(8, 8))
         plt.scatter(results['time'], results['error'], s=0.75)
         plt.xlabel('iteration')
         plt.ylabel('forecast rmse')
 
-        if period is not None:
+        if plot_period:
+            period = filter_params['assimilation_period']
             assimilation_ticks = cls.__make_assimilation_ticks(results['time'],
                                                                period)
             for t in assimilation_ticks:

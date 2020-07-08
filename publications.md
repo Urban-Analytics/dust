@@ -8,6 +8,8 @@ _The following publications report on the current progress of the DUST project o
 
 ## Peer Reviewed Articles
 
+
+
 Kieu, Le-Minh, N. Malleson, and A. Heppenstall (2019). Dealing with Uncertainty in Agent-Based Models for Short-Term Predictions’. _Royal Society Open Science_ 7(1): 191074. DOI: [10.1098/rsos.191074](https://doi.org/10.1098/rsos.191074) (open access)
 
 Kieu, Le-Minh, D. Ngoduy, N Malleson, and E. Chung (2019). A Stochastic Schedule-Following Simulation Model of Bus Routes. _Transportmetrica B: Transport Dynamics_ 7 (1): 1588–1610. DOI: [10.1080/21680566.2019.1670118](https://doi.org/10.1080/21680566.2019.1670118).
@@ -29,6 +31,10 @@ Kieu, Le-Minh, N. Malleson, and A. Heppenstall (2019) Dealing with Uncertainty i
 ## Conference proceedings
 
 _For a full list of conference presentations, see the [presentations](./presentations.html) page._
+
+R. Clay, Le-Minh Kieu, J. A. Ward, A. Heppenstall, **N. Malleson** (2020) Towards Real-Time Crowd Simulation Under Uncertainty Using an Agent-Based Model and an Unscented Kalman Filter. In Demazeau Y., Holvoet T., Corchado J., Costantini S. (eds) _Advances in Practical Applications of Agents, Multi-Agent Systems, and Trustworthiness. The PAAMS Collection. PAAMS 2020._ Lecture Notes in Computer Science, vol 12092. Springer. [DOI: 10.1007/978-3-030-49778-1_6](https://doi.org/10.1007/978-3-030-49778-1_6) [Paper (pdf)]({{site.baseurl}}/papers/2020-PAAMS-UKF.pdf)
+
+D. Birks, A. Heppenstall and **N. Malleson** (2020). Towards the Development of Societal Twins. 24th European Conference on Artificial Intelligence - ECAI 2020. [Abstract (pdf)](http://ecai2020.eu/papers/1162_paper.pdf).
 
 Heppenstall, A. and **N. Malleson** (2020). Building cities from slime mould, agents and quantum field theory. In [Proceedings of AAMAS 2020](http://www.ifaamas.org/Proceedings/aamas2020/). [Abstract (pdf)]({{site.baseurl}}/papers/2020-AAMAS-Heppenstall.pdf). [Presentation](https://underline.io/lecture/60-building-cities-from-slime-mould,-agents-and-quantum-field-theory). [DOI: 10.5555/3398761.3398765](https://dl.acm.org/doi/abs/10.5555/3398761.3398765).
 

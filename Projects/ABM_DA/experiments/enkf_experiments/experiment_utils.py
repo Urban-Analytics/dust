@@ -18,8 +18,8 @@ from time import sleep
 
 sys.path.append('../../stationsim')
 from stationsim_gcs_model import Model
-from ensemble_kalman_filter import EnsembleKalmanFilter
-
+from ensemble_kalman_filter import EnsembleKalmanFilter,
+from ensemble_kalman_filter import EnsembleKalmanFilterType
 
 class Modeller():
     def __init__(self):

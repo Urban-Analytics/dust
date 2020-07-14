@@ -7,18 +7,26 @@ A class to represent a general Ensemble Kalman Filter for use with StationSim.
 
 # Imports
 from copy import deepcopy as dcopy
+from enum import Enum, auto
+from filter import Filter
 import warnings as warns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from filter import Filter
 
 
 # Classes
+class EnsembleKalmanFilterType(Enum):
+    STATE = auto()
+    PARAMETER = auto()
+    DUAL = auto()
+
+
 class EnsembleKalmanFilter(Filter):
     """
     A class to represent a general EnKF.
     """
+
     def __init__(self, model, filter_params, model_params, benchmarking=False):
         """
         Initialise the Ensemble Kalman Filter.
@@ -47,6 +55,7 @@ class EnsembleKalmanFilter(Filter):
         self.keep_results = False
         self.vis = False
         self.run_vanilla = False
+        self.mode = EnsembleKalmanFilterType.STATE
 
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():

@@ -124,7 +124,6 @@ class EnsembleKalmanFilter(Filter):
         print('ensemble_size:\t{0}'.format(self.ensemble_size))
         print('assimilation_period:\t{0}'.format(self.assimilation_period))
 
-
     def step(self):
         """
         Step the filter forward by one time-step.
@@ -188,7 +187,6 @@ class EnsembleKalmanFilter(Filter):
         # print('time: {0}, models: {1}'.format(self.time, [m.pop_active for m in
             # self.models]))
 
-
     def predict(self):
         """
         Step the model forward by one time-step to produce a prediction.
@@ -204,7 +202,6 @@ class EnsembleKalmanFilter(Filter):
         if self.run_vanilla:
             for i in range(self.vanilla_ensemble_size):
                 self.vanilla_models[i].step()
-
 
     def update(self, data):
         """
@@ -227,7 +224,6 @@ class EnsembleKalmanFilter(Filter):
         X = self.state_ensemble + gain_matrix @ diff
         self.state_ensemble = X
 
-
     def update_state_ensemble(self):
         """
         Update self.state_ensemble based on the states of the models.
@@ -243,7 +239,6 @@ class EnsembleKalmanFilter(Filter):
             for i in range(self.vanilla_ensemble_size):
                 self.vanilla_state_ensemble[:, i] = state_vector
 
-
     def update_state_mean(self):
         """
         Update self.state_mean based on the current state ensemble.
@@ -251,7 +246,6 @@ class EnsembleKalmanFilter(Filter):
         self.state_mean = np.mean(self.state_ensemble, axis=1)
         if self.run_vanilla:
             self.vanilla_state_mean = np.mean(self.vanilla_state_ensemble, axis=1)
-
 
     def update_data_ensemble(self, data):
         """
@@ -265,7 +259,6 @@ class EnsembleKalmanFilter(Filter):
             x[:, i] = data + np.random.normal(0, self.R_vector, len(data))
         self.data_ensemble = x
 
-
     def update_models(self):
         """
         Update individual model states based on state ensemble.
@@ -273,7 +266,6 @@ class EnsembleKalmanFilter(Filter):
         for i in range(self.ensemble_size):
             state_vector = self.state_ensemble[:, i]
             self.models[i].set_state(state_vector, sensor='location')
-
 
     def make_ensemble_covariance(self):
         """
@@ -283,7 +275,6 @@ class EnsembleKalmanFilter(Filter):
         b = np.ones(shape=(1, self.ensemble_size))
         A = self.state_ensemble - 1/self.ensemble_size * a @ b
         return 1/(self.ensemble_size - 1) * A @ A.T
-
 
     def make_gain_matrix(self):
         """
@@ -316,7 +307,6 @@ class EnsembleKalmanFilter(Filter):
         diff = state_covariance + self.data_covariance
         return C @ self.H_transpose @ np.linalg.inv(diff)
 
-
     @staticmethod
     def separate_coords(arr):
         """
@@ -324,7 +314,6 @@ class EnsembleKalmanFilter(Filter):
         Assumes that xs and ys alternate.
         """
         return arr[::2], arr[1::2]
-
 
     def process_results(self):
         """
@@ -376,7 +365,6 @@ class EnsembleKalmanFilter(Filter):
             plt.savefig('./results/rmse_comparison.eps')
             plt.show()
 
-
     def save_results(self, data):
         """
         Utility method to save the results of a filter run.
@@ -391,7 +379,6 @@ class EnsembleKalmanFilter(Filter):
         print('Writing filter results to {0}.'.format(data_path))
         data.to_csv(data_path, index=False)
 
-
     @classmethod
     def make_errors(cls, result, truth):
         """
@@ -405,7 +392,6 @@ class EnsembleKalmanFilter(Filter):
         distance_error = np.sqrt(np.square(x_error) + np.square(y_error))
 
         return distance_error, x_error, y_error
-
 
     @classmethod
     def calculate_rmse(cls, ground_truth, data):

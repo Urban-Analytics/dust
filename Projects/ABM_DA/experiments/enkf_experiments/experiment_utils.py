@@ -168,7 +168,7 @@ class Modeller():
             Path(full_dir).mkdir(parents=True, exist_ok=True)
             fname1 = f'{full_dir}/errors.json'
             fname2 = f'{full_dir}/forecast_errors.json'
-            
+
             with open(fname1, 'w', encoding='utf-8') as f:
                 json.dump(errors, f, ensure_ascii=False, indent=2)
 
@@ -305,10 +305,27 @@ class Modeller():
             # t.join()
 
     @staticmethod
-    def run_for_endtime():
+    def run_for_endtime(N=250):
+        """
+        Run the model a number of times to see how the number of iterations
+        taken for all agents to reach their assigned exit varies with
+        population size.
+
+        Run stationsim_gcs for a range of population sizes. 
+        For each population size, run the model N times, collecting the time at
+        the model finds that all of its agents have reached their assigned
+        exits.
+        For each population size, plot a histogram of the distribution of end
+        times to inspect the variation.
+
+        Parameters
+        ----------
+        N : int
+            The number of times for which the model is run with each population
+            size.
+        """
         # Current
         pop = [2, 5, 10, 20, 50, 100]
-        N = 250
 
         endtimes = dict()
 
@@ -922,6 +939,29 @@ class Visualiser():
     @classmethod
     def plot_forecast_error_timeseries(cls, enkf, model_params, filter_params,
                                        do_save=False, plot_period=True):
+        """
+        plot_forecast_error_timeseries
+
+        Plot the variation of Ensemble Kalman Filter forecast error over time
+        (iterations).
+        Additionally, vertical lines may be plotted to indicate timesteps at
+        which data has been assimilated.
+
+        Parameters
+        ----------
+        enkf : EnsembleKalmanFilter class
+            An instance of the Ensemble Kalman Filter that has been run and is
+            to have its forecast error plotted.
+        model_params : dict
+            Dictionary of parameters passed to each model in the ensemble.
+        filter_params : dict
+            Dictionary of parameters dictating the behaviour of the filter.
+        do_save : boolean
+            Indicates whether or not to save a copy of the plots.
+        plot_period : boolean
+            Indicates whether or not to plot vertical lines indicating timesteps
+            at which data have been assimilated.
+        """
         results = pd.DataFrame(enkf.forecast_error)
         plt.figure(figsize=(8, 8))
         plt.scatter(results['time'], results['error'], s=0.75)
@@ -941,9 +981,22 @@ class Visualiser():
 
     @staticmethod
     def __make_assimilation_ticks(times, period):
+        """
+        make_assimilation_ticks
+
+        Given the times at which agent states are known and the regularity with
+        which data is assimilated, provide a list of the times at which the data
+        assimilation has taken place.
+
+        Parameters
+        ----------
+        times : list
+            Times at which the model state is known.
+        period : int
+            The period with which data is assimilated.
+        """
         ticks = [time for time in times if time % period == 0]
         return ticks
-
 
     @staticmethod
     def plot_endtimes(data):

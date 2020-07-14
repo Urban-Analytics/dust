@@ -39,30 +39,14 @@ class EnsembleKalmanFilter(Filter):
         Returns:
             None
         """
-        # Call parent constructor
         # Instantiates the base model and starts time at 0
         super().__init__(model, model_params)
 
         # Filter attributes - outlines the expected params
-        self.max_iterations = None
-        self.ensemble_size = None
-        self.assimilation_period = None
-        self.state_vector_length = None
-        self.data_vector_length = None
-        self.H = None
-        self.R_vector = None
-        self.data_covariance = None
-        self.keep_results = False
-        self.vis = False
-        self.run_vanilla = False
-        self.mode = EnsembleKalmanFilterType.STATE
+        self.__assign_filter_defaults()
 
         # Get filter attributes from params, warn if unexpected attribute
-        for k, v in filter_params.items():
-            if not hasattr(self, k):
-                w = 'EnKF received unexpected {0} attribute.'.format(k)
-                warns.warn(w, RuntimeWarning)
-            setattr(self, k, v)
+        self.__assign_filter_params(filter_params)
 
         # Set up ensemble of models
         self.models = [dcopy(self.base_model) for _ in range(self.ensemble_size)]
@@ -98,20 +82,9 @@ class EnsembleKalmanFilter(Filter):
         self.rmse = list()
         self.forecast_error = list()
 
-        # Agent to plot individually
-        self.agent_number = 6
-
         # Vanilla params
         if self.run_vanilla:
-            # Ensemble of vanilla models is always 10 (control variable)
-            self.vanilla_ensemble_size = 10
-            self.vanilla_models = [dcopy(self.base_model) for _ in
-                                   range(self.vanilla_ensemble_size)]
-            self.vanilla_state_mean = None
-            self.vanilla_state_ensemble = np.zeros(shape=(self.state_vector_length,
-                                                          self.vanilla_ensemble_size))
-            self.vanilla_rmse = list()
-            self.vanilla_results = list()
+            self.__setup_baseline()
 
         self.update_state_ensemble()
         self.update_state_mean()
@@ -119,10 +92,48 @@ class EnsembleKalmanFilter(Filter):
         self.results = list()
 #        self.results = [self.state_mean]
 
+        # Agent to plot individually
+        self.agent_number = 6
+
+        self.__print_start_summary()
+
+    def __setup_baseline(self):
+        # Ensemble of vanilla models is always 10 (control variable)
+        self.vanilla_ensemble_size = 10
+        self.vanilla_models = [dcopy(self.base_model) for _ in
+                               range(self.vanilla_ensemble_size)]
+        self.vanilla_state_mean = None
+        self.vanilla_state_ensemble = np.zeros(shape=(self.state_vector_length,
+                                                      self.vanilla_ensemble_size))
+        self.vanilla_rmse = list()
+        self.vanilla_results = list()
+
+    def __print_start_summary(self):
         print('Running Ensemble Kalman Filter...')
         print('max_iterations:\t{0}'.format(self.max_iterations))
         print('ensemble_size:\t{0}'.format(self.ensemble_size))
         print('assimilation_period:\t{0}'.format(self.assimilation_period))
+
+    def __assign_filter_params(self, filter_params):
+        for k, v in filter_params.items():
+            if not hasattr(self, k):
+                w = 'EnKF received unexpected {0} attribute.'.format(k)
+                warns.warn(w, RuntimeWarning)
+            setattr(self, k, v)
+
+    def __assign_filter_defaults(self):
+        self.max_iterations = None
+        self.ensemble_size = None
+        self.assimilation_period = None
+        self.state_vector_length = None
+        self.data_vector_length = None
+        self.H = None
+        self.R_vector = None
+        self.data_covariance = None
+        self.keep_results = False
+        self.vis = False
+        self.run_vanilla = False
+        self.mode = EnsembleKalmanFilterType.STATE
 
     def step(self):
         """

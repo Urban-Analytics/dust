@@ -107,12 +107,20 @@ class Agent:
                         break
 
     def set_agent_location(self, gate):
-        '''
-            Define one final or initial position for the agent.
+        """
+        set_agent_locations
 
-            It is necessary to ensure that the agent has a distance from
-            the station wall compatible with its own size.
-        '''
+        Provide a set of coordinates in 2d space pertaining to the provided gate
+        number.
+        A perturbation is introduced to ensure that the agent in question
+        remains a set distance from the wall of the environment (based on the
+        agent's size).
+
+        Parameters
+        ----------
+        gate : int
+            Number of the gate in the collection of gates in the model.
+        """
         perturb = self.model.gates_space * np.random.uniform(-10, +10)
         if(self.model.gates_locations[gate][0] == 0):
             return self.model.gates_locations[gate] + [1.05*self.size, perturb]

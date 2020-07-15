@@ -12,7 +12,7 @@ from matplotlib.animation import FuncAnimation
 # Dont automatically load seaborn as it isn't needed on the HPC
 try:
     from seaborn import kdeplot as sns_kdeplot
-except ImportError as e:
+except ImportError:
     warnings.warn("The seaborn module is not available. If you try to create "
                   "kde plots for this model (i.e. a wiggle map or density "
                   "map) then it will fail.")

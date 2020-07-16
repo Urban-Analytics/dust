@@ -18,15 +18,18 @@ from time import sleep
 
 sys.path.append('../../stationsim')
 from stationsim_gcs_model import Model
-from ensemble_kalman_filter import EnsembleKalmanFilter,
+from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
 
+
+# Classes
 class Modeller():
     def __init__(self):
         pass
 
     @classmethod
-    def run_all(cls, pop_size=20, its=300, assimilation_period=50, ensemble_size=10):
+    def run_all(cls, pop_size=20, its=300, assimilation_period=50,
+                ensemble_size=10, mode=EnsembleKalmanFilterType.DUAL_EXIT):
         """
         Overall function to run everything.
         """
@@ -53,13 +56,15 @@ class Modeller():
 
         OBS_NOISE_STD = 1
         vec_length = 2 * model_params['pop_total']
+        observation_operator = cls.__make_observation_operator(pop_size, mode)
 
         filter_params = {'max_iterations': its,
                          'assimilation_period': assimilation_period,
                          'ensemble_size': ensemble_size,
+                         'population_size': model_params['pop_total'],
                          'state_vector_length': vec_length,
                          'data_vector_length': vec_length,
-                         'H': np.identity(vec_length),
+                         'H': observation_operator,
                          'R_vector': OBS_NOISE_STD * np.ones(vec_length),
                          'keep_results': True,
                          'run_vanilla': True,
@@ -147,6 +152,7 @@ class Modeller():
         filter_params = {'max_iterations': 3600,
                          'assimilation_period': a,
                          'ensemble_size': e,
+                         'population_size': model_params['pop_total'],
                          'state_vector_length': vec_length,
                          'data_vector_length': vec_length,
                          'H': np.identity(vec_length),
@@ -348,6 +354,21 @@ class Modeller():
             endtimes[p] = e
 
         Visualiser.plot_endtimes(endtimes)
+
+    @classmethod
+    def __make_observation_operator(cls, population_size, mode):
+        if mode == EnsembleKalmanFilterType.STATE:
+            return np.identity(2 * population_size)
+        elif mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            return cls.__make_exit_observation_operator(population_size)
+        else:
+            raise ValueError(f'Unexpected filter mode: {mode}')
+
+    @staticmethod
+    def __make_exit_observation_operator(population_size):
+        a = np.identity(2 * population_size)
+        b = np.zeros(shape=(2 * population_size, population_size))
+        return np.hstack((a, b))
 
 
 class Processor():

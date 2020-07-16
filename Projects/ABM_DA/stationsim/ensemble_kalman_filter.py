@@ -134,6 +134,7 @@ class EnsembleKalmanFilter(Filter):
         self.vis = False
         self.run_vanilla = False
         self.mode = EnsembleKalmanFilterType.STATE
+        self.active = True
 
     def step(self):
         """
@@ -145,49 +146,53 @@ class EnsembleKalmanFilter(Filter):
         Returns:
             None
         """
-        self.predict()
-        self.update_state_ensemble()
-        self.update_state_mean()
-        truth = self.base_model.get_state(sensor='location')
-
-        forecast_error = {'time': self.time,
-                          'error': self.calculate_rmse(truth, self.state_mean)}
-        self.forecast_error.append(forecast_error)
-
-        if self.time % self.assimilation_period == 0:
-            # Construct observations
-            noise = np.random.normal(0, self.R_vector, truth.shape)
-            data = truth + noise
-
-            # if self.vis:
-                # self.plot_model('before_update_{0}'.format(self.time), data)
-                # self.plot_model2('before_update_{0}'.format(self.time), data)
-
-            # Calculating prior and likelihood errors
-            rmse = {'time': self.time}
-            rmse['obs'] = self.calculate_rmse(truth, data)
-            rmse['forecast'] = self.calculate_rmse(truth, self.state_mean)
-
-            # Update
-            self.update(data)
-            self.update_models()
+        # Check if any of the models are active
+        self.update_status()
+        # Only predict-update if there is at least one active model
+        if self.status:
+            self.predict()
+            self.update_state_ensemble()
             self.update_state_mean()
+            truth = self.base_model.get_state(sensor='location')
 
-            # Analysis error
-            rmse['analysis'] = self.calculate_rmse(truth, self.state_mean)
+            forecast_error = {'time': self.time,
+                              'error': self.calculate_rmse(truth, self.state_mean)}
+            self.forecast_error.append(forecast_error)
 
-            # Vanilla error
-            if self.run_vanilla:
-                rmse['vanilla'] = self.calculate_rmse(truth,
-                                                      self.vanilla_state_mean)
+            if self.time % self.assimilation_period == 0:
+                # Construct observations
+                noise = np.random.normal(0, self.R_vector, truth.shape)
+                data = truth + noise
 
-            self.rmse.append(rmse)
+                # if self.vis:
+                    # self.plot_model('before_update_{0}'.format(self.time), data)
+                    # self.plot_model2('before_update_{0}'.format(self.time), data)
 
-            # if self.vis:
-                # self.plot_model('after_update_{0}'.format(self.time), data)
-                # self.plot_model2('after_update_{0}'.format(self.time), data)
-        # else:
-            # self.update_state_mean()
+                # Calculating prior and likelihood errors
+                rmse = {'time': self.time}
+                rmse['obs'] = self.calculate_rmse(truth, data)
+                rmse['forecast'] = self.calculate_rmse(truth, self.state_mean)
+
+                # Update
+                self.update(data)
+                self.update_models()
+                self.update_state_mean()
+
+                # Analysis error
+                rmse['analysis'] = self.calculate_rmse(truth, self.state_mean)
+
+                # Vanilla error
+                if self.run_vanilla:
+                    rmse['vanilla'] = self.calculate_rmse(truth,
+                                                          self.vanilla_state_mean)
+
+                self.rmse.append(rmse)
+
+                # if self.vis:
+                    # self.plot_model('after_update_{0}'.format(self.time), data)
+                    # self.plot_model2('after_update_{0}'.format(self.time), data)
+            # else:
+                # self.update_state_mean()
         self.time += 1
         self.results.append(self.state_mean)
         if self.run_vanilla:
@@ -412,3 +417,13 @@ class EnsembleKalmanFilter(Filter):
         """
         d_error, x_error, y_error = cls.make_errors(data, ground_truth)
         return np.sqrt(np.mean(d_error))
+
+    def update_status(self):
+        """
+        update_status
+
+        Update the status of the filter to indicate whether it is active.
+        The filter should be active if and only if there is at least 1 active
+        model in the ensemble.
+        """
+        self.status = any([m.status == 1 for m in self.models])

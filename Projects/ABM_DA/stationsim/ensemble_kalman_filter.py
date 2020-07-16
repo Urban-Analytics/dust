@@ -193,10 +193,10 @@ class EnsembleKalmanFilter(Filter):
                     # self.plot_model2('after_update_{0}'.format(self.time), data)
             # else:
                 # self.update_state_mean()
-        self.time += 1
-        self.results.append(self.state_mean)
-        if self.run_vanilla:
-            self.vanilla_results.append(self.vanilla_state_mean)
+            self.time += 1
+            self.results.append(self.state_mean)
+            if self.run_vanilla:
+                self.vanilla_results.append(self.vanilla_state_mean)
 
         # print('time: {0}, base: {1}'.format(self.time,
             # self.base_model.pop_active))

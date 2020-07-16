@@ -113,7 +113,9 @@ class Modeller():
         return enkf
 
     @classmethod
-    def run_repeat(cls, a=50, e=10, p=20, s=1, N=10, write_json=False):
+    def run_repeat(cls, a=50, e=10, p=20, s=1, N=10,
+                   write_json=False,
+                   mode=EnsembleKalmanFilterType.STATE):
         """
         Repeatedly run an enkf realisation of stationsim.
 
@@ -148,6 +150,7 @@ class Modeller():
 
         OBS_NOISE_STD = s
         vec_length = 2 * model_params['pop_total']
+        observation_operator = cls.__make_observation_operator(p, mode)
 
         filter_params = {'max_iterations': 3600,
                          'assimilation_period': a,
@@ -155,7 +158,7 @@ class Modeller():
                          'population_size': model_params['pop_total'],
                          'state_vector_length': vec_length,
                          'data_vector_length': vec_length,
-                         'H': np.identity(vec_length),
+                         'H': observation_operator,
                          'R_vector': OBS_NOISE_STD * np.ones(vec_length),
                          'keep_results': True,
                          'vis': False}

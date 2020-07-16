@@ -328,6 +328,8 @@ class EnsembleKalmanFilter(Filter):
         """
         Function to split a flat array into xs and ys.
         Assumes that xs and ys alternate.
+        i.e.
+        [x0, y0, x1, y1] -> ([x0, x1], [y0, y1])
         """
         return arr[::2], arr[1::2]
 

@@ -1,0 +1,12 @@
+#  2020-07-09 10:27:14.125166
+# 
+#  PF params: {'agents_to_visualise': 50, 'number_of_runs': 1, 'multi_step': False, 'particle_std': 1.0, 'model_std': 1.0, 'do_save': True, 'plot_save': False, 'do_ani': False, 'show_ani': False, 'do_external_data': True, 'resample_window': 1, 'number_of_particles': 20, 'do_resample': True, 'external_info': ['gcs_final_real_data/', True, True]}
+# 
+#  Model params: {'pop_total': 274, 'batch_iterations': 3100, 'step_limit': 1000, 'birth_rate': 1.6666666666666667, 'do_history': False, 'do_print': True, 'station': 'Grand_Central'}
+# 
+#  Min_Mean_errors Max_Mean_errors Average_mean_errors Min_Absolute_errors Max_Absolute_errors Average_Absolute_errors Min_variances Max_variances Average_variances Before_resample?
+11.711864717791578 5329.12369589889 3439.7455655975605 9.241492239744662 5329.310358260632 3439.875802284824 0.8956359774503118 3117.7260863146016 503.2339098317596 0
+11.419836716117812 5329.126310793041 3439.2580106609093 8.940205551352948 5329.310358260632 3439.600499782676 0.8961680179445976 2784.0312354934304 502.1746212087594 1
+# 
+#  Distance_Mean Distance_Mean_errors
+38.37959273361959 13.213701612191864

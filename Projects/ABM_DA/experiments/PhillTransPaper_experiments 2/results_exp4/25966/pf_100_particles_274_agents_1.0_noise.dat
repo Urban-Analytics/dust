@@ -1,0 +1,7 @@
+#  2020-07-17 06:54:23.174166
+# 
+#  PF params: {'agents_to_visualise': 100, 'number_of_runs': 1, 'multi_step': False, 'particle_std': 1.0, 'model_std': 1.0, 'do_save': True, 'plot_save': False, 'do_ani': True, 'show_ani': False, 'do_external_data': True, 'resample_window': 100, 'number_of_particles': 100, 'do_resample': True, 'external_info': ['gcs_final_real_data/', False, False]}
+# 
+#  Model params: {'pop_total': 274, 'batch_iterations': 2000, 'step_limit': 2000, 'birth_rate': 1.6666666666666667, 'do_history': False, 'do_print': False, 'station': 'Grand_Central'}
+# 
+#  Min_Mean_errors Max_Mean_errors Average_mean_errors Min_Absolute_errors Max_Absolute_errors Average_Absolute_errors Min_variances Max_variances Average_variances Before_resample?

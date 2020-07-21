@@ -382,8 +382,10 @@ class grand_plots:
         plt.tight_layout()
         "save?"
         if self.save:
+            plt.tight_layout
             plt.savefig(self.destination + f"3d_{n}_error_trajectories.pdf")
-
+            plt.close()
+            
     def depickle_data_parser(self, instance):
         """simplified version of ukf.data_parser. just pulls truths/preds
 
@@ -627,14 +629,15 @@ class grand_plots:
             ax.set_title(str(keys[0]).capitalize() + " = " + str(self.p1[i]))
         plt.title = title
         if self.save:
+            plt.tight_layout()
             plt.savefig(self.destination + f_name)
 
 
 def ex0_grand(source, destination):
     n = 30  # population size
     file_params = {
-        "rate":  [1.0, 5.0, 10.0, 25.0],
-        "noise": [0., 0.5, 1.0, 2.0, 5.0, 10],
+        "rate":  [1.0, 5.0, 10.0, 25.0, 50.0],
+        "noise": [0., 0.25, 0.5, 1.0, 2.0, 5.0,],
         # "source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
         "source": source,
         "destination": destination,

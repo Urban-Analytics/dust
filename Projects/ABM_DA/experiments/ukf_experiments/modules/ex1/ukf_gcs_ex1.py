@@ -227,17 +227,17 @@ def ex1_plots(instance, destination, prefix, save, animate):
     
     ukf_params = instance.ukf_params
     index2 = ukf_params["index2"]
-    forecasts = np.vstack(instance.forecasts)
+    #forecasts = np.vstack(instance.forecasts)
     
     obs *= nan_array
     truths *= nan_array
     preds *= nan_array
-    forecasts*= nan_array
+    #forecasts*= nan_array
     
     #cut off the initial 0s
     truths[np.where(truths == 0)] = np.nan
     preds[np.where(truths == 0)] = np.nan
-    forecasts[np.where(truths== 0)] = np.nan
+    #forecasts[np.where(truths== 0)] = np.nan
     obs[np.where(truths == 0)] = np.nan
 
     
@@ -308,7 +308,7 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
  
         model_params, ukf_params = u.model_params, u.ukf_params
     
-    ex1_plots(u, destination, "ukf_gcs_", True, True)
+    ex1_plots(u, destination, "ukf_gcs_", True, False)
 
     return u
     
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     do_pickle = True #pickle new run
     pickle_source = "../pickles/" #where to load/save pickles from
     destination = "../plots/"
-    n = 30 #population size
+    n = 20 #population size
     prop = 1.0 #proportion observed
     
     u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

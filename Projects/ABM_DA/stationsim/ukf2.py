@@ -16,6 +16,7 @@ This file has no main. use ukf notebook/modules in experiments folder
 # general packages used for filtering
 
 import os
+import sys
 import numpy as np  # numpy
 import datetime  # for timing experiments
 import pickle  # for saving class instances
@@ -23,10 +24,10 @@ from scipy.stats import chi2  # for adaptive ukf test
 import logging
 from copy import deepcopy
 import multiprocessing
-
-
 from itertools import repeat
 
+"""functions to modify starmap to allow additional kwargs
+"""
 def starmap_with_kwargs(pool, fn, sigmas, kwargs_iter):
     args_for_starmap = zip(repeat(fn), sigmas, kwargs_iter)
     return pool.starmap(apply_args_and_kwargs, args_for_starmap)
@@ -34,67 +35,25 @@ def starmap_with_kwargs(pool, fn, sigmas, kwargs_iter):
 def apply_args_and_kwargs(fn, sigmas, kwargs):
     return fn(sigmas, **kwargs)
 
-#from stationsim_model import Model
+def model_step(model):
+    with HiddenPrints():
+        model.step()
+    return model
 
-"""
-shamelessly stolen functions for multiprocessing np.apply_along_axis
-https://stackoverflow.com/questions/45526700/easy-parallelization-of-numpy-apply-along-axis
-"""
-
-def unpacking_apply_along_axis(all_args):
-    (func1d, axis, arr, kwargs) = all_args    
-    """wrap all args as multiprocessing.pool only takes one argument.
-    
-    This function is useful with multiprocessing.Pool().map(): (1)
-    map() only handles functions that take a single argument, and (2)
-    this function can generally be imported from a module, as required
-    by map().
-    
-    Parameters
-    ------
-    all_args : tuple
-        `all_args` all arguments for np.apply_along_axis.
-    
-        
-    Returns
-    single_arg : func
-        `single_arg` wrapped to a single argument
+class HiddenPrints:
+    """stop repeat printing from stationsim 
+    We get a lot of `iterations : X` prints as it jumps back 
+    and forth over every 100th step. This stops that.
+    https://stackoverflow.com/questions/8391411/suppress-calls-to-print-python
     """
-    single_arg = np.apply_along_axis(func1d, axis, arr, **kwargs)
-    return single_arg
-
-def parallel_apply_along_axis(func1d, axis, arr, **kwargs):
-    """Like numpy.apply_along_axis(), but takes advantage of multiple cores.
     
-    Parameters
-    ------
-    func1d : func
-        function that takes a 1 dimensional argument
-    axis : int
-        which `axis` to slice and apply func1d on. E.g. if axis = 0 
-        on a 2d array we take a full slice of the 0th axis (every row)
-        and then a single column looping over the other axis (columns)
-    """        
-    # Effective axis where apply_along_axis() will be applied by each
-    # worker (any non-zero axis number would work, so as to allow the use
-    # of `np.array_split()`, which is only done on axis 0):
-    effective_axis = 1 if axis == 0 else axis
-    if effective_axis != axis:
-        arr = arr.swapaxes(axis, effective_axis)
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
 
-    # Chunks for the mapping (only a few chunks):
-    chunks = [(func1d, effective_axis, sub_arr, kwargs)
-              for sub_arr in np.array_split(arr, multiprocessing.cpu_count())]
-
-    pool = multiprocessing.Pool()
-    individual_results = pool.map(unpacking_apply_along_axis, chunks)
-    # Freeing the workers:
-    pool.close()
-    pool.join()
-
-    return np.concatenate(individual_results)
-
-
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
 
 
 def covariance(data1, mean1, weight, data2=None, mean2=None, addition=None):
@@ -540,6 +499,7 @@ class ukf_ss:
         self.model_params = model_params  # stationsim parameters
         self.ukf_params = ukf_params  # ukf parameters
         self.base_model = base_model  # station sim
+        #burn in to avoid wierd gcss 0s
         for i in range(5):
             self.base_model.step()
 
@@ -548,8 +508,10 @@ class ukf_ss:
         for key in ukf_params.keys():
             setattr(self, key, ukf_params[key])
 
-
+        #list of particle models
         self.base_models = [deepcopy(self.base_model)] * int((2 * 2 * self.pop_total) + 1)
+        
+        #iterable fx_kwargs
         self.fx_kwargs = []
         for i in range(len(self.base_models)):
             self.fx_kwargs.append({"base_model" : self.base_models[i]})
@@ -614,7 +576,7 @@ class ukf_ss:
 
         self.ukf = ukf(self.model_params, ukf_params, self.base_models, self.pool)
 
-    def ss_Predict(self):
+    def ss_Predict(self, step):
         """ Forecast step of UKF for stationsim.
 
         - forecast state using UKF (unscented transform)
@@ -622,7 +584,12 @@ class ukf_ss:
         - jump base_model forwards to forecast time
         - update truths list with new positions
         
+        Parameters
+        ------
+        step : int
+            time point of main base_model
         """
+        
         """if fx kwargs need updating do it here. Future ABMs may dynamically update parameters as they receive new
         state information. Stationsim does not do this but future ones may so its nice to think about now.
         """
@@ -630,16 +597,19 @@ class ukf_ss:
             # update transition function fx_kwargs if necessary. not necessary for stationsim but easy to add later.
             #self.fx_kwargs_update_function(*update_fx_args)
 
-
-        self.ukf.predict(self.fx_kwargs)
-        self.forecasts.append(self.ukf.x)
+        
+        
+        if (step + 1) % self.sample_rate == 0:
+            self.ukf.predict(self.fx_kwargs)
+            self.forecasts.append(self.ukf.x)
+        else:
+            self.base_models = self.pool.map(model_step, 
+                                        self.base_models)
         #if self.batch:
         #        self.ukf.base_model.set_state(self.batch_truths[step],
         #        "if batch update stationsim with new truths after step"
         #                                      sensor = "location")
-        
-        self.base_model.step()
-        self.truths.append(self.base_model.get_state(sensor="location"))
+    
 
     def ss_Update(self, step, **hx_kwargs):
         """ Update step of UKF for stationsim.
@@ -656,7 +626,6 @@ class ukf_ss:
         """
 
         if step % self.sample_rate == 0:
-
             state = self.base_model.get_state(sensor="location").astype(float)
             noise_array = np.ones(self.pop_total*2)
             noise_array[np.repeat([agent.status != 1 for
@@ -717,10 +686,14 @@ class ukf_ss:
             #        print("ran out of truths. maybe batch model ended too early.")
                     
             #forecast next StationSim state and jump model forwards
+
+            
             self.status_key.append([agent.status for agent in self.base_model.agents])
-            self.ss_Predict()
+            self.ss_Predict(self.base_model.step_id)
+            self.base_model.step()
+            self.truths.append(self.base_model.get_state(sensor="location"))
             #assimilate new values
-            self.ss_Update(step, **self.hx_kwargs)
+            self.ss_Update(self.base_model.step_id, **self.hx_kwargs)
             
             if step%100 == 0 :
                 logging.info(f"Iterations: {step}")

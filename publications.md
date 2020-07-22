@@ -8,7 +8,7 @@ _The following publications report on the current progress of the DUST project o
 
 ## Peer Reviewed Articles
 
-
+**Malleson, N.**, K. Minors, Le-Minh Kieu , J. A. Ward , A. West and A. Heppenstall (2020) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. _Journal of Artificial Societies and Social Simulation (JASSS)_ 23 (3).  [http://jasss.soc.surrey.ac.uk/23/3/3.html](http://jasss.soc.surrey.ac.uk/23/3/3.html) DOI: [10.18564/jasss.4266](https://dx.doi.org/10.18564/jasss.4266) (open access)
 
 Kieu, Le-Minh, N. Malleson, and A. Heppenstall (2019). Dealing with Uncertainty in Agent-Based Models for Short-Term Predictions’. _Royal Society Open Science_ 7(1): 191074. DOI: [10.1098/rsos.191074](https://doi.org/10.1098/rsos.191074) (open access)
 

@@ -10,8 +10,8 @@ Created on Mon Dec  2 11:16:33 2019
 import sys
 import os
 
-sys.path.append("modules")
-sys.path.append("../../../stationsim")
+sys.path.append("..")
+sys.path.append("../../../../stationsim")
 
 import numpy as np
 from math import floor
@@ -140,7 +140,7 @@ def omission_params(n, prop, model_params, ukf_params):
     ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
     
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
-    ukf_params["q"] = 0.001 * np.eye(2 * n)
+    ukf_params["q"] = 0.01 * np.eye(2 * n)
     ukf_params["r"] = 0.01 * np.eye(2 * ukf_params["sample_size"])#sensor noise
     
     ukf_params["fx"] = fx
@@ -149,6 +149,7 @@ def omission_params(n, prop, model_params, ukf_params):
     ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"], "n" : n,
                                "index" : ukf_params["index"],}
     ukf_params["obs_key_func"] = obs_key_func
+    ukf_params["alpha"] = 0.1
     
     ukf_params["file_name"] =  ex1_pickle_name(n, prop)
         
@@ -296,9 +297,9 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
 if __name__ == "__main__":
     recall = False #recall previous run
     do_pickle = True #pickle new run
-    pickle_source = "../pickles/" #where to load/save pickles from
-    destination = "../plots/"
-    n = 20 #population size
-    prop = 0.5  #proportion observed
+    pickle_source = "../../pickles/" #where to load/save pickles from
+    destination = "../../plots/"
+    n = 10 #population size
+    prop = 1.0  #proportion observed
     
     u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

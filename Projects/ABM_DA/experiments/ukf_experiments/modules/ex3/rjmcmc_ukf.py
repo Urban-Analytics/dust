@@ -56,44 +56,95 @@ posteriors for models M and N respectively.
 """
 
 ########
-#exit gate probability distribution functions
+#imports
 ########
 
 import os
 import sys
-sys.path.append("../../../../stationsim")
-from ukf2 import ukf, ukf_ss
+import logging
+import datetime
 import random
 import numpy as np
 import multiprocessing
+from scipy.stats import multivariate_normal
+from scipy.spatial.distance import mahalanobis
+from copy import deepcopy
+
+#imports from stationsim folder
+sys.path.append("../../../../stationsim")
+from ukf2 import ukf, ukf_ss
+from stationsim_model import Model
+
+#imports from modules
 sys.path.append("..")
 from sensors import generate_Camera_Rect
 import stationsim_densities as sd
+import default_ukf_configs as configs
 
-class rjmcmc_ukf(ukf_ss):
+class rjmcmc_ukf():
     
-    def __init__(self, model_params, ukf_params, base_model, pool):
-    
+    def __init__(self, model_params, ukf_params, base_model):
+        """init rjmcmc_ukf class
+        
+        - load in model and ukf params.
+        - make every model/ukf params part of self for cleaner code
+        - load in multiprocessing pool and base_model
+        - build exit gate polygons and assign them integers
+        - build base_model boundary
+        
+        Parameters
+        ----------
+        model_params, ukf_params : dict
+            stationsim parameters `model_params` and ukf parameters 
+            `ukf_params`.
+        base_model : cls
+            DESCRIPTION.
+        pool : multiprocessing.pool
+            `pool` for multiprocessing used in map/starmap.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.ukf_params = ukf_params
+        self.model_params = model_params
         for key in model_params.keys():
             setattr(self, key, model_params[key])
         for key in ukf_params.keys():
             setattr(self, key, ukf_params[key])
+            
         self.base_model = base_model
+        #self.base_models = [self.base_model] * ((4 * self.pop_total) + 1)
+        self.fx_kwargs = [self.fx_kwargs] * ((4 * self.pop_total) + 1)
+
+        
+        "Build exit gate and boundary polygons."
+        "Assign each exit gate an integer."
         self.get_gates_dict, self.set_gates_dict = self.gates_dict(self.base_model)
         
         self.boundary = generate_Camera_Rect(np.array([0, 0]), 
                                              np.array([0, self.height]),
                                              np.array([self.width, self.height]), 
                                              np.array([self.width, 0]))
-        buffer = base_model.gates_space
-        exit_gates =  base_model.gates_locations[-2:]
+        buffer = self.base_model.gates_space
+        exit_gates =  self.base_model.gates_locations[-2:]
         self.exit_polys = sd.exit_points_to_polys(exit_gates, self.boundary, buffer)
-    
+        self.pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
 
-    def agent_probabilities(self, base_model, theta, plot = False):
+        self.true_gates = self.get_gates(self, base_model, self.get_gates_dict)
+        self.current_gates = []
+        self.alphas = []
+        self.time1 = datetime.datetime.now()
+        
+        
+    def agent_probabilities(self, base_model, theta, get_gate_dict,  plot = False):
         """possibly only sample from more contentiuous agents for speed
         would fit into draw_new_gates rather than sample agents uniformly
 
+        Parameters
+        --------
+        
         Returns
         -------
         gate_probabilities : array_like
@@ -108,6 +159,12 @@ class rjmcmc_ukf(ukf_ss):
                                        self.boundary)
         cut_bounds = sd.cut_boundaries(polys, self.boundary)
         gate_probabilities = sd.exit_gate_probabilities(self.exit_polys, cut_bounds)
+        for i in range(gate_probabilities.shape[0]):
+            if np.sum(gate_probabilities[i, :] == 0) or base_model.agents[i].status != 1:
+                current_gate = get_gate_dict[str(base_model.agents[i].loc_desire)]
+                gate_probabilities[i, current_gate] = 1
+                gate_probabilities[i, ~current_gate] = 0     
+            
         if plot:
             sd.plot_vision(cut_bounds, self.exit_polys, polys, self.boundary)
         return gate_probabilities
@@ -134,6 +191,7 @@ class rjmcmc_ukf(ukf_ss):
         """
         
         #sample without replacement which gates to change
+        new_gates = deepcopy(current_gates)
         n_agents, n_gates = gate_probabilities.shape
         if n_agents < n_replace:
             n_replace = n_agents
@@ -143,15 +201,15 @@ class rjmcmc_ukf(ukf_ss):
             weights = gate_probabilities[item, :]
             choice = random.choices(range(n_gates),
                                      weights = weights, k = 1)
-            current_gates[item] = choice[0]
+            new_gates[item] = choice[0]
             
-        return current_gates
+        return new_gates
     
     ########
     #acceptance probability
     ########
     
-    def transition_probability(self, gates_distribution, old_gates, new_gates):
+    def transition_probability(self, gates_distribution, new_gates):
         """ probability of moving to one combination of gates from another.
         
         if proposal gates are m = m_1,..., m_i we times together the probabilities
@@ -162,23 +220,50 @@ class rjmcmc_ukf(ukf_ss):
         gates_distribution : array_like
             array of (n_agents x n_gates) shape. element i,j is the probability 
             of the ith agent moving to the jth gate.
-        old_gates, new_gates: array_like
-            `old_gates` current agent exit gates and `new_gates` proposed exit
-            gates.
+        new_gates: array_like
+            `new_gates` proposed exit gates.
         Returns
         -------
         probability : float
             probability of moving from 
 
         """
+        prob = 1
+        for i, gate in enumerate(new_gates):
+            prob *= gates_distribution[i, gate]
+        return prob
     
-    def acceptance_probability(model1, model2, obs):
+    def ratio_of_mv_normals(self, ukf1, ukf2, obs):
+        """take the ratio of two mv normal densities too small for python
+        
+        often we see densities <1e-16 which python cant handle
+        as we have a ratio of these densities we can cancel out elements
+        of each density making it calculable in python.
+        Returns
+        -------
+        None.
+
+        """
+        x1 = ukf1.ukf.x
+        p1 = ukf1.ukf.p
+        x2 = ukf2.ukf.x
+        p2 = ukf2.ukf.p
+        obs1 = np.matmul(ukf1.ukf.k, obs)
+        obs2 = np.matmul(ukf2.ukf.k, obs)
+        
+        prob = 1
+        prob *= (np.linalg.det(p1)/np.linalg.det(p2))**(-1/2)
+        distance = -0.5*(mahalanobis(obs2, x2, p2) - mahalanobis(obs1, x1, p1))
+        prob *= np.exp(distance)
+        return prob
+            
+    def acceptance_probability(self, ukf1, ukf2, obs):
         """ given observations and two potential models, calculate their relative strength
         
         
         Parameters
         ------
-        model1, model2 : cls
+        ukf1, ukf2 : cls
             `model1` and `model2` are the current and candidate models 
             with different exit gates.
         obs : some observations to determine likelihood of each model
@@ -191,11 +276,54 @@ class rjmcmc_ukf(ukf_ss):
             changing models when we draw a number between 0 and 1 from a 
             uniform distribution.
         """
-    
+        #placeholder 
         prob = 1
-        #times in probabilities
+        #posterior Gaussian densities of observations.
+        #I.E how likely are the observations to be from the given posterior. 
+        #larger density implies more likely
+        prob *= self.ratio_of_mv_normals(ukf1, ukf2, obs)
+        
+        
+        #transition probabilities from old to new model and vice versa
+        new_gates = self.get_gates(self, ukf2.base_model, self.get_gates_dict)
+        old_new_transition = self.transition_probability(self.gate_probabilities,
+                                                         new_gates)
+        prob /= old_new_transition
+        old_gates = self.get_gates(self, ukf1.base_model, self.get_gates_dict)
+        new_old_transition = self.transition_probability(self.gate_probabilities,
+                                                         old_gates)
+        prob *= new_old_transition
+        prob = np.min([prob, 1.])
+        #Jacobian 1 for now. could change if we vary stationsim dimensions.
+        #prob *= Jacobian
         return prob
     
+    def choose_model(self, alpha):
+        """given acceptance probability alpha do we choose the old or new model
+
+        Parameters
+        ----------
+        alpha : float
+            probability of accepting the new model `alpha`. Must be 
+            0<=alpha<=1 by definition.
+
+        Returns
+        -------
+        choice : bool
+            `Final `choice` bool. 
+            False if we KEEP the old model 
+            True if we CHANGE to the new model
+
+        """
+        if alpha  == 1.:
+            choice = True
+        else:
+            choice = np.random.binomial(1, alpha)
+            if choice ==0:
+                choice = False
+            else:
+                choice = True
+        return choice
     
     ######
     #general functions for interacting with stationsim
@@ -268,14 +396,13 @@ class rjmcmc_ukf(ukf_ss):
         for i, gate in enumerate(new_gates):
             new_gate = set_gates_dict[gate]
             base_model.agents[i].loc_desire = new_gate
-        
         return base_model
     
     ########
     #main step function
     ########
     
-    def step():
+    def step(self, ukf_1):
         """main step function for rjmcmc
         
         - given current exit gates process stationsim one step through ukf
@@ -289,16 +416,79 @@ class rjmcmc_ukf(ukf_ss):
         None.
     
         """
-        #calculate exit gate pdf and draw new gates
-
-        #copy old model
         
-        #step both models
+                #if self.batch:
+        #    if self.base_model.step_id == len(self.batch_truths):
+        #        break
+        #        print("ran out of truths. maybe batch model ended too early.")
         
+        base_model = ukf_1.base_models[0]
+        #calculate exit gate pdf and draw new gates for candidate model
+        self.gate_probabilities = self.agent_probabilities(base_model, np.pi/8, self.get_gates_dict)
+        #copy original model and give it new gates
+        ukf_2 = ukf_1
+        current_gates = self.get_gates(self, ukf_1.base_model, self.get_gates_dict)
+        
+        new_gates = self.draw_new_gates(self.gate_probabilities, current_gates, 5)
+        
+        
+        for i, base_model in enumerate(ukf_2.base_models):
+            ukf_2.base_models[i] = self.set_gates(self, 
+                                                  ukf_2.base_model, 
+                                                  new_gates,
+                                                  self.set_gates_dict)
+        #step both models forwards to get posterior distributions for mu/sigma
+        ukf_1.step()
+        ukf_2.step()
+        
+        ukf_1.base_model.step()
+        obs = ukf_1.base_model.get_state("location")
         #calculate alpha
-        
+        alpha = self.acceptance_probability(ukf_1, ukf_2, obs)
+        self.alphas.append(alpha)
         #choose new model
+        choice = self.choose_model(alpha)
+        if choice:
+            return ukf_2
+        else:
+            return ukf_1
+    def main(self):
+        """main function for rjmcmc_ukf
+        
+
+        Returns
+        -------
+        None.
+
+        """
+
+        
+        logging.info("rjmcmc_ukf start")
+    
+        self.ukf_1 = ukf_ss(self.model_params, self.ukf_params, self.base_model, self.pool)
+        
+        for step in range(self.step_limit):    
+            self.ukf_1 = self.step(self.ukf_1)
+            if step%100 == 0 :
+                logging.info(f"Iterations: {step}")
+            finished = self.base_model.pop_finished == self.pop_total
+            if finished:  # break condition
+                logging.info("ukf broken early. all agents finished")
+                break
+    
+        self.time2 = datetime.datetime.now()  # timer
+        if not finished:
+            logging.info(f"ukf timed out. max iterations {self.step_limit} of stationsim reached")
+        time = self.time2-self.time1
+        time = f"Time Elapsed: {time}"
+        print(time)
+        logging.info(time)
+        
+        self.pool.close()
+        self.pool.join()
+        self.ukf_1.pool = None
+        self.pool = None
+
         
 if __name__ == "__main__":
-#    rjmcmc_ukf = rjmcmc_ukf(base_model)
     pass

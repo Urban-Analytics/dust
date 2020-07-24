@@ -209,10 +209,12 @@ def exit_gate_probabilities(gates, cut_boundaries, scale = True):
         intersect_length_sum = sum(intersect_lengths)
         if scale and  intersect_length_sum!= 0:
             intersect_lengths = [item/intersect_length_sum for item in intersect_lengths]
-            
+        
         main_intersect_lengths.append(intersect_lengths)
         
     gate_probabilities = np.array(main_intersect_lengths)
+
+            
     return gate_probabilities
         
     
@@ -292,7 +294,7 @@ def plot_vision(cut_bounds, exit_polys, polys, boundary):
     plt.title("Each Agents vision of exit gates. ")
     plt.show()
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
     #!! to do needs a check on each agent's status.
     model_params = configs.model_params
     model_params["pop_total"] = 2

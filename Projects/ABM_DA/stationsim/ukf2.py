@@ -11,6 +11,7 @@ citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
 
 This file has no main. use ukf notebook/modules in experiments folder
 
+!!dsitinguish between fx_kwargs and fx_kwargs_iter
 """
 
 # general packages used for filtering
@@ -370,13 +371,13 @@ class ukf:
         self.r = np.eye(yhat.shape[0])
         pyy = covariance(nl_sigmas, yhat, self.wc, addition=self.r)
         pxy = covariance(self.sigmas, self.x, self.wc, nl_sigmas, yhat)
-        k = np.matmul(pxy, np.linalg.inv(pyy))
+        self.k = np.matmul(pxy, np.linalg.inv(pyy))
 
         "i dont know why `self.x += ...` doesnt work here"
         mu = (z-yhat)
-        self.x = self.x + np.matmul(k, mu)
+        self.x = self.x + np.matmul(self.k, mu)
         
-        p = self.p - np.linalg.multi_dot([k, pyy, k.T])
+        p = self.p - np.linalg.multi_dot([self.k, pyy, self.k.T])
 
         
 
@@ -384,15 +385,14 @@ class ukf:
         adaptive = False
         if adaptive:
             if np.sum(np.abs(mu)) != 0:
-                x, p = self.fault_test(
-                    z, mu, pxy, pyy, self.x, self.p, k, yhat)
+                x, p = self.fault_test(z, mu, pxy, pyy, self.x, self.p, self.k, yhat)
 
         """record various data for diagnostics. Warning this makes the pickles
         rather large"""
         if self.verbose:
             self.pxys.append(pxy)
             self.pyys.append(pyy)
-            self.ks.append(k)
+            self.ks.append(self.k)
             self.mus.append(mu)
             
         "update mean and covariance states"
@@ -540,6 +540,9 @@ class ukf_ss:
         self.time1 = datetime.datetime.now()  # timer
         self.time2 = None
         
+        self.ukf = ukf(self.model_params, ukf_params, self.base_models, self.pool)
+
+        
         "save the initial stationsim for batch purposes."
 
     
@@ -554,27 +557,6 @@ class ukf_ss:
             4), byteorder='little') if seed == None else seed
         np.random.seed(new_seed)
     '''
-
-    def init_ukf(self, ukf_params, seed=None):
-        """initialise ukf with initial state and covariance structures.
-
-        Parameters
-        ------
-        ukf_params : dict
-            dictionary of various ukf parameters `ukf_params`
-        seed : float
-            fixed `seed` for testing. 
-
-        Returns
-        ------
-        self.ukf : class
-            `ukf` class intance for stationsim
-            
-        """
-        #if seed != None:
-        #    self.set_random_seed(seed)
-
-        self.ukf = ukf(self.model_params, ukf_params, self.base_models, self.pool)
 
     def ss_Predict(self, step):
         """ Forecast step of UKF for stationsim.
@@ -661,21 +643,31 @@ class ukf_ss:
             self.ukf_histories.append(self.ukf.x)  # append histories
             self.obs.append(new_state)
 
+    def step(self):
+        """ukf step function
+        - initiates ukf
+        - while any agents are still active
+        - predict with ukf
+        - step true model
+        - update ukf with new model positions
+        - repeat until all agents finish or max iterations reached
+        - if no agents then stop
+        """
+        
+        self.status_key.append([agent.status for agent in self.base_model.agents])
+        self.ss_Predict(self.base_model.step_id)
+        self.base_model.step()
+        self.truths.append(self.base_model.get_state(sensor="location"))
+        #assimilate new values
+        self.ss_Update(self.base_model.step_id, **self.hx_kwargs)
+            
     def main(self):
         
         """main function for applying ukf to gps style station StationSim
-        -    initiates ukf
-        -    while any agents are still active
-        -    predict with ukf
-        -    step true model
-        -    update ukf with new model positions
-        -    repeat until all agents finish or max iterations reached
-        -    if no agents then stop
 
         """
 
         #initialise UKF
-        self.init_ukf(self.ukf_params)
 
         logging.info("ukf start")
         for step in range(self.step_limit):
@@ -686,15 +678,8 @@ class ukf_ss:
             #        print("ran out of truths. maybe batch model ended too early.")
                     
             #forecast next StationSim state and jump model forwards
+            self.step()
 
-            
-            self.status_key.append([agent.status for agent in self.base_model.agents])
-            self.ss_Predict(self.base_model.step_id)
-            self.base_model.step()
-            self.truths.append(self.base_model.get_state(sensor="location"))
-            #assimilate new values
-            self.ss_Update(self.base_model.step_id, **self.hx_kwargs)
-            
             if step%100 == 0 :
                 logging.info(f"Iterations: {step}")
             finished = self.base_model.pop_finished == self.pop_total
@@ -711,7 +696,8 @@ class ukf_ss:
         logging.info(time)
         
         self.pool.close()
-        self.pool.join()
+        self.ukf.pool.close()
+        #self.pool.join()
         self.ukf.pool = None
         self.pool = None
         

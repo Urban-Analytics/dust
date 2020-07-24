@@ -115,7 +115,7 @@ class Test_rjmcmc_ukf(unittest.TestCase):
     
     def test_agent_probabilites(self):
         rjmcmc_ukf = self.rjmcmc_ukf
-        theta = ((np.pi/20))
+        theta = ((np.pi/10))
         gate_probabilites = rjmcmc_ukf.agent_probabilities(self.base_model, theta, True)
         expected = np.array([[0.5, 0.5],
                              [0.5, 0.5]])

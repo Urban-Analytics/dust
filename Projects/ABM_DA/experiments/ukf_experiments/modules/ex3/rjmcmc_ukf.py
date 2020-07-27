@@ -121,21 +121,24 @@ class rjmcmc_ukf():
         
         "Build exit gate and boundary polygons."
         "Assign each exit gate an integer."
-        self.get_gates_dict, self.set_gates_dict = self.gates_dict(self.base_model)
+        self.get_gates_dict, self.set_gates_dict = self.gates_dict(self, self.base_model)
         
         self.boundary = generate_Camera_Rect(np.array([0, 0]), 
                                              np.array([0, self.height]),
                                              np.array([self.width, self.height]), 
                                              np.array([self.width, 0]))
         buffer = self.base_model.gates_space
-        exit_gates =  self.base_model.gates_locations[-2:]
+        exit_gates =  self.base_model.gates_locations[-self.gates_out:]
         self.exit_polys = sd.exit_points_to_polys(exit_gates, self.boundary, buffer)
-        self.pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
 
         self.true_gates = self.get_gates(self, base_model, self.get_gates_dict)
-        self.current_gates = []
+        self.estimated_gates = []
+        self.model_choices = []
         self.alphas = []
         self.time1 = datetime.datetime.now()
+        
+        
+
         
         
     def agent_probabilities(self, base_model, theta, get_gate_dict,  plot = False):
@@ -160,11 +163,12 @@ class rjmcmc_ukf():
         cut_bounds = sd.cut_boundaries(polys, self.boundary)
         gate_probabilities = sd.exit_gate_probabilities(self.exit_polys, cut_bounds)
         for i in range(gate_probabilities.shape[0]):
+            #if np.sum(gate_probabilities[i, :]) == 0:
             if np.sum(gate_probabilities[i, :] == 0) or base_model.agents[i].status != 1:
-                current_gate = get_gate_dict[str(base_model.agents[i].loc_desire)]
+                current_gate = get_gate_dict[str(base_model.agents[i].loc_desire)]                
+                gate_probabilities[i, :] = 0     
                 gate_probabilities[i, current_gate] = 1
-                gate_probabilities[i, ~current_gate] = 0     
-            
+
         if plot:
             sd.plot_vision(cut_bounds, self.exit_polys, polys, self.boundary)
         return gate_probabilities
@@ -251,10 +255,13 @@ class rjmcmc_ukf():
         obs1 = np.matmul(ukf1.ukf.k, obs)
         obs2 = np.matmul(ukf2.ukf.k, obs)
         
-        prob = 1
+        prob = 1.
         prob *= (np.linalg.det(p1)/np.linalg.det(p2))**(-1/2)
-        distance = -0.5*(mahalanobis(obs2, x2, p2) - mahalanobis(obs1, x1, p1))
-        prob *= np.exp(distance)
+        distance = -0.5*(mahalanobis(obs2, x2, p2)**2 - mahalanobis(obs1, x1, p1)**2)
+        if np.exp(distance) == np.inf:
+            prob *= 0.
+        else:
+            prob *= np.exp(distance)
         return prob
             
     def acceptance_probability(self, ukf1, ukf2, obs):
@@ -288,11 +295,20 @@ class rjmcmc_ukf():
         new_gates = self.get_gates(self, ukf2.base_model, self.get_gates_dict)
         old_new_transition = self.transition_probability(self.gate_probabilities,
                                                          new_gates)
-        prob /= old_new_transition
         old_gates = self.get_gates(self, ukf1.base_model, self.get_gates_dict)
         new_old_transition = self.transition_probability(self.gate_probabilities,
                                                          old_gates)
         prob *= new_old_transition
+        prob /= old_new_transition
+
+        #if old_new_transition != 0:
+        #    print("Warning. 0 chance of moving from current to new gates.")
+        #    prob = np.nan
+        #else:
+        #    prob /= old_new_transition
+
+        #if prob == np.nan:
+        #    print("Warning. nan probability. This is usually just the initiation step.")
         prob = np.min([prob, 1.])
         #Jacobian 1 for now. could change if we vary stationsim dimensions.
         #prob *= Jacobian
@@ -330,7 +346,7 @@ class rjmcmc_ukf():
     ######
     
     @staticmethod
-    def gates_dict(base_model):
+    def gates_dict(self, base_model):
         """assign each exit gate location an integer for a given model
         
         Parameters
@@ -345,7 +361,7 @@ class rjmcmc_ukf():
             2x1 numpy array value for each key giving the location.
 
         """
-        gates_locations = base_model.gates_locations[-2:]
+        gates_locations = base_model.gates_locations[-self.gates_out:]
         get_gates_dict = {}
         set_gates_dict = {}
         for i in range(gates_locations.shape[0]):
@@ -402,7 +418,7 @@ class rjmcmc_ukf():
     #main step function
     ########
     
-    def step(self, ukf_1):
+    def rj_step(self, ukf_1, pool):
         """main step function for rjmcmc
         
         - given current exit gates process stationsim one step through ukf
@@ -422,26 +438,25 @@ class rjmcmc_ukf():
         #        break
         #        print("ran out of truths. maybe batch model ended too early.")
         
-        base_model = ukf_1.base_models[0]
+        base_model = ukf_1.base_model
         #calculate exit gate pdf and draw new gates for candidate model
         self.gate_probabilities = self.agent_probabilities(base_model, np.pi/8, self.get_gates_dict)
         #copy original model and give it new gates
-        ukf_2 = ukf_1
+        ukf_2 = deepcopy(ukf_1)
         current_gates = self.get_gates(self, ukf_1.base_model, self.get_gates_dict)
         
-        new_gates = self.draw_new_gates(self.gate_probabilities, current_gates, 5)
+        new_gates = self.draw_new_gates(self.gate_probabilities, current_gates, 2)
         
         
-        for i, base_model in enumerate(ukf_2.base_models):
+        for i, model in enumerate(ukf_2.base_models):
             ukf_2.base_models[i] = self.set_gates(self, 
-                                                  ukf_2.base_model, 
+                                                  model, 
                                                   new_gates,
                                                   self.set_gates_dict)
         #step both models forwards to get posterior distributions for mu/sigma
-        ukf_1.step()
-        ukf_2.step()
-        
-        ukf_1.base_model.step()
+        ukf_1.step(pool)
+        ukf_2.step(pool)
+                
         obs = ukf_1.base_model.get_state("location")
         #calculate alpha
         alpha = self.acceptance_probability(ukf_1, ukf_2, obs)
@@ -449,10 +464,20 @@ class rjmcmc_ukf():
         #choose new model
         choice = self.choose_model(alpha)
         if choice:
-            return ukf_2
+            current_gates = new_gates
+            model_choice = 1
+            new_ukf =  ukf_2
+
         else:
-            return ukf_1
-    def main(self):
+            model_choice = 0
+            new_ukf =  ukf_1
+            
+        self.estimated_gates.append(current_gates)
+        self.model_choices.append(model_choice)
+        
+        return new_ukf
+    
+    def main(self, pool):
         """main function for rjmcmc_ukf
         
 
@@ -464,14 +489,22 @@ class rjmcmc_ukf():
 
         
         logging.info("rjmcmc_ukf start")
-    
-        self.ukf_1 = ukf_ss(self.model_params, self.ukf_params, self.base_model, self.pool)
+        no_gates_model = deepcopy(self.base_model)
+        no_gates_models = [self.set_gates(self, no_gates_model, 
+                                             [0]*(self.pop_total),
+                                             self.set_gates_dict)]
+        no_gates_models = no_gates_models * ((4*self.pop_total) + 1)
+        self.estimated_gates.append([0]*(self.pop_total))
         
+        self.ukf_1 = ukf_ss(self.model_params, self.ukf_params, self.base_model,
+                            no_gates_models)
+
         for step in range(self.step_limit):    
-            self.ukf_1 = self.step(self.ukf_1)
+            self.ukf_1 = self.rj_step(self.ukf_1, pool)
             if step%100 == 0 :
                 logging.info(f"Iterations: {step}")
-            finished = self.base_model.pop_finished == self.pop_total
+                
+            finished = self.ukf_1.base_model.pop_finished == self.pop_total
             if finished:  # break condition
                 logging.info("ukf broken early. all agents finished")
                 break
@@ -484,10 +517,10 @@ class rjmcmc_ukf():
         print(time)
         logging.info(time)
         
-        self.pool.close()
-        self.pool.join()
-        self.ukf_1.pool = None
-        self.pool = None
+        #self.pool.close()
+        #self.pool.join()
+        #self.ukf_1.pool = None
+        #self.pool = None
 
         
 if __name__ == "__main__":

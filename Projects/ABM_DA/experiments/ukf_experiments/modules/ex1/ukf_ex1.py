@@ -15,6 +15,7 @@ sys.path.append("../../../../stationsim")
 
 import numpy as np
 from math import floor
+import multiprocessing
 
 "local imports"
 from ukf_fx import fx
@@ -243,7 +244,7 @@ def ex1_plots(instance, destination, prefix, save, animate):
         plts.pair_frames(truths, forecasts, obs_key,
                          truths.shape[0], "../plots/")
         
-def ex1_main(n, prop, recall, do_pickle, source, destination):
+def ex1_main(n, prop, recall, do_pickle, source, destination, pool):
     
     
     """main function to run experiment 1
@@ -275,7 +276,7 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
         print(f"Proportion Observed: {prop}")
         
         u = ukf_ss(model_params,ukf_params,base_model)
-        u.main()
+        u.main(pool)
         pickle_main(ukf_params["file_name"],pickle_source, do_pickle, u)
     
     else:
@@ -301,5 +302,6 @@ if __name__ == "__main__":
     destination = "../../plots/"
     n = 10 #population size
     prop = 1.0  #proportion observed
-    
-    u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)
+    pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
+
+    u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination, pool)

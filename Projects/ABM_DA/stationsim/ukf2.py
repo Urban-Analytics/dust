@@ -197,7 +197,7 @@ class ukf:
         `base_model` initalised class instance of desired ABM.
     """
 
-    def __init__(self, model_params, ukf_params, base_models, pool):
+    def __init__(self, model_params, ukf_params, x_0):
         """
         x - state
         n - state size 
@@ -219,12 +219,12 @@ class ukf:
         for key in ukf_params.keys():
             setattr(self, key, ukf_params[key])
 
-        self.base_models = base_models
-        self.base_model = deepcopy(base_models[0])
+        #self.base_models = base_models
+        #self.base_model = deepcopy(base_models[0])
 
         "pull parameters from dictionary"
         # !!initialise some positions and covariances
-        self.x = self.base_model.get_state(sensor="location")
+        self.x = x_0
         self.n = self.x.shape[0]  # state space dimension
 
         "MSSP sigma point scaling parameters"
@@ -240,9 +240,7 @@ class ukf:
 
         self.xs = []
         self.ps = []
-        
-        self.pool = pool
-        
+                
         self.verbose = True
         if self.verbose:
             self.pxxs = []
@@ -251,7 +249,7 @@ class ukf:
             self.ks = []
             self.mus = []
             
-    def unscented_Mean(self, sigmas, wm, kf_function, function_kwargs):
+    def unscented_Mean(self, pool, sigmas, wm, kf_function, function_kwargs):
         """calculate unscented tmean  estimate for some sample of agent positions
     
         -calculate sigma points using sigma_function 
@@ -300,11 +298,11 @@ class ukf:
         n_sigmas = sigmas.shape[1]
         sigmas_iter = [sigmas[:, i] for i in range(n_sigmas)]
         
-        nl_sigmas = starmap_with_kwargs(self.pool, 
+        nl_sigmas = starmap_with_kwargs(pool, 
                                         kf_function, 
                                         sigmas_iter, 
                                         function_kwargs)
-        #nl_sigmas = self.pool.starmap(kf_function, list(zip( \
+        #nl_sigmas = pool.starmap(kf_function, list(zip( \
         #    range(n_sigmas),  # Particle numbers (in integer)
         #    [sigma for sigma in sigmas],
         #    function_kwargs  # Number of iterations to step each particle (an integer)
@@ -314,7 +312,7 @@ class ukf:
     
         return nl_sigmas, xhat
     
-    def predict(self, fx_kwargs):
+    def predict(self, pool, fx_kwargs):
         """Transitions sigma points forwards using markovian transition function plus noise Q
 
         - calculate sigmas using prior mean and covariance P.
@@ -333,7 +331,7 @@ class ukf:
         """
 
         sigmas = MSSP(self.x, self.p, self.g)
-        forecasted_sigmas, xhat = self.unscented_Mean(sigmas, 
+        forecasted_sigmas, xhat = self.unscented_Mean(pool, sigmas, 
                                                       self.wm, 
                                                       self.fx,
                                                       fx_kwargs)
@@ -347,7 +345,7 @@ class ukf:
         if self.verbose:
             self.pxxs.append(pxx)
 
-    def update(self, z, hx_kwargs):
+    def update(self, z, pool, hx_kwargs):
         """ update forecasts with measurements to get posterior assimilations
 
         - nudges X- sigmas with new pxx from predict
@@ -366,7 +364,7 @@ class ukf:
 
         """
 
-        nl_sigmas, yhat = self.unscented_Mean(self.sigmas, self.wm,
+        nl_sigmas, yhat = self.unscented_Mean(pool, self.sigmas, self.wm,
                                          self.hx, hx_kwargs)
         self.r = np.eye(yhat.shape[0])
         pyy = covariance(nl_sigmas, yhat, self.wc, addition=self.r)
@@ -482,7 +480,8 @@ class ukf_ss:
         stationsim model `base_model`
     """
 
-    def __init__(self, model_params, ukf_params, base_model, truths = None):
+    def __init__(self, model_params, ukf_params, base_model, base_models = None,
+                 truths = None):
         """
         *_params - loads in parameters for the model, station sim filter and general UKF parameters
         base_model - initiate stationsim 
@@ -509,14 +508,16 @@ class ukf_ss:
             setattr(self, key, ukf_params[key])
 
         #list of particle models
-        self.base_models = [deepcopy(self.base_model)] * int((2 * 2 * self.pop_total) + 1)
-        
+        if base_models is None:
+            self.base_models = [deepcopy(self.base_model)] * int((2 * 2 * self.pop_total) + 1)
+        else:
+            self.base_models = base_models
+            
         #iterable fx_kwargs
         self.fx_kwargs = []
         for i in range(len(self.base_models)):
             self.fx_kwargs.append({"base_model" : self.base_models[i]})
 
-        self.pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
 
         """lists for various data outputs
         observations
@@ -540,7 +541,8 @@ class ukf_ss:
         self.time1 = datetime.datetime.now()  # timer
         self.time2 = None
         
-        self.ukf = ukf(self.model_params, ukf_params, self.base_models, self.pool)
+        self.ukf = ukf(self.model_params, ukf_params, 
+                       base_model.get_state(sensor="location"))
 
         
         "save the initial stationsim for batch purposes."
@@ -558,7 +560,7 @@ class ukf_ss:
         np.random.seed(new_seed)
     '''
 
-    def ss_Predict(self, step):
+    def ss_Predict(self, step, pool):
         """ Forecast step of UKF for stationsim.
 
         - forecast state using UKF (unscented transform)
@@ -582,10 +584,10 @@ class ukf_ss:
         
         
         if (step + 1) % self.sample_rate == 0:
-            self.ukf.predict(self.fx_kwargs)
+            self.ukf.predict(pool, self.fx_kwargs)
             self.forecasts.append(self.ukf.x)
         else:
-            self.base_models = self.pool.map(model_step, 
+            self.base_models = pool.map(model_step, 
                                         self.base_models)
         #if self.batch:
         #        self.ukf.base_model.set_state(self.batch_truths[step],
@@ -593,7 +595,7 @@ class ukf_ss:
         #                                      sensor = "location")
     
 
-    def ss_Update(self, step, **hx_kwargs):
+    def ss_Update(self, step, pool, **hx_kwargs):
         """ Update step of UKF for stationsim.
         - if step is a multiple of sample_rate
         - measure state from base_model.
@@ -629,7 +631,7 @@ class ukf_ss:
             #convert full noisy state to actual sensor observations
             new_state = self.ukf.hx(state, **self.hx_kwargs)
 
-            self.ukf.update(new_state, hx_kwargs_iter)
+            self.ukf.update(new_state, pool, hx_kwargs_iter)
             #self.base_model.set_state(self.ukf.x, sensor = "location")
                 
             if self.obs_key_func is not None:
@@ -643,7 +645,7 @@ class ukf_ss:
             self.ukf_histories.append(self.ukf.x)  # append histories
             self.obs.append(new_state)
 
-    def step(self):
+    def step(self, pool):
         """ukf step function
         - initiates ukf
         - while any agents are still active
@@ -655,13 +657,13 @@ class ukf_ss:
         """
         
         self.status_key.append([agent.status for agent in self.base_model.agents])
-        self.ss_Predict(self.base_model.step_id)
+        self.ss_Predict(self.base_model.step_id, pool)
         self.base_model.step()
         self.truths.append(self.base_model.get_state(sensor="location"))
         #assimilate new values
-        self.ss_Update(self.base_model.step_id, **self.hx_kwargs)
+        self.ss_Update(self.base_model.step_id, pool, **self.hx_kwargs)
             
-    def main(self):
+    def main(self, pool):
         
         """main function for applying ukf to gps style station StationSim
 
@@ -678,7 +680,7 @@ class ukf_ss:
             #        print("ran out of truths. maybe batch model ended too early.")
                     
             #forecast next StationSim state and jump model forwards
-            self.step()
+            self.step(pool)
 
             if step%100 == 0 :
                 logging.info(f"Iterations: {step}")
@@ -694,13 +696,7 @@ class ukf_ss:
         time = f"Time Elapsed: {time}"
         print(time)
         logging.info(time)
-        
-        self.pool.close()
-        self.ukf.pool.close()
-        #self.pool.join()
-        self.ukf.pool = None
-        self.pool = None
-        
+                
     """List of static methods for extracting numpy array data 
     """
     @staticmethod

@@ -7,6 +7,7 @@ Created on Wed Jul 22 14:57:18 2020
 """
 import sys
 import numpy as np
+import multiprocessing
 
 from rjmcmc_ukf import rjmcmc_ukf
 
@@ -72,8 +73,8 @@ def rjmcmc_params(n, model_params, ukf_params):
     ukf_params["prop"] = prop
         
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
-    ukf_params["q"] = 0.1 * np.eye(2 * n)
-    ukf_params["r"] = 0.1 * np.eye(2 * n)#sensor noise
+    ukf_params["q"] = 0.01 * np.eye(2 * n)
+    ukf_params["r"] = 0.01 * np.eye(2 * n)#sensor noise
     
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"] = {"base_model":base_model} 
@@ -85,15 +86,20 @@ def rjmcmc_params(n, model_params, ukf_params):
     ukf_params["file_name"] =  ex3_pickle_name(n)
     return model_params, ukf_params, base_model
 
-if __name__ == "__main__":
-    n = 20
+
+def ex3_main(n):
+    
     model_params = configs.model_params
+    model_params["gates_out"] = 3
     ukf_params = configs.ukf_params
     model_params, ukf_params, base_model = rjmcmc_params(n, model_params,
-                                                         ukf_params)
+                                                         ukf_params)                                                        
+    pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
     rjmcmc_UKF= rjmcmc_ukf(model_params, ukf_params, base_model)
-    rjmcmc_UKF.main()
-    
+    rjmcmc_UKF.main(pool)
+    pool.close()
+    pool.join()
+
     instance = rjmcmc_UKF.ukf_1
     destination = "../../plots"
     prefix = "rjmcmc_ukf_"
@@ -119,6 +125,12 @@ if __name__ == "__main__":
     #plts.path_plots(obs, "Observed")
     plts.path_plots(preds[::instance.sample_rate], "Predicted")
     plts.path_plots(truths, "True")
+    return rjmcmc_UKF
 
+if __name__ == "__main__":
+    
+    n = 10
+    rjmcmc_UKF = ex3_main(n)
+    
     
     

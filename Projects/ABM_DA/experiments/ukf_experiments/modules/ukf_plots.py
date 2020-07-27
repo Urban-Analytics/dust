@@ -263,6 +263,7 @@ class ukf_plots:
             
             if len(plot_range) ==1:
                 plt.show()
+                plt.close()
                         
             if self.save:
                 plt.tight_layout()

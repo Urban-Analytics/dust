@@ -140,7 +140,7 @@ def omission_params(n, prop, model_params, ukf_params):
     
     ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
     
-    ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
+    ukf_params["p"] = 0.01 * np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = 0.01 * np.eye(2 * n)
     ukf_params["r"] = 0.01 * np.eye(2 * ukf_params["sample_size"])#sensor noise
     
@@ -241,8 +241,8 @@ def ex1_plots(instance, destination, prefix, save, animate):
 
     if animate:
         #plts.trajectories(truths, "plots/")
-        plts.pair_frames(truths, forecasts, obs_key,
-                         truths.shape[0], "../plots/")
+        plts.pair_frames(truths, preds, obs_key,
+                         truths.shape[0], "../../plots/")
         
 def ex1_main(n, prop, recall, do_pickle, source, destination, pool):
     
@@ -300,7 +300,7 @@ if __name__ == "__main__":
     do_pickle = True #pickle new run
     pickle_source = "../../pickles/" #where to load/save pickles from
     destination = "../../plots/"
-    n = 10 #population size
+    n = 20 #population size
     prop = 1.0  #proportion observed
     pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
 

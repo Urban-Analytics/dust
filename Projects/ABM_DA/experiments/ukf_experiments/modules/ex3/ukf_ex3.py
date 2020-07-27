@@ -15,6 +15,7 @@ sys.path.append("..")
 import default_ukf_configs as configs
 from ukf_fx import fx
 from ukf_plots import ukf_plots
+import matplotlib.pyplot as plt
 
 sys.path.append("../../../../stationsim")
 from stationsim_model import Model
@@ -86,6 +87,17 @@ def rjmcmc_params(n, model_params, ukf_params):
     ukf_params["file_name"] =  ex3_pickle_name(n)
     return model_params, ukf_params, base_model
 
+def error_plot(true_gates, estimated_gates):
+    distances = []
+    true_gates = np.array(true_gates)
+    estimated_gates = np.array(estimated_gates)
+    for i in range(1, estimated_gates.shape[0]):
+        distance = np.sum((true_gates - estimated_gates[i,:]) != 0)
+        distances.append(distance)
+    f = plt.figure()
+    plt.plot(distances)
+    plt.xlabel("time")
+    plt.ylabel("Error Between Estimated and True Gates. ")
 
 def ex3_main(n):
     
@@ -101,9 +113,9 @@ def ex3_main(n):
     pool.join()
 
     instance = rjmcmc_UKF.ukf_1
-    destination = "../../plots"
+    destination = "../../plots/"
     prefix = "rjmcmc_ukf_"
-    save = False
+    save = True
     animate = False
     plts = ukf_plots(instance, destination, prefix, save, animate)
 
@@ -113,23 +125,37 @@ def ex3_main(n):
     preds = instance.preds_parser(instance, True, truths)
     
     ukf_params = instance.ukf_params
-    #forecasts = np.vstack(instance.forecasts)
+    forecasts = np.vstack(instance.forecasts)
     
     "remove agents not in model to avoid wierd plots"
     truths *= nan_array
     preds *= nan_array
-    #forecasts*= nan_array
+    forecasts*= nan_array[::instance.sample_rate]
     
     "indices for unobserved agents"
 
     #plts.path_plots(obs, "Observed")
+    
+    error_plot(rjmcmc_UKF.true_gate, rjmcmc_UKF.estimated_gates)
+    
+    plts.error_hist(truths[::instance.sample_rate,:], 
+                    preds[::instance.sample_rate,:],"Observed Errors")
+    
     plts.path_plots(preds[::instance.sample_rate], "Predicted")
     plts.path_plots(truths, "True")
+    plts.path_plots(forecasts[::instance.sample_rate], "Forecasts")
+
+    if animate:
+        #plts.trajectories(truths, "plots/")
+        obs_key = np.vstack(instance.obs_key)
+        plts.pair_frames(truths[::instance.sample_rate], forecasts, obs_key,
+                         int(truths.shape[0]/5), "../../plots/")
+    
     return rjmcmc_UKF
 
 if __name__ == "__main__":
     
-    n = 10
+    n = 20
     rjmcmc_UKF = ex3_main(n)
     
     

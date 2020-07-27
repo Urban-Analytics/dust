@@ -131,7 +131,8 @@ class rjmcmc_ukf():
         exit_gates =  self.base_model.gates_locations[-self.gates_out:]
         self.exit_polys = sd.exit_points_to_polys(exit_gates, self.boundary, buffer)
 
-        self.true_gates = self.get_gates(self, base_model, self.get_gates_dict)
+        self.true_gate = self.get_gates(self, base_model, self.get_gates_dict)
+        self.true_gates = []
         self.estimated_gates = []
         self.model_choices = []
         self.alphas = []
@@ -418,7 +419,7 @@ class rjmcmc_ukf():
     #main step function
     ########
     
-    def rj_step(self, ukf_1, pool):
+    def rj_step(self, ukf_1, step, pool):
         """main step function for rjmcmc
         
         - given current exit gates process stationsim one step through ukf
@@ -437,16 +438,14 @@ class rjmcmc_ukf():
         #    if self.base_model.step_id == len(self.batch_truths):
         #        break
         #        print("ran out of truths. maybe batch model ended too early.")
-        
         base_model = ukf_1.base_model
         #calculate exit gate pdf and draw new gates for candidate model
-        self.gate_probabilities = self.agent_probabilities(base_model, np.pi/8, self.get_gates_dict)
+        self.gate_probabilities = self.agent_probabilities(base_model, np.pi/6, self.get_gates_dict)
         #copy original model and give it new gates
         ukf_2 = deepcopy(ukf_1)
-        current_gates = self.get_gates(self, ukf_1.base_model, self.get_gates_dict)
+        current_gates = self.get_gates(self, ukf_1.base_models[0], self.get_gates_dict)
         
-        new_gates = self.draw_new_gates(self.gate_probabilities, current_gates, 2)
-        
+        new_gates = self.draw_new_gates(self.gate_probabilities, current_gates, 5)
         
         for i, model in enumerate(ukf_2.base_models):
             ukf_2.base_models[i] = self.set_gates(self, 
@@ -454,8 +453,8 @@ class rjmcmc_ukf():
                                                   new_gates,
                                                   self.set_gates_dict)
         #step both models forwards to get posterior distributions for mu/sigma
-        ukf_1.step(pool)
-        ukf_2.step(pool)
+        ukf_1.step(step, pool)
+        ukf_2.step(step, pool)
                 
         obs = ukf_1.base_model.get_state("location")
         #calculate alpha
@@ -500,7 +499,13 @@ class rjmcmc_ukf():
                             no_gates_models)
 
         for step in range(self.step_limit):    
-            self.ukf_1 = self.rj_step(self.ukf_1, pool)
+            if step % 5 ==0 and step > 0:
+                self.ukf_1 = self.rj_step(self.ukf_1, step, pool)
+            else:
+                self.ukf_1.step(step, pool)
+            
+            self.true_gates.append(self.get_gates(self, self.ukf_1.base_model,
+                                   self.get_gates_dict))
             if step%100 == 0 :
                 logging.info(f"Iterations: {step}")
                 

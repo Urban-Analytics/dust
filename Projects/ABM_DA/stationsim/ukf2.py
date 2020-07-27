@@ -5,12 +5,9 @@ The Unscented Kalman Filter (UKF) designed to be hyper efficient alternative to 
 Monte Carlo techniques such as the Particle Filter. This file aims to unify the old 
 intern project files by combining them into one single filter. It also aims to be geared 
 towards real data with a modular data input approach for a hybrid of sensors.
-
 This is based on
 citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.80.1421&rep=rep1&type=pdf
-
 This file has no main. use ukf notebook/modules in experiments folder
-
 !!dsitinguish between fx_kwargs and fx_kwargs_iter
 """
 
@@ -59,59 +56,43 @@ class HiddenPrints:
 
 def covariance(data1, mean1, weight, data2=None, mean2=None, addition=None):
     """within/cross-covariance between sigma points and their unscented mean.
-
     Note: CAN'T use numpy.cov here as it uses the regular mean 
     and not the unscented mean. as far as i know there isnt a
     numpy function for this
-
     This is the mathematical formula. Feel free to ignore
     --------------------------------------
     Define sigma point matrices X_{mxp}, Y_{nxp}, 
     some unscented mean vectors a_{mx1}, b_{nx1}
     and some vector of covariance weights wc.
-
     Also define a column subtraction operator COL(X,a) 
     such that we subtract a from every column of X elementwise.
-
     Using the above we calculate the cross covariance between two sets of 
     sigma points as 
-
     P_xy = COL(X-a) * W * COL(Y-b)^T
-
     Given some diagonal weight matrix W with diagonal entries wc and 0 otherwise.
-
     This is similar to the standard statistical covariance with the exceptions
     of a non standard mean and weightings.
     --------------------------------------
-
     - put weights in diagonal matrix
     - calculate resdiual matrix/ices as each set of sigmas minus their mean
     - calculate weighted covariance as per formula above
     - add additional noise if required e.g. process/sensor noise
-
     Parameters
     ------
-
     data1, mean1` : array_like
         `data1` some array of sigma points and their unscented mean `mean1` 
-
     data2, mean2` : array_like
         `data2` some OTHER array of sigma points and their unscented mean `mean2` 
         can be same as data1, mean1 for within sample covariance.
-
     `weight` : array_like
         `weight` sample covariance weightings
-
     addition : array_like
         `addition` some additive noise for the covariance such as 
         the sensor/process noise.
-
     Returns 
     ------
-
     covariance_matrix : array_like
         `covariance_matrix` unscented covariance matrix used in ukf algorithm
-
     """
 
     "if no secondary data defined do within covariance. else do cross"
@@ -152,27 +133,22 @@ def covariance(data1, mean1, weight, data2=None, mean2=None, addition=None):
 
 def MSSP(mean, p, g):
     """merwe's scaled sigma point calculations based on current mean x and covariance P
-
     - calculate square root of P 
     - generate empty sigma frame with each column as mean
     - keep first point the same
     - for next n points add the ith column of sqrt(P)
     - for the final n points subtract the ith column of sqrt(P)
-
     Parameters
     ------
     mean , p : array_like
         state mean `x` and covariance `p` numpy arrays
-
     g : float
         `g` sigma point scaling parameter. larger g pushes outer sigma points
         further from the centre sigma.
-
     Returns
     ------
     sigmas : array_like
         matrix of MSSPs with each column representing one sigma point
-
     """
     n = mean.shape[0]
     s = np.linalg.cholesky(p)
@@ -187,12 +163,10 @@ def MSSP(mean, p, g):
 
 class ukf:
     """main ukf class for assimilating data from some ABM
-
     Parameters
     ------
     model_params, ukf_params : dict
         dictionary of model `model_params` and ukf `ukf_params` parameters
-
     base_model : cls
         `base_model` initalised class instance of desired ABM.
     """
@@ -230,6 +204,7 @@ class ukf:
         "MSSP sigma point scaling parameters"
         self.lam = self.a**2*(self.n+self.k) - self.n
         self.g = np.sqrt(self.n+self.lam)  # gamma parameter
+        self.sigmas = None
 
         "unscented mean and covariance weights based on a, b, and k"
         main_weight = 1/(2*(self.n+self.lam))
@@ -314,13 +289,11 @@ class ukf:
     
     def predict(self, pool, fx_kwargs):
         """Transitions sigma points forwards using markovian transition function plus noise Q
-
         - calculate sigmas using prior mean and covariance P.
         - forecast sigmas X- for next timestep using transition function Fx.
         - unscented mean for foreacsting next state.
         - calculate interim mean state x and covariance P
         - pass these onto  update function
-
         Parameters
         ------
         fx_kwargs : dict
@@ -329,9 +302,10 @@ class ukf:
             instance as an arguement to run forwards as an ensemble.
             
         """
-
-        sigmas = MSSP(self.x, self.p, self.g)
-        forecasted_sigmas, xhat = self.unscented_Mean(pool, sigmas, 
+        if self.sigmas is None:
+            self.sigmas = MSSP(self.x, self.p, self.g)
+            
+        forecasted_sigmas, xhat = self.unscented_Mean(pool, self.sigmas, 
                                                       self.wm, 
                                                       self.fx,
                                                       fx_kwargs)
@@ -347,7 +321,6 @@ class ukf:
 
     def update(self, z, pool, hx_kwargs):
         """ update forecasts with measurements to get posterior assimilations
-
         - nudges X- sigmas with new pxx from predict
         - calculate measurement sigmas Y = h(X-)
         - calculate unscented mean of Y, yhat
@@ -355,13 +328,11 @@ class ukf:
         - calculate cross covariance between X- and Y and Kalman gain (pxy, K)
         - update x and P
         - store x and P updates in lists (xs, ps)
-
         Parameters
         ------
         z : array_like
             measurements from sensors `z`
         hx_kwargs : dict
-
         """
 
         nl_sigmas, yhat = self.unscented_Mean(pool, self.sigmas, self.wm,
@@ -396,6 +367,7 @@ class ukf:
         "update mean and covariance states"
         self.ps.append(self.p)
         self.xs.append(self.x)
+        self.sigmas = None
 
     def batch(self):
         """
@@ -405,11 +377,9 @@ class ukf:
 
     def fault_test(self, z, mu, pxy, pyy, x, p, k, yhat):
         """ adaptive UKF augmentation
-
         -check chi squared test
         -if fails update q and r.
         -recalculate new x and p
-
         """
         sigma = 0.05
 
@@ -469,13 +439,11 @@ class ukf:
 class ukf_ss:
 
     """UKF for station sim using ukf filter class.
-
     Parameters
     ------
     model_params,filter_params,ukf_params : dict
         loads in parameters for the model, station sim filter and general UKF parameters
         `model_params`,`filter_params`,`ukf_params`
-
     base_model : method
         stationsim model `base_model`
     """
@@ -514,9 +482,6 @@ class ukf_ss:
             self.base_models = base_models
             
         #iterable fx_kwargs
-        self.fx_kwargs = []
-        for i in range(len(self.base_models)):
-            self.fx_kwargs.append({"base_model" : self.base_models[i]})
 
 
         """lists for various data outputs
@@ -562,7 +527,6 @@ class ukf_ss:
 
     def ss_Predict(self, step, pool):
         """ Forecast step of UKF for stationsim.
-
         - forecast state using UKF (unscented transform)
         - update forecasts list
         - jump base_model forwards to forecast time
@@ -581,14 +545,13 @@ class ukf_ss:
             # update transition function fx_kwargs if necessary. not necessary for stationsim but easy to add later.
             #self.fx_kwargs_update_function(*update_fx_args)
 
-        
-        
-        if (step + 1) % self.sample_rate == 0:
-            self.ukf.predict(pool, self.fx_kwargs)
-            self.forecasts.append(self.ukf.x)
-        else:
-            self.base_models = pool.map(model_step, 
-                                        self.base_models)
+        self.fx_kwargs = []
+        for i in range(len(self.base_models)):
+            self.fx_kwargs.append({"base_model" : self.base_models[i]})
+        self.ukf.predict(pool, self.fx_kwargs)
+        self.forecasts.append(self.ukf.x)
+        self.base_models = pool.map(model_step, 
+                                    self.base_models)
         #if self.batch:
         #        self.ukf.base_model.set_state(self.batch_truths[step],
         #        "if batch update stationsim with new truths after step"
@@ -645,7 +608,7 @@ class ukf_ss:
             self.ukf_histories.append(self.ukf.x)  # append histories
             self.obs.append(new_state)
 
-    def step(self, pool):
+    def step(self, step, pool):
         """ukf step function
         - initiates ukf
         - while any agents are still active
@@ -657,16 +620,15 @@ class ukf_ss:
         """
         
         self.status_key.append([agent.status for agent in self.base_model.agents])
-        self.ss_Predict(self.base_model.step_id, pool)
+        self.ss_Predict(step, pool)
         self.base_model.step()
         self.truths.append(self.base_model.get_state(sensor="location"))
         #assimilate new values
-        self.ss_Update(self.base_model.step_id, pool, **self.hx_kwargs)
+        self.ss_Update(step, pool, **self.hx_kwargs)
             
     def main(self, pool):
         
         """main function for applying ukf to gps style station StationSim
-
         """
 
         #initialise UKF
@@ -680,7 +642,7 @@ class ukf_ss:
             #        print("ran out of truths. maybe batch model ended too early.")
                     
             #forecast next StationSim state and jump model forwards
-            self.step(pool)
+            self.step(step, pool)
 
             if step%100 == 0 :
                 logging.info(f"Iterations: {step}")
@@ -703,13 +665,11 @@ class ukf_ss:
     def truth_parser(self):
         """extract truths from ukf_ss class
         
-
         Returns
         -------
         truths : "array_like"
             `truths` array of agents true positions. Every 2 columns is an 
             agents xy positions over time. 
-
         """
         
         truths = np.vstack(self.truths)
@@ -891,17 +851,14 @@ def batch_load(file_name):
 
 def pickler(instance, pickle_source, f_name):
     """save ukf run as a pickle
-
     Parameters
     ------
     instance : class
         finished ukf_ss class `instance` to pickle. defaults to None 
         such that if no run is available we load a pickle instead.
-
     f_name, pickle_source : str
         `f_name` name of pickle file and `pickle_source` where to load 
         and save pickles from/to
-
     """
 
     f = open(pickle_source + f_name, "wb")
@@ -911,12 +868,10 @@ def pickler(instance, pickle_source, f_name):
 
 def depickler(pickle_source, f_name):
     """load a ukf pickle
-
     Parameters
     ------
     pickle_source : str
         `pickle_source` where to load and save pickles from/to
-
     instance : class
         finished ukf_ss class `instance` to pickle. defaults to None 
         such that if no run is available we load a pickle instead.
@@ -930,7 +885,6 @@ def depickler(pickle_source, f_name):
 class class_dict_to_instance(ukf_ss):
 
     """ build a complete ukf_ss instance from a pickled class_dict.
-
     This class simply inherits the ukf_ss class and adds attributes according
     to some dictionary 
     """
@@ -947,32 +901,24 @@ class class_dict_to_instance(ukf_ss):
 
 def pickle_main(f_name, pickle_source, do_pickle, instance=None):
     """main function for saving and loading ukf pickles
-
     NOTE THE FOLLOWING IS DEPRECATED IT NOW SAVES AS CLASS_DICT INSTEAD FOR 
     VARIOUS REASONS
-
     - check if we have a finished ukf_ss class and do we want to pickle it
     - if so, pickle it as f_name at pickle_source
     - else, if no ukf_ss class is present, load one with f_name from pickle_source 
-
     IT IS NOW
-
     - check if we have a finished ukf_ss class instance and do we want to pickle it
     - if so, pickle instance.__dict__ as f_name at pickle_source
     - if no ukf_ss class is present, load one with f_name from pickle_source 
     - if the file is a dictionary open it into a class instance for the plots to understand
     - if it is an instance just load it as is.
-
-
     Parameters
     ------
     f_name, pickle_source : str
         `f_name` name of pickle file and `pickle_source` where to load 
         and save pickles from/to
-
     do_pickle : bool
         `do_pickle` do we want to pickle a finished run?
-
     instance : class
         finished ukf_ss class `instance` to pickle. defaults to None 
         such that if no run is available we load a pickle instead.

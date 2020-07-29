@@ -1,9 +1,13 @@
 =================================================================================================================
 * gcs_final_real_data/: Folder with real data organized by frame and with an activation.dat file with initial parameters.
 
-* stationsim_gcs_model.py: python3 file with the StationSim model (last version).
+* stationsim_gcs_model_orig.py: python3 file with the StationSim model.
 
-* particle_filter_gcs.py: python3 file with the Particle Filter code adapted to use external data.
+* stationsim_gcs_model_temper.py: python3 file with the tempered version of StationSim model.
+
+* particle_filter_gcs_temper.py: python3 file with a tempered Particle Filter.
+
+* particle_filter_gcs_orig.py: python3 file with the Particle Filter code adapted to use external data.
 
 * run_pf_exp#.py: python3 files to run the experiments for the PhillTransPaper, where # = 1, 2, 3, 4.
 

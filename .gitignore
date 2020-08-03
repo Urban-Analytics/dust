@@ -89,3 +89,6 @@ tags
 # ********** enkf experiment results **********
 Projects/ABM_DA/experiments/enkf_experiments/results
 Projects/ABM_DA/experiments/enkf_experiments/data.json
+
+# Vim files
+*.vim

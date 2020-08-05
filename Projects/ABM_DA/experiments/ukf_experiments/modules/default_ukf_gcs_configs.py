@@ -69,7 +69,7 @@ not 100% sure what kappa does. think its a bias parameter.
 
 ukf_params = {      
 
-'sample_rate' : 2,
+'sample_rate' : 1,
 "bring_noise" : True,
 "noise" : 0.5,
 "do_batch" : False,

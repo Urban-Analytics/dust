@@ -346,7 +346,7 @@ class ukf:
         mu = (z-yhat)
         self.x = self.x + np.matmul(self.k, mu)
         
-        p = self.p - np.linalg.multi_dot([self.k, pyy, self.k.T])
+        self.p = self.p - np.linalg.multi_dot([self.k, pyy, self.k.T])
 
         
 
@@ -467,8 +467,6 @@ class ukf_ss:
         self.ukf_params = ukf_params  # ukf parameters
         self.base_model = base_model  # station sim
         #burn in to avoid wierd gcss 0s
-        for i in range(5):
-            self.base_model.step()
 
         for key in model_params.keys():
             setattr(self, key, model_params[key])
@@ -548,6 +546,7 @@ class ukf_ss:
         self.fx_kwargs = []
         for i in range(len(self.base_models)):
             self.fx_kwargs.append({"base_model" : self.base_models[i]})
+            
         self.ukf.predict(pool, self.fx_kwargs)
         self.forecasts.append(self.ukf.x)
         self.base_models = pool.map(model_step, 
@@ -634,7 +633,7 @@ class ukf_ss:
         #initialise UKF
 
         logging.info("ukf start")
-        for step in range(self.step_limit):
+        for ukf_step in range(self.step_limit):
             
             #if self.batch:
             #    if self.base_model.step_id == len(self.batch_truths):
@@ -642,10 +641,14 @@ class ukf_ss:
             #        print("ran out of truths. maybe batch model ended too early.")
                     
             #forecast next StationSim state and jump model forwards
-            self.step(step, pool)
+            if ukf_step % self.sample_rate == 0:
+                self.step(ukf_step, pool)
+            else:
+                self.base_models = pool.map(model_step, 
+                                    self.base_models)
 
-            if step%100 == 0 :
-                logging.info(f"Iterations: {step}")
+            if ukf_step%100 == 0 :
+                logging.info(f"Iterations: {ukf_step}")
             finished = self.base_model.pop_finished == self.pop_total
             if finished:  # break condition
                 logging.info("ukf broken early. all agents finished")

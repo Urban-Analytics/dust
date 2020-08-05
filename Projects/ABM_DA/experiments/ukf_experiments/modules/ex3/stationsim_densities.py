@@ -294,10 +294,34 @@ def plot_vision(cut_bounds, exit_polys, polys, boundary):
     plt.title("Each Agents vision of exit gates. ")
     plt.show()
 
-if __name__ == "__main__": 
-    #!! to do needs a check on each agent's status.
+def heading_importance_function(position, start_position, theta, boundary, exit_polys):
+    """calculate empirical probabilities based on start and current agent positions
+    
+
+    Returns
+    -------
+    None.
+
+    """
+    angles = start_gate_heading(start_position, position)
+    polys = vision_polygon(position, angles, theta, boundary)
+    cut_bounds = cut_boundaries(polys, boundary)
+    gate_probabilities = exit_gate_probabilities(exit_polys, cut_bounds)
+    
+    return gate_probabilities, polys, cut_bounds
+
+def  main(n, importance_function):
+    """test function for agent desnsities to assume it works
+    
+
+    Returns
+    -------
+    None.
+
+    """
+    
     model_params = configs.model_params
-    model_params["pop_total"] = 2
+    model_params["pop_total"] = n
     ukf_params = configs.ukf_params
     
     base_model = Model(**model_params)
@@ -311,7 +335,7 @@ if __name__ == "__main__":
                                     np.array([width, height]), 
                                     np.array([width, 0]))
     buffer = base_model.gates_space
-    exit_gates =  base_model.gates_locations
+    exit_gates =  base_model.gates_locations[-base_model.gates_out:]
     exit_polys = exit_points_to_polys(exit_gates, boundary, buffer)
     
     
@@ -321,16 +345,20 @@ if __name__ == "__main__":
         base_model.step()
     
     position = base_model.get_state(sensor = "location")
-    
+    theta = np.pi/10
     #start_position = np.array([50, 50])
     #position = np.array([25, 25])
     #exit_gates = np.array([[0,5], [5,0]])
     #exit_polys = exit_points_to_polys(exit_gates, boundary, buffer)
-    
-    angles = start_gate_heading(start_position, position)
-    
-    polys = vision_polygon(position, angles, ((1*np.pi/10)), boundary)
-    cut_bounds = cut_boundaries(polys, boundary)
-    gate_probabilities = exit_gate_probabilities(exit_polys, cut_bounds)
+    gate_probabilities, polys, cut_bounds = importance_function(position, 
+                                                                start_position, 
+                                                                theta, 
+                                                                boundary, 
+                                                                exit_polys)
     print(gate_probabilities)
-    plot_vision(cut_bounds,exit_polys, polys, boundary)
+    plot_vision(cut_bounds, exit_polys, polys, boundary)
+
+if __name__ == "__main__": 
+    n = 1
+    main(n, heading_importance_function)
+   

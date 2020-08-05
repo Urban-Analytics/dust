@@ -73,17 +73,15 @@ from copy import deepcopy
 #imports from stationsim folder
 sys.path.append("../../../../stationsim")
 from ukf2 import ukf, ukf_ss
-from stationsim_model import Model
 
 #imports from modules
 sys.path.append("..")
 from sensors import generate_Camera_Rect
 import stationsim_densities as sd
-import default_ukf_configs as configs
 
 class rjmcmc_ukf():
     
-    def __init__(self, model_params, ukf_params, base_model):
+    def __init__(self, model_params, ukf_params, base_model, get_gates, set_gates):
         """init rjmcmc_ukf class
         
         - load in model and ukf params.
@@ -115,23 +113,25 @@ class rjmcmc_ukf():
             setattr(self, key, ukf_params[key])
             
         self.base_model = base_model
+        self.get_gates = get_gates
+        self.set_gates = set_gates
+        
         #self.base_models = [self.base_model] * ((4 * self.pop_total) + 1)
-        self.fx_kwargs = [self.fx_kwargs] * ((4 * self.pop_total) + 1)
+        #self.fx_kwargs = [self.fx_kwargs] * ((4 * self.pop_total) + 1)
 
         
         "Build exit gate and boundary polygons."
         "Assign each exit gate an integer."
         self.get_gates_dict, self.set_gates_dict = self.gates_dict(self, self.base_model)
-        
+
         self.boundary = generate_Camera_Rect(np.array([0, 0]), 
                                              np.array([0, self.height]),
                                              np.array([self.width, self.height]), 
                                              np.array([self.width, 0]))
         buffer = self.base_model.gates_space
-        exit_gates =  self.base_model.gates_locations[-self.gates_out:]
-        self.exit_polys = sd.exit_points_to_polys(exit_gates, self.boundary, buffer)
+        self.exit_polys = sd.exit_points_to_polys(self.exit_gates, self.boundary, buffer)
 
-        self.true_gate = self.get_gates(self, base_model, self.get_gates_dict)
+        self.true_gate = self.get_gates(base_model, self.get_gates_dict)
         self.true_gates = []
         self.estimated_gates = []
         self.model_choices = []
@@ -166,7 +166,11 @@ class rjmcmc_ukf():
         for i in range(gate_probabilities.shape[0]):
             #if np.sum(gate_probabilities[i, :]) == 0:
             if np.sum(gate_probabilities[i, :] == 0) or base_model.agents[i].status != 1:
-                current_gate = get_gate_dict[str(base_model.agents[i].loc_desire)]                
+                try:
+                    current_gate = base_model.agents[i].gate_out
+                except:
+                    current_gate = self.get_gates_dict[str(base_model.agents[i].loc_desire)]
+
                 gate_probabilities[i, :] = 0     
                 gate_probabilities[i, current_gate] = 1
 
@@ -293,10 +297,10 @@ class rjmcmc_ukf():
         
         
         #transition probabilities from old to new model and vice versa
-        new_gates = self.get_gates(self, ukf2.base_model, self.get_gates_dict)
+        new_gates = self.get_gates(ukf2.base_model, self.get_gates_dict)
         old_new_transition = self.transition_probability(self.gate_probabilities,
                                                          new_gates)
-        old_gates = self.get_gates(self, ukf1.base_model, self.get_gates_dict)
+        old_gates = self.get_gates(ukf1.base_model, self.get_gates_dict)
         new_old_transition = self.transition_probability(self.gate_probabilities,
                                                          old_gates)
         prob *= new_old_transition
@@ -362,7 +366,8 @@ class rjmcmc_ukf():
             2x1 numpy array value for each key giving the location.
 
         """
-        gates_locations = base_model.gates_locations[-self.gates_out:]
+        
+        gates_locations = self.exit_gates
         get_gates_dict = {}
         set_gates_dict = {}
         for i in range(gates_locations.shape[0]):
@@ -370,50 +375,8 @@ class rjmcmc_ukf():
             key = i
             get_gates_dict[str(gate_location)] = key
             set_gates_dict[key] = gate_location
-        return get_gates_dict, set_gates_dict
-    
-    @staticmethod
-    def get_gates(self, base_model, get_gates_dict):
-        """get model exit gate combination from stationsim model
-        
-        Parameters
-        ------
-        stationsim : cls
-            some `stationsim` class we wish to extract the gates of
-        Returns
-        -------
-        gates : int
-            Intinger incidating which of the exit `gates` an agent is heading 
-            to.
-        """
-        #gate centroids from model
-        gates = [agent.loc_desire for agent in base_model.agents]
-        #convert centroid into intigers using gates_dict
-        for i, desire in enumerate(gates):
-            gates[i] = get_gates_dict[str(desire)]
-        return gates
-    
-    @staticmethod
-    def set_gates(self, base_model, new_gates, set_gates_dict):
-        """ assign stationsim a certain combination of gates
-        
-        Parameters
-        ------
-        
-        gates : list
-            slist of agents exit `gates`
             
-        Returns 
-        ------
-        
-        stationsim : cls
-            some `stationsim` class we wish to extract the gates of
-        """
-
-        for i, gate in enumerate(new_gates):
-            new_gate = set_gates_dict[gate]
-            base_model.agents[i].loc_desire = new_gate
-        return base_model
+        return get_gates_dict, set_gates_dict
     
     ########
     #main step function
@@ -440,16 +403,15 @@ class rjmcmc_ukf():
         #        print("ran out of truths. maybe batch model ended too early.")
         base_model = ukf_1.base_model
         #calculate exit gate pdf and draw new gates for candidate model
-        self.gate_probabilities = self.agent_probabilities(base_model, np.pi/6, self.get_gates_dict)
+        self.gate_probabilities = self.agent_probabilities(base_model, self.vision_angle, self.get_gates_dict)
         #copy original model and give it new gates
         ukf_2 = deepcopy(ukf_1)
-        current_gates = self.get_gates(self, ukf_1.base_models[0], self.get_gates_dict)
+        current_gates = self.get_gates(ukf_1.base_models[0], self.get_gates_dict)
         
         new_gates = self.draw_new_gates(self.gate_probabilities, current_gates, 5)
         
         for i, model in enumerate(ukf_2.base_models):
-            ukf_2.base_models[i] = self.set_gates(self, 
-                                                  model, 
+            ukf_2.base_models[i] = self.set_gates(model, 
                                                   new_gates,
                                                   self.set_gates_dict)
         #step both models forwards to get posterior distributions for mu/sigma
@@ -489,9 +451,9 @@ class rjmcmc_ukf():
         
         logging.info("rjmcmc_ukf start")
         no_gates_model = deepcopy(self.base_model)
-        no_gates_models = [self.set_gates(self, no_gates_model, 
-                                             [0]*(self.pop_total),
-                                             self.set_gates_dict)]
+        no_gates_models = [self.set_gates(no_gates_model, 
+                                          [0]*(self.pop_total),
+                                          self.set_gates_dict)]
         no_gates_models = no_gates_models * ((4*self.pop_total) + 1)
         self.estimated_gates.append([0]*(self.pop_total))
         
@@ -499,13 +461,13 @@ class rjmcmc_ukf():
                             no_gates_models)
 
         for step in range(self.step_limit):    
-            if step % 5 ==0 and step > 0:
+            if step % self.jump_rate ==0 and step > 0:
                 self.ukf_1 = self.rj_step(self.ukf_1, step, pool)
             else:
                 self.ukf_1.step(step, pool)
             
-            self.true_gates.append(self.get_gates(self, self.ukf_1.base_model,
-                                   self.get_gates_dict))
+            self.true_gates.append(self.get_gates(self.ukf_1.base_model,
+                                                  self.get_gates_dict))
             if step%100 == 0 :
                 logging.info(f"Iterations: {step}")
                 

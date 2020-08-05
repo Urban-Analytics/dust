@@ -140,9 +140,9 @@ def omission_params(n, prop, model_params, ukf_params):
     
     ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
     
-    ukf_params["p"] = 0.01 * np.eye(2 * n) #inital guess at state covariance
-    ukf_params["q"] = 0.01 * np.eye(2 * n)
-    ukf_params["r"] = 0.01 * np.eye(2 * ukf_params["sample_size"])#sensor noise
+    ukf_params["p"] = 0.1 * np.eye(2 * n) #inital guess at state covariance
+    ukf_params["q"] = 0.001 * np.eye(2 * n)
+    ukf_params["r"] = 0.001 * np.eye(2 * ukf_params["sample_size"])#sensor noise
     
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"] = {"base_model":base_model} 
@@ -275,7 +275,7 @@ def ex1_main(n, prop, recall, do_pickle, source, destination, pool):
         print(f"Population: {n}")
         print(f"Proportion Observed: {prop}")
         
-        u = ukf_ss(model_params,ukf_params,base_model)
+        u = ukf_ss(model_params, ukf_params, base_model)
         u.main(pool)
         pickle_main(ukf_params["file_name"],pickle_source, do_pickle, u)
     
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     pickle_source = "../../pickles/" #where to load/save pickles from
     destination = "../../plots/"
     n = 20 #population size
-    prop = 1.0  #proportion observed
-    pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
+    prop = 1.0 #proportion observed
+    pool = multiprocessing.Pool(processes = int(multiprocessing.cpu_count()/2))
 
     u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination, pool)

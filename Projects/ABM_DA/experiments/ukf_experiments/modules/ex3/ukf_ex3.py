@@ -65,6 +65,47 @@ def obs_key_func(state, **hx_kwargs):
     
     return key
 
+def get_gates(base_model, get_gates_dict):
+    """get model exit gate combination from stationsim model
+    
+    Parameters
+    ------
+    stationsim : cls
+        some `stationsim` class we wish to extract the gates of
+    Returns
+    -------
+    gates : int
+        Intinger incidating which of the exit `gates` an agent is heading 
+        to.
+    """
+    #gate centroids from model
+    gates = [agent.loc_desire for agent in base_model.agents]
+    #convert centroid into intigers using gates_dict
+    for i, desire in enumerate(gates):
+        gates[i] = get_gates_dict[str(desire)]
+    return gates
+
+def set_gates(base_model, new_gates, set_gates_dict):
+    """ assign stationsim a certain combination of gates
+    
+    Parameters
+    ------
+    
+    gates : list
+        slist of agents exit `gates`
+        
+    Returns 
+    ------
+    
+    stationsim : cls
+        some `stationsim` class we wish to extract the gates of
+    """
+
+    for i, gate in enumerate(new_gates):
+        new_gate = set_gates_dict[gate]
+        base_model.agents[i].loc_desire = new_gate
+    return base_model
+    
 def rjmcmc_params(n, model_params, ukf_params):
     
     model_params["pop_total"] = n
@@ -73,7 +114,7 @@ def rjmcmc_params(n, model_params, ukf_params):
     prop = 1
     ukf_params["prop"] = prop
         
-    ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
+    ukf_params["p"] = 0.1 * np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = 0.01 * np.eye(2 * n)
     ukf_params["r"] = 0.01 * np.eye(2 * n)#sensor noise
     
@@ -104,10 +145,18 @@ def ex3_main(n):
     model_params = configs.model_params
     model_params["gates_out"] = 3
     ukf_params = configs.ukf_params
+    ukf_params["station"] = "stationsim"
+    ukf_params["jump_rate"] = 5
+    ukf_params["vision_angle"] = np.pi/8
+
     model_params, ukf_params, base_model = rjmcmc_params(n, model_params,
-                                                         ukf_params)                                                        
+                                                         ukf_params)       
+    ukf_params["exit_gates"] =  base_model.gates_locations[-model_params["gates_out"]:]
+                                                 
     pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
-    rjmcmc_UKF= rjmcmc_ukf(model_params, ukf_params, base_model)
+    rjmcmc_UKF= rjmcmc_ukf(model_params, ukf_params, base_model,
+                                                         get_gates,
+                                                         set_gates)
     rjmcmc_UKF.main(pool)
     pool.close()
     pool.join()
@@ -130,7 +179,7 @@ def ex3_main(n):
     "remove agents not in model to avoid wierd plots"
     truths *= nan_array
     preds *= nan_array
-    forecasts*= nan_array[::instance.sample_rate]
+    forecasts*= nan_array
     
     "indices for unobserved agents"
 
@@ -148,14 +197,14 @@ def ex3_main(n):
     if animate:
         #plts.trajectories(truths, "plots/")
         obs_key = np.vstack(instance.obs_key)
-        plts.pair_frames(truths[::instance.sample_rate], forecasts, obs_key,
+        plts.pair_frames(truths[::instance.sample_rate], preds, obs_key,
                          int(truths.shape[0]/5), "../../plots/")
     
     return rjmcmc_UKF
 
 if __name__ == "__main__":
     
-    n = 20
+    n = 10
     rjmcmc_UKF = ex3_main(n)
     
     

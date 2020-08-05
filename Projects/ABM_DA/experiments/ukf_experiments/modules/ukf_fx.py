@@ -30,8 +30,6 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
 
 def fx(x, **fx_kwargs):
-    
-    
     """Transition function for the StationSim
     
     - Copies current base model
@@ -57,8 +55,8 @@ def fx(x, **fx_kwargs):
     #f = open(f"temp_pickle_model_ukf_{self.time1}","rb")
     #model = pickle.load(f)
     #f.close()
-    base_model = fx_kwargs["base_model"]
-    model = deepcopy(base_model)
+    model = fx_kwargs["base_model"]
+    #model = deepcopy(model)
     model.set_state(state = x, sensor="location")    
     with HiddenPrints():
         model.step() #step model with print suppression

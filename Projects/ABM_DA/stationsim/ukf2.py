@@ -224,7 +224,7 @@ class ukf:
             self.ks = []
             self.mus = []
             
-    def unscented_Mean(self, pool, sigmas, wm, kf_function, function_kwargs):
+    def unscented_Mean(self, pool, sigmas_iter, wm, kf_function, function_kwargs):
         """calculate unscented tmean  estimate for some sample of agent positions
     
         -calculate sigma points using sigma_function 
@@ -269,10 +269,7 @@ class ukf:
         #now with multiprocessing
         #nl_sigmas = parallel_apply_along_axis(kf_function, 0, sigmas, **function_kwargs).T
         #calculate unscented mean using non linear sigmas and MSSP mean weights
-                
-        n_sigmas = sigmas.shape[1]
-        sigmas_iter = [sigmas[:, i] for i in range(n_sigmas)]
-        
+                        
         nl_sigmas = starmap_with_kwargs(pool, 
                                         kf_function, 
                                         sigmas_iter, 
@@ -305,7 +302,14 @@ class ukf:
         if self.sigmas is None:
             self.sigmas = MSSP(self.x, self.p, self.g)
             
-        forecasted_sigmas, xhat = self.unscented_Mean(pool, self.sigmas, 
+            sigmas_iter = [self.sigmas[:, i] for i in range(self.sigmas.shape[1])]
+            forecasted_sigmas, xhat = self.unscented_Mean(pool, sigmas_iter, 
+                                                      self.wm, 
+                                                      self.fx,
+                                                      fx_kwargs)
+        else: 
+            sigmas = [None] * len(fx_kwargs)
+            forecasted_sigmas, xhat = self.unscented_Mean(pool, sigmas, 
                                                       self.wm, 
                                                       self.fx,
                                                       fx_kwargs)
@@ -334,8 +338,9 @@ class ukf:
             measurements from sensors `z`
         hx_kwargs : dict
         """
-
-        nl_sigmas, yhat = self.unscented_Mean(pool, self.sigmas, self.wm,
+        sigmas_iter = [self.sigmas[:, i] for i in range(self.sigmas.shape[1])]
+        
+        nl_sigmas, yhat = self.unscented_Mean(pool, sigmas_iter, self.wm,
                                          self.hx, hx_kwargs)
         self.r = np.eye(yhat.shape[0])
         pyy = covariance(nl_sigmas, yhat, self.wc, addition=self.r)
@@ -607,7 +612,7 @@ class ukf_ss:
             self.ukf_histories.append(self.ukf.x)  # append histories
             self.obs.append(new_state)
 
-    def step(self, step, pool):
+    def step(self, ukf_step, pool):
         """ukf step function
         - initiates ukf
         - while any agents are still active
@@ -617,13 +622,28 @@ class ukf_ss:
         - repeat until all agents finish or max iterations reached
         - if no agents then stop
         """
-        
-        self.status_key.append([agent.status for agent in self.base_model.agents])
-        self.ss_Predict(step, pool)
-        self.base_model.step()
-        self.truths.append(self.base_model.get_state(sensor="location"))
-        #assimilate new values
-        self.ss_Update(step, pool, **self.hx_kwargs)
+        if self.sample_rate == 1 or ukf_step % self.sample_rate ==0:
+            self.status_key.append([agent.status for agent in self.base_model.agents])
+            self.ss_Predict(ukf_step, pool)
+            self.base_model.step()
+            self.truths.append(self.base_model.get_state(sensor="location"))
+            #assimilate new values
+            self.ss_Update(ukf_step, pool, **self.hx_kwargs)
+            
+        elif self.sample_rate > 1 and (ukf_step + 1) % self.sample_rate ==0 :
+            self.status_key.append([agent.status for agent in self.base_model.agents])
+            self.ss_Predict(ukf_step, pool)
+            self.base_model.step()
+            self.truths.append(self.base_model.get_state(sensor="location"))
+
+        else:
+            self.status_key.append([agent.status for agent in self.base_model.agents])
+            self.base_model.step()
+            self.truths.append(self.base_model.get_state(sensor="location"))
+            self.base_models = pool.map(model_step, 
+                                self.base_models)
+            
+                
             
     def main(self, pool):
         
@@ -641,11 +661,8 @@ class ukf_ss:
             #        print("ran out of truths. maybe batch model ended too early.")
                     
             #forecast next StationSim state and jump model forwards
-            if ukf_step % self.sample_rate == 0:
-                self.step(ukf_step, pool)
-            else:
-                self.base_models = pool.map(model_step, 
-                                    self.base_models)
+            self.step(ukf_step, pool)
+
 
             if ukf_step%100 == 0 :
                 logging.info(f"Iterations: {ukf_step}")

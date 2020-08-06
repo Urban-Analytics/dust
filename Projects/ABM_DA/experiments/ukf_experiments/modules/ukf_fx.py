@@ -57,9 +57,11 @@ def fx(x, **fx_kwargs):
     #f.close()
     model = fx_kwargs["base_model"]
     #model = deepcopy(model)
-    model.set_state(state = x, sensor="location")    
+    if x is not None:
+        model.set_state(state = x, sensor="location")    
     with HiddenPrints():
         model.step() #step model with print suppression
     state = model.get_state(sensor="location")
     
     return state
+

@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 
 sys.path.append("../../../../stationsim")
 from stationsim_gcs_model import Model
-
+from ukf2 import pickle_main
 
 def hx3(state, **hx_kwargs):
     return state
@@ -41,7 +41,7 @@ def ex3_pickle_name(n):
         return `f_name` file name to save pickle as
     """
     
-    f_name = f"rjmcmc_ukf_agents_{n}.pkl"
+    f_name = f"rjmcmc_ukf_gcs_agents_{n}.pkl"
     return f_name
 
 def obs_key_func(state, **hx_kwargs):
@@ -143,50 +143,68 @@ def error_plot(true_gates, estimated_gates):
     plt.xlabel("time")
     plt.ylabel("Error Between Estimated and True Gates. ")
 
-def ex3_main(n):
+def ex3_main(n, recall):
     
     model_params = configs.model_params
     model_params["station"] = "Grand_Central"
-    #model_params["step_limit"] = 1000
+    model_params["step_limit"] = 1000
     ukf_params = configs.ukf_params
-    ukf_params["jump_rate"] = 5
+    ukf_params["jump_rate"] = 25
     ukf_params["vision_angle"] = np.pi/8
 
     model_params, ukf_params, base_model = rjmcmc_params(n, model_params,
                                                          ukf_params)       
     ukf_params["exit_gates"] =  base_model.gates_locations
-                                                 
-    pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
-    rjmcmc_UKF= rjmcmc_ukf(model_params, ukf_params, base_model, get_gates,
-                           set_gates)
-    rjmcmc_UKF.main(pool)
-    pool.close()
-    pool.join()
 
-    instance = rjmcmc_UKF.ukf_1
     destination = "../../plots/"
-    prefix = "rjmcmc_ukf_"
+    pickle_source = "../../pickles"
+    prefix = "rjmcmc_ukf_gcs_"
     save = True
     animate = True
+    do_pickle = True
+                                      
+    if not recall:
+        pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
+        rjmcmc_UKF= rjmcmc_ukf(model_params, ukf_params, base_model,
+                                                             get_gates,
+                                                             set_gates)
+        rjmcmc_UKF.main(pool)
+        pool.close()
+        pool.join()
+    
+        instance = rjmcmc_UKF.ukf_1
+        pickle_main(ukf_params["file_name"],pickle_source, do_pickle, rjmcmc_UKF)
+    if recall:
+        f_name = ex3_pickle_name(n)
+        
+        "try loading class_dicts first. If no dict then class instance."
+        try:
+            rjmcmc_UKF  = pickle_main("dict_" + f_name, pickle_source, do_pickle)
+        except:
+            rjmcmc_UKF  = pickle_main(f_name, pickle_source, do_pickle)
+            
+        model_params, ukf_params = rjmcmc_UKF.model_params, rjmcmc_UKF.ukf_params
+    
+    instance = rjmcmc_UKF.ukf_1
     plts = ukf_plots(instance, destination, prefix, save, animate)
-
-
+            
+    instance = rjmcmc_UKF.ukf_1
     truths = instance.truth_parser(instance)
     nan_array= instance.nan_array_parser(truths, instance.base_model)
     preds = instance.preds_parser(instance, True, truths)
     
     ukf_params = instance.ukf_params
-    forecasts = np.vstack(instance.forecasts)
+    #forecasts = np.vstack(instance.forecasts)
     
     "remove agents not in model to avoid wierd plots"
     truths *= nan_array
     preds *= nan_array
-    forecasts*= nan_array
+    #forecasts*= nan_array
     
     "indices for unobserved agents"
 
     #plts.path_plots(obs, "Observed")
-    
+    obs_key = instance.obs_key_parser()
     error_plot(rjmcmc_UKF.true_gate, rjmcmc_UKF.estimated_gates)
     
     plts.error_hist(truths[::instance.sample_rate,:], 
@@ -194,20 +212,21 @@ def ex3_main(n):
     
     plts.path_plots(preds[::instance.sample_rate], "Predicted")
     plts.path_plots(truths, "True")
-    plts.path_plots(forecasts[::instance.sample_rate], "Forecasts")
+    #plts.path_plots(forecasts[::instance.sample_rate], "Forecasts")
 
     if animate:
         #plts.trajectories(truths, "plots/")
         obs_key = np.vstack(instance.obs_key)
         plts.pair_frames(truths[::instance.sample_rate], preds, obs_key,
-                         int(truths.shape[0]/5), "../../plots/")
+                         int(truths.shape[0]/instance.sample_rate), "../../plots/")
     
     return rjmcmc_UKF
 
 if __name__ == "__main__":
     
     n = 5
-    rjmcmc_UKF = ex3_main(n)
+    recall = False
+    rjmcmc_UKF = ex3_main(n, recall)
     
     
     

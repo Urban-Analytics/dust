@@ -300,7 +300,7 @@ if __name__ == "__main__":
     do_pickle = True #pickle new run
     pickle_source = "../../pickles/" #where to load/save pickles from
     destination = "../../plots/"
-    n = 20 #population size
+    n = 5 #population size
     prop = 1.0 #proportion observed
     pool = multiprocessing.Pool(processes = int(multiprocessing.cpu_count()/2))
 

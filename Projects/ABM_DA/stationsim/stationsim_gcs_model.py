@@ -45,11 +45,11 @@ class Agent:
         self.size = model.agent_size
 
         self.gate_in = np.random.randint(model.gates_in)
-        gate_out = np.random.randint(model.gates_out) + model.gates_in
-        while (gate_out == self.gate_in or
-               gate_out >= len(model.gates_locations)):
-            gate_out = np.random.randint(model.gates_out)
-        self.loc_desire = self.set_agent_location(gate_out)
+        self.gate_out = np.random.randint(model.gates_out) + model.gates_in
+        while (self.gate_out == self.gate_in or
+               self.gate_out >= len(model.gates_locations)):
+            self.gate_out = np.random.randint(model.gates_out)
+        self.loc_desire = self.set_agent_location(self.gate_out)
 
         # Speed
         speed_max = 0
@@ -480,6 +480,8 @@ class Model:
         if self.step_id == 0:
             state = self.get_state('location2D')
 
+        # print('model status', self.status)
+
         # If there are still agents in the model
         # AND we are within the time limit
         # AND?
@@ -528,9 +530,9 @@ class Model:
             self.step_id += 1
         else:
             # if self.do_print and self.status == 1:
-                print(f'StationSim {self.unique_id} - Everyone made it!')
-                self.status = 0
-                self.max_time = max(self.time_save)
+            print(f'StationSim {self.unique_id} - Everyone made it!')
+            self.status = 0
+            self.max_time = max(self.time_save)
 
     # information about next collision
     def get_collisionTable(self):
@@ -596,6 +598,11 @@ class Model:
             state = np.ravel(state)
         elif sensor == 'location2D':
             state = [agent.location for agent in self.agents]
+        elif sensor == 'loc_exit':
+            locations = self.get_state('location2D')
+            x, y = [l[0] for l in locations], [l[1] for l in locations]
+            exits = [agent.gate_out for agent in self.agents]
+            state = x + y + exits
         return state
 
     def set_state(self, state, sensor=None):
@@ -615,6 +622,9 @@ class Model:
         elif sensor == 'location2D':
             for i, agent in enumerate(self.agents):
                 agent.location = state[i, :]
+        elif sensor == 'exit':
+            for i, agent in enumerate(self.agents):
+                agent.loc_desire = agent.set_agent_location(state[i])
 
     # TODO: Deprecated, update PF
     def agents2state(self, do_ravel=True):

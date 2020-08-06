@@ -964,7 +964,7 @@ class Visualiser():
         plt.plot(results['time'], results['obs'], label='observations')
         plt.plot(results['time'], results['forecast'], label='filter_forecast')
         plt.plot(results['time'], results['analysis'], label='filter_analysis')
-        # plt.plot(results['time'], results['vanilla'], label='vanilla')
+        plt.plot(results['time'], results['vanilla'], label='vanilla')
 
         plt.legend()
 

@@ -307,6 +307,10 @@ class EnsembleKalmanFilter(Filter):
             # print(sensor_type)
             # print(state_vector)
             self.state_ensemble[:, i] = state_vector
+        if self.run_vanilla:
+            for i in range(self.vanilla_ensemble_size):
+                state_vector = self.vanilla_models[i].get_state(self.sensor_type)
+                self.vanilla_state_ensemble[:, i] = state_vector
 
     def update_state_mean(self):
         """

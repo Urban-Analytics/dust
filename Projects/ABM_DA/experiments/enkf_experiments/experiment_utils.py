@@ -29,13 +29,13 @@ class Modeller():
 
     @classmethod
     def run_all(cls, pop_size=20, its=300, assimilation_period=50,
-                ensemble_size=10, mode=EnsembleKalmanFilterType.DUAL_EXIT):
+                ensemble_size=10, mode=EnsembleKalmanFilterType.STATE):
         """
         Overall function to run everything.
         """
         # Set up params
         model_params = {'pop_total': pop_size,
-                        'station': 'Grand_Central',
+                        # 'station': 'Grand_Central',
                         'do_print': False}
         # model_params = {'width': 200,
                         # 'height': 100,
@@ -55,17 +55,20 @@ class Modeller():
                         # 'do_print': False}
 
         OBS_NOISE_STD = 1
-        vec_length = 2 * model_params['pop_total']
         observation_operator = cls.__make_observation_operator(pop_size, mode)
+        state_vec_length = cls.__make_state_vector_length(pop_size, mode)
+        data_mode = EnsembleKalmanFilterType.STATE
+        data_vec_length = cls.__make_state_vector_length(pop_size, data_mode)
 
         filter_params = {'max_iterations': its,
                          'assimilation_period': assimilation_period,
                          'ensemble_size': ensemble_size,
-                         'population_size': model_params['pop_total'],
-                         'state_vector_length': vec_length,
-                         'data_vector_length': vec_length,
+                         'population_size': pop_size,
+                         'state_vector_length': state_vec_length,
+                         'data_vector_length': data_vec_length,
+                         'mode': mode,
                          'H': observation_operator,
-                         'R_vector': OBS_NOISE_STD * np.ones(vec_length),
+                         'R_vector': OBS_NOISE_STD * np.ones(data_vec_length),
                          'keep_results': True,
                          'run_vanilla': True,
                          'vis': False}
@@ -106,10 +109,11 @@ class Modeller():
         num_steps = filter_params['max_iterations']
 
         for i in range(num_steps):
-            if i % 25 == 0:
-                print('step {0}'.format(i))
+            # if i % 25 == 0:
+                # print('step {0}'.format(i))
+                # # print(enkf.models[0].get_state('loc_exit'))
+            print('step {0}'.format(i))
             enkf.step()
-
         return enkf
 
     @classmethod
@@ -372,6 +376,15 @@ class Modeller():
         a = np.identity(2 * population_size)
         b = np.zeros(shape=(2 * population_size, population_size))
         return np.hstack((a, b))
+
+    @staticmethod
+    def __make_state_vector_length(population_size, mode):
+        if mode == EnsembleKalmanFilterType.STATE:
+            return 2 * population_size
+        elif mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            return 3 * population_size
+        else:
+            raise ValueError(f'Unexpected filter mode: {mode}')
 
 
 class Processor():
@@ -946,12 +959,12 @@ class Visualiser():
 
     @staticmethod
     def plot_error_timeseries(enkf, model_params, filter_params, do_save=False):
-        results = pd.DataFrame(enkf.rmse)
+        results = pd.DataFrame(enkf.metrics)
         plt.figure(figsize=(8, 8))
         plt.plot(results['time'], results['obs'], label='observations')
         plt.plot(results['time'], results['forecast'], label='filter_forecast')
         plt.plot(results['time'], results['analysis'], label='filter_analysis')
-        plt.plot(results['time'], results['vanilla'], label='vanilla')
+        # plt.plot(results['time'], results['vanilla'], label='vanilla')
 
         plt.legend()
 
@@ -959,6 +972,14 @@ class Visualiser():
             plt.savefig('results/figures/error_timeseries.pdf')
         else:
             plt.show()
+
+        if enkf.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            plt.figure(figsize=(12, 8))
+            plt.plot(results['time'], results['exit_accuracy'])
+            if do_save:
+                plt.savefig('results/figures/exit_accuracy.pdf')
+            else:
+                plt.show()
 
     @classmethod
     def plot_forecast_error_timeseries(cls, enkf, model_params, filter_params,
@@ -988,7 +1009,7 @@ class Visualiser():
         """
         results = pd.DataFrame(enkf.forecast_error)
         plt.figure(figsize=(8, 8))
-        plt.scatter(results['time'], results['error'], s=0.75)
+        plt.scatter(results['time'], results['forecast'], s=0.75)
         plt.xlabel('iteration')
         plt.ylabel('forecast rmse')
 

@@ -18,7 +18,7 @@ from math import floor
 import multiprocessing
 
 "local imports"
-from ukf_fx import fx
+from ukf_fx import fx2
 from ukf_plots import ukf_plots
 import default_ukf_configs as configs
 
@@ -140,18 +140,16 @@ def omission_params(n, prop, model_params, ukf_params):
     
     ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
     
-    ukf_params["p"] = 0.1 * np.eye(2 * n) #inital guess at state covariance
-    ukf_params["q"] = 0.001 * np.eye(2 * n)
+    ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
+    ukf_params["q"] = 0.05 * np.eye(2 * n)
     ukf_params["r"] = 0.001 * np.eye(2 * ukf_params["sample_size"])#sensor noise
     
-    ukf_params["fx"] = fx
+    ukf_params["fx"] = fx2
     ukf_params["fx_kwargs"] = {"base_model":base_model} 
     ukf_params["hx"] = hx1
     ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"], "n" : n,
                                "index" : ukf_params["index"],}
-    ukf_params["obs_key_func"] = obs_key_func
-    ukf_params["alpha"] = 0.1
-    
+    ukf_params["obs_key_func"] = obs_key_func    
     ukf_params["file_name"] =  ex1_pickle_name(n, prop)
         
     return model_params, ukf_params, base_model
@@ -244,7 +242,7 @@ def ex1_plots(instance, destination, prefix, save, animate):
         plts.pair_frames(truths, preds, obs_key,
                          truths.shape[0], "../../plots/")
         
-def ex1_main(n, prop, recall, do_pickle, source, destination, pool):
+def ex1_main(n, prop, recall, do_pickle, source, destination):
     
     
     """main function to run experiment 1
@@ -276,7 +274,7 @@ def ex1_main(n, prop, recall, do_pickle, source, destination, pool):
         print(f"Proportion Observed: {prop}")
         
         u = ukf_ss(model_params, ukf_params, base_model)
-        u.main(pool)
+        u.main()
         pickle_main(ukf_params["file_name"],pickle_source, do_pickle, u)
     
     else:
@@ -291,7 +289,7 @@ def ex1_main(n, prop, recall, do_pickle, source, destination, pool):
  
         model_params, ukf_params = u.model_params, u.ukf_params
     
-    ex1_plots(u, destination, "ukf_", True, False)
+    ex1_plots(u, destination, "ukf_", True, True)
 
     return u
     
@@ -302,6 +300,5 @@ if __name__ == "__main__":
     destination = "../../plots/"
     n = 5 #population size
     prop = 1.0 #proportion observed
-    pool = multiprocessing.Pool(processes = int(multiprocessing.cpu_count()/2))
 
-    u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination, pool)
+    u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

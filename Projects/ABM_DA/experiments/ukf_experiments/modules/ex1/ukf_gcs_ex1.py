@@ -16,11 +16,12 @@ from math import floor
 import multiprocessing
 
 "local imports"
-from ukf_fx import fx
+sys.path.append("..")
+from ukf_fx import fx2
 from ukf_plots import ukf_plots
 import default_ukf_gcs_configs as configs
 
-
+sys.path.append("../../../../stationsim")
 from ukf2 import ukf_ss, pickle_main
 from stationsim_gcs_model import Model
 
@@ -151,7 +152,7 @@ def omission_params(n, prop, model_params, ukf_params):
     ukf_params["r"] = 0.01 * np.eye(2 * ukf_params["sample_size"])# sensor noise
     
     # Kalman functions and their experiment specific kwargs
-    ukf_params["fx"] = fx
+    ukf_params["fx"] = fx2
     ukf_params["fx_kwargs"] = {"base_model":base_model} 
     ukf_params["hx"] = hx1
     ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"], "n" : n,
@@ -294,7 +295,7 @@ def ex1_main(n, prop, pool, recall, do_pickle, source, destination):
         print(f"Proportion Observed: {prop}")
         
         u = ukf_ss(model_params,ukf_params,base_model)
-        u.main(pool)
+        u.main()
         pickle_main(ukf_params["file_name"],pickle_source, do_pickle, u)
     
     else:
@@ -318,7 +319,7 @@ if __name__ == "__main__":
     do_pickle = True #pickle new run
     pickle_source = "../../pickles/" #where to load/save pickles from
     destination = "../../plots/"
-    n = 5 #population size
+    n = 30 #population size
     prop = 1.0 #proportion observed
     pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
 

@@ -156,289 +156,29 @@ def MSSP(mean, p, g):
     sigmas = sigmas.T
     sigmas[:, 1:n+1] += g*s  # 'upper' confidence sigmas
     sigmas[:, n+1:] -= g*s  # 'lower' confidence sigmas
+    sigmas = sigmas.T.tolist()
     return sigmas
 
 
-# %%
+def unscented_Mean(sigmas, wm):
+        """calculate unscented mean  estimate for some sample of agent positions
 
-class ukf:
-    """main ukf class for assimilating data from some ABM
-    Parameters
-    ------
-    model_params, ukf_params : dict
-        dictionary of model `model_params` and ukf `ukf_params` parameters
-    base_model : cls
-        `base_model` initalised class instance of desired ABM.
-    """
-
-    def __init__(self, model_params, ukf_params, x_0):
-        """
-        x - state
-        n - state size 
-        p - state covariance
-        fx - transition function
-        hx - measurement function
-        lam - lambda paramter function of tuning parameters a,b,k
-        g - gamma parameter function of tuning parameters a,b,k
-        wm/wc - unscented weights for mean and covariances respectively.
-        q,r -noise structures for fx and hx
-        xs,ps - lists for storage
-        
-        """
-
-        # init initial state
-        "full parameter dictionaries and ABM"
-        self.model_params = model_params
-        self.ukf_params = ukf_params
-        for key in ukf_params.keys():
-            setattr(self, key, ukf_params[key])
-
-        #self.base_models = base_models
-        #self.base_model = deepcopy(base_models[0])
-
-        "pull parameters from dictionary"
-        # !!initialise some positions and covariances
-        self.x = x_0
-        self.n = self.x.shape[0]  # state space dimension
-
-        "MSSP sigma point scaling parameters"
-        self.lam = self.a**2*(self.n+self.k) - self.n
-        self.g = np.sqrt(self.n+self.lam)  # gamma parameter
-        self.sigmas = None
-
-        "unscented mean and covariance weights based on a, b, and k"
-        main_weight = 1/(2*(self.n+self.lam))
-        self.wm = np.ones(((2*self.n)+1))*main_weight
-        self.wm[0] *= 2*self.lam
-        self.wc = self.wm.copy()
-        self.wc[0] += (1-self.a**2+self.b)
-
-        self.xs = []
-        self.ps = []
-                
-        self.verbose = True
-        if self.verbose:
-            self.pxxs = []
-            self.pxys = []
-            self.pyys = []
-            self.ks = []
-            self.mus = []
-            
-    def unscented_Mean(self, pool, sigmas_iter, wm, kf_function, function_kwargs):
-        """calculate unscented tmean  estimate for some sample of agent positions
-    
-        -calculate sigma points using sigma_function 
-            (e.g Merwe Scaled Sigma Points (MSSP) or 
-            central difference sigma points (CDSP)) 
-        - apply kf_function to sigma points (usually transition function or 
-            measurement function.) to get an array of transformed sigma points.
-        - calculate weighted mean of transformed points to get unscented mean.
-    
         Parameters
         ------
         sigmas, wm : array_like
             `sigmas` array of sigma points  and `wm` mean weights
     
-        kf_function : function
-            `sigma_function` function defining type of sigmas used and
-            `kf_function` defining whether to apply transition of measurement 
-            function (f/h) of UKF.
-    
-        **function_kwargs : kwargs
-            `function_kwargs` keyword arguments for kf_function. Varies depending
-            on the experiment so good to be general here. This must be in dictionary 
-            form e.g. {"test":1} then called as necessary in kf_function as 
-            test = function_kwargs["test"] = 1
-    
-            This allows for a generalised set of arguements for any desired
-            function. Typically we use Kalman filter measurement and transition functions.
-            Any function could be used as long as it takes some vector of 1d agent inputs and
-            returns a 1d output.
-    
         Returns 
         ------
     
-        sigmas, nl_sigmas, xhat : array_like
-            raw `sigmas` from sigma_function, projected non-linear `nl_sigmas`, 
-            and the unscented mean of `xhat` of said projections.
+        u_mean : array_like
+            unscented mean of `u_mean` of sigmas.
     
         """
-    
-        #calculate either forecasted sigmas X- or measured sigmas Y with f/h
-        #nl_sigmas = np.apply_along_axis(kf_function, 0, sigmas, **function_kwargs)
-        #now with multiprocessing
-        #nl_sigmas = parallel_apply_along_axis(kf_function, 0, sigmas, **function_kwargs).T
-        #calculate unscented mean using non linear sigmas and MSSP mean weights
-                        
-        nl_sigmas = starmap_with_kwargs(pool, 
-                                        kf_function, 
-                                        sigmas_iter, 
-                                        function_kwargs)
-        #nl_sigmas = pool.starmap(kf_function, list(zip( \
-        #    range(n_sigmas),  # Particle numbers (in integer)
-        #    [sigma for sigma in sigmas],
-        #    function_kwargs  # Number of iterations to step each particle (an integer)
-        #)))
-        nl_sigmas = np.vstack(nl_sigmas).T
-        xhat = np.dot(nl_sigmas, wm)  # unscented mean for predicitons
-    
-        return nl_sigmas, xhat
-    
-    def predict(self, pool, fx_kwargs):
-        """Transitions sigma points forwards using markovian transition function plus noise Q
-        - calculate sigmas using prior mean and covariance P.
-        - forecast sigmas X- for next timestep using transition function Fx.
-        - unscented mean for foreacsting next state.
-        - calculate interim mean state x and covariance P
-        - pass these onto  update function
-        Parameters
-        ------
-        fx_kwargs : dict
-            keyword arguments for transition function of ABM.
-            This is step for stationsim and requires the current stationsim
-            instance as an arguement to run forwards as an ensemble.
-            
-        """
-        if self.sigmas is None:
-            self.sigmas = MSSP(self.x, self.p, self.g)
-            
-            sigmas_iter = [self.sigmas[:, i] for i in range(self.sigmas.shape[1])]
-            forecasted_sigmas, xhat = self.unscented_Mean(pool, sigmas_iter, 
-                                                      self.wm, 
-                                                      self.fx,
-                                                      fx_kwargs)
-        else: 
-            sigmas = [None] * len(fx_kwargs)
-            forecasted_sigmas, xhat = self.unscented_Mean(pool, sigmas, 
-                                                      self.wm, 
-                                                      self.fx,
-                                                      fx_kwargs)
-        self.sigmas = forecasted_sigmas
-
-        pxx = covariance(forecasted_sigmas, xhat, self.wc, addition=self.q)
-
-        self.p = pxx  # update Sxx
-        self.x = xhat  # update xhat
-
-        if self.verbose:
-            self.pxxs.append(pxx)
-
-    def update(self, z, pool, hx_kwargs):
-        """ update forecasts with measurements to get posterior assimilations
-        - nudges X- sigmas with new pxx from predict
-        - calculate measurement sigmas Y = h(X-)
-        - calculate unscented mean of Y, yhat
-        - calculate measured state covariance pyy sing r
-        - calculate cross covariance between X- and Y and Kalman gain (pxy, K)
-        - update x and P
-        - store x and P updates in lists (xs, ps)
-        Parameters
-        ------
-        z : array_like
-            measurements from sensors `z`
-        hx_kwargs : dict
-        """
-        sigmas_iter = [self.sigmas[:, i] for i in range(self.sigmas.shape[1])]
+        sigmas = np.vstack(sigmas).T
+        u_mean = np.dot(sigmas, wm)  # unscented mean for predicitons
         
-        nl_sigmas, yhat = self.unscented_Mean(pool, sigmas_iter, self.wm,
-                                         self.hx, hx_kwargs)
-        self.r = np.eye(yhat.shape[0])
-        pyy = covariance(nl_sigmas, yhat, self.wc, addition=self.r)
-        pxy = covariance(self.sigmas, self.x, self.wc, nl_sigmas, yhat)
-        self.k = np.matmul(pxy, np.linalg.inv(pyy))
-
-        "i dont know why `self.x += ...` doesnt work here"
-        mu = (z-yhat)
-        self.x = self.x + np.matmul(self.k, mu)
-        
-        self.p = self.p - np.linalg.multi_dot([self.k, pyy, self.k.T])
-
-        
-
-        """adaptive ukf augmentation. one for later."""
-        adaptive = False
-        if adaptive:
-            if np.sum(np.abs(mu)) != 0:
-                x, p = self.fault_test(z, mu, pxy, pyy, self.x, self.p, self.k, yhat)
-
-        """record various data for diagnostics. Warning this makes the pickles
-        rather large"""
-        if self.verbose:
-            self.pxys.append(pxy)
-            self.pyys.append(pyy)
-            self.ks.append(self.k)
-            self.mus.append(mu)
-            
-        "update mean and covariance states"
-        self.ps.append(self.p)
-        self.xs.append(self.x)
-        self.sigmas = None
-
-    def batch(self):
-        """
-        batch function hopefully coming soon
-        """
-        return
-
-    def fault_test(self, z, mu, pxy, pyy, x, p, k, yhat):
-        """ adaptive UKF augmentation
-        -check chi squared test
-        -if fails update q and r.
-        -recalculate new x and p
-        """
-        sigma = 0.05
-
-        psi = np.linalg.multi_dot([mu.T, np.linalg.inv(pyy), mu])
-        # critical rejection point
-        critical = chi2.ppf(1 - sigma, df=mu.shape[0])
-        print(psi, critical)
-        if psi <= critical:
-
-            "accept null hypothesis. keep q,r"
-            pass
-
-        else:
-
-            #update Q
-            a = 0.95
-            lambd_0 = 0.05
-            lambd_1 = 1 - (a * critical)/psi
-
-            lambd = np.max(lambd_0, lambd_1)
-            self.q = (1-lambd)*self.q + lambd * \
-                np.linalg.multi_dot([k, mu, mu.T, k.T])
-
-            #update R
-
-            eps = z - self.hx(x, **self.hx_kwargs)
-
-            #build new pyy
-            #generate new sigmas using current estimates of x and p 
-            sigmas = MSSP(x, p, self.g)
-            nl_sigmas, yhat = self.unscented_Mean(
-                sigmas, self.wm, self.hx, self.hx_kwargs)
-            syy = covariance(nl_sigmas, yhat, self.wc)
-            b = 0.95
-            delta_0 = 0.05
-            delta_1 = 1 - (b * critical)/psi
-            delta = np.max(delta_0, delta_1)
-            self.r = (1-delta)*self.r + delta * \
-                (np.linalg.multi_dot([eps, eps.T]) + syy)
-
-            print("noises updated")
-            #correct estimates of x and P using new noise"
-            #generate covariances and kalman gain"
-            pxx = covariance(sigmas, x, self.wc)
-            pxy = covariance(self.sigmas, x, self.wc, nl_sigmas, yhat)
-            pyy = syy + self.r
-            k = np.matmul(pxy, np.linalg.inv(pyy))
-
-            "update x and P using new noises"
-            x = self.x + np.matmul(k, mu)
-            p = pxx - np.linalg.multi_dot([k, np.linalg.inv(pxy), k.T])
-
-        return x, p
-
+        return u_mean
 
 # %%
 class ukf_ss:
@@ -480,55 +220,60 @@ class ukf_ss:
 
         #list of particle models
         if base_models is None:
-            self.base_models = [deepcopy(self.base_model)] * int((2 * 2 * self.pop_total) + 1)
+            self.base_models = []
+            for i in range(int((4 * self.pop_total) + 1)):
+                self.base_models.append(deepcopy(self.base_model))
         else:
             self.base_models = base_models
             
-        #iterable fx_kwargs
+        #initial hx_kwargs iterable for starmap
+        self.hx_kwargs_iter = [self.hx_kwargs] * (4 * (self.pop_total) + 1)
 
 
-        """lists for various data outputs
-        observations
-        ukf assimilations
-        pure stationsim forecasts
-        ground truths
-        list of covariance matrices
-        list of observation types for each agents at one time point
-        
-        """
+
+        #placeholder lists for various things
         self.obs = []  # actual sensor observations
         self.ukf_histories = []  # ukf predictions
         self.forecasts = []  # pure stationsim predictions
         self.truths = []  # noiseless observations
+        self.ps = []
 
-        self.full_ps = []  # full covariances. again used for animations and not error metrics
         self.obs_key = []  # which agents are observed (0 not, 1 agg, 2 gps)
-        self.status_key = []
+        self.status_key = [] #status of agents over time (0 not started, 1 in progress, 2 finished)
         
-        "timer"
+        #initial ukf parameters/sigma weightings
+        self.x = self.base_model.get_state("location") #initial agent positions
+        #initial covariance p in ukf_params. usually just identity matrix
+        #same for q and r
+        self.n = self.x.shape[0]  # state space dimension
+
+        #MSSP sigma point scaling parameters
+        self.lam = self.a**2*(self.n+self.k) - self.n
+        self.g = np.sqrt(self.n+self.lam)  # gamma parameter
+        self.sigmas = None
+
+        #unscented mean and covariance weights based on a, b, and k
+        main_weight = 1/(2*(self.n+self.lam))
+        self.wm = np.ones(((2*self.n)+1))*main_weight
+        self.wm[0] *= 2*self.lam
+        self.wc = self.wm.copy()
+        self.wc[0] += (1-self.a**2+self.b)
+
+                
+        self.verbose = False
+        
+        if self.verbose:
+            self.pxxs = []
+            self.pxys = []
+            self.pyys = []
+            self.ks = []
+            self.mus = []
+        
+        #timer
         self.time1 = datetime.datetime.now()  # timer
         self.time2 = None
-        
-        self.ukf = ukf(self.model_params, ukf_params, 
-                       base_model.get_state(sensor="location"))
 
-        
-        "save the initial stationsim for batch purposes."
-
-    
-    '''
-    @classmethod
-    def set_random_seed(cls, seed=None):
-        """Set a new numpy random seed
-        :param seed: the optional seed value (if None then get one from os.urandom)
-        
-        """
-        new_seed = int.from_bytes(os.urandom(
-            4), byteorder='little') if seed == None else seed
-        np.random.seed(new_seed)
-    '''
-
-    def ss_Predict(self, step, pool):
+    def ss_Predict(self, ukf_step):
         """ Forecast step of UKF for stationsim.
         - forecast state using UKF (unscented transform)
         - update forecasts list
@@ -547,22 +292,23 @@ class ukf_ss:
         #if self.fx_kwargs_update_function is not None:
             # update transition function fx_kwargs if necessary. not necessary for stationsim but easy to add later.
             #self.fx_kwargs_update_function(*update_fx_args)
-
-        self.fx_kwargs = []
-        for i in range(len(self.base_models)):
-            self.fx_kwargs.append({"base_model" : self.base_models[i]})
+        
+        if self.sigmas is None:
+            self.sigmas = MSSP(self.x, self.p, self.g)
+            for i, sigma in enumerate(self.sigmas):
+                self.base_models[i].set_state("location", sigma)
+        
+        for model in self.base_models:
+            with HiddenPrints():
+                    model.step()
             
-        self.ukf.predict(pool, self.fx_kwargs)
-        self.forecasts.append(self.ukf.x)
-        self.base_models = pool.map(model_step, 
-                                    self.base_models)
-        #if self.batch:
-        #        self.ukf.base_model.set_state(self.batch_truths[step],
-        #        "if batch update stationsim with new truths after step"
-        #                                      sensor = "location")
-    
-
-    def ss_Update(self, step, pool, **hx_kwargs):
+        print(self.base_models[0].step_id)
+        #pool = multiprocessing.Pool()
+        #self.base_models = pool.starmap(self.fx, zip(self.base_models))
+        #pool.close()
+        #pool.join()
+        
+    def ss_Update(self, ukf_step, **hx_kwargs):
         """ Update step of UKF for stationsim.
         - if step is a multiple of sample_rate
         - measure state from base_model.
@@ -576,43 +322,86 @@ class ukf_ss:
         
         """
 
-        if step % self.sample_rate == 0:
-            state = self.base_model.get_state(sensor="location").astype(float)
-            noise_array = np.ones(self.pop_total*2)
-            noise_array[np.repeat([agent.status != 1 for
-                                   agent in self.base_model.agents], 2)] = 0
-            noise_array *= np.random.normal(0, self.noise, self.pop_total*2)
-            state += noise_array
-
-            """if hx function arguements need updating it is done here. 
-            for example if observed index changes as 
-            with experiment 4 we update it here such 
-            0that the ukf takes the correct subset."""
-            if self.hx_kwargs_update_function is not None:
-                #update measurement function hx_kwargs if necessary
-                hx_kwargs = self.hx_kwargs_update_function(state, *self.hx_update_args, **hx_kwargs)
-                self.hx_kwargs = hx_kwargs
-                self.ukf.hx_kwargs = hx_kwargs
-
-            hx_kwargs_iter = [hx_kwargs] * (4 * (self.pop_total) + 1)
-            #convert full noisy state to actual sensor observations
-            new_state = self.ukf.hx(state, **self.hx_kwargs)
-
-            self.ukf.update(new_state, pool, hx_kwargs_iter)
-            #self.base_model.set_state(self.ukf.x, sensor = "location")
-                
-            if self.obs_key_func is not None:
-                key = self.obs_key_func(state, **self.hx_kwargs)
-                #force inactive agents to unobserved
-                #removed for now.put back in if we do variable dimensions of desired state
-                #key *= [agent.status % 2 for agent in self.base_model.agents]
-                self.obs_key.append(key)
-                
             
-            self.ukf_histories.append(self.ukf.x)  # append histories
-            self.obs.append(new_state)
+        self.sigmas = [model.get_state("location") for model in self.base_models]
+        xhat = unscented_Mean(self.sigmas, self.wm)
+        stacked_sigmas = np.vstack(self.sigmas).T
+        pxx = covariance(stacked_sigmas, xhat, self.wc, addition=self.q)
 
-    def step(self, ukf_step, pool):
+        self.p = pxx  # update Sxx
+        self.x = xhat  # update xhat
+
+        #add noise to base_model observation"
+        state = self.base_model.get_state(sensor="location").astype(float)
+        noise_array = np.ones(self.pop_total*2)
+        noise_array[np.repeat([agent.status != 1 for
+                               agent in self.base_model.agents], 2)] = 0
+        noise_array *= np.random.normal(0, self.noise, self.pop_total*2)
+        state += noise_array
+
+        """if hx function arguements need updating it is done here. 
+        for example if observed index changes e.g. if an agent
+        changes from observed to unobserved due to leaving a camera's
+        vision."""
+        
+        if self.hx_kwargs_update_function is not None:
+            #update measurement function hx_kwargs if necessary
+            hx_kwargs = self.hx_kwargs_update_function(state, *self.hx_update_args, **hx_kwargs)
+            self.hx_kwargs = hx_kwargs
+            self.ukf.hx_kwargs = hx_kwargs
+            
+            #hx_kwargs iterable for starmap_with_kwargs
+            self.hx_kwargs = [hx_kwargs] * (4 * (self.pop_total) + 1)
+            
+        #convert full noisy state to actual sensor observations
+        new_state = self.hx(state, **self.hx_kwargs)
+        
+        if self.obs_key_func is not None:
+            key = self.obs_key_func(state, **self.hx_kwargs)
+            #force inactive agents to unobserved
+            #removed for now.put back in if we do variable dimensions of desired state
+            #key *= [agent.status % 2 for agent in self.base_model.agents]
+            self.obs_key.append(key)
+            
+        
+        #assimilate sensor observations onto desired state predictions
+        nl_sigmas = [self.hx(sigmas, **self.hx_kwargs) for sigmas in self.sigmas]
+        #pool = multiprocessing.Pool()
+        #nl_sigmas = starmap_with_kwargs(pool, 
+        #                            self.hx, 
+        #                            self.sigmas, 
+        #                           self.hx_kwargs)
+        #pool.close()
+        #pool.join()
+        #pool = None
+        stacked_nl_sigmas = np.vstack(nl_sigmas).T
+        yhat = unscented_Mean(nl_sigmas, self.wm)
+        pyy = covariance(stacked_nl_sigmas, yhat, self.wc, addition=self.r)
+        pxy = covariance(stacked_sigmas, self.x, self.wc, stacked_nl_sigmas, yhat)
+        self.k = np.matmul(pxy, np.linalg.inv(pyy))
+
+        "i dont know why `self.x += ...` doesnt work here"
+        mu = (new_state - yhat)
+        self.x = self.x + np.matmul(self.k, mu)
+        
+        self.p = self.p - np.linalg.multi_dot([self.k, pyy, self.k.T])
+
+        #append agent states, covariances, and observation types
+        self.ukf_histories.append(self.x)  # append histories
+        self.obs.append(new_state)
+        self.ps.append(self.p)
+        self.sigmas = None
+        
+        #record various data for diagnostics. Warning this makes the pickles rather large
+        if self.verbose:
+            self.pxxs.append(pxx)
+            self.pxys.append(pxy)
+            self.pyys.append(pyy)
+            self.ks.append(self.k)
+            self.mus.append(mu)
+            
+
+    def step(self, ukf_step):
         """ukf step function
         - initiates ukf
         - while any agents are still active
@@ -622,30 +411,17 @@ class ukf_ss:
         - repeat until all agents finish or max iterations reached
         - if no agents then stop
         """
-        if self.sample_rate == 1 or ukf_step % self.sample_rate ==0:
-            self.status_key.append([agent.status for agent in self.base_model.agents])
-            self.ss_Predict(ukf_step, pool)
-            self.base_model.step()
-            self.truths.append(self.base_model.get_state(sensor="location"))
+        
+        self.ss_Predict(ukf_step)
+        self.status_key.append([agent.status for agent in self.base_model.agents])
+        self.base_model.step()
+        self.truths.append(self.base_model.get_state(sensor="location"))    
+        
+        if ukf_step % self.sample_rate == 0 and ukf_step > 0:
             #assimilate new values
-            self.ss_Update(ukf_step, pool, **self.hx_kwargs)
+            self.ss_Update(ukf_step, **self.hx_kwargs)
             
-        elif self.sample_rate > 1 and (ukf_step + 1) % self.sample_rate ==0 :
-            self.status_key.append([agent.status for agent in self.base_model.agents])
-            self.ss_Predict(ukf_step, pool)
-            self.base_model.step()
-            self.truths.append(self.base_model.get_state(sensor="location"))
-
-        else:
-            self.status_key.append([agent.status for agent in self.base_model.agents])
-            self.base_model.step()
-            self.truths.append(self.base_model.get_state(sensor="location"))
-            self.base_models = pool.map(model_step, 
-                                self.base_models)
-            
-                
-            
-    def main(self, pool):
+    def main(self):
         
         """main function for applying ukf to gps style station StationSim
         """
@@ -661,23 +437,20 @@ class ukf_ss:
             #        print("ran out of truths. maybe batch model ended too early.")
                     
             #forecast next StationSim state and jump model forwards
-            self.step(ukf_step, pool)
-
-
+            self.step(ukf_step)
             if ukf_step%100 == 0 :
                 logging.info(f"Iterations: {ukf_step}")
-            finished = self.base_model.pop_finished == self.pop_total
-            if finished:  # break condition
+            if self.base_model.pop_finished == self.pop_total:  # break condition
                 logging.info("ukf broken early. all agents finished")
                 break
+            if ukf_step == self.step_limit:
+                logging.info(f"ukf timed out. max iterations {self.step_limit} of stationsim reached.")
 
         self.time2 = datetime.datetime.now()  # timer
-        if not finished:
-            logging.info(f"ukf timed out. max iterations {self.step_limit} of stationsim reached")
         time = self.time2-self.time1
-        time = f"Time Elapsed: {time}"
-        print(time)
-        logging.info(time)
+        self.time = f"Time Elapsed: {time}"
+        print(self.time)
+        logging.info(self.time)
                 
     """List of static methods for extracting numpy array data 
     """
@@ -733,8 +506,7 @@ class ukf_ss:
             preds = np.zeros((truths.shape[0], self.pop_total*2))*np.nan
 
             #fill in every sample_rate rows with ukf predictions
-            for j in range(int(preds.shape[0]//self.sample_rate)):
-                preds[j*self.sample_rate, :] = raw_preds[j, :]
+            preds[self.sample_rate::self.sample_rate ,:] = raw_preds
         else:
             #if not full_mode returns preds as is
             preds = raw_preds
@@ -830,13 +602,9 @@ class ukf_ss:
     def obs_key_parser(self):
         """extract obs_key
         """
-        obs_key2 = np.vstack(self.obs_key)
-        shape = np.vstack(self.truths).shape[0]
-        obs_key = np.zeros((shape, self.pop_total))*np.nan
-
-        for j in range(int(shape//self.sample_rate)):
-            obs_key[j*self.sample_rate, :] = obs_key2[j, :]
-
+        obs_key_raw = np.vstack(self.obs_key)
+        obs_key = (np.zeros(np.vstack(self.truths).shape)*np.nan)[:,::2]
+        obs_key[self.sample_rate::self.sample_rate,:] = obs_key_raw
         return obs_key
 
 def batch_save(model_params, n, seed):

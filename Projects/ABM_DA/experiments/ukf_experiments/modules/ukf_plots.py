@@ -23,6 +23,7 @@ from matplotlib.collections import PatchCollection
 import imageio 
 from shutil import rmtree
 from default_ukf_configs import marker_attributes as marker_attributes
+import shutil
 
 plt.rcParams.update({'font.size':20})  # make plot font bigger
 
@@ -193,7 +194,7 @@ class ukf_plots:
             else:
                 truths2 = truths[i, :]
                 preds2 = preds[i, :]
-                obs_key2 = obs_key[i - i%sample_rate,:]
+                obs_key2 = obs_key[i, :]
             ms = 10 #marker_size
             alpha = 1
             
@@ -291,9 +292,13 @@ class ukf_plots:
         """
         
         save_dir = destination +"output_pairs/"
-        os.mkdir(save_dir)
+        try:
+            os.mkdir(save_dir)
+        except:
+            shutil.rmtree(save_dir)
+            os.mkdir(save_dir)
         
-        self.pair_frames_main(truths,forecasts,obs_key,range(plot_range), save_dir)
+        self.pair_frames_main(truths, forecasts, obs_key, range(plot_range), save_dir)
         animations.animate(self,save_dir, destination + self.prefix +
                            f"pairwise_gif_{self.filter_class.pop_total}", 6)
         

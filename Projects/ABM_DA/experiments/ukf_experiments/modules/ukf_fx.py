@@ -65,3 +65,29 @@ def fx(x, **fx_kwargs):
     
     return state
 
+def fx2(model):
+    """Transition function for the StationSim. more efficient attempt
+    
+    - Copies current base model
+    - Replaces positions with some sigma points
+    - Step replaced model forwards one time point
+    - record new stationsim positions as forecasted sigmapoint
+    - loop over this in ukf function to get family of forecasted 
+      sigmas
+    
+    Parameters
+    ------
+    x : array_like
+        Sigma point of measured state `x`
+    **fx_args
+        arbitrary arguments for transition function fx
+        
+    Returns
+    -----
+    state : array_like
+        predicted measured state for given sigma point
+    """    
+    with HiddenPrints():
+        model.step() #step model with print suppression    
+    return model
+

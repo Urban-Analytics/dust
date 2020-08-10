@@ -68,16 +68,17 @@ import numpy as np
 import multiprocessing
 from scipy.stats import multivariate_normal
 from scipy.spatial.distance import mahalanobis
-from copy import deepcopy
+from copy import copy, deepcopy
 
 #imports from stationsim folder
 sys.path.append("../../../../stationsim")
-from ukf2 import ukf, ukf_ss
+from ukf2 import ukf_ss
 
 #imports from modules
 sys.path.append("..")
 from sensors import generate_Camera_Rect
 import stationsim_densities as sd
+
 
 class rjmcmc_ukf():
     
@@ -138,6 +139,7 @@ class rjmcmc_ukf():
         self.alphas = []
         self.time1 = datetime.datetime.now()
         
+        self.start_position = self.base_model.get_state("location")
         
 
         
@@ -155,10 +157,10 @@ class rjmcmc_ukf():
             
 
         """
-        start_position = np.hstack([agent.loc_start for agent in base_model.agents])
+
         position = base_model.get_state(sensor = "location")
         
-        angles = sd.start_gate_heading(start_position, position)
+        angles = sd.start_gate_heading(self.start_position, position)
         polys = sd.vision_polygon(position, angles, theta, 
                                        self.boundary)
         cut_bounds = sd.cut_boundaries(polys, self.boundary)
@@ -200,7 +202,7 @@ class rjmcmc_ukf():
         """
         
         #sample without replacement which gates to change
-        new_gates = deepcopy(current_gates)
+        new_gates = copy(current_gates)
         n_agents, n_gates = gate_probabilities.shape
         if n_agents < n_replace:
             n_replace = n_agents
@@ -253,12 +255,12 @@ class rjmcmc_ukf():
         None.
 
         """
-        x1 = ukf1.ukf.x
-        p1 = ukf1.ukf.p
-        x2 = ukf2.ukf.x
-        p2 = ukf2.ukf.p
-        obs1 = np.matmul(ukf1.ukf.k, obs)
-        obs2 = np.matmul(ukf2.ukf.k, obs)
+        x1 = ukf1.x
+        p1 = ukf1.p
+        x2 = ukf2.x
+        p2 = ukf2.p
+        obs1 = np.matmul(ukf1.k, obs)
+        obs2 = np.matmul(ukf2.k, obs)
         
         prob = 1.
         prob *= (np.linalg.det(p1)/np.linalg.det(p2))**(-1/2)
@@ -338,6 +340,8 @@ class rjmcmc_ukf():
         """
         if alpha  == 1.:
             choice = True
+        elif alpha == 0 or np.nan:
+            choice = False
         else:
             choice = np.random.binomial(1, alpha)
             if choice ==0:
@@ -382,8 +386,8 @@ class rjmcmc_ukf():
     #main step function
     ########
     
-    def rj_step(self, ukf_1, step, pool):
-        """main step function for rjmcmc
+    def rj_clone(self, ukf_1):
+        """build two ukfs to run in tandem
         
         - given current exit gates process stationsim one step through ukf
         - at the same time draw new exit gates and process that one step through
@@ -391,9 +395,16 @@ class rjmcmc_ukf():
         - calculate acceptance probablility
         - accept or reject new model accordingly
         - update as necessary
+        
+        Parameters
+        --------
+        ukf_1 : cls
+         `ukf_1` current ukf class to clone and assign new gates
+        
         Returns
         -------
-        None.
+        ukf_2 : cls
+            `ukf_2` cloned ukf with newly drawn gates
     
         """
         
@@ -406,18 +417,28 @@ class rjmcmc_ukf():
         self.gate_probabilities = self.agent_probabilities(base_model, self.vision_angle, self.get_gates_dict)
         #copy original model and give it new gates
         ukf_2 = deepcopy(ukf_1)
-        current_gates = self.get_gates(ukf_1.base_models[0], self.get_gates_dict)
+        self.current_gates = self.get_gates(ukf_1.base_models[0], self.get_gates_dict)
         
-        new_gates = self.draw_new_gates(self.gate_probabilities, current_gates, 5)
+        self.new_gates = self.draw_new_gates(self.gate_probabilities, 
+                                             self.current_gates, self.n_jumps)
         
         for i, model in enumerate(ukf_2.base_models):
             ukf_2.base_models[i] = self.set_gates(model, 
-                                                  new_gates,
+                                                  self.new_gates,
                                                   self.set_gates_dict)
         #step both models forwards to get posterior distributions for mu/sigma
-        ukf_1.step(step, pool)
-        ukf_2.step(step, pool)
+        return ukf_2
                 
+    def rj_choose(self, ukf_1, ukf_2, step):
+        """choose which of the two ukfs to keep
+        
+
+        Returns
+        -------
+        new_ukf : TYPE
+            DESCRIPTION.
+
+        """
         obs = ukf_1.base_model.get_state("location")
         #calculate alpha
         alpha = self.acceptance_probability(ukf_1, ukf_2, obs)
@@ -425,7 +446,7 @@ class rjmcmc_ukf():
         #choose new model
         choice = self.choose_model(alpha)
         if choice:
-            current_gates = new_gates
+            self.current_gates = self.new_gates
             model_choice = 1
             new_ukf =  ukf_2
 
@@ -433,12 +454,12 @@ class rjmcmc_ukf():
             model_choice = 0
             new_ukf =  ukf_1
             
-        self.estimated_gates.append(current_gates)
+        self.estimated_gates.append(self.current_gates)
         self.model_choices.append(model_choice)
         
         return new_ukf
     
-    def main(self, pool):
+    def main(self):
         """main function for rjmcmc_ukf
         
 
@@ -447,25 +468,29 @@ class rjmcmc_ukf():
         None.
 
         """
-
         
         logging.info("rjmcmc_ukf start")
         no_gates_model = deepcopy(self.base_model)
-        no_gates_models = [self.set_gates(no_gates_model, 
+        no_gates_model = self.set_gates(no_gates_model, 
                                           [0]*(self.pop_total),
-                                          self.set_gates_dict)]
-        no_gates_models = no_gates_models * ((4*self.pop_total) + 1)
+                                          self.set_gates_dict)
+        no_gates_models = []
+        for i in range(((4*self.pop_total) + 1)):
+            no_gates_models.append(deepcopy(no_gates_model))
         self.estimated_gates.append([0]*(self.pop_total))
         
         self.ukf_1 = ukf_ss(self.model_params, self.ukf_params, self.base_model,
                             no_gates_models)
-
+        self.ukf_2 = self.rj_clone(self.ukf_1)
+        
         for step in range(self.step_limit):    
-            if step % self.jump_rate ==0 and step > 0:
-                self.ukf_1 = self.rj_step(self.ukf_1, step, pool)
-            else:
-                self.ukf_1.step(step, pool)
-            
+            #one step burn in so we have kalman gains for ukf
+            self.ukf_1.step(step)
+            self.ukf_2.step(step)
+            if step % self.jump_rate == 0 and step >= self.sample_rate:
+                self.ukf_1 = self.rj_choose(self.ukf_1, self.ukf_2, step)
+                self.ukf_2 = self.rj_clone(self.ukf_1)
+
             self.true_gates.append(self.get_gates(self.ukf_1.base_model,
                                                   self.get_gates_dict))
             if step%100 == 0 :

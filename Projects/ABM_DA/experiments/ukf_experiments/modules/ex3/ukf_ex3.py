@@ -13,7 +13,7 @@ from rjmcmc_ukf import rjmcmc_ukf
 
 sys.path.append("..")
 import default_ukf_configs as configs
-from ukf_fx import fx
+from ukf_fx import fx2
 from ukf_plots import ukf_plots
 import matplotlib.pyplot as plt
 
@@ -119,7 +119,7 @@ def rjmcmc_params(n, model_params, ukf_params):
     ukf_params["q"] = 0.01 * np.eye(2 * n)
     ukf_params["r"] = 0.01 * np.eye(2 * n)#sensor noise
     
-    ukf_params["fx"] = fx
+    ukf_params["fx"] = fx2
     ukf_params["fx_kwargs"] = {"base_model":base_model} 
     ukf_params["hx"] = hx3
     ukf_params["hx_kwargs"] = {"pop_total" : n}
@@ -147,7 +147,8 @@ def ex3_main(n, recall):
     model_params["gates_out"] = 3
     ukf_params = configs.ukf_params
     ukf_params["station"] = "stationsim"
-    ukf_params["jump_rate"] = 2
+    ukf_params["jump_rate"] = 5
+    ukf_params["n_jumps"] = 5
     ukf_params["vision_angle"] = np.pi/8
 
     model_params, ukf_params, base_model = rjmcmc_params(n, model_params,
@@ -156,20 +157,17 @@ def ex3_main(n, recall):
        
 
     destination = "../../plots/"
-    pickle_source = "../../pickles"
+    pickle_source = "../../pickles/"
     prefix = "rjmcmc_ukf_"
     save = True
     animate = True
     do_pickle = True
                                       
     if not recall:
-        pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
         rjmcmc_UKF= rjmcmc_ukf(model_params, ukf_params, base_model,
                                                              get_gates,
                                                              set_gates)
-        rjmcmc_UKF.main(pool)
-        pool.close()
-        pool.join()
+        rjmcmc_UKF.main()
     
         instance = rjmcmc_UKF.ukf_1
         pickle_main(ukf_params["file_name"],pickle_source, do_pickle, rjmcmc_UKF)
@@ -217,15 +215,16 @@ def ex3_main(n, recall):
 
     if animate:
         #plts.trajectories(truths, "plots/")
-        obs_key = np.vstack(instance.obs_key)
-        plts.pair_frames(truths[::instance.sample_rate], preds[::instance.sample_rate], obs_key,
-                         int(truths.shape[0]/instance.sample_rate), "../../plots/")
+        plts.pair_frames(truths[::instance.sample_rate], 
+                         preds[::instance.sample_rate],
+                         obs_key[::instance.sample_rate],
+                         truths[::instance.sample_rate].shape[0], "../../plots/")
     
     return rjmcmc_UKF
 
 if __name__ == "__main__":
     
-    n = 10
+    n = 8
     recall = False
     rjmcmc_UKF = ex3_main(n, recall)
     

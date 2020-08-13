@@ -12,6 +12,7 @@ from os import listdir
 import pandas as pd
 from pathlib import Path
 import queue
+import seaborn as sns
 import threading
 import sys
 from time import sleep
@@ -29,13 +30,13 @@ class Modeller():
 
     @classmethod
     def run_all(cls, pop_size=20, its=300, assimilation_period=50,
-                ensemble_size=10, mode=EnsembleKalmanFilterType.STATE):
+                ensemble_size=10, mode=EnsembleKalmanFilterType.DUAL_EXIT):
         """
         Overall function to run everything.
         """
         # Set up params
         model_params = {'pop_total': pop_size,
-                        # 'station': 'Grand_Central',
+                        'station': 'Grand_Central',
                         'do_print': False}
         # model_params = {'width': 200,
                         # 'height': 100,
@@ -54,6 +55,7 @@ class Modeller():
                         # 'do_history': True,
                         # 'do_print': False}
 
+        # Set up filter parameters
         OBS_NOISE_STD = 1
         observation_operator = cls.__make_observation_operator(pop_size, mode)
         state_vec_length = cls.__make_state_vector_length(pop_size, mode)
@@ -75,6 +77,29 @@ class Modeller():
 
         # Run enkf and process results
         enkf = cls.run_enkf(model_params, filter_params)
+        for agent in enkf.base_model.agents:
+            print(agent.gate_out)
+
+        gl = enkf.base_model.gates_locations
+        plt.figure()
+        for i, g in enumerate(gl):
+            plt.scatter(g[0], g[1], label=i)
+        plt.legend(loc='center')
+        plt.savefig('results/figures/exit_map.pdf')
+
+        # Plotting to look at accuracy of exit estimations
+        if mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            exits = enkf.exits
+            agent_exits = [list() for _ in range(pop_size)]
+            for t in range(len(exits)):
+                for i in range(pop_size):
+                    agent_exits[i].append(exits[t][i])
+
+            plt.figure()
+            for i in range(len(agent_exits)):
+                plt.plot(agent_exits[i], label=str(i))
+            plt.legend()
+            plt.savefig('./results/figures/exits.pdf')
 
         # Plotting
         Visualiser.plot_error_timeseries(enkf, model_params,
@@ -385,6 +410,80 @@ class Modeller():
             return 3 * population_size
         else:
             raise ValueError(f'Unexpected filter mode: {mode}')
+
+    @classmethod
+    def run_experiment_1(cls):
+        # cls.run_experiment_1_1()
+        cls.run_experiment_1_2()
+
+    @classmethod
+    def run_experiment_1_1(cls):
+        # Run model alone for multiple population sizes
+        # Show that the number of collisions increases with the population size
+        # Number of collisions should be scaled by the number of timesteps
+        pop_sizes = range(2, 51, 2)
+        N_repeats = 25
+        model_results = list()
+        for pop_size in pop_sizes:
+            print(f'Running for {pop_size} agents')
+            for _ in range(N_repeats):
+                collisions = cls.__run_model(pop_size)
+                if collisions is not None:
+                    model_results.append(collisions)
+
+        model_results = pd.DataFrame(model_results)
+        model_results.to_csv('./results/data/model_collisions.csv')
+        plt.figure()
+        sns.relplot(x='population_size', y='collisions',
+                    kind='line', data=model_results)
+        plt.savefig('./results/figures/model_collisions.pdf')
+
+    @staticmethod
+    def run_experiment_1_2():
+        # Run the EnKF+model for multiple population sizes (multiple times)
+        pop_sizes = [2, 5, 10, 20, 50, 100]
+        N = 50
+        its = 3600
+        assimilation_period = 25
+        ensemble_size = 10
+        mode = EnsembleKalmanFilterType.STATE
+
+        # Plot facet grid by population size
+        # Individual plots are sns.relplot, x=time, y=error
+        # Two plots per subfig: baseline and filter
+        # Run the EnKF+model for multiple population sizes (multiple times)
+        pop_sizes = [2, 5, 10, 20, 50, 100]
+        N = 50
+        its = 3600
+        assimilation_period = 25
+        ensemble_size = 10
+        mode = EnsembleKalmanFilterType.STATE
+
+        # Plot facet grid by population size
+        # Individual plots are sns.relplot, x=time, y=error
+        # Two plots per subfig: baseline and filter
+
+    @staticmethod
+    def __run_model(N):
+        model_params = {'pop_total': N,
+                        'station': 'Grand_Central',
+                        'do_print': False}
+        m = Model(**model_params)
+
+        # Run model
+        for _ in range(m.step_limit):
+            m.step()
+
+        try:
+            c = len(m.history_wiggle_locs)
+            t = m.max_time
+            d = {'collisions': c,
+                 'time': t,
+                 'population_size': N}
+            return d
+        except:
+            print('failure')
+            return None
 
 
 class Processor():

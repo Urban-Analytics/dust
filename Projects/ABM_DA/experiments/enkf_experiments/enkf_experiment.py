@@ -31,6 +31,7 @@ np.random.seed(42)
 # process_batch(read_time=True)
 
 # d = {'station': 'Grand_Central'}
-Modeller.run_all(its=2400, pop_size=10, ensemble_size=25)
+Modeller.run_all(its=600, pop_size=2, ensemble_size=50, assimilation_period=10)
 # Modeller.run_repeat_combos(resume=False)
 # Modeller.run_for_endtime()
+# Modeller.run_experiment_1()

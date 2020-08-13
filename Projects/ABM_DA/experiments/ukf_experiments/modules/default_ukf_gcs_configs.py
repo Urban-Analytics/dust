@@ -21,7 +21,7 @@ gate_speed- mean entry speed for agents
 speed_min - minimum agents speed to prevent ridiculuous iteration numbers
 speed_mean - desired mean of normal distribution of speed of agents
 speed_std - as above but standard deviation
-speed_steps - how many levels of speed between min and max for each agent
+speed_steps - how many ractchet levels of speed between min and max for each agent
 
 separation - parameter to determine collisions in cKDTree. Similar to agent size
 wiggle - how far an agent moves laterally to avoid queueing
@@ -41,7 +41,7 @@ model_params = {
 'gates_speed': 1,
 
 'speed_min': .2,
-'speed_mean': 2,
+'speed_mean': 5,
 'speed_std': 1,
 'speed_steps': 3,
 
@@ -69,12 +69,12 @@ not 100% sure what kappa does. think its a bias parameter.
 
 ukf_params = {      
 
-'sample_rate' : 2,
+'sample_rate' : 5,
 "bring_noise" : True,
 "noise" : 0.5,
 "do_batch" : False,
 
-"a": 0.5,
+"a": 0.2,
 "b": 2,
 "k": 0,
 

@@ -24,13 +24,13 @@ We require a natural number for this rate 1, 2, 3, ...
 import sys
 import numpy as np
 
-sys.path.append("../modules")
+sys.path.append("..")
 # import required modules
 from ukf_fx import fx
 from ukf_plots import L2s
 import default_ukf_configs
 
-sys.path.append("../../../stationsim")
+sys.path.append("../../../../stationsim")
 from ukf2 import ukf_ss
 from stationsim_model import Model
 
@@ -67,9 +67,9 @@ def benchmark_params(n, noise, sample_rate, model_params, ukf_params):
     
     base_model = Model(**model_params)
 
-    ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
-    ukf_params["q"] = np.eye(2 * n)
-    ukf_params["r"] = np.eye(2 * n)#sensor noise
+    ukf_params["p"] = 0.1 * np.eye(2 * n) #inital guess at state covariance
+    ukf_params["q"] = 0.1 * np.eye(2 * n)
+    ukf_params["r"] = 0.1 * np.eye(2 * n)#sensor noise
     
     ukf_params["fx"] = fx
     ukf_params["fx_kwargs"] = {"base_model": base_model}
@@ -123,11 +123,10 @@ def ex0_save(instance,source,f_name):
     """
 
     truths = instance.truth_parser(instance)
-    nan_array= instance.nan_array_parser(truths, instance.base_model)
-    obs_key = instance.obs_key_parser()
-    obs = instance.obs_parser(instance, True, truths, obs_key)
-    preds = instance.preds_parser(instance, True, truths)
-    forecasts = np.vstack(instance.forecasts)
+    nan_array= instance.nan_array_parser(instance, truths, instance.base_model)
+    obs, obs_key = instance.obs_parser(instance, True)
+    preds = instance.preds_parser(instance, True)
+    forecasts =  instance.forecasts_parser(instance, True)
 
     obs *= nan_array
     truths *= nan_array
@@ -175,15 +174,16 @@ def ex0_main(n, noise, sampling_rate):
     
     u = ukf_ss(model_params,ukf_params,base_model)
     u.main()
-    ex0_save(u, "../results/", ukf_params["file_name"])
+    ex0_save(u, "../../results/", ukf_params["file_name"])
+    return u
   
 #%%  
     
 if __name__ == "__main__":
-    n= 10
-    noise = 0.5
-    sampling_rate = 5    
-    ex0_main(n,  noise, sampling_rate)
+    n= 20
+    noise = 1
+    sample_rate = 1   
+    u = ex0_main(n,  noise, sample_rate)
     
     
     

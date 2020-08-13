@@ -18,7 +18,6 @@ import sys
 import numpy as np  # numpy
 import datetime  # for timing experiments
 import pickle  # for saving class instances
-from scipy.stats import chi2  # for adaptive ukf test
 import logging
 from copy import deepcopy
 import multiprocessing
@@ -147,8 +146,8 @@ def MSSP(mean, p, g):
         further from the centre sigma.
     Returns
     ------
-    sigmas : array_like
-        matrix of MSSPs with each column representing one sigma point
+    sigmas : list
+        list of MSSPs with each item representing one sigma point.
     """
     n = mean.shape[0]
     s = np.linalg.cholesky(p)
@@ -170,10 +169,8 @@ def unscented_Mean(sigmas, wm):
     
         Returns 
         ------
-    
         u_mean : array_like
             unscented mean of `u_mean` of sigmas.
-    
         """
         sigmas = np.vstack(sigmas).T
         u_mean = np.dot(sigmas, wm)  # unscented mean for predicitons
@@ -275,10 +272,9 @@ class ukf_ss:
 
     def ss_Predict(self, ukf_step):
         """ Forecast step of UKF for stationsim.
-        - forecast state using UKF (unscented transform)
-        - update forecasts list
-        - jump base_model forwards to forecast time
-        - update truths list with new positions
+        - if at step 0 or after an update step generate new sigmas points
+            and assign them to base_models
+        - otherwise step the base_models with their given sigma points.
         
         Parameters
         ------
@@ -297,32 +293,42 @@ class ukf_ss:
             self.sigmas = MSSP(self.x, self.p, self.g)
             for i, sigma in enumerate(self.sigmas):
                 self.base_models[i].set_state("location", sigma)
-        
-        for model in self.base_models:
+
+        print(self.base_models[0].step_id)        
+        if self.pop_total <= 20 and self.station != None:
             with HiddenPrints():
-                    model.step()
+                for model in self.base_models:
+                            model.step()
+        else:
+            pool = multiprocessing.Pool()
+            self.base_models = pool.starmap(self.fx, zip(self.base_models))
+            pool.close()
+            pool.join()
             
-        print(self.base_models[0].step_id)
-        #pool = multiprocessing.Pool()
-        #self.base_models = pool.starmap(self.fx, zip(self.base_models))
-        #pool.close()
-        #pool.join()
-        
     def ss_Update(self, ukf_step, **hx_kwargs):
         """ Update step of UKF for stationsim.
         - if step is a multiple of sample_rate
-        - measure state from base_model.
-        - add some gaussian noise to active agents.
-        - apply measurement funciton h to project noisy 
-            state onto measured state
-        - assimilate ukf with projected noisy state
+        - step base_models forwards
+        - get unscented mean and covariance estimate for desired state x pxx
+        - measure state from base_model applying gaussian noise and converting it
+            into observations using hx.
+        - assimilate ukf with projected noisy osbervations.
         - calculate each agents observation type with obs_key_func.
         - append lists of ukf assimilations and model observations
-        - else do nothing
         
-        """
-
+        Parameters
+        --------
+        ukf_step : int
+            `ukf_step` base model step id
+        hx_kwargs : kwargs
+            `hx_kwargs` any kwargs other than the true base model state needed to 
+            run hx.
             
+        Returns
+        ------
+        None.
+        """
+        #calculate desired state unscented mean and covariance
         self.sigmas = [model.get_state("location") for model in self.base_models]
         xhat = unscented_Mean(self.sigmas, self.wm)
         stacked_sigmas = np.vstack(self.sigmas).T
@@ -331,13 +337,14 @@ class ukf_ss:
         self.p = pxx  # update Sxx
         self.x = xhat  # update xhat
 
-        #add noise to base_model observation"
+        #add noise to base_model true state
         state = self.base_model.get_state(sensor="location").astype(float)
-        noise_array = np.ones(self.pop_total*2)
-        noise_array[np.repeat([agent.status != 1 for
-                               agent in self.base_model.agents], 2)] = 0
-        noise_array *= np.random.normal(0, self.noise, self.pop_total*2)
-        state += noise_array
+        if self.noise != 0:
+            noise_array = np.ones(self.pop_total*2)
+            noise_array[np.repeat([agent.status != 1 for
+                                   agent in self.base_model.agents], 2)] = 0
+            noise_array *= np.random.normal(0, self.noise, self.pop_total*2)
+            state += noise_array
 
         """if hx function arguements need updating it is done here. 
         for example if observed index changes e.g. if an agent
@@ -353,9 +360,10 @@ class ukf_ss:
             #hx_kwargs iterable for starmap_with_kwargs
             self.hx_kwargs = [hx_kwargs] * (4 * (self.pop_total) + 1)
             
-        #convert full noisy state to actual sensor observations
+        #convert full noisy true state to actual sensor observations
         new_state = self.hx(state, **self.hx_kwargs)
         
+        #append obs key list if there is any. useful to have for nice plots later.
         if self.obs_key_func is not None:
             key = self.obs_key_func(state, **self.hx_kwargs)
             #force inactive agents to unobserved
@@ -364,7 +372,7 @@ class ukf_ss:
             self.obs_key.append(key)
             
         
-        #assimilate sensor observations onto desired state predictions
+        #calculate unscenterd mean and covariance of observed state
         nl_sigmas = [self.hx(sigmas, **self.hx_kwargs) for sigmas in self.sigmas]
         #pool = multiprocessing.Pool()
         #nl_sigmas = starmap_with_kwargs(pool, 
@@ -378,8 +386,9 @@ class ukf_ss:
         yhat = unscented_Mean(nl_sigmas, self.wm)
         pyy = covariance(stacked_nl_sigmas, yhat, self.wc, addition=self.r)
         pxy = covariance(stacked_sigmas, self.x, self.wc, stacked_nl_sigmas, yhat)
+        
+        #assimilate predictions of x with observations
         self.k = np.matmul(pxy, np.linalg.inv(pyy))
-
         "i dont know why `self.x += ...` doesnt work here"
         mu = (new_state - yhat)
         self.x = self.x + np.matmul(self.k, mu)
@@ -390,6 +399,7 @@ class ukf_ss:
         self.ukf_histories.append(self.x)  # append histories
         self.obs.append(new_state)
         self.ps.append(self.p)
+        self.forecasts.append(xhat)
         self.sigmas = None
         
         #record various data for diagnostics. Warning this makes the pickles rather large
@@ -410,6 +420,18 @@ class ukf_ss:
         - update ukf with new model positions
         - repeat until all agents finish or max iterations reached
         - if no agents then stop
+        
+        Parameters
+        --------
+        ukf_step : int
+            `ukf_step` base model step id
+        hx_kwargs : kwargs
+            `hx_kwargs` any kwargs other than the true base model state needed to 
+            run hx.
+            
+        Returns
+        ------
+        None.
         """
         
         self.ss_Predict(ukf_step)
@@ -424,6 +446,17 @@ class ukf_ss:
     def main(self):
         
         """main function for applying ukf to gps style station StationSim
+    
+        - for each time step
+        - if time 0 or step_limit + 1
+            - generate new sigmas and step base_models forwards
+        - if time is step_limit 
+            - step base_models forwards and do update step and collapse sigmasd
+        - else just step base_models forwards.
+        
+        Returns
+        ------
+        None.
         """
 
         #initialise UKF
@@ -462,14 +495,14 @@ class ukf_ss:
         -------
         truths : "array_like"
             `truths` array of agents true positions. Every 2 columns is an 
-            agents xy positions over time. 
+            agents xy positions over time bottom filled with np.nans. 
         """
         
         truths = np.vstack(self.truths)
         return truths
         
     @staticmethod
-    def preds_parser(self, full_mode, truths = None):
+    def preds_parser(self, full_mode):
         """Parse ukf predictions of agents positions from some ukf class
         
         Parameters
@@ -500,10 +533,8 @@ class ukf_ss:
             #print full preds with sample_rate blank gaps between rows.
             #we want the predictions to have the same number of rows
             #as the true data.
-            if truths is None:
-                print("Warning! full mode needs a truths frame for reference.")
             #placeholder frame with same size as truths
-            preds = np.zeros((truths.shape[0], self.pop_total*2))*np.nan
+            preds = np.zeros((len(self.truths), self.pop_total*2))*np.nan
 
             #fill in every sample_rate rows with ukf predictions
             preds[self.sample_rate::self.sample_rate ,:] = raw_preds
@@ -513,8 +544,8 @@ class ukf_ss:
         return preds
     
     @staticmethod
-    def obs_parser(self, full_mode, truths = None, obs_key = None):
-        """Parse sensor observations I.E. observed state from ukf class
+    def forecasts_parser(self, full_mode):
+        """Parse ukf predictions of agents positions from some ukf class
         
         Parameters
         -------
@@ -531,43 +562,82 @@ class ukf_ss:
         truths : `array_like`
             `truths` numpy array to reference for full shape of preds array.
             I.E how many rows (time points) and columns (agents)
-        obs_key : `array_like`
-        Array of the same shape as truths indicating whether an agents positions
-        are observered either directly, via some aggregate, or not at all.
-            
+        
         Returns
         -------
-        obs : "array_like"
-            numpy array of observations `obs` from observed state.
-            
-        !!todo issues aligning obs_key and observations dimensions
-        e.g. trying to fit a 1x4 observation into 1x6 index
+        forecasts : `array_like`
+            `preds` numpy array of ukf predictions.
         """
         
-        raw_obs = self.obs
-    
+        raw_forecasts = np.vstack(self.forecasts)
+
         if full_mode:
             #print full preds with sample_rate blank gaps between rows.
             #we want the predictions to have the same number of rows
             #as the true data.
-            if truths is None:
-                print("Warning! full mode needs a truths frame for reference.")
             #placeholder frame with same size as truths
-            obs = np.zeros((truths.shape[0], self.pop_total*2))*np.nan
+            forecasts = np.zeros((len(self.truths), self.pop_total*2))*np.nan
 
             #fill in every sample_rate rows with ukf predictions
-            for i in range(len(raw_obs)):
-                index = np.where(obs_key[i*self.sample_rate, :]==2)
-                index2 = 2*np.repeat(index,2)
-                index2[1::2]+=1
-                if index2.shape[0]>0:
-                    obs[((i)*self.sample_rate), index2] = raw_obs[i]
-                
+            forecasts[self.sample_rate::self.sample_rate ,:] = raw_forecasts
         else:
             #if not full_mode returns preds as is
-            obs = raw_obs
-        return obs
+            forecasts = raw_forecasts
+        return forecasts
+    
+    @staticmethod
+    def obs_parser(self, full_mode):
+        """Parse ukf predictions of agents positions from some ukf class
         
+        Parameters
+        -------
+        full_mode : 'bool'
+        'full_mode' determines whether we print the ukf predictions as is
+        or fill out a data frame for every time point. For example, if we have
+        200 time points for a stationsim run and a sample rate of 5 we will
+        get 200/5 = 40 ukf predictions. If we set full_mode to false we get an
+        array with 40 rows. If we set it to True we get the full 200 rows with
+        4 blanks rows for every 5th row of data. This is very useful for 
+        plots later as it standardises the data times and makes animating much,
+        much easier.
+        
+        truths : `array_like`
+            `truths` numpy array to reference for full shape of preds array.
+            I.E how many rows (time points) and columns (agents)
+        
+        Returns
+        -------
+        forecasts : `array_like`
+            `preds` numpy array of ukf predictions.
+        """
+        
+        raw_obs = np.vstack(self.obs)
+        raw_obs_key = np.vstack(self.obs_key)
+        
+        if full_mode:
+            #print full preds with sample_rate blank gaps between rows.
+            #we want the predictions to have the same number of rows
+            #as the true data.
+            #placeholder frame with same size as truths
+            obs = np.zeros((len(self.truths), self.pop_total*2))*np.nan
+            obs_key = np.zeros((len(self.truths), self.pop_total))*np.nan
+            
+            obs_key[self.sample_rate::self.sample_rate, :] = raw_obs_key
+            
+            #fill in every sample_rate rows with ukf predictions
+            where_observed = np.where(obs_key == 2)
+            where = where_observed[1][:self.pop_total]
+            where = np.repeat(2 * where, 2)
+            where[1::2] += 1
+            
+            obs[self.sample_rate::self.sample_rate , where] = raw_obs
+        else:
+            #if not full_mode returns preds as is
+            obs = obs
+        return obs, obs_key
+    
+    @staticmethod
+
     def nan_array_parser(self, truths, base_model):
         """ Indicate when an agent leaves the model to ignore any outputs.
         
@@ -598,14 +668,6 @@ class ukf_ss:
         nan_array[rows, columns] = 1
         
         return nan_array
-
-    def obs_key_parser(self):
-        """extract obs_key
-        """
-        obs_key_raw = np.vstack(self.obs_key)
-        obs_key = (np.zeros(np.vstack(self.truths).shape)*np.nan)[:,::2]
-        obs_key[self.sample_rate::self.sample_rate,:] = obs_key_raw
-        return obs_key
 
 def batch_save(model_params, n, seed):
     "save a stationsim model to use later in a batch"

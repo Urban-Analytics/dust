@@ -221,11 +221,10 @@ def ex1_plots(instance, destination, prefix, save, animate):
 
 
     truths = instance.truth_parser(instance)
-    nan_array= instance.nan_array_parser(truths, instance.base_model)
-    nan_array[0, :] = np.nan
-    obs_key = instance.obs_key_parser()
-    obs = instance.obs_parser(instance, True, truths, obs_key)
-    preds = instance.preds_parser(instance, True, truths)
+    nan_array= instance.nan_array_parser(instance, truths, instance.base_model)
+    obs, obs_key = instance.obs_parser(instance, True)
+    preds = instance.preds_parser(instance, True)
+    forecasts =  instance.forecasts_parser(instance, True)
     
     ukf_params = instance.ukf_params
     index2 = ukf_params["index2"]
@@ -315,11 +314,11 @@ def ex1_main(n, prop, pool, recall, do_pickle, source, destination):
     return u
     
 if __name__ == "__main__":
-    recall = False #recall previous run
+    recall = True #recall previous run
     do_pickle = True #pickle new run
     pickle_source = "../../pickles/" #where to load/save pickles from
     destination = "../../plots/"
-    n = 30 #population size
+    n = 20 #population size
     prop = 1.0 #proportion observed
     pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
 

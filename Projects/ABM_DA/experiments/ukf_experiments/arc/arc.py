@@ -53,7 +53,7 @@ import sys
 
 class arc():
     
-    def __init__(self, filter_params, model_params, base_model, test = False):
+    def __init__(self, test = False):
         """load in updated parameters and model so DA algorithm runs
         
         Parameters
@@ -70,13 +70,9 @@ class arc():
             a larger batch of jobs to have none of them succeed and 400 abort
             emails.
         """
-        
-        self.filter_params = filter_params
-        self.model_params = model_params
-        self.base_model = base_model
         self.test = test
         
-    def arc_main(self, filter_function, file_name):
+    def arc_main(self, filter_function, file_name, *args):
         """ main function for running experiments on arc
         
         - load updated filter and model parameters and model.
@@ -100,12 +96,12 @@ class arc():
         
         # Start logging incase run fails. Specify filename and logging level.
         logging.basicConfig(filename = file_name + '.log', level = logging.INFO)
-        
-        print("Filter params: " + str(self.filter_params))
-        print("Model params: " + str(self.model_params))
+                
+        print("Model params: " + str(args[0]))
+        print("Filter params: " + str(args[1]))
     
         # init and run ukf
-        self.u = filter_function(self.model_params, self.filter_params, self.base_model)
+        self.u = filter_function(*args)
         self.u.main()
         
         return self.u

@@ -8,18 +8,20 @@ Created on Wed Jul 22 14:57:18 2020
 import sys
 import numpy as np
 import multiprocessing
+import matplotlib.pyplot as plt
 
 from rjmcmc_ukf import rjmcmc_ukf
 
 sys.path.append("..")
-import default_ukf_configs as configs
-from ukf_fx import fx2
-from ukf_plots import ukf_plots
-import matplotlib.pyplot as plt
+sys.path.append("../..")
+import modules.default_ukf_configs as configs
+from modules.ukf_fx import fx2
+from modules.ukf_plots import ukf_plots
 
-sys.path.append("../../../../stationsim")
-from stationsim_model import Model
-from ukf2 import pickle_main
+sys.path.append("../../../..")
+sys.path.append("../../..")
+from stationsim.stationsim_model import Model
+from stationsim.ukf2 import pickle_main
 
 
 def hx3(state, **hx_kwargs):
@@ -107,14 +109,18 @@ def set_gates(base_model, new_gates, set_gates_dict):
         base_model.agents[i].loc_desire = new_gate
     return base_model
     
-def rjmcmc_params(n, model_params, ukf_params):
+def rj_params(n, jump_rate, n_jumps, model_params, ukf_params):
     
     model_params["pop_total"] = n
+    model_params["gates_out"] = 3
+
     base_model = Model(**model_params)
+    model_params["exit_gates"] =  base_model.gates_locations[-model_params["gates_out"]:]
     
-    prop = 1
-    ukf_params["prop"] = prop
-        
+    ukf_params["vision_angle"] = np.pi/8
+    ukf_params["jump_rate"] = jump_rate
+    ukf_params["n_jumps"] = n_jumps
+    
     ukf_params["p"] = 0.1 * np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = 0.01 * np.eye(2 * n)
     ukf_params["r"] = 0.01 * np.eye(2 * n)#sensor noise
@@ -141,28 +147,20 @@ def error_plot(true_gates, estimated_gates):
     plt.xlabel("time")
     plt.ylabel("Error Between Estimated and True Gates. ")
 
-def ex3_main(n, recall):
-    
-    model_params = configs.model_params
-    model_params["gates_out"] = 3
+def ex3_main(n, jump_rate, n_jumps, recall):
     ukf_params = configs.ukf_params
-    ukf_params["station"] = "stationsim"
-    ukf_params["jump_rate"] = 5
-    ukf_params["n_jumps"] = 5
-    ukf_params["vision_angle"] = np.pi/8
-
-    model_params, ukf_params, base_model = rjmcmc_params(n, model_params,
-                                                         ukf_params)       
-    ukf_params["exit_gates"] =  base_model.gates_locations[-model_params["gates_out"]:]
-       
-
+    model_params = configs.model_params
     destination = "../../plots/"
     pickle_source = "../../pickles/"
     prefix = "rjmcmc_ukf_"
     save = True
     animate = True
     do_pickle = True
-                                      
+                       
+    model_params, ukf_params, base_model = rj_params(n, jump_rate, n_jumps, model_params,
+                                                         ukf_params)       
+       
+               
     if not recall:
         rjmcmc_UKF= rjmcmc_ukf(model_params, ukf_params, base_model,
                                                              get_gates,
@@ -185,10 +183,11 @@ def ex3_main(n, recall):
     instance = rjmcmc_UKF.ukf_1
     plts = ukf_plots(instance, destination, prefix, save, animate)
 
-
     truths = instance.truth_parser(instance)
-    nan_array= instance.nan_array_parser(truths, instance.base_model)
-    preds = instance.preds_parser(instance, True, truths)
+    nan_array= instance.nan_array_parser(instance, truths, instance.base_model)
+    obs, obs_key = instance.obs_parser(instance, True)
+    preds = instance.preds_parser(instance, True)
+    forecasts =  instance.forecasts_parser(instance, True)
     
     ukf_params = instance.ukf_params
     #forecasts = np.vstack(instance.forecasts)
@@ -201,7 +200,6 @@ def ex3_main(n, recall):
     "indices for unobserved agents"
 
     #plts.path_plots(obs, "Observed")
-    obs_key = instance.obs_key_parser()
     plts.pair_frame(truths, preds, obs_key, 10, destination)
 
     error_plot(rjmcmc_UKF.true_gate, rjmcmc_UKF.estimated_gates)
@@ -224,9 +222,11 @@ def ex3_main(n, recall):
 
 if __name__ == "__main__":
     
-    n = 8
+    n = 50
+    jump_rate = 10
+    n_jumps = 5
     recall = False
-    rjmcmc_UKF = ex3_main(n, recall)
+    rjmcmc_UKF = ex3_main(n, jump_rate, n_jumps, recall)
     
     
     

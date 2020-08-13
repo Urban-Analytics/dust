@@ -27,11 +27,13 @@ from descartes import PolygonPatch
 
 default_colour_cycle = plt.rcParams['axes.prop_cycle'].by_key()["color"]
 sys.path.append("..")
-import default_ukf_configs as configs
-from sensors import generate_Camera_Rect
+sys.path.append("../..")
+import modules.default_ukf_configs as configs
+from modules.sensors import generate_Camera_Rect
 
-sys.path.append("../../../../stationsim")
-from stationsim_model import Model
+sys.path.append("../../..")
+sys.path.append("../../../..")
+from stationsim.stationsim_model import Model
 
 
 def start_gate_heading(start_position, position):

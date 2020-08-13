@@ -43,6 +43,8 @@ from arc import arc
 
 sys.path.append("../modules")
 import default_ukf_configs as configs
+sys.path.append("../modules/ex0")
+sys.path.append('../../../../stationsim')
 from ukf_ex0 import benchmark_params, ex0_save
 
 sys.path.append('../../../stationsim')

@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -36,19 +37,23 @@ import numpy as np
 
 from arc import arc
 
-sys.path.append("../modules/ex1")
-from ukf_ex1 import omission_params
+sys.path.append("..")
 sys.path.append("../modules")
-import default_ukf_configs as configs
+from ex3.gcs_ukf_ex3 import rj_params,  get_gates, set_gates
+from ex3.rjmcmc_ukf import rjmcmc_ukf
 
-sys.path.append('../../../stationsim')
-sys.path.append('../../../../stationsim')
+sys.path.append("../modules")
+sys.path.append("../..")
+import modules.default_ukf_configs as configs
 
-from ukf2 import pickler, ukf_ss
+sys.path.append('../../..')
+#sys.path.append('../../../../stationsim')
+
+from stationsim.ukf2 import pickler, ukf_ss
 
 # %%
 
-def ex1_parameters(parameter_lists, test):
+def ex3_parameters(parameter_lists, test):
     """let the arc task array choose experiment parameters to run
 
     Parameters
@@ -76,18 +81,20 @@ def ex1_parameters(parameter_lists, test):
     if not test:
         "assign parameters according to task array"
         n = parameter_lists[int(sys.argv[1])-1][0]
-        prop = parameter_lists[int(sys.argv[1])-1][1]
-        run_id = parameter_lists[int(sys.argv[1])-1][2]
+        jump_rate = parameter_lists[int(sys.argv[1])-1][1]
+        theta = parameter_lists[int(sys.argv[1])-1][2]
+        run_id = parameter_lists[int(sys.argv[1])-1][3]
     else:
         "if testing use these parameters for a single quick run."
         n = 5
-        prop = 0.5
+        jump_rate = 5
+        n_jumps = 3
         run_id = "test"
         
-    return n, prop, run_id
+    return n, jump_rate, n_jumps, run_id
 
 
-def arc_ex1_main(parameter_lists, test):
+def arc_ex3_main(parameter_lists, test):
     """main function to run ukf experiment 1 on arc.
     
     Parameters
@@ -106,32 +113,38 @@ def arc_ex1_main(parameter_lists, test):
     # load in default params
     ukf_params = configs.ukf_params
     model_params = configs.model_params
+    if test:
+        model_params["seed"] = 8
+        
     # load in experiment 1 parameters
-    n, prop, run_id = ex1_parameters(parameter_lists, test)
+    n, jump_rate, n_jumps, run_id = ex3_parameters(parameter_lists, test)
     # update model and ukf parameters for given experiment and its' parameters
-    model_params, ukf_params, base_model =  omission_params(n, 
-                                                            prop, 
+    model_params, ukf_params, base_model =  rj_params(n, jump_rate, n_jumps,
                                                             model_params, 
                                                             ukf_params)
     #file name to save results to
-    file_name = "ukf_agents_{}_prop_{}-{}".format(
+    file_name = "ukf_agents_{}_rate_{}_jumps_{}-{}".format(
         str(n).zfill(3),
-        str(prop),
+        str(jump_rate),
+        str(n_jumps),
         str(run_id).zfill(3)) + ".pkl"
     #where to save the file
     destination = "../results/" 
     
+    ukf_args = model_params, ukf_params, base_model, get_gates , set_gates
     # initiate arc class
-    ex1_arc = arc(ukf_params, model_params, base_model, test)
+    ex3_arc = arc(test)
     # run ukf_ss filter for arc class
-    u = ex1_arc.arc_main(ukf_ss, file_name)
+    u = ex3_arc.arc_main(rjmcmc_ukf, file_name, *ukf_args)
     # save entire ukf class as a pickle
-    ex1_arc.arc_save(pickler, destination, file_name)
+    ex3_arc.arc_save(pickler, destination, file_name)
+    
+    return u
 
 if __name__ == '__main__':
     
     #if testing set to True. if running batch experiments set to False
-    test = False
+    test = True
     if test:
         print("Test set to true. If you're running an experiment, it wont go well.")
 
@@ -144,5 +157,5 @@ if __name__ == '__main__':
     #cartesian product list giving all combinations of experiment parameters.
     param_list = [(x, y, z) for x in num_age for y in props for z in run_id]
     
-    arc_ex1_main(param_list, test)
+    u = arc_ex3_main(param_list, test)
 

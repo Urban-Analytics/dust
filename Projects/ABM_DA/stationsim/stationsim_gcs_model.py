@@ -47,7 +47,7 @@ class Agent:
         self.gate_in = np.random.randint(model.gates_in)
         self.gate_out = np.random.randint(model.gates_out) + model.gates_in
         while (self.gate_out == self.gate_in or
-               self.gate_out >= len(model.gates_locations)):
+                self.gate_out >= model.gates_out):
             self.gate_out = np.random.randint(model.gates_out)
         self.loc_desire = self.set_agent_location(self.gate_out)
 
@@ -625,6 +625,7 @@ class Model:
                 agent.location = state[i, :]
         elif sensor == 'exit':
             for i, agent in enumerate(self.agents):
+                agent.gate_out = state[i]
                 agent.loc_desire = agent.set_agent_location(state[i])
 
     # TODO: Deprecated, update PF

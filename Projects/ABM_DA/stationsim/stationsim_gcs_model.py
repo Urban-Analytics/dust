@@ -417,13 +417,14 @@ class Model:
         if(self.station == 'Grand_Central'):
             self.width = 200
             self.height = 400
+            # gates ordered clockwise from west side
             self.gates_locations =\
-                np.array([[0, self.height/2],  # south side
-                          [20, self.height], [170, self.height],  # west side
-                          [20, 0], [170, 0],  # east side
-                          [self.width, 60], [self.width, 125],  # north side
-                          [self.width, 200], [self.width, 275],  # north side
-                          [self.width, 340]])  # north side
+                np.array([[20, self.height], [170, self.height],  # west
+                          [self.width, 340], [self.width, 275],   # north
+                          [self.width, 200], [self.width, 125],   # north
+                          [self.width, 60],                       # north
+                          [170, 0], [20, 0],                      # east
+                          [0, self.height/2]])                    # south
             self.gates_in = len(self.gates_locations)
             self.gates_out = len(self.gates_locations)
             self.clock = Agent(self, self.pop_total)

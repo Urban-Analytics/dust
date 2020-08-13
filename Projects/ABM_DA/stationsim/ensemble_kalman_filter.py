@@ -50,7 +50,7 @@ class EnsembleKalmanFilter(Filter):
         self.__assign_filter_params(filter_params)
 
         # Set up ensemble of models
-        self.__set_up_models()
+        self.models = self.__set_up_models()
         # Make sure that models have state
         # for m in self.models:
         # if not hasattr(m, 'state'):
@@ -83,7 +83,7 @@ class EnsembleKalmanFilter(Filter):
             self.__set_up_baseline()
 
         self.update_state_ensemble()
-        self.update_state_mean()
+        self.update_state_means()
 
         self.results = list()
 #        self.results = [self.state_mean]
@@ -94,12 +94,14 @@ class EnsembleKalmanFilter(Filter):
 
         self.__print_start_summary()
         self.original_state = self.state_mean
+        self.exits = [self.state_mean[2*self.population_size:]]
 
     def __set_up_baseline(self):
         # Ensemble of vanilla models is always 10 (control variable)
         self.vanilla_ensemble_size = 10
-        self.vanilla_models = [dcopy(self.base_model) for _ in
-                               range(self.vanilla_ensemble_size)]
+        self.vanilla_models = self.__set_up_models(self.vanilla_ensemble_size)
+        # self.vanilla_models = [dcopy(self.base_model) for _ in
+                               # range(self.vanilla_ensemble_size)]
         self.vanilla_state_mean = None
         self.vanilla_state_ensemble = np.zeros(shape=(self.state_vector_length,
                                                       self.vanilla_ensemble_size))
@@ -151,13 +153,14 @@ class EnsembleKalmanFilter(Filter):
         self.error_funcs = {EnsembleKalmanFilterType.STATE: self.__make_errors,
                             EnsembleKalmanFilterType.DUAL_EXIT: self.__make_dual_errors}
 
-    def __set_up_models(self):
+    def __set_up_models(self, n=None):
         # Set up ensemble of models
         # Deep copy preserves knowledge of agent origins and destinations
-        self.models = [dcopy(self.base_model) for _ in range(self.ensemble_size)]
+        n = self.ensemble_size if n is None else n
+        models = [dcopy(self.base_model) for _ in range(n)]
 
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
-            for model in self.models:
+            for model in models:
                 for agent in model.agents:
                     # Randomise the destination of each agent in each model
                     gate_out = self.__make_random_destination(model.gates_in,
@@ -167,6 +170,7 @@ class EnsembleKalmanFilter(Filter):
                     agent.loc_desire = agent.set_agent_location(agent.gate_out)
         elif self.mode != EnsembleKalmanFilterType.STATE:
             raise ValueError('Filter type not recognised.')
+        return models
 
     def __make_random_destination(self, gates_in, gates_out, gate_in):
         # Ensure that their destination is not the same as their origin
@@ -191,7 +195,7 @@ class EnsembleKalmanFilter(Filter):
         if self.active:
             self.predict()
             self.update_state_ensemble()
-            self.update_state_mean()
+            self.update_state_means()
 
             truth = self.base_model.get_state(sensor=self.sensor_type)
 
@@ -211,12 +215,14 @@ class EnsembleKalmanFilter(Filter):
 
                 # Update
                 self.update(data)
+                self.update_state_means()
                 self.update_models()
-                self.update_state_mean()
 
                 metrics = forecast_error.copy()
                 metrics = self.__make_metrics(metrics, truth, obs_truth, data)
                 self.metrics.append(metrics)
+
+                self.exits.append(self.state_mean[2*self.population_size:])
 
                 # if self.vis:
                     # self.plot_model('after_update_{0}'.format(self.time), data)
@@ -265,8 +271,8 @@ class EnsembleKalmanFilter(Filter):
                                                      self.data_vector_length)
             warns.warn(w, RuntimeWarning)
         X = np.zeros(shape=(self.state_vector_length, self.ensemble_size))
-        gain_matrix = self.make_gain_matrix()
         self.update_data_ensemble(data)
+        gain_matrix = self.make_gain_matrix()
         diff = self.data_ensemble - self.H @ self.state_ensemble
         X = self.state_ensemble + gain_matrix @ diff
         self.state_ensemble = X
@@ -304,30 +310,30 @@ class EnsembleKalmanFilter(Filter):
         """
         for i in range(self.ensemble_size):
             state_vector = self.models[i].get_state(sensor=self.sensor_type)
-            # print(sensor_type)
-            # print(state_vector)
             self.state_ensemble[:, i] = state_vector
         if self.run_vanilla:
             for i in range(self.vanilla_ensemble_size):
                 state_vector = self.vanilla_models[i].get_state(self.sensor_type)
                 self.vanilla_state_ensemble[:, i] = state_vector
 
-    def update_state_mean(self):
+    def update_state_means(self):
+        self.state_mean = self.update_state_mean(self.state_ensemble)
+        self.vanilla_state_mean = self.update_state_mean(self.vanilla_state_ensemble)
+
+    def update_state_mean(self, state_ensemble):
         """
         Update self.state_mean based on the current state ensemble.
         """
-        self.state_mean = np.mean(self.state_ensemble, axis=1)
+        state_mean = np.mean(state_ensemble, axis=1)
 
         # Round exits if they are in the state vectors
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
-            destinations = self.state_mean[2*self.population_size:]
+            destinations = state_mean[2*self.population_size:]
             destinations = self.__round_destinations(destinations,
                                                      self.n_exits)
-            self.state_mean[2*self.population_size:] = destinations
+            state_mean[2*self.population_size:] = destinations
 
-        if self.run_vanilla:
-            self.vanilla_state_mean = np.mean(self.vanilla_state_ensemble,
-                                              axis=1)
+        return state_mean
 
     def update_data_ensemble(self, data):
         """
@@ -339,6 +345,7 @@ class EnsembleKalmanFilter(Filter):
         x = np.zeros(shape=(len(data), self.ensemble_size))
         for i in range(self.ensemble_size):
             x[:, i] = data + np.random.normal(0, self.R_vector, len(data))
+
         self.data_ensemble = x
 
     def update_models(self):
@@ -397,9 +404,7 @@ class EnsembleKalmanFilter(Filter):
         """
         More standard version
         """
-        # print(self.state_ensemble.shape)
         C = np.cov(self.state_ensemble)
-        # print(self.H.shape, C.shape, self.H_transpose.shape)
         state_covariance = self.H @ C @ self.H_transpose
         diff = state_covariance + self.data_covariance
         return C @ self.H_transpose @ np.linalg.inv(diff)
@@ -436,9 +441,6 @@ class EnsembleKalmanFilter(Filter):
         base_states = self.base_model.history_state
         truth = [np.ravel(x) for x in base_states]
         without = list()
-
-        # print('base', len(base_states))
-        # print('model', len(self.results))
 
         for i, result in enumerate(self.results):
             distance_error, x_error, y_error = self.__make_errors(result, truth[i])

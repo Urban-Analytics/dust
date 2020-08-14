@@ -441,7 +441,7 @@ class ParticleFilter(Filter):
             for i in range(numiter):
                 self.base_model.step()
                 
-        stepped_particles = list(itertools.starmap(ParticleFilter.step_particle, list(zip( \
+        stepped_particles = self.pool.starmap((ParticleFilter.step_particle, list(zip( \
             range(self.number_of_particles),  # Particle numbers (in integer)
             [m for m in self.models],  # Associated Models (a Model object)
             [numiter] * self.number_of_particles,  # Number of iterations to step each particle (an integer)
@@ -485,18 +485,18 @@ class ParticleFilter(Filter):
         '''
 
 
-#        stepped_particles = self.pool.starmap(ParticleFilter.step_monte_carlo, list(zip( \
-#            range(self.number_of_particles),  # Particle numbers (in integer)
-#            [m for m in self.models]  # Associated Models (a Model object)# Number of iterations to step each particle (an integer)
-              # Particle std (for adding noise) (a float)
-              # Shape (for adding noise) (a tuple)
-#        )))
-        stepped_particles = list(itertools.starmap(ParticleFilter.step_monte_carlo, list(zip( \
+        stepped_particles = self.pool.starmap(ParticleFilter.step_monte_carlo, list(zip( \
             range(self.number_of_particles),  # Particle numbers (in integer)
-            [m for m in self.models]  # Associated Models (a Model object)
-            #[self.particle_std] * self.number_of_particles,  # Particle std (for adding noise) (a float)
-            #[s.shape for s in self.states],  # Shape (for adding noise) (a tuple)
-        ))))
+            [m for m in self.models]  # Associated Models (a Model object)# Number of iterations to step each particle (an integer)
+#               Particle std (for adding noise) (a float)
+#               Shape (for adding noise) (a tuple)
+        )))
+#        stepped_particles = list(itertools.starmap(ParticleFilter.step_monte_carlo, list(zip( \
+#            range(self.number_of_particles),  # Particle numbers (in integer)
+#            [m for m in self.models]  # Associated Models (a Model object)
+#            #[self.particle_std] * self.number_of_particles,  # Particle std (for adding noise) (a float)
+#            #[s.shape for s in self.states],  # Shape (for adding noise) (a tuple)
+#        ))))
 
         self.models = [stepped_particles[i][0] for i in range(len(stepped_particles))]
         self.states = np.array([stepped_particles[i][1] for i in range(len(stepped_particles))])

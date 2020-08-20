@@ -122,9 +122,10 @@ def arc_ex1_main(parameter_lists, test):
     destination = "../results/" 
     
     # initiate arc class
-    ex1_arc = arc(ukf_params, model_params, base_model, test)
+    ukf_args = ukf_params, model_params, base_model
+    ex1_arc = arc(test)
     # run ukf_ss filter for arc class
-    u = ex1_arc.arc_main(ukf_ss, file_name)
+    u = ex1_arc.arc_main(ukf_ss, file_name, *ukf_args)
     # save entire ukf class as a pickle
     ex1_arc.arc_save(pickler, destination, file_name)
 

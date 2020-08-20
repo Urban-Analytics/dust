@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jul 17 16:25:08 2020
+Created on Fri Jul 17 16:25:f 2020
 
 @author: medrclaa
 
 This file contains code for implementing the Reversible Jump Markov Chain Monte
 Carlo (RJMCMC) on the Unscented Kalman  Filter (UKF). The main aim is to assume 
-the exit gate of each agent is unknown, I.E. we dont know where anyone is going, 
+the exit gate of each agent is unknown, I.E. we dont know fwhere anyone is going, 
 and need to estimate the exit gates of each agent. The problem results in an
 enormous number of potential models (n_gates-1)**n_agents (e.g. around 282 million
 potential models for 10 agents and 8 gates). It is obviously infeasible to test 
@@ -79,7 +79,9 @@ from stationsim.ukf2 import ukf_ss
 sys.path.append("..")
 sys.path.append("../..")
 from modules.sensors import generate_Camera_Rect
-import stationsim_densities as sd
+
+sys.path.append("..")
+import ex3.stationsim_densities as sd
 
 class rjmcmc_ukf():
     

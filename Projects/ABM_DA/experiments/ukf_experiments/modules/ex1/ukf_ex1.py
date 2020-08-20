@@ -11,20 +11,23 @@ import sys
 import os
 
 sys.path.append("..")
-sys.path.append("../../../../stationsim")
 
 import numpy as np
 from math import floor
 import multiprocessing
 
 "local imports"
-from ukf_fx import fx2
-from ukf_plots import ukf_plots
-import default_ukf_configs as configs
+sys.path.append("../..")
+sys.path.append("..")
+from modules.ukf_fx import fx2
+from modules.ukf_plots import ukf_plots
+import modules.default_ukf_configs as configs
 
 
-from ukf2 import ukf_ss, pickle_main
-from stationsim_model import Model
+sys.path.append("../../../..")
+sys.path.append("../../..")
+from stationsim.ukf2 import ukf_ss, pickle_main
+from stationsim.stationsim_model import Model
 
 def omission_index(n, sample_size):
     """randomly pick agents without replacement to observe 
@@ -133,6 +136,7 @@ def omission_params(n, prop, model_params, ukf_params):
     """
     
     model_params["pop_total"] = n
+    model_params["station"] = None
     base_model = Model(**model_params)
 
     ukf_params["prop"] = prop

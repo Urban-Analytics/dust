@@ -295,13 +295,14 @@ class ukf_ss:
                 self.base_models[i].set_state("location", sigma)
 
         print(self.base_models[0].step_id)        
-        if self.pop_total <= 20 and self.station != None:
+        if self.pop_total <= 20 or self.station == None:
             with HiddenPrints():
                 for model in self.base_models:
                             model.step()
         else:
             pool = multiprocessing.Pool()
-            self.base_models = pool.starmap(self.fx, zip(self.base_models))
+            self.base_models = pool.map(self.fx, 
+                                        self.base_models)
             pool.close()
             pool.join()
             

@@ -79,13 +79,13 @@ def ex3_parameters(parameter_lists, test):
         "assign parameters according to task array"
         n = parameter_lists[int(sys.argv[1])-1][0]
         jump_rate = parameter_lists[int(sys.argv[1])-1][1]
-        theta = parameter_lists[int(sys.argv[1])-1][2]
+        n_jumps = parameter_lists[int(sys.argv[1])-1][2]
         run_id = parameter_lists[int(sys.argv[1])-1][3]
     else:
         "if testing use these parameters for a single quick run."
         n = 5
         jump_rate = 5
-        n_jumps = 3
+        n_jumps = 5
         run_id = "test"
         
     return n, jump_rate, n_jumps, run_id
@@ -144,7 +144,7 @@ def arc_ex3_main(parameter_lists, test):
     return u
 
 if __name__ == '__main__':
-    
+
     #if testing set to True. if running batch experiments set to False
     test = True
     if test:
@@ -153,11 +153,17 @@ if __name__ == '__main__':
     # agent populations from 10 to 30
     num_age = [10, 20, 30]  
     # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
-    props = [0.25, 0.5, 0.75, 1]
+    jump_rate = [1, 2, 5, 10, 25]
     # how many experiments per population and proportion pair. 30 by default.
-    run_id = np.arange(0, 30, 1)
+    n_jumps = [1, 2, 5, 10, 50]
     #cartesian product list giving all combinations of experiment parameters.
-    param_list = [(x, y, z) for x in num_age for y in props for z in run_id]
+    run_id = np.arange(30)
+    
+    param_list = [(x, y, z, a) 
+                  for x in num_age 
+                  for y in jump_rate
+                  for z in n_jumps 
+                  for a in run_id]
     
     u = arc_ex3_main(param_list, test)
-
+    

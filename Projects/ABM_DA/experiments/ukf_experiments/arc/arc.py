@@ -58,12 +58,6 @@ class arc():
         
         Parameters
         ----------
-        filter_params, model_params : dict
-            dictionaries of `model_params` model parameters and `filter_params` 
-            DA filter parameters
-        base_model : class
-            `base_model` some base model to run the DA algorithm on. 
-            stationsim for now.
         test : bool
             if `test` is true we choose some simple parameters to run on arc.
             this is to test the file works and produces results before running 
@@ -84,8 +78,10 @@ class arc():
         filter_function : cls
             `filter_function` class that applies some DA algorithm. Needs an init
             that loads model_params, filter_params, base_model
-        file_name : TYPE
-            DESCRIPTION.
+        file_name : str
+            `file_name` name to save pickle of class instance to.
+        args : args
+            any positional `args` needed to init filter_function
         """
         # If not testing abort the run if no set of parameters are specified        
         if not self.test:

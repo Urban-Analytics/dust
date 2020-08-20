@@ -25,14 +25,17 @@ import sys
 import numpy as np
 
 sys.path.append("..")
-# import required modules
-from ukf_fx import fx
-from ukf_plots import L2s
-import default_ukf_configs
+sys.path.append("../..")
 
-sys.path.append("../../../../stationsim")
-from ukf2 import ukf_ss
-from stationsim_model import Model
+# import required modules
+from modules.ukf_fx import fx2
+from modules.ukf_plots import L2s
+import modules.default_ukf_configs
+
+sys.path.append("../../../..")
+sys.path.append("../../..")
+from stationsim.ukf2 import ukf_ss
+from stationsim.stationsim_model import Model
 
 
 def benchmark_params(n, noise, sample_rate, model_params, ukf_params):
@@ -62,16 +65,18 @@ def benchmark_params(n, noise, sample_rate, model_params, ukf_params):
     """
     
     model_params["pop_total"] = n
+    model_params["station"] = None
+    
+    base_model = Model(**model_params)
+    
     ukf_params["noise"] = noise
     ukf_params["sample_rate"] = sample_rate
     
-    base_model = Model(**model_params)
-
     ukf_params["p"] = 0.1 * np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = 0.1 * np.eye(2 * n)
     ukf_params["r"] = 0.1 * np.eye(2 * n)#sensor noise
     
-    ukf_params["fx"] = fx
+    ukf_params["fx"] = fx2
     ukf_params["fx_kwargs"] = {"base_model": base_model}
     ukf_params["hx"] = hx0    
     ukf_params["hx_kwargs"] = {}

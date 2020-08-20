@@ -136,11 +136,14 @@ def arc_ex0_main(n, parameter_lists, test):
     destination = "../results/"
     
     # initiate arc class
-    ex0_arc = arc(ukf_params, model_params, base_model, test)
+    ukf_args = ukf_params, model_params, base_model
+    ex0_arc = arc(test)
     # run ukf_ss filter for arc class
-    u = ex0_arc.arc_main(ukf_ss, file_name)
+    u = ex0_arc.arc_main(ukf_ss, file_name, *ukf_args)
     # save entire ukf class as a pickle
     ex0_arc.arc_save(ex0_save, destination, file_name)
+
+    return u
 
 if __name__ == '__main__':
     test = False
@@ -157,4 +160,4 @@ if __name__ == '__main__':
     # Each experiment will use one item of this list.
     parameter_lists = [(x, y, z)
                   for x in sample_rate for y in noise for z in run_id]
-    arc_ex0_main(n, parameter_lists, test)
+    u = arc_ex0_main(n, parameter_lists, test)

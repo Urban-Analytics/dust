@@ -46,7 +46,6 @@ model_params = {
 'speed_steps': 3,
 
 'separation': 5,
-'max_wiggle': 1,
 
 'step_limit': 3600,
 
@@ -71,7 +70,7 @@ ukf_params = {
 
 'sample_rate' : 5,
 "bring_noise" : True,
-"noise" : 0.5,
+"noise" : 0.2,
 "do_batch" : False,
 
 "a": 0.2,

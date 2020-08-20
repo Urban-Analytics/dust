@@ -10,7 +10,9 @@ import numpy as np
 import multiprocessing
 import matplotlib.pyplot as plt
 
-from rjmcmc_ukf import rjmcmc_ukf
+sys.path.append("..")
+sys.path.append("../modules/")
+from ex3.rjmcmc_ukf import rjmcmc_ukf
 
 sys.path.append("..")
 sys.path.append("../..")
@@ -113,7 +115,8 @@ def rj_params(n, jump_rate, n_jumps, model_params, ukf_params):
     
     model_params["pop_total"] = n
     model_params["gates_out"] = 3
-
+    model_params["station"] = None
+    
     base_model = Model(**model_params)
     model_params["exit_gates"] =  base_model.gates_locations[-model_params["gates_out"]:]
     
@@ -162,13 +165,17 @@ def ex3_main(n, jump_rate, n_jumps, recall):
        
                
     if not recall:
-        rjmcmc_UKF= rjmcmc_ukf(model_params, ukf_params, base_model,
-                                                             get_gates,
-                                                             set_gates)
+        rjmcmc_UKF= rjmcmc_ukf(model_params, 
+                               ukf_params, 
+                               base_model,
+                               get_gates,
+                               set_gates)
         rjmcmc_UKF.main()
     
-        instance = rjmcmc_UKF.ukf_1
-        pickle_main(ukf_params["file_name"],pickle_source, do_pickle, rjmcmc_UKF)
+        pickle_main(ukf_params["file_name"], 
+                    pickle_source, 
+                    do_pickle, 
+                    rjmcmc_UKF)
     if recall:
         f_name = ex3_pickle_name(n)
         
@@ -222,8 +229,8 @@ def ex3_main(n, jump_rate, n_jumps, recall):
 
 if __name__ == "__main__":
     
-    n = 50
-    jump_rate = 10
+    n = 5
+    jump_rate = 5
     n_jumps = 5
     recall = False
     rjmcmc_UKF = ex3_main(n, jump_rate, n_jumps, recall)

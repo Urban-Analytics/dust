@@ -7,16 +7,16 @@ Created on Wed Jul 22 14:57:18 2020
 """
 import sys
 import numpy as np
+import multiprocessing
 import matplotlib.pyplot as plt
 
+from rjmcmc_ukf import rjmcmc_ukf
 
 sys.path.append("..")
 sys.path.append("../..")
 from modules.ukf_fx import fx2
 from modules.ukf_plots import ukf_plots
 import default_ukf_gcs_configs as configs
-
-from ex3.rjmcmc_ukf import rjmcmc_ukf
 
 sys.path.append("../../..")
 sys.path.append("../../../..")
@@ -248,7 +248,7 @@ def ex3_main(n, jump_rate, n_jumps, recall):
     prefix = "rjmcmc_ukf_gcs_"
     # bools for saving plots, making animations, and saving class pickles
     save = True
-    animate = False
+    animate = True
     do_pickle = True
 
     # if not recalling, run the rjukf from scratch
@@ -291,7 +291,7 @@ def ex3_main(n, jump_rate, n_jumps, recall):
     plts.error_hist(truths[::instance.sample_rate, :],
                     preds[::instance.sample_rate, :], "Observed Errors")
     # plot trajectories of agents as a spaghetti plot
-    plts.path_plots(preds[::instance.sample_rate, :], "Predicted")
+    plts.path_plots(preds[::instance.sample_rate], "Predicted")
     plts.path_plots(truths, "True")
     # plts.path_plots(forecasts[::instance.sample_rate], "Forecasts")
 
@@ -309,5 +309,5 @@ if __name__ == "__main__":
     n = 5
     jump_rate = 5
     n_jumps = 5
-    recall = True
+    recall = False
     rjmcmc_UKF = ex3_main(n, jump_rate, n_jumps, recall)

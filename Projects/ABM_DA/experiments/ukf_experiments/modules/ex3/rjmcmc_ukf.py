@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jul 17 16:25:f 2020
+Created on Fri Jul 17 16:25:08 2020
 
 @author: medrclaa
 
 This file contains code for implementing the Reversible Jump Markov Chain Monte
 Carlo (RJMCMC) on the Unscented Kalman  Filter (UKF). The main aim is to assume 
-the exit gate of each agent is unknown, I.E. we dont know fwhere anyone is going, 
+the exit gate of each agent is unknown, I.E. we dont know where anyone is going, 
 and need to estimate the exit gates of each agent. The problem results in an
 enormous number of potential models (n_gates-1)**n_agents (e.g. around 282 million
 potential models for 10 agents and 8 gates). It is obviously infeasible to test 
@@ -69,6 +69,7 @@ import multiprocessing
 from scipy.stats import multivariate_normal
 from scipy.spatial.distance import mahalanobis
 from copy import copy, deepcopy
+import pickle
 
 #imports from stationsim folder
 sys.path.append("../../..")
@@ -79,9 +80,7 @@ from stationsim.ukf2 import ukf_ss
 sys.path.append("..")
 sys.path.append("../..")
 from modules.sensors import generate_Camera_Rect
-
-sys.path.append("..")
-import ex3.stationsim_densities as sd
+import stationsim_densities as sd
 
 class rjmcmc_ukf():
     
@@ -130,7 +129,6 @@ class rjmcmc_ukf():
         
         # Build two dictionaries to translate an intiger exit gate into a
         # 2d gate centroid coordinate and back.
-        self.get_gates_dict, self.set_gates_dict = self.gates_dict(self, self.base_model)
         
         # build ABM boundary polygon in shapely.
         self.boundary = generate_Camera_Rect(np.array([0, 0]), 
@@ -388,37 +386,6 @@ class rjmcmc_ukf():
                 choice = True
         return choice
     
-    ######
-    #general functions for interacting with stationsim
-    ######
-    
-    @staticmethod
-    def gates_dict(self, base_model):
-        """assign each exit gate location an integer for a given model
-        
-        Parameters
-        ----------
-        base_model : cls
-            some model `base_model` e.g. stationsim
-
-        Returns
-        -------
-        gates_dict : dict
-            `gates_dict` dictionary with intiger keys for each gate and a 
-            2x1 numpy array value for each key giving the location.
-
-        """
-        
-        gates_locations = self.exit_gates
-        get_gates_dict = {}
-        set_gates_dict = {}
-        for i in range(gates_locations.shape[0]):
-            gate_location = gates_locations[i,:]
-            key = i
-            get_gates_dict[str(gate_location)] = key
-            set_gates_dict[key] = gate_location
-            
-        return get_gates_dict, set_gates_dict
     
     ########
     #main step function
@@ -446,7 +413,18 @@ class rjmcmc_ukf():
     
         """
         #calculate exit gate pdf and draw new gates for candidate model
-        #copy original model and give it new gates       
+        #copy original model and give it new gates      
+        self.gate_probabilities = self.agent_probabilities(self.ukf_1.base_model,
+                                                                   self.vision_angle, 
+                                                                   self.get_gates_dict)
+        self.current_gates = self.get_gates(self.ukf_1.base_models[0],
+                                                    self.get_gates_dict)
+        
+        self.new_gates = self.draw_new_gates(self.gate_probabilities, 
+                                             self.current_gates, self.n_jumps)
+                
+        self.ukf_2 =  pickle.loads(pickle.dumps(self.ukf_1, -1))
+        #self.ukf_2 = deepcopy(self.ukf_1) #generally slower
         for i, model in enumerate(self.ukf_2.base_models):
             self.ukf_2.base_models[i] = self.set_gates(model, 
                                                   self.new_gates,
@@ -477,7 +455,7 @@ class rjmcmc_ukf():
             self.current_gates = self.new_gates
             model_choice = 1
             #model swap. done this way to avoiding using deepcopy (its slow as hell).
-            self.ukf_1, self.ukf_2 =  self.ukf_2, self.ukf_1
+            self.ukf_1 = self.ukf_2
         else:
             #if not choice keep current model ukf_1. assign ukf_2 new gates
             model_choice = 0
@@ -513,21 +491,13 @@ class rjmcmc_ukf():
         self.ukf_1 = ukf_ss(self.model_params, self.ukf_params, self.base_model,
                             no_gates_models)
         self.ukf_2 = deepcopy(self.ukf_1)
+        self.rj_assign()
         
         for step in range(self.step_limit):    
             #one step burn in so we have kalman gains for ukf
             self.ukf_1.step(step)
             self.ukf_2.step(step)
-            if step % self.jump_rate == 0 and step >= self.sample_rate:
-                self.gate_probabilities = self.agent_probabilities(self.ukf_1.base_model,
-                                                                   self.vision_angle, 
-                                                                   self.get_gates_dict)
-                self.current_gates = self.get_gates(self.ukf_1.base_models[0],
-                                                    self.get_gates_dict)
-        
-                self.new_gates = self.draw_new_gates(self.gate_probabilities, 
-                                             self.current_gates, self.n_jumps)
-        
+            if step % self.jump_rate == 0 and step >= self.sample_rate:       
                 self.rj_choose(step)
                 self.rj_assign()
                 self.true_gates.append(self.get_gates(self.ukf_1.base_model,

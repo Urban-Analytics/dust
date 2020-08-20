@@ -44,10 +44,10 @@ from ex3.rjmcmc_ukf import rjmcmc_ukf
 
 sys.path.append("../modules")
 sys.path.append("../..")
-import modules.default_ukf_gcs_configs as configs
+import modules.default_ukf_configs as configs
 
 sys.path.append('../../..')
-sys.path.append('../../../..')
+#sys.path.append('../../../../stationsim')
 
 from stationsim.ukf2 import pickler, ukf_ss
 
@@ -151,17 +151,11 @@ if __name__ == '__main__':
     # agent populations from 10 to 30
     num_age = [10, 20, 30]  
     # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
-    jump_rate = [1, 2, 5, 10, 25]
+    props = [0.25, 0.5, 0.75, 1]
     # how many experiments per population and proportion pair. 30 by default.
-    n_jumps = [1, 2, 5, 10, 50]
+    run_id = np.arange(0, 30, 1)
     #cartesian product list giving all combinations of experiment parameters.
-    run_id = np.arange(30)
-    
-    param_list = [(x, y, z, a) 
-                  for x in num_age 
-                  for y in jump_rate
-                  for z in n_jumps 
-                  for a in run_id]
+    param_list = [(x, y, z) for x in num_age for y in props for z in run_id]
     
     u = arc_ex3_main(param_list, test)
 

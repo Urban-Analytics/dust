@@ -23,7 +23,8 @@ import default_ukf_gcs_configs as configs
 
 sys.path.append("../../../../stationsim")
 from ukf2 import ukf_ss, pickle_main
-from stationsim_gcs_model import Model
+#from stationsim_gcs_model import Model
+from stationsim_density_model import Model
 
 
 
@@ -314,7 +315,7 @@ def ex1_main(n, prop, pool, recall, do_pickle, source, destination):
     return u
     
 if __name__ == "__main__":
-    recall = True #recall previous run
+    recall = False #recall previous run
     do_pickle = True #pickle new run
     pickle_source = "../../pickles/" #where to load/save pickles from
     destination = "../../plots/"

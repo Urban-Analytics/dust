@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Jul 22 14:57:18 2020
-
 @author: medrclaa
 """
 import sys
@@ -10,9 +9,10 @@ import numpy as np
 import multiprocessing
 import matplotlib.pyplot as plt
 
-sys.path.append("..")
-sys.path.append("../modules/")
-from ex3.rjmcmc_ukf import rjmcmc_ukf
+from rjmcmc_ukf import rjmcmc_ukf
+
+# double path appends here for this script to work in arc. 
+# if anyone ever reads this and knows better please do.
 
 sys.path.append("..")
 sys.path.append("../..")
@@ -46,7 +46,7 @@ def ex3_pickle_name(n):
         return `f_name` file name to save pickle as
     """
     
-    f_name = f"rjmcmc_ukf_agents_{n}.pkl"
+    f_name = f"rjukf_agents_{n}.pkl"
     return f_name
 
 def obs_key_func(state, **hx_kwargs):
@@ -110,22 +110,47 @@ def set_gates(base_model, new_gates, set_gates_dict):
         new_gate = set_gates_dict[gate]
         base_model.agents[i].loc_desire = new_gate
     return base_model
+   
+def gates_dict(base_model):
+        """assign each exit gate location an integer for a given model
+        
+        Parameters
+        ----------
+        base_model : cls
+            some model `base_model` e.g. stationsim
+        Returns
+        -------
+        gates_dict : dict
+            `gates_dict` dictionary with intiger keys for each gate and a 
+            2x1 numpy array value for each key giving the location.
+        """
+        
+        gates_locations = base_model.gates_locations[-base_model.gates_out:]
+        get_gates_dict = {}
+        set_gates_dict = {}
+        for i in range(gates_locations.shape[0]):
+            gate_location = gates_locations[i,:]
+            key = i
+            get_gates_dict[str(gate_location)] = key
+            set_gates_dict[key] = gate_location
+            
+        return get_gates_dict, set_gates_dict 
     
 def rj_params(n, jump_rate, n_jumps, model_params, ukf_params):
     
     model_params["pop_total"] = n
     model_params["gates_out"] = 3
     model_params["station"] = None
-    
     base_model = Model(**model_params)
     model_params["exit_gates"] =  base_model.gates_locations[-model_params["gates_out"]:]
+    model_params["get_gates_dict"], model_params["set_gates_dict"] = gates_dict(base_model)
     
     ukf_params["vision_angle"] = np.pi/8
     ukf_params["jump_rate"] = jump_rate
     ukf_params["n_jumps"] = n_jumps
-    
-    ukf_params["p"] = 0.1 * np.eye(2 * n) #inital guess at state covariance
-    ukf_params["q"] = 0.01 * np.eye(2 * n)
+
+    ukf_params["p"] = 1.0 * np.eye(2 * n) #inital guess at state covariance
+    ukf_params["q"] = 1.0 * np.eye(2 * n)
     ukf_params["r"] = 0.01 * np.eye(2 * n)#sensor noise
     
     ukf_params["fx"] = fx2
@@ -165,17 +190,13 @@ def ex3_main(n, jump_rate, n_jumps, recall):
        
                
     if not recall:
-        rjmcmc_UKF= rjmcmc_ukf(model_params, 
-                               ukf_params, 
-                               base_model,
-                               get_gates,
-                               set_gates)
+        rjmcmc_UKF= rjmcmc_ukf(model_params, ukf_params, base_model,
+                                                             get_gates,
+                                                             set_gates)
         rjmcmc_UKF.main()
     
-        pickle_main(ukf_params["file_name"], 
-                    pickle_source, 
-                    do_pickle, 
-                    rjmcmc_UKF)
+        instance = rjmcmc_UKF.ukf_1
+        pickle_main(ukf_params["file_name"],pickle_source, do_pickle, rjmcmc_UKF)
     if recall:
         f_name = ex3_pickle_name(n)
         
@@ -230,10 +251,7 @@ def ex3_main(n, jump_rate, n_jumps, recall):
 if __name__ == "__main__":
     
     n = 5
-    jump_rate = 5
+    jump_rate = 5 #make this a multiple of sample_rate in the ukf default configs
     n_jumps = 5
     recall = False
     rjmcmc_UKF = ex3_main(n, jump_rate, n_jumps, recall)
-    
-    
-    

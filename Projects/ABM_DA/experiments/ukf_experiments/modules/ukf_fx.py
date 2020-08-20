@@ -8,6 +8,7 @@ Created on Mon Dec  2 11:42:17 2019
 "used in HiddenPrints"
 import os
 import sys
+import numpy as np
 
 "used in fx to restore stepped model"
 from copy import deepcopy  
@@ -65,7 +66,7 @@ def fx(x, **fx_kwargs):
     
     return state
 
-def fx2(model):
+def fx2(model, **fx_kwargs):
     """Transition function for the StationSim. more efficient attempt
     
     - Copies current base model
@@ -86,8 +87,30 @@ def fx2(model):
     -----
     state : array_like
         predicted measured state for given sigma point
-    """    
-    with HiddenPrints():
-        model.step() #step model with print suppression    
-    return model
+    """      
+    return model.get_state("location")
 
+def fx3_1(base_model):
+    """ stack new locations and exit estimates 
+    
+
+    Parameters
+    ----------
+    **fx_kwargs : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+    sigma = base_model.get_state("location")
+    exit_estimate = get_state()
+    output = np.zeros((2* len(sigma)))
+    
+    output[0::4] = sigma[0::2]
+    output[1::4] = sigma[1::2]
+    output[2::4] = exit_estimate[0::2]
+    output[3::4] = exit_estimate[1::2]
+    
+    return output

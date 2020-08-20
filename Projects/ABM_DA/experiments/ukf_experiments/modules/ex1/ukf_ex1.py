@@ -11,23 +11,20 @@ import sys
 import os
 
 sys.path.append("..")
+sys.path.append("../../../../stationsim")
 
 import numpy as np
 from math import floor
 import multiprocessing
 
 "local imports"
-sys.path.append("../..")
-sys.path.append("..")
-from modules.ukf_fx import fx2
-from modules.ukf_plots import ukf_plots
-import modules.default_ukf_configs as configs
+from ukf_fx import fx2
+from ukf_plots import ukf_plots
+import default_ukf_configs as configs
 
 
-sys.path.append("../../../..")
-sys.path.append("../../..")
-from stationsim.ukf2 import ukf_ss, pickle_main
-from stationsim.stationsim_model import Model
+from ukf2 import ukf_ss, pickle_main
+from stationsim_model import Model
 
 def omission_index(n, sample_size):
     """randomly pick agents without replacement to observe 
@@ -137,6 +134,7 @@ def omission_params(n, prop, model_params, ukf_params):
     
     model_params["pop_total"] = n
     model_params["station"] = None
+    
     base_model = Model(**model_params)
 
     ukf_params["prop"] = prop
@@ -145,8 +143,8 @@ def omission_params(n, prop, model_params, ukf_params):
     ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
     
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
-    ukf_params["q"] = 0.05 * np.eye(2 * n)
-    ukf_params["r"] = 0.001 * np.eye(2 * ukf_params["sample_size"])#sensor noise
+    ukf_params["q"] = 0.1 * np.eye(2 * n)
+    ukf_params["r"] = 0.1 * np.eye(2 * ukf_params["sample_size"])#sensor noise
     
     ukf_params["fx"] = fx2
     ukf_params["fx_kwargs"] = {"base_model":base_model} 
@@ -236,7 +234,7 @@ def ex1_plots(instance, destination, prefix, save, animate):
         plts.error_hist(truths[::instance.sample_rate, not_index2], 
                         preds[::instance.sample_rate, not_index2],"Unobserved Errors")
         
-    plts.path_plots(obs, "Observed")
+    plts.path_plots(obs[::instance.sample_rate] , "Observed")
     plts.path_plots(preds[::instance.sample_rate], "Predicted")
     plts.path_plots(truths, "True")
 
@@ -270,6 +268,7 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
     if not recall:
         model_params = configs.model_params
         ukf_params = configs.ukf_params
+        model_params["random_seed"] = 8
         model_params, ukf_params, base_model = omission_params(n, prop,
                                                                model_params, ukf_params)
         
@@ -292,7 +291,7 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
  
         model_params, ukf_params = u.model_params, u.ukf_params
     
-    ex1_plots(u, destination, "ukf_", True, True)
+    ex1_plots(u, destination, "ukf_", True, False)
 
     return u
     
@@ -301,7 +300,7 @@ if __name__ == "__main__":
     do_pickle = True #pickle new run
     pickle_source = "../../pickles/" #where to load/save pickles from
     destination = "../../plots/"
-    n = 30 #population size
+    n = 5 #population size
     prop = 1.0 #proportion observed
 
     u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

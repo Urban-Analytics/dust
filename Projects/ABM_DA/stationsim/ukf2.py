@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 
 """
 The Unscented Kalman Filter (UKF) designed to be hyper efficient alternative to similar 
@@ -161,7 +161,6 @@ def MSSP(mean, p, g):
 
 def unscented_Mean(sigmas, wm):
         """calculate unscented mean  estimate for some sample of agent positions
-
         Parameters
         ------
         sigmas, wm : array_like
@@ -225,8 +224,6 @@ class ukf_ss:
             
         #initial hx_kwargs iterable for starmap
         self.hx_kwargs_iter = [self.hx_kwargs] * (4 * (self.pop_total) + 1)
-
-
 
         #placeholder lists for various things
         self.obs = []  # actual sensor observations
@@ -293,18 +290,17 @@ class ukf_ss:
             self.sigmas = MSSP(self.x, self.p, self.g)
             for i, sigma in enumerate(self.sigmas):
                 self.base_models[i].set_state("location", sigma)
-
+            
+        # non multiprocessing for low populations (its faster)
+        # also used for simpler base stationsim vs gcs.
         print(self.base_models[0].step_id)        
-        if self.pop_total <= 20 or self.station == None:
+        if self.pop_total <= 20 and self.station == None:
             with HiddenPrints():
                 for model in self.base_models:
                             model.step()
         else:
-            pool = multiprocessing.Pool()
-            self.base_models = pool.map(self.fx, 
-                                        self.base_models)
-            pool.close()
-            pool.join()
+            self.base_models = self.pool.map(model_step, self.base_models)
+
             
     def ss_Update(self, ukf_step, **hx_kwargs):
         """ Update step of UKF for stationsim.
@@ -329,16 +325,19 @@ class ukf_ss:
         ------
         None.
         """
-        #calculate desired state unscented mean and covariance
-        self.sigmas = [model.get_state("location") for model in self.base_models]
+        #final predicted sigma points after some amount of model steps.
+        self.sigmas = [self.fx(model, **self.fx_kwargs) for model in self.base_models]
+        #unscented mean
         xhat = unscented_Mean(self.sigmas, self.wm)
+        #stack sigmas in numpy for easy matrix manipulation
         stacked_sigmas = np.vstack(self.sigmas).T
+        #unscented covariance using said stack
         pxx = covariance(stacked_sigmas, xhat, self.wc, addition=self.q)
 
-        self.p = pxx  # update Sxx
+        self.p = pxx  # update Sxx co
         self.x = xhat  # update xhat
 
-        #add noise to base_model true state
+        #add gaussian (both x and y directions) noise to base_model true state
         state = self.base_model.get_state(sensor="location").astype(float)
         if self.noise != 0:
             noise_array = np.ones(self.pop_total*2)
@@ -434,7 +433,11 @@ class ukf_ss:
         ------
         None.
         """
-        
+        # open pool on each step. 
+        # allows use of pickling classes in ex3 rather than deepcopy
+        # to copy classes uniquely (I.E objects in each class can be manipulated separately)
+        # making it a lot faster
+        self.pool = multiprocessing.Pool()
         self.ss_Predict(ukf_step)
         self.status_key.append([agent.status for agent in self.base_model.agents])
         self.base_model.step()
@@ -443,7 +446,11 @@ class ukf_ss:
         if ukf_step % self.sample_rate == 0 and ukf_step > 0:
             #assimilate new values
             self.ss_Update(ukf_step, **self.hx_kwargs)
-            
+    
+        self.pool.close()
+        self.pool.join()     
+        self.pool = None
+        
     def main(self):
         
         """main function for applying ukf to gps style station StationSim
@@ -485,7 +492,10 @@ class ukf_ss:
         self.time = f"Time Elapsed: {time}"
         print(self.time)
         logging.info(self.time)
-                
+        
+        #close and delete pool object for pickling
+
+        
     """List of static methods for extracting numpy array data 
     """
     @staticmethod

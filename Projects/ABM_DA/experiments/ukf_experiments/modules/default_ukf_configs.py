@@ -32,8 +32,8 @@ do_ bools for saving plotting and animating data.
 """
 model_params = {
 
-'width': 200,
-'height': 400,
+'width': 100,
+'height': 50,
 
 'gates_in': 3,
 'gates_out': 2,
@@ -74,7 +74,7 @@ ukf_params = {
 "noise" : 0.2,
 "do_batch" : False,
 
-"a": 0.2,
+"a": 0.1,
 "b": 2,
 "k": 0,
 

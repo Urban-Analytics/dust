@@ -475,7 +475,7 @@ class grand_plots:
                         file)[1], os.path.split(file)[0]+"/", True)
                     f.close()
                     "pull raw data"
-                    truth, preds = self.depickle_data_parser(u)
+                    truth = self.depickle_data_parser(u)
                     "find L2 distances"
                     distances = L2_parser(truth[::u.sample_rate, :],
                                           preds[::u.sample_rate, :])
@@ -491,6 +491,65 @@ class grand_plots:
 
         return L2
 
+    def gates_extractor(self):
+        keys = self.param_keys
+        gate_distances = {}
+        "loop over first parameter. usually agents."
+        for i in self.p1:
+            print(i)
+            "sub dictionary for parameter i"
+            gate_distances[i] = {}
+            for j in self.p2:
+                print(i, j)
+                "file names for glob to find. note wildcard * is needed"
+                f_name = self.source + f"*{keys[0]}_*{i}_{keys[1]}_*{j}-*"
+                "find all files with given i and j"
+                files = glob.glob(f_name)
+                "placeholder list for grand medians of UKF runs with parameters i and j"
+                sub_distances = []
+                for file in files:
+                    "open pickle"
+                    f = open(file, "rb")
+                    u = pickle_main(os.path.split(file)[1], os.path.split(file)[0]+"/", True)
+                    f.close()
+                    "pull raw data"
+                    self.sample_rate = u.sample_rate
+                    true_gates = np.vstack(u.true_gates)[0, :]
+                    predicted_gates = np.vstack(u.estimated_gates)
+                    "find L2 distances"
+                    distances = (true_gates - predicted_gates != 0) * 1
+                    
+                    sub_distances.append(np.sum(distances, axis=1))
+                    "stack list of grand medians as an nx1 vector array"
+                    "put array into grand dictionary with keys i and j"
+                gate_distances[i][j] = sub_distances
+        return gate_distances
+                
+    def gates_data_frame(self, gate_distances):
+        
+        data_frame = pd.DataFrame()
+        keys = self.param_keys
+        for i in self.p1:
+            for j in self.p2:
+                gates_list = gate_distances[i][j]
+                for data in gates_list:
+                    sub_frame = pd.DataFrame(data)
+                    sub_frame.columns = ["Error"]
+                    sub_frame["time_points"] = sub_frame.index * self.sample_rate
+                    sub_frame[keys[0]] = i
+                    sub_frame[keys[1]] = j
+                    data_frame = pd.concat([data_frame, sub_frame])
+                
+        return data_frame
+                
+    def gates_data_lineplot(self, data_frame, title):
+        for key in self.param_keys:
+            f = plt.figure()
+            sns.lineplot(x = "time_points", y = "Error", data = data_frame, hue = key)
+            plt.tight_layout()
+            #plt.show()
+            plt.savefig(self.destination + title + key + "_gates_convergance.pdf")
+            
     def data_framer(self, L2):
         """ turns dictionary of L2 arrays into pandas dataframe for easier plotting
 

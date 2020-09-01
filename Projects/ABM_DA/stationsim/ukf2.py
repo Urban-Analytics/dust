@@ -305,7 +305,7 @@ class ukf_ss:
                 self.fx_kwargs_iter[i] = self.fx_kwargs_update(self.base_models[i], self.fx_kwargs_iter[i])
                 
         print(self.base_models[0].step_id)        
-        if self.pop_total <= 20 and self.station == None:
+        if self.pop_total < 30 and self.station == None:
             with HiddenPrints():
                 for i, model in enumerate(self.base_models):
                     self.base_models[i] = self.fx(model, **self.fx_kwargs_iter[i])

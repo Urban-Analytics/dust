@@ -79,15 +79,15 @@ def ex3_parameters(parameter_lists, test):
         "assign parameters according to task array"
         n = parameter_lists[int(sys.argv[1])-1][0]
         jump_rate = parameter_lists[int(sys.argv[1])-1][1]
-        theta = parameter_lists[int(sys.argv[1])-1][2]
-        run_id = parameter_lists[int(sys.argv[1])-1][3]
+        run_id = parameter_lists[int(sys.argv[1])-1][2]
     else:
         "if testing use these parameters for a single quick run."
         n = 5
         jump_rate = 5
-        n_jumps = 3
         run_id = "test"
-        
+     
+    n_jumps = 5
+    
     return n, jump_rate, n_jumps, run_id
 
 
@@ -125,10 +125,9 @@ def arc_ex3_main(parameter_lists, test):
                                                             model_params, 
                                                             ukf_params)
     #file name to save results to
-    file_name = "rjukf_agents_{}_rate_{}_jumps_{}-{}".format(
+    file_name = "rjukf_agents_{}_jump_rate_{}-{}".format(
         str(n).zfill(3),
         str(jump_rate),
-        str(n_jumps),
         str(run_id).zfill(3)) + ".pkl"
     #where to save the file
     destination = "../results/" 
@@ -146,18 +145,19 @@ def arc_ex3_main(parameter_lists, test):
 if __name__ == '__main__':
     
     #if testing set to True. if running batch experiments set to False
-    test = True
+    test = False
     if test:
         print("Test set to true. If you're running an experiment, it wont go well.")
 
     # agent populations from 10 to 30
     num_age = [10, 20, 30]  
     # 25 to 100 % proportion observed in 25% increments. must be 0<=x<=1
-    props = [0.25, 0.5, 0.75, 1]
+    jump_rates = [5, 10, 20]
     # how many experiments per population and proportion pair. 30 by default.
-    run_id = np.arange(0, 30, 1)
+    run_id = np.arange(0, 50, 1)
     #cartesian product list giving all combinations of experiment parameters.
-    param_list = [(x, y, z) for x in num_age for y in props for z in run_id]
+    param_list = [(x, y, z) for x in num_age for y in jump_rates for z in run_id]
     
     u = arc_ex3_main(param_list, test)
+
 

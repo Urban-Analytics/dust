@@ -24,7 +24,8 @@ import default_ukf_configs as configs
 
 
 from ukf2 import ukf_ss, pickle_main
-from stationsim_model import Model
+#from stationsim_model import Model
+from stationsim_density_model import Model
 
 def omission_index(n, sample_size):
     """randomly pick agents without replacement to observe 
@@ -147,13 +148,16 @@ def omission_params(n, prop, model_params, ukf_params):
     ukf_params["r"] = 0.1 * np.eye(2 * ukf_params["sample_size"])#sensor noise
     
     ukf_params["fx"] = fx2
-    ukf_params["fx_kwargs"] = {"base_model":base_model} 
+    ukf_params["fx_kwargs"] = {} 
+    ukf_params["fx_kwargs_update"] = None
+    
     ukf_params["hx"] = hx1
     ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"], "n" : n,
                                "index" : ukf_params["index"],}
+    
     ukf_params["obs_key_func"] = obs_key_func    
     ukf_params["file_name"] =  ex1_pickle_name(n, prop)
-        
+    
     return model_params, ukf_params, base_model
 
 def ex1_pickle_name(n, prop):

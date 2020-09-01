@@ -32,8 +32,8 @@ do_ bools for saving plotting and animating data.
 """
 model_params = {
 
-'width': 100,
-'height': 50,
+'width': 400,
+'height': 200,
 
 'gates_in': 3,
 'gates_out': 2,
@@ -69,14 +69,19 @@ not 100% sure what kappa does. think its a bias parameter.
 
 ukf_params = {      
 
-'sample_rate' : 1,
+'sample_rate' : 5,
 "bring_noise" : True,
-"noise" : 0.2,
+"noise" : 0.5,
 "do_batch" : False,
 
 "a": 0.1,
 "b": 2,
 "k": 0,
+
+# whether ukf.step() stores data in class or outputs it for storing elsewhere
+# this is good when dealing with multiple UKFs and prevents the class getting
+# too large
+"record" : True,
 
 "fx_kwargs_update_function": None,
 "fx_update_args": [],

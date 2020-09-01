@@ -74,13 +74,13 @@ import pickle
 #imports from stationsim folder
 sys.path.append("../../..")
 sys.path.append("../../../..")
-from stationsim.ukf2 import ukf_ss
+from stationsim.ukf2 import *
 
 #imports from modules
 sys.path.append("..")
 sys.path.append("../..")
 from modules.sensors import generate_Camera_Rect
-import stationsim_densities as sd
+import ex3.stationsim_densities as sd
 
 class rjmcmc_ukf():
     
@@ -126,7 +126,11 @@ class rjmcmc_ukf():
         #self.base_models = [self.base_model] * ((4 * self.pop_total) + 1)
         #self.fx_kwargs = [self.fx_kwargs] * ((4 * self.pop_total) + 1)
 
-        
+        if self.jump_rate % self.sample_rate != 0:
+            print("Warning! jump rate is not a multiple of the sample rate.")
+            print("Jump decisions will be made on unassimilated position predictions.")
+            print("This can result in poor estimation of exit gates.")
+            
         # Build two dictionaries to translate an intiger exit gate into a
         # 2d gate centroid coordinate and back.
         
@@ -141,11 +145,21 @@ class rjmcmc_ukf():
         self.exit_polys = sd.exit_points_to_polys(self.exit_gates, self.boundary, buffer)
         
         #calculate true exit gates and make a number of placeholder lists for data
+
         self.true_gate = self.get_gates(base_model, self.get_gates_dict)
+        
+        #various placeholder lists
+        self.obs = []  # actual sensor observations
+        self.obs_key = []
+        self.ukf_histories = []  # ukf predictions
+        self.forecasts = []  # pure stationsim predictions
+        self.truths = []  # noiseless observations
+        self.ps = [] #covariances
         self.true_gates = []
         self.estimated_gates = []
         self.model_choices = []
         self.alphas = []
+        
         self.time1 = datetime.datetime.now()
         
         # initial agent postions to initiate ukf and calcualte agent probabilities
@@ -414,15 +428,7 @@ class rjmcmc_ukf():
         """
         #calculate exit gate pdf and draw new gates for candidate model
         #copy original model and give it new gates      
-        self.gate_probabilities = self.agent_probabilities(self.ukf_1.base_model,
-                                                                   self.vision_angle, 
-                                                                   self.get_gates_dict)
-        self.current_gates = self.get_gates(self.ukf_1.base_models[0],
-                                                    self.get_gates_dict)
-        
-        self.new_gates = self.draw_new_gates(self.gate_probabilities, 
-                                             self.current_gates, self.n_jumps)
-                
+
         self.ukf_2 =  pickle.loads(pickle.dumps(self.ukf_1, -1))
         #self.ukf_2 = deepcopy(self.ukf_1) #generally slower
         for i, model in enumerate(self.ukf_2.base_models):
@@ -491,17 +497,36 @@ class rjmcmc_ukf():
         self.ukf_1 = ukf_ss(self.model_params, self.ukf_params, self.base_model,
                             no_gates_models)
         self.ukf_2 = deepcopy(self.ukf_1)
-        self.rj_assign()
         
         for step in range(self.step_limit):    
             #one step burn in so we have kalman gains for ukf
+            
             self.ukf_1.step(step)
             self.ukf_2.step(step)
+        
             if step % self.jump_rate == 0 and step >= self.sample_rate:       
+                self.gate_probabilities = self.agent_probabilities(self.ukf_1.base_model,
+                                                                   self.vision_angle, 
+                                                                   self.get_gates_dict)
+                self.current_gates = self.get_gates(self.ukf_1.base_models[0],
+                                                            self.get_gates_dict)
+                
+                self.new_gates = self.draw_new_gates(self.gate_probabilities, 
+                                                     self.current_gates, self.n_jumps)
+                        
                 self.rj_choose(step)
                 self.rj_assign()
                 self.true_gates.append(self.get_gates(self.ukf_1.base_model,
                                                   self.get_gates_dict))
+                
+            if step % self.sample_rate == 0 and step > 0:
+                self.forecasts.append(self.ukf_1.forecast)
+                self.ukf_histories.append(self.ukf_1.prediction)  # append histories
+                self.obs.append(self.ukf_1.obs)
+                self.obs_key.append(self.ukf_1.obs_key)
+                self.ps.append(self.ukf_1.p)
+            self.truths.append(self.ukf_1.base_model.get_state(sensor="location"))
+            
             if step%100 == 0 :
                 logging.info(f"Iterations: {step}")
                 
@@ -510,6 +535,7 @@ class rjmcmc_ukf():
                 logging.info("ukf broken early. all agents finished")
                 break
     
+        self.status_key = self.ukf_1.status_key
         self.time2 = datetime.datetime.now()  # timer
         if not finished:
             logging.info(f"ukf timed out. max iterations {self.step_limit} of stationsim reached")

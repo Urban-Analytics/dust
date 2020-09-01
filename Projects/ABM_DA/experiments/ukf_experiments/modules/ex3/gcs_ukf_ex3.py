@@ -20,7 +20,9 @@ import default_ukf_gcs_configs as configs
 
 sys.path.append("../../..")
 sys.path.append("../../../..")
-from stationsim.stationsim_gcs_model import Model
+#from stationsim.stationsim_gcs_model import Model
+from stationsim.stationsim_density_model import Model
+
 from stationsim.ukf2 import pickle_main
 
 
@@ -127,7 +129,31 @@ def set_gates(base_model, new_gates, set_gates_dict):
         base_model.agents[i].loc_desire = new_gate
     return base_model
 
-
+def gates_dict(base_model):
+        """assign each exit gate location an integer for a given model
+        
+        Parameters
+        ----------
+        base_model : cls
+            some model `base_model` e.g. stationsim
+        Returns
+        -------
+        gates_dict : dict
+            `gates_dict` dictionary with intiger keys for each gate and a 
+            2x1 numpy array value for each key giving the location.
+        """
+        
+        gates_locations = base_model.gates_locations[-base_model.gates_out:]
+        get_gates_dict = {}
+        set_gates_dict = {}
+        for i in range(gates_locations.shape[0]):
+            gate_location = gates_locations[i,:]
+            key = i
+            get_gates_dict[str(gate_location)] = key
+            set_gates_dict[key] = gate_location
+            
+        return get_gates_dict, set_gates_dict 
+    
 def rj_params(n, jump_rate, n_jumps, model_params, ukf_params):
     """build parameter dictionaries for ABM and rjukf
 
@@ -153,9 +179,13 @@ def rj_params(n, jump_rate, n_jumps, model_params, ukf_params):
     model_params["station"] = "Grand_Central"
 
     base_model = Model(**model_params)
+    model_params["width"] = base_model.width
+    model_params["height"] = base_model.height
+    
     model_params["exit_gates"] = base_model.gates_locations
+    model_params["get_gates_dict"], model_params["set_gates_dict"] = gates_dict(base_model)
 
-    ukf_params["vision_angle"] = np.pi/8
+    ukf_params["vision_angle"] = np.pi/6
     ukf_params["jump_rate"] = jump_rate
     ukf_params["n_jumps"] = n_jumps
     
@@ -235,7 +265,7 @@ def ex3_main(n, jump_rate, n_jumps, recall):
     """
     # load in some specific parameters
     model_params = configs.model_params
-    model_params["step_limit"] = 300
+    #model_params["step_limit"] = 200
     ukf_params = configs.ukf_params
 
     # build rest of parameter dictionaries
@@ -306,8 +336,8 @@ def ex3_main(n, jump_rate, n_jumps, recall):
 
 
 if __name__ == "__main__":
-    n = 5
-    jump_rate = 5
+    n = 10
+    jump_rate = 2
     n_jumps = 5
     recall = False
     rjmcmc_UKF = ex3_main(n, jump_rate, n_jumps, recall)

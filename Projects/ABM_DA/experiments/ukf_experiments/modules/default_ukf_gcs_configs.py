@@ -32,8 +32,8 @@ do_ bools for saving plotting and animating data.
 """
 model_params = {
 
-'width': 200,
-'height': 400,
+'width': 740,
+'height': 700,
 
 'gates_in': 3,
 'gates_out': 2,
@@ -41,7 +41,7 @@ model_params = {
 'gates_speed': 1,
 
 'speed_min': .2,
-'speed_mean': 5,
+'speed_mean': 10,
 'speed_std': 1,
 'speed_steps': 3,
 

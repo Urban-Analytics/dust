@@ -66,7 +66,7 @@ def fx(x, **fx_kwargs):
     
     return state
 
-def fx2(model, **fx_kwargs):
+def fx2(*fx_args, **fx_kwargs):
     """Transition function for the StationSim. more efficient attempt
     
     - Copies current base model
@@ -87,10 +87,12 @@ def fx2(model, **fx_kwargs):
     -----
     state : array_like
         predicted measured state for given sigma point
-    """      
-    return model.get_state("location")
+    """   
+    model = fx_args[0]
+    model.step()
+    return model
 
-def fx3_1(base_model):
+def fx3(*fx_args, **fx_kwargs):
     """ stack new locations and exit estimates 
     
 
@@ -104,13 +106,15 @@ def fx3_1(base_model):
     None.
 
     """
-    sigma = base_model.get_state("location")
-    exit_estimate = get_state()
-    output = np.zeros((2* len(sigma)))
+    model = fx_args[0]
+    gates = fx_kwargs["gates"]
+    state = fx_kwargs["state"]
+    set_gates = fx_kwargs["set_gates"]
     
-    output[0::4] = sigma[0::2]
-    output[1::4] = sigma[1::2]
-    output[2::4] = exit_estimate[0::2]
-    output[3::4] = exit_estimate[1::2]
+    set_gates_dict = fx_kwargs["set_gates_dict"]
     
-    return output
+    model.set_state(state, "location")    
+    set_gates(model, gates, set_gates_dict)
+    model.step()
+
+    return model

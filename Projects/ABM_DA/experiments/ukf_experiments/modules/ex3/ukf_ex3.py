@@ -9,7 +9,6 @@ import numpy as np
 import multiprocessing
 import matplotlib.pyplot as plt
 
-from rjmcmc_ukf import rjmcmc_ukf
 
 # double path appends here for this script to work in arc. 
 # if anyone ever reads this and knows better please do.
@@ -20,10 +19,13 @@ import modules.default_ukf_configs as configs
 from modules.ukf_fx import fx2
 from modules.ukf_plots import ukf_plots
 
+from ex3.rjmcmc_ukf import rjmcmc_ukf
+
+
 sys.path.append("../../../..")
 sys.path.append("../../..")
 from stationsim.stationsim_model import Model
-from stationsim.ukf2 import pickle_main
+from stationsim.ukf2 import *
 
 
 def hx3(state, **hx_kwargs):
@@ -139,39 +141,44 @@ def gates_dict(base_model):
 def rj_params(n, jump_rate, n_jumps, model_params, ukf_params):
     
     model_params["pop_total"] = n
-    model_params["gates_out"] = 3
+    #model_params["gates_out"] = 3
     model_params["station"] = None
+    
     base_model = Model(**model_params)
     model_params["exit_gates"] =  base_model.gates_locations[-model_params["gates_out"]:]
     model_params["get_gates_dict"], model_params["set_gates_dict"] = gates_dict(base_model)
     
-    ukf_params["vision_angle"] = np.pi/8
+    ukf_params["vision_angle"] = np.pi/12
     ukf_params["jump_rate"] = jump_rate
     ukf_params["n_jumps"] = n_jumps
 
     ukf_params["p"] = 1.0 * np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = 1.0 * np.eye(2 * n)
-    ukf_params["r"] = 0.01 * np.eye(2 * n)#sensor noise
+    ukf_params["r"] = 1.0 * np.eye(2 * n)#sensor noise
     
     ukf_params["fx"] = fx2
-    ukf_params["fx_kwargs"] = {"base_model":base_model} 
+    ukf_params["fx_kwargs"] = {} 
+    ukf_params["fx_kwargs_update"] = None
+
     ukf_params["hx"] = hx3
     ukf_params["hx_kwargs"] = {"pop_total" : n}
     
     ukf_params["obs_key_func"] = obs_key_func
     
+    ukf_params["record"] = False
     ukf_params["file_name"] =  ex3_pickle_name(n)
+    
     return model_params, ukf_params, base_model
 
-def error_plot(true_gates, estimated_gates):
+def error_plot(true_gates, estimated_gates, rate):
     distances = []
     true_gates = np.array(true_gates)
     estimated_gates = np.array(estimated_gates)
-    for i in range(1, estimated_gates.shape[0]):
+    for i in range(estimated_gates.shape[0]):
         distance = np.sum((true_gates - estimated_gates[i,:]) != 0)
         distances.append(distance)
     f = plt.figure()
-    plt.plot(distances)
+    plt.plot(rate * np.arange(estimated_gates.shape[0]), distances)
     plt.xlabel("time")
     plt.ylabel("Error Between Estimated and True Gates. ")
 
@@ -182,7 +189,7 @@ def ex3_main(n, jump_rate, n_jumps, recall):
     pickle_source = "../../pickles/"
     prefix = "rjmcmc_ukf_"
     save = True
-    animate = True
+    animate = False
     do_pickle = True
                        
     model_params, ukf_params, base_model = rj_params(n, jump_rate, n_jumps, model_params,
@@ -208,14 +215,14 @@ def ex3_main(n, jump_rate, n_jumps, recall):
             
         model_params, ukf_params = rjmcmc_UKF.model_params, rjmcmc_UKF.ukf_params
             
-    instance = rjmcmc_UKF.ukf_1
+    instance = rjmcmc_UKF
     plts = ukf_plots(instance, destination, prefix, save, animate)
 
-    truths = instance.truth_parser(instance)
-    nan_array= instance.nan_array_parser(instance, truths, instance.base_model)
-    obs, obs_key = instance.obs_parser(instance, True)
-    preds = instance.preds_parser(instance, True)
-    forecasts =  instance.forecasts_parser(instance, True)
+    truths = truth_parser(instance)
+    nan_array= nan_array_parser(instance, truths, instance.base_model)
+    obs, obs_key = obs_parser(instance, True)
+    preds = preds_parser(instance, True)
+    forecasts =  forecasts_parser(instance, True)
     
     ukf_params = instance.ukf_params
     #forecasts = np.vstack(instance.forecasts)
@@ -223,14 +230,14 @@ def ex3_main(n, jump_rate, n_jumps, recall):
     "remove agents not in model to avoid wierd plots"
     truths *= nan_array
     preds *= nan_array
-    #forecasts*= nan_array
+    forecasts*= nan_array
     
     "indices for unobserved agents"
 
     #plts.path_plots(obs, "Observed")
-    plts.pair_frame(truths, preds, obs_key, 10, destination)
+    plts.pair_frame(truths, preds, obs_key, 100, destination)
 
-    error_plot(rjmcmc_UKF.true_gate, rjmcmc_UKF.estimated_gates)
+    error_plot(rjmcmc_UKF.true_gate, rjmcmc_UKF.estimated_gates, instance.sample_rate)
     
     plts.error_hist(truths[::instance.sample_rate,:], 
                     preds[::instance.sample_rate,:],"Observed Errors")

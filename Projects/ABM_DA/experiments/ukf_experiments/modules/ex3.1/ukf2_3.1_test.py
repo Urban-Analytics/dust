@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 The Unscented Kalman Filter (UKF) designed to be hyper efficient alternative to similar 
@@ -25,14 +25,20 @@ from itertools import repeat
 
 """functions to modify starmap to allow additional kwargs
 """
-
-def starmap_with_kwargs(pool, fn, args_iter, kwargs_iter):
+def starmap_with_args_kwargs(pool, fn, args_iter, kwargs_iter):
     args_for_starmap = zip(repeat(fn), args_iter, kwargs_iter)
     return pool.starmap(apply_args_and_kwargs, args_for_starmap)
 
 def apply_args_and_kwargs(fn, args, kwargs):
-    return fn(*[args], **kwargs)
+    return fn(*args, **kwargs)    
+  
+def starmap_with_kwargs(pool, fn, sigmas, kwargs_iter):
+    args_for_starmap = zip(repeat(fn), sigmas, kwargs_iter)
+    return pool.starmap(apply_args_and_kwargs, args_for_starmap)
 
+def apply_args_and_kwargs(fn, sigmas, kwargs):
+    return fn(sigmas, **kwargs)    
+      
 def model_step(model):
     with HiddenPrints():
         model.step()
@@ -162,6 +168,7 @@ def MSSP(mean, p, g):
 
 def unscented_Mean(sigmas, wm):
         """calculate unscented mean  estimate for some sample of agent positions
+
         Parameters
         ------
         sigmas, wm : array_like
@@ -225,12 +232,21 @@ class ukf_ss:
             
         #initial hx_kwargs iterable for starmap
         self.hx_kwargs_iter = [self.hx_kwargs] * (4 * (self.pop_total) + 1)
-        self.fx_kwargs_iter = [self.fx_kwargs] * (4 * (self.pop_total) + 1)
 
 
+
+        #placeholder lists for various things
+        self.obs = []  # actual sensor observations
+        self.ukf_histories = []  # ukf predictions
+        self.forecasts = []  # pure stationsim predictions
+        self.truths = []  # noiseless observations
+        self.ps = []
+
+        self.obs_key = []  # which agents are observed (0 not, 1 agg, 2 gps)
+        self.status_key = [] #status of agents over time (0 not started, 1 in progress, 2 finished)
         
         #initial ukf parameters/sigma weightings
-        self.x = self.base_model.get_state("location") #initial agent positions
+        self.x = self.x0
         #initial covariance p in ukf_params. usually just identity matrix
         #same for q and r
         self.n = self.x.shape[0]  # state space dimension
@@ -257,17 +273,6 @@ class ukf_ss:
             self.ks = []
             self.mus = []
         
-        #placeholder lists for various things
-        if self.record:
-            self.obs = []  # actual sensor observations
-            self.ukf_histories = []  # ukf predictions
-            self.forecasts = []  # pure stationsim predictions
-            self.truths = []  # noiseless observations
-            self.ps = []
-        
-            self.obs_key = []  # which agents are observed (0 not, 1 agg, 2 gps)
-            
-        self.status_key = [] #status of agents over time (0 not started, 1 in progress, 2 finished)
         #timer
         self.time1 = datetime.datetime.now()  # timer
         self.time2 = None
@@ -294,27 +299,20 @@ class ukf_ss:
         if self.sigmas is None:
             self.sigmas = MSSP(self.x, self.p, self.g)
             for i, sigma in enumerate(self.sigmas):
-                self.base_models[i].set_state("location", sigma)
-            
-        # non multiprocessing for low populations (its faster)
-        # also used for simpler base stationsim vs gcs.
-        
-        if self.fx_kwargs_update is not None:
-            #self.fx_kwargs_iter = self.pool.starmap(self.fx_kwargs_update, zip(self.base_models, self.fx_kwargs_iter))
-            for i, args in enumerate(self.fx_kwargs_iter):
-                self.fx_kwargs_iter[i] = self.fx_kwargs_update(self.base_models[i], self.fx_kwargs_iter[i])
-                
+                self.base_models[i] = self.model_set(self.base_models[i], sigma, 
+                                                     **self.model_set_kwargs)
+
         print(self.base_models[0].step_id)        
         if self.pop_total <= 20 and self.station == None:
             with HiddenPrints():
-                for i, model in enumerate(self.base_models):
-                    self.base_models[i] = self.fx(model, **self.fx_kwargs_iter[i])
+                for model in self.base_models:
+                            model.step()
+                            
         else:
-            self.base_models = starmap_with_kwargs(self.pool,
-                                                   self.fx, 
-                                                   self.base_models, 
-                                                   self.fx_kwargs_iter)
-
+            pool = multiprocessing.Pool()
+            self.base_models = pool.starmap(model_step, zip(self.base_models))
+            pool.close()
+            pool.join()
             
     def ss_Update(self, ukf_step, **hx_kwargs):
         """ Update step of UKF for stationsim.
@@ -339,19 +337,22 @@ class ukf_ss:
         ------
         None.
         """
-        #final predicted sigma points after some amount of model steps.
-        self.sigmas = [model.get_state("location") for model in self.base_models]
-        #unscented mean
+        #calculate desired state unscented mean and covariance
+        self.fx_kwargs = [self.fx_kwargs_update(self)] * ((4 * self.n) + 1)
+        
+        pool = multiprocessing.Pool()
+        self.sigmas = pool.map(self.fx, self.base_models)
+        pool.close()
+        pool.join()
+        
         xhat = unscented_Mean(self.sigmas, self.wm)
-        #stack sigmas in numpy for easy matrix manipulation
         stacked_sigmas = np.vstack(self.sigmas).T
-        #unscented covariance using said stack
         pxx = covariance(stacked_sigmas, xhat, self.wc, addition=self.q)
 
-        self.p = pxx  # update Sxx co
+        self.p = pxx  # update Sxx
         self.x = xhat  # update xhat
 
-        #add gaussian (both x and y directions) noise to base_model true state
+        #add noise to base_model true state
         state = self.base_model.get_state(sensor="location").astype(float)
         if self.noise != 0:
             noise_array = np.ones(self.pop_total*2)
@@ -378,10 +379,12 @@ class ukf_ss:
         new_state = self.hx(state, **self.hx_kwargs)
         
         #append obs key list if there is any. useful to have for nice plots later.
-        key = self.obs_key_func(state, **self.hx_kwargs)
-        #force inactive agents to unobserved
-        #removed for now.put back in if we do variable dimensions of desired state
-        #key *= [agent.status % 2 for agent in self.base_model.agents]
+        if self.obs_key_func is not None:
+            key = self.obs_key_func(state, **self.hx_kwargs)
+            #force inactive agents to unobserved
+            #removed for now.put back in if we do variable dimensions of desired state
+            #key *= [agent.status % 2 for agent in self.base_model.agents]
+            self.obs_key.append(key)
             
         
         #calculate unscenterd mean and covariance of observed state
@@ -404,28 +407,17 @@ class ukf_ss:
         "i dont know why `self.x += ...` doesnt work here"
         mu = (new_state - yhat)
         self.x = self.x + np.matmul(self.k, mu)
+        
         self.p = self.p - np.linalg.multi_dot([self.k, pyy, self.k.T])
 
         #append agent states, covariances, and observation types
-
+        self.ukf_histories.append(self.x)  # append histories
+        self.obs.append(new_state)
+        self.ps.append(self.p)
+        self.forecasts.append(xhat)
         self.sigmas = None
         
         #record various data for diagnostics. Warning this makes the pickles rather large
-        
-        if self.record:
-            self.forecasts.append(xhat)
-            self.ukf_histories.append(self.x)  # append histories
-            self.obs.append(new_state)
-            self.obs_key.append(key)
-            self.ps.append(self.p)
-        else:
-            # if keeping the lists outside the class for pickle efficiency. 
-            # update variables for append lists later.
-            self.forecast = xhat
-            self.prediction = self.x
-            self.obs = new_state
-            self.obs_key = key
-                        
         if self.verbose:
             self.pxxs.append(pxx)
             self.pxys.append(pxy)
@@ -456,28 +448,16 @@ class ukf_ss:
         ------
         None.
         """
-        # open pool on each step. 
-        # allows use of pickling classes in ex3 rather than deepcopy
-        # to copy classes uniquely (I.E objects in each class can be manipulated separately)
-        # making it a lot faster
-        self.pool = multiprocessing.Pool()
+        
         self.ss_Predict(ukf_step)
         self.status_key.append([agent.status for agent in self.base_model.agents])
         self.base_model.step()
+        self.truths.append(self.base_model.get_state(sensor="location"))    
         
-        if self.record:
-            self.truths.append(self.base_model.get_state(sensor="location"))    
-        else:
-            self.truth = self.base_model.get_state(sensor="location")
-            
         if ukf_step % self.sample_rate == 0 and ukf_step > 0:
             #assimilate new values
             self.ss_Update(ukf_step, **self.hx_kwargs)
-    
-        self.pool.close()
-        self.pool.join()     
-        self.pool = None
-        
+            
     def main(self):
         
         """main function for applying ukf to gps style station StationSim
@@ -520,183 +500,189 @@ class ukf_ss:
         print(self.time)
         logging.info(self.time)
         
-        #close and delete pool object for pickling
-
-        
     """List of static methods for extracting numpy array data 
     """
-def truth_parser(self):
-    """extract truths from ukf_ss class
-    
-    Returns
-    -------
-    truths : "array_like"
-        `truths` array of agents true positions. Every 2 columns is an 
-        agents xy positions over time bottom filled with np.nans. 
-    """
-    
-    truths = np.vstack(self.truths)
-    return truths
-    
-def preds_parser(self, full_mode):
-    """Parse ukf predictions of agents positions from some ukf class
-    
-    Parameters
-    -------
-    full_mode : 'bool'
-    'full_mode' determines whether we print the ukf predictions as is
-    or fill out a data frame for every time point. For example, if we have
-    200 time points for a stationsim run and a sample rate of 5 we will
-    get 200/5 = 40 ukf predictions. If we set full_mode to false we get an
-    array with 40 rows. If we set it to True we get the full 200 rows with
-    4 blanks rows for every 5th row of data. This is very useful for 
-    plots later as it standardises the data times and makes animating much,
-    much easier.
-    
-    truths : `array_like`
-        `truths` numpy array to reference for full shape of preds array.
-        I.E how many rows (time points) and columns (agents)
-    
-    Returns
-    -------
-    preds : `array_like`
-        `preds` numpy array of ukf predictions.
-    """
-    
-    raw_preds = np.vstack(self.ukf_histories)
-
-    if full_mode:
-        #print full preds with sample_rate blank gaps between rows.
-        #we want the predictions to have the same number of rows
-        #as the true data.
-        #placeholder frame with same size as truths
-        preds = np.zeros((len(self.truths), self.pop_total*2))*np.nan
-
-        #fill in every sample_rate rows with ukf predictions
-        preds[self.sample_rate::self.sample_rate ,:] = raw_preds
-    else:
-        #if not full_mode returns preds as is
-        preds = raw_preds
-    return preds
-
-def forecasts_parser(self, full_mode):
-    """Parse ukf predictions of agents positions from some ukf class
-    
-    Parameters
-    -------
-    full_mode : 'bool'
-    'full_mode' determines whether we print the ukf predictions as is
-    or fill out a data frame for every time point. For example, if we have
-    200 time points for a stationsim run and a sample rate of 5 we will
-    get 200/5 = 40 ukf predictions. If we set full_mode to false we get an
-    array with 40 rows. If we set it to True we get the full 200 rows with
-    4 blanks rows for every 5th row of data. This is very useful for 
-    plots later as it standardises the data times and makes animating much,
-    much easier.
-    
-    truths : `array_like`
-        `truths` numpy array to reference for full shape of preds array.
-        I.E how many rows (time points) and columns (agents)
-    
-    Returns
-    -------
-    forecasts : `array_like`
-        `preds` numpy array of ukf predictions.
-    """
-    
-    raw_forecasts = np.vstack(self.forecasts)
-
-    if full_mode:
-        #print full preds with sample_rate blank gaps between rows.
-        #we want the predictions to have the same number of rows
-        #as the true data.
-        #placeholder frame with same size as truths
-        forecasts = np.zeros((len(self.truths), self.pop_total*2))*np.nan
-
-        #fill in every sample_rate rows with ukf predictions
-        forecasts[self.sample_rate::self.sample_rate ,:] = raw_forecasts
-    else:
-        #if not full_mode returns preds as is
-        forecasts = raw_forecasts
-    return forecasts
-
-def obs_parser(self, full_mode):
-    """Parse ukf predictions of agents positions from some ukf class
-    
-    Parameters
-    -------
-    full_mode : 'bool'
-    'full_mode' determines whether we print the ukf predictions as is
-    or fill out a data frame for every time point. For example, if we have
-    200 time points for a stationsim run and a sample rate of 5 we will
-    get 200/5 = 40 ukf predictions. If we set full_mode to false we get an
-    array with 40 rows. If we set it to True we get the full 200 rows with
-    4 blanks rows for every 5th row of data. This is very useful for 
-    plots later as it standardises the data times and makes animating much,
-    much easier.
-    
-    truths : `array_like`
-        `truths` numpy array to reference for full shape of preds array.
-        I.E how many rows (time points) and columns (agents)
-    
-    Returns
-    -------
-    forecasts : `array_like`
-        `preds` numpy array of ukf predictions.
-    """
-    
-    raw_obs = np.vstack(self.obs)
-    raw_obs_key = np.vstack(self.obs_key)
-    
-    if full_mode:
-        #print full preds with sample_rate blank gaps between rows.
-        #we want the predictions to have the same number of rows
-        #as the true data.
-        #placeholder frame with same size as truths
-        obs = np.zeros((len(self.truths), self.pop_total*2))*np.nan
-        obs_key = np.zeros((len(self.truths), self.pop_total))*np.nan
+    @staticmethod
+    def truth_parser(self):
+        """extract truths from ukf_ss class
         
-        obs_key[self.sample_rate::self.sample_rate, :] = raw_obs_key
+        Returns
+        -------
+        truths : "array_like"
+            `truths` array of agents true positions. Every 2 columns is an 
+            agents xy positions over time bottom filled with np.nans. 
+        """
         
-        #fill in every sample_rate rows with ukf predictions
-        where_observed = np.where(obs_key == 2)
-        where = where_observed[1][:self.pop_total]
-        where = np.repeat(2 * where, 2)
-        where[1::2] += 1
+        truths = np.vstack(self.truths)
+        return truths
         
-        obs[self.sample_rate::self.sample_rate , where] = raw_obs
-    else:
-        #if not full_mode returns preds as is
-        obs = obs
-    return obs, obs_key
+    @staticmethod
+    def preds_parser(self, full_mode):
+        """Parse ukf predictions of agents positions from some ukf class
+        
+        Parameters
+        -------
+        full_mode : 'bool'
+        'full_mode' determines whether we print the ukf predictions as is
+        or fill out a data frame for every time point. For example, if we have
+        200 time points for a stationsim run and a sample rate of 5 we will
+        get 200/5 = 40 ukf predictions. If we set full_mode to false we get an
+        array with 40 rows. If we set it to True we get the full 200 rows with
+        4 blanks rows for every 5th row of data. This is very useful for 
+        plots later as it standardises the data times and makes animating much,
+        much easier.
+        
+        truths : `array_like`
+            `truths` numpy array to reference for full shape of preds array.
+            I.E how many rows (time points) and columns (agents)
+        
+        Returns
+        -------
+        preds : `array_like`
+            `preds` numpy array of ukf predictions.
+        """
+        
+        raw_preds = np.vstack(self.ukf_histories)
 
-def nan_array_parser(self, truths, base_model):
-    """ Indicate when an agent leaves the model to ignore any outputs.
+        if full_mode:
+            #print full preds with sample_rate blank gaps between rows.
+            #we want the predictions to have the same number of rows
+            #as the true data.
+            #placeholder frame with same size as truths
+            preds = np.zeros((len(self.truths), self.pop_total*2))*np.nan
+
+            #fill in every sample_rate rows with ukf predictions
+            preds[self.sample_rate::self.sample_rate ,:] = raw_preds
+        else:
+            #if not full_mode returns preds as is
+            preds = raw_preds
+        return preds
     
-    Returns
-    -------
-    nan_array : "array_like"
+    @staticmethod
+    def forecasts_parser(self, full_mode):
+        """Parse ukf predictions of agents positions from some ukf class
+        
+        Parameters
+        -------
+        full_mode : 'bool'
+        'full_mode' determines whether we print the ukf predictions as is
+        or fill out a data frame for every time point. For example, if we have
+        200 time points for a stationsim run and a sample rate of 5 we will
+        get 200/5 = 40 ukf predictions. If we set full_mode to false we get an
+        array with 40 rows. If we set it to True we get the full 200 rows with
+        4 blanks rows for every 5th row of data. This is very useful for 
+        plots later as it standardises the data times and makes animating much,
+        much easier.
+        
+        truths : `array_like`
+            `truths` numpy array to reference for full shape of preds array.
+            I.E how many rows (time points) and columns (agents)
+        
+        Returns
+        -------
+        forecasts : `array_like`
+            `preds` numpy array of ukf predictions.
+        """
+        
+        raw_forecasts = np.vstack(self.forecasts)
+
+        if full_mode:
+            #print full preds with sample_rate blank gaps between rows.
+            #we want the predictions to have the same number of rows
+            #as the true data.
+            #placeholder frame with same size as truths
+            forecasts = np.zeros((len(self.truths), self.pop_total*2))*np.nan
+
+            #fill in every sample_rate rows with ukf predictions
+            forecasts[self.sample_rate::self.sample_rate ,:] = raw_forecasts
+        else:
+            #if not full_mode returns preds as is
+            forecasts = raw_forecasts
+        return forecasts
     
-    The `nan_array` indicates whether an agent is in the model
-    or not for a given time step. This will be 1 if an agent is in and
-    nan otherwise. We can times this array with our ukf predictions
-    for nicer looking plots that cut the wierd tails off. In the long term,
-    this could be replaced if the ukf removes states as they leave the model.
-    """
+    @staticmethod
+    def obs_parser(self, full_mode):
+        """Parse ukf predictions of agents positions from some ukf class
+        
+        Parameters
+        -------
+        full_mode : 'bool'
+        'full_mode' determines whether we print the ukf predictions as is
+        or fill out a data frame for every time point. For example, if we have
+        200 time points for a stationsim run and a sample rate of 5 we will
+        get 200/5 = 40 ukf predictions. If we set full_mode to false we get an
+        array with 40 rows. If we set it to True we get the full 200 rows with
+        4 blanks rows for every 5th row of data. This is very useful for 
+        plots later as it standardises the data times and makes animating much,
+        much easier.
+        
+        truths : `array_like`
+            `truths` numpy array to reference for full shape of preds array.
+            I.E how many rows (time points) and columns (agents)
+        
+        Returns
+        -------
+        forecasts : `array_like`
+            `preds` numpy array of ukf predictions.
+        """
+        
+        raw_obs = np.vstack(self.obs)
+        raw_obs_key = np.vstack(self.obs_key)
+        
+        if full_mode:
+            #print full preds with sample_rate blank gaps between rows.
+            #we want the predictions to have the same number of rows
+            #as the true data.
+            #placeholder frame with same size as truths
+            obs = np.zeros((len(self.truths), self.pop_total*2))*np.nan
+            obs_key = np.zeros((len(self.truths), self.pop_total))*np.nan
+            
+            obs_key[self.sample_rate::self.sample_rate, :] = raw_obs_key
+            
+            #fill in every sample_rate rows with ukf predictions
+            where_observed = np.where(obs_key == 2)
+            where = where_observed[1][:self.pop_total]
+            where = np.repeat(2 * where, 2)
+            where[1::2] += 1
+            
+            obs[self.sample_rate::self.sample_rate , where] = raw_obs
+        else:
+            #if not full_mode returns preds as is
+            obs = obs
+        return obs, obs_key
     
-    nan_array = np.ones(truths.shape)*np.nan
-    status_array = np.vstack(self.status_key)
-    status_array = np.repeat(status_array, 2, axis = 1)   
-    #for i, agent in enumerate(base_model.agents):
-        #find which rows are  NOT (None, None). Store in index.
-    #    array = np.array(agent.history_locations[:truths.shape[0]])
-    #    in_model = np.where(array!=None)
-        #set anything in index to 1. I.E which agents are still in model to 1.
-    #    nan_array[in_model, 2*i:(2*i)+2] = 1
-    index_where = np.where(status_array == 1)  
-    nan_array[index_where] = 1
-    
-    return nan_array
+    @staticmethod
+
+    def nan_array_parser(self, truths, base_model):
+        """ Indicate when an agent leaves the model to ignore any outputs.
+        
+        Returns
+        -------
+        nan_array : "array_like"
+        
+        The `nan_array` indicates whether an agent is in the model
+        or not for a given time step. This will be 1 if an agent is in and
+        nan otherwise. We can times this array with our ukf predictions
+        for nicer looking plots that cut the wierd tails off. In the long term,
+        this could be replaced if the ukf removes states as they leave the model.
+        """
+        
+        nan_array = np.ones(truths.shape)*np.nan
+        status_array = np.vstack(self.status_key)
+        
+        #for i, agent in enumerate(base_model.agents):
+            #find which rows are  NOT (None, None). Store in index.
+        #    array = np.array(agent.history_locations[:truths.shape[0]])
+        #    in_model = np.where(array!=None)
+            #set anything in index to 1. I.E which agents are still in model to 1.
+        #    nan_array[in_model, 2*i:(2*i)+2] = 1
+        rows = np.repeat(np.where(status_array == 1)[0],2)
+        columns = np.repeat(2 * np.where(status_array == 1)[1], 2)
+        columns[::2]+=1
+        
+        nan_array[rows, columns] = 1
+        
+        return nan_array
 
 def batch_save(model_params, n, seed):
     "save a stationsim model to use later in a batch"

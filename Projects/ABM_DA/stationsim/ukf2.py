@@ -291,6 +291,8 @@ class ukf_ss:
             # update transition function fx_kwargs if necessary. not necessary for stationsim but easy to add later.
             #self.fx_kwargs_update_function(*update_fx_args)
         
+        self.pool = multiprocessing.Pool()
+        
         if self.sigmas is None:
             self.sigmas = MSSP(self.x, self.p, self.g)
             for i, sigma in enumerate(self.sigmas):
@@ -305,17 +307,23 @@ class ukf_ss:
                 self.fx_kwargs_iter[i] = self.fx_kwargs_update(self.base_models[i], self.fx_kwargs_iter[i])
                 
         print(self.base_models[0].step_id)        
-        if self.pop_total < 30 and self.station == None:
+        if self.pop_total <= 30 and self.station == None:
             with HiddenPrints():
                 for i, model in enumerate(self.base_models):
                     self.base_models[i] = self.fx(model, **self.fx_kwargs_iter[i])
         else:
-            self.base_models = starmap_with_kwargs(self.pool,
-                                                   self.fx, 
-                                                   self.base_models, 
-                                                   self.fx_kwargs_iter)
-
+            #self.base_models = starmap_with_kwargs(self.pool,
+            #                                       self.fx, 
+            #                                       self.base_models, 
+            #                                       self.fx_kwargs_iter)
+            with Hidden_Prints():
+                self.base_models = self.pool.map(self.fx, self.base_models)
             
+        self.pool.close()
+        self.pool.join()     
+        self.pool = None
+        
+        
     def ss_Update(self, ukf_step, **hx_kwargs):
         """ Update step of UKF for stationsim.
         - if step is a multiple of sample_rate
@@ -460,7 +468,6 @@ class ukf_ss:
         # allows use of pickling classes in ex3 rather than deepcopy
         # to copy classes uniquely (I.E objects in each class can be manipulated separately)
         # making it a lot faster
-        self.pool = multiprocessing.Pool()
         self.ss_Predict(ukf_step)
         self.status_key.append([agent.status for agent in self.base_model.agents])
         self.base_model.step()
@@ -474,10 +481,6 @@ class ukf_ss:
             #assimilate new values
             self.ss_Update(ukf_step, **self.hx_kwargs)
     
-        self.pool.close()
-        self.pool.join()     
-        self.pool = None
-        
     def main(self):
         
         """main function for applying ukf to gps style station StationSim

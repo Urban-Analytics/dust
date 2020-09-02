@@ -15,7 +15,6 @@ from copy import deepcopy
 
 class HiddenPrints:
     
-    
     """stop repeat printing from stationsim 
     We get a lot of `iterations : X` prints as it jumps back 
     and forth over every 100th step. This stops that.
@@ -30,7 +29,7 @@ class HiddenPrints:
         sys.stdout.close()
         sys.stdout = self._original_stdout
 
-def fx(x, **fx_kwargs):
+def fx(model, x = None):
     """Transition function for the StationSim
     
     - Copies current base model
@@ -52,7 +51,7 @@ def fx(x, **fx_kwargs):
     state : array_like
         predicted measured state for given sigma point
     """   
-        
+    
     #f = open(f"temp_pickle_model_ukf_{self.time1}","rb")
     #model = pickle.load(f)
     #f.close()
@@ -62,11 +61,11 @@ def fx(x, **fx_kwargs):
         model.set_state(state = x, sensor="location")    
     with HiddenPrints():
         model.step() #step model with print suppression
-    state = model.get_state(sensor="location")
+    #state = model.get_state(sensor="location")
     
-    return state
+    return model
 
-def fx2(*fx_args, **fx_kwargs):
+def fx2(model):
     """Transition function for the StationSim. more efficient attempt
     
     - Copies current base model
@@ -88,7 +87,6 @@ def fx2(*fx_args, **fx_kwargs):
     state : array_like
         predicted measured state for given sigma point
     """   
-    model = fx_args[0]
     model.step()
     return model
 

@@ -32,8 +32,8 @@ do_ bools for saving plotting and animating data.
 """
 model_params = {
 
-'width': 400,
-'height': 200,
+'width': 200,
+'height': 100,
 
 'gates_in': 3,
 'gates_out': 2,

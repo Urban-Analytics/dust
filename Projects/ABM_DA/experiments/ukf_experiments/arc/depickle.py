@@ -68,9 +68,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
 import numpy as np
 from ukf_fx import HiddenPrints
-from ukf2 import pickle_main
+from ukf2 import pickle_main, truth_parser, preds_parser
 from ukf_plots import L2s as L2_parser
-
+import copy
 
 """
 path appends to keep pickle happy when loading in older experiments.
@@ -475,7 +475,11 @@ class grand_plots:
                         file)[1], os.path.split(file)[0]+"/", True)
                     f.close()
                     "pull raw data"
-                    truth = self.depickle_data_parser(u)
+                    try:
+                        truth = truth_parser(u)
+                        preds = preds_parser(u, True)
+                    except:
+                        truth, preds = self.depickle_data_parser(u)
                     "find L2 distances"
                     distances = L2_parser(truth[::u.sample_rate, :],
                                           preds[::u.sample_rate, :])
@@ -513,8 +517,8 @@ class grand_plots:
                     u = pickle_main(os.path.split(file)[1], os.path.split(file)[0]+"/", True)
                     f.close()
                     "pull raw data"
-                    self.sample_rate = u.sample_rate
-                    true_gates = np.vstack(u.true_gates)[0, :]
+                    self.jump_rate = u.jump_rate
+                    true_gates = u.true_gate
                     predicted_gates = np.vstack(u.estimated_gates)
                     "find L2 distances"
                     distances = (true_gates - predicted_gates != 0) * 1
@@ -535,17 +539,18 @@ class grand_plots:
                 for data in gates_list:
                     sub_frame = pd.DataFrame(data)
                     sub_frame.columns = ["Error"]
-                    sub_frame["time_points"] = sub_frame.index * self.sample_rate
-                    sub_frame[keys[0]] = i
-                    sub_frame[keys[1]] = j
+                    sub_frame["time_points"] = sub_frame.index * j
+                    sub_frame[keys[0]] = str(i)
+                    sub_frame[keys[1]] = str(j)
                     data_frame = pd.concat([data_frame, sub_frame])
                 
         return data_frame
                 
     def gates_data_lineplot(self, data_frame, title):
-        for key in self.param_keys:
+        for key in self.param_keys[:2]:
             f = plt.figure()
-            sns.lineplot(x = "time_points", y = "Error", data = data_frame, hue = key)
+            ax = sns.lineplot(x = "time_points", y = "Error", data = data_frame, 
+                              hue = key, legend = "full", palette = cm.viridis)
             plt.tight_layout()
             #plt.show()
             plt.savefig(self.destination + title + key + "_gates_convergance.pdf")
@@ -622,7 +627,7 @@ class grand_plots:
         "initiate plot"
         f, ax = plt.subplots(figsize=(8, 8))
         "colourmap"
-        cmap = cm.viridis
+        cmap = copy.copy(cm.get_cmap("viridis"))
         "set nan values for 100% unobserved to white (not black because black text)"
         cmap.set_bad("white")
 

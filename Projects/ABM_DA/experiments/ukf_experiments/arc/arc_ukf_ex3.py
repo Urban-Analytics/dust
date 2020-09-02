@@ -33,6 +33,7 @@ scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/no
 """
 import sys
 import numpy as np
+import pickle
 
 from arc import arc
 
@@ -138,14 +139,33 @@ def arc_ex3_main(parameter_lists, test):
     # run ukf_ss filter for arc class
     u = ex3_arc.arc_main(rjmcmc_ukf, file_name, *ukf_args)
     # save entire ukf class as a pickle
-    ex3_arc.arc_save(pickler, destination, file_name)
+    ex3_arc.arc_save(ex3_save, destination, file_name)
     
     return u
 
+class ex3_saver:
+    """store required components from rjmcmc_UKF run for plotting.
+    saves a bunch of space
+    """
+    def __init__(self, u):
+        self.truths = u.truths
+        self.ukf_histories = u.ukf_histories
+        self.jump_rate = u.jump_rate
+        self.pop_total = u.pop_total
+        self.sample_rate = u.sample_rate
+        self.true_gate = u.true_gate
+        self.estimated_gates = u.estimated_gates
+        
+def ex3_save(u, destination, file_name):
+    saved_class = ex3_saver(u)
+    f = open(destination + file_name, "wb")
+    pickle.dump(saved_class, f)
+    f.close()
+    
 if __name__ == '__main__':
     
     #if testing set to True. if running batch experiments set to False
-    test = False
+    test = True
     if test:
         print("Test set to true. If you're running an experiment, it wont go well.")
 

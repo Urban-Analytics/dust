@@ -37,7 +37,7 @@ class Modeller():
         # Set up params
         model_params = {'pop_total': pop_size,
                         'station': 'Grand_Central',
-                        'do_print': False}
+                        'do_print': True}
         # model_params = {'width': 200,
                         # 'height': 100,
                         # 'pop_total': pop_size,
@@ -72,7 +72,7 @@ class Modeller():
                          'H': observation_operator,
                          'R_vector': OBS_NOISE_STD * np.ones(data_vec_length),
                          'keep_results': True,
-                         'run_vanilla': True,
+                         'run_vanilla': False,
                          'vis': False}
 
         # Run enkf and process results
@@ -1047,7 +1047,8 @@ class Visualiser():
         plt.plot(results['time'], results['obs'], label='observations')
         plt.plot(results['time'], results['forecast'], label='filter_forecast')
         plt.plot(results['time'], results['analysis'], label='filter_analysis')
-        plt.plot(results['time'], results['vanilla'], label='vanilla')
+        if enkf.run_vanilla:
+            plt.plot(results['time'], results['vanilla'], label='vanilla')
 
         plt.legend()
 
@@ -1113,7 +1114,7 @@ class Visualiser():
         make_assimilation_ticks
 
         Given the times at which agent states are known and the regularity with
-        which data is assimilated, provide a list of the times at which the data
+        which data is assimilated, provide a list of the times when the data
         assimilation has taken place.
 
         Parameters

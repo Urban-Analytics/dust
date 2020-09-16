@@ -318,7 +318,8 @@ class EnsembleKalmanFilter(Filter):
 
     def update_state_means(self):
         self.state_mean = self.update_state_mean(self.state_ensemble)
-        self.vanilla_state_mean = self.update_state_mean(self.vanilla_state_ensemble)
+        if self.run_vanilla:
+            self.vanilla_state_mean = self.update_state_mean(self.vanilla_state_ensemble)
 
     def update_state_mean(self, state_ensemble):
         """

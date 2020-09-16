@@ -80,32 +80,16 @@ class Modeller():
         for agent in enkf.base_model.agents:
             print(agent.gate_out)
 
-        gl = enkf.base_model.gates_locations
-        plt.figure()
-        for i, g in enumerate(gl):
-            plt.scatter(g[0], g[1], label=i)
-        plt.legend(loc='center')
-        plt.savefig('results/figures/exit_map.pdf')
-
-        # Plotting to look at accuracy of exit estimations
-        if mode == EnsembleKalmanFilterType.DUAL_EXIT:
-            exits = enkf.exits
-            agent_exits = [list() for _ in range(pop_size)]
-            for t in range(len(exits)):
-                for i in range(pop_size):
-                    agent_exits[i].append(exits[t][i])
-
-            plt.figure()
-            for i in range(len(agent_exits)):
-                plt.plot(agent_exits[i], label=str(i))
-            plt.legend()
-            plt.savefig('./results/figures/exits.pdf')
-
         # Plotting
         Visualiser.plot_error_timeseries(enkf, model_params,
                                          filter_params, True)
         Visualiser.plot_forecast_error_timeseries(enkf, model_params,
                                                   filter_params, True)
+        Visualiser.plot_exits(enkf)
+
+        # Plotting to look at accuracy of exit estimations
+        if mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            Visualiser.plot_exit_accuracy(enkf, model_params)
 
     @classmethod
     def run_combos(cls):
@@ -1151,3 +1135,27 @@ class Visualiser():
             plt.xlabel('Endtime (iterations)')
             plt.ylabel('Frequency')
             plt.savefig(f'results/figures/endtimes_{population_size}.pdf')
+
+    @staticmethod
+    def plot_exits(enkf):
+        gl = enkf.base_model.gates_locations
+        plt.figure()
+        for i, g in enumerate(gl):
+            plt.scatter(g[0], g[1], label=i)
+        plt.legend(loc='center')
+        plt.savefig('results/figures/exit_map.pdf')
+
+    @staticmethod
+    def plot_exit_accuracy(enkf, model_params):
+        pop_size = model_params['pop_total']
+        exits = enkf.exits
+        agent_exits = [list() for _ in range(pop_size)]
+        for t in range(len(exits)):
+            for i in range(pop_size):
+                agent_exits[i].append(exits[t][i])
+
+        plt.figure()
+        for i in range(len(agent_exits)):
+            plt.plot(agent_exits[i], label=str(i))
+        plt.legend()
+        plt.savefig('./results/figures/exits.pdf')

@@ -209,9 +209,8 @@ class EnsembleKalmanFilter(Filter):
                 # Construct observations
                 data, obs_truth = self.__make_data()
 
-                # if self.vis:
-                    # self.plot_model('before_update_{0}'.format(self.time), data)
-                    # self.plot_model2('before_update_{0}'.format(self.time), data)
+                # Plot model state
+                self.plot_model_state('before')
 
                 # Update
                 self.update(data)
@@ -222,11 +221,13 @@ class EnsembleKalmanFilter(Filter):
                 metrics = self.__make_metrics(metrics, truth, obs_truth, data)
                 self.metrics.append(metrics)
 
-                self.exits.append(self.state_mean[2*self.population_size:])
+                if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+                    exits = self.state_mean[2*self.population_size]
+                    self.exits.append(exits)
 
-                # if self.vis:
-                    # self.plot_model('after_update_{0}'.format(self.time), data)
-                    # self.plot_model2('after_update_{0}'.format(self.time), data)
+                # Plot posterior
+                self.plot_model_state('after')
+
             # else:
                 # self.update_state_mean()
             self.time += 1
@@ -561,3 +562,18 @@ class EnsembleKalmanFilter(Filter):
     def __round_destination(destination, n_destinations):
         dest = int(round(destination))
         return dest % n_destinations
+
+    def plot_model_state(self, when):
+        plt.figure()
+        # Plot exits
+        gl = self.base_model.gates_locations
+        for i, g in enumerate(gl):
+            plt.scatter(g[0], g[1], c='black', alpha=0.5)
+
+        # Plot ensembles
+        for model in self.models:
+            for agent in model.agents:
+                plt.scatter(agent.location[0], agent.location[1],
+                            c='red', s=0.1)
+
+        plt.savefig(f'./results/figures/{when}_{self.time}.pdf')

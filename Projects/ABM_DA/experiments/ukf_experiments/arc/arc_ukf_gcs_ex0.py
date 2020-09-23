@@ -84,8 +84,7 @@ def ex0_parameters(n, parameter_lists, test):
         
     #If testing use some fast test parameters.
     else:
-        n = 5
-        sample_rate = 25
+        sample_rate = 1
         noise = 1
         run_id = "test"
         
@@ -122,6 +121,7 @@ def arc_ex0_main(n, parameter_lists, test):
     model_params = configs.model_params
     
     if test:
+        n = 5
         model_params["seed"] = 8
         model_params["step_limit"] = 100
         

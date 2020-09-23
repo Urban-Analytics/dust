@@ -129,5 +129,5 @@ def ex0_main(n, noise, sampling_rate):
 if __name__ == "__main__":
     n= 5
     noise = 1
-    sampling_rate = 5 
+    sampling_rate = 1
     u =  ex0_main(n,  noise, sampling_rate)

@@ -309,7 +309,7 @@ class ukf_ss:
         # also used for simpler base stationsim vs gcs.
                 
         print(self.base_models[0].step_id)        
-        if self.pop_total <= 30:
+        if self.pop_total <= 30 and self.station == None:
             with HiddenPrints():
                 for i, model in enumerate(self.base_models):
                     self.base_models[i] = self.fx(model, **self.fx_kwargs_iter[i])

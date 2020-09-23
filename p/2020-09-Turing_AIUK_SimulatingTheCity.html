@@ -41,7 +41,7 @@
                         <h5>Alan Turing Institute: AI UK Smart Cities</h5>
 
                         <h1 style="font-size: 45px;">Simulating the City with <strike>AI</strike><br/>
-													Machine Learning and Agent-Based Modelling</h1>
+													Agent-Based Modelling</h1>
                         <hr/>
                         <h2 style="font-size: 35px;"><a href="https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall">Alison Heppenstall</a> and
                             <a href="http://nickmalleson.co.uk/">Nick Malleson</a></h2>
@@ -76,7 +76,7 @@
                          data-background-video-loop="loop"
                          id="Context-UrbanFlows">
                     <div class="whitebackground2 fragment">
-                        <h3>Quantifying Real-Time Urban Dynamics?</h3>
+                        <h3>Quantifying Real-Time Urban Dynamics</h3>
                         
                         <p><i>People</i> are the drivers of processes in cities</p>
 
@@ -94,7 +94,7 @@
                 </section>
                 
                 
-                <section data-background-video="../videos/trafalgar_timelapse2-1280×720.mp4"
+                <section data-background-video="../videos/trafalgar_timelapse2-1280x720.mp4"
                          data-background-video-loop="loop"
                          id="Context-UrbanFlows2">
                     <div class="whitebackground2 fragment" style="width:70%" >
@@ -103,34 +103,152 @@
                     </div>
                 </section>
                 
-                <!-- Traffalgar videos side by side
+                
                 <section  id="Context-UrbanFlows2b">
                     
-                     <video data-autoplay controls loop width="45%" height="auto" 
-                            alt="Traffalgar square before COVID: busy">
-                        <source data-src="../videos/trafalgar_timelapse-1280×720.mp4" type="video/mp4"/>
-                         Your browser does not support the video tag.
-                    </video>
+                    <div class="r-stack">
+                        
+                         <video class="fragment" data-autoplay controls loop width="45%" height="auto" 
+                                alt="Traffalgar square before COVID: busy">
+                            <source data-src="../videos/trafalgar_timelapse-1280×720.mp4" type="video/mp4"/>
+                             Your browser does not support the video tag.
+                        </video>
+
+                         <video class="fragment" data-autoplay controls loop width="45%" height="auto" 
+                                alt="Traffalgar square after COVID: quieter">
+                            <source data-src="../videos/trafalgar_timelapse2-1280x720.mp4" type="video/mp4"/>
+                             Your browser does not support the video tag.
+                        </video>
+
+                        <img class="fragment" data-src="../figures/google_mobility_lockdown_data.png" 
+                                 alt="Google Mobility Data: people spending much more time at home" />
+                    </div>
+                
+                </section>
+                
+                
+                <!-- ************************************************************
+                ************** CONTEXT: NEW DATA & METHODS **********************
+                ************************************************************ -->
+                
+                <section id="Data">
                     
-                     <video data-autoplay controls loop width="45%" height="auto" 
-                            alt="Traffalgar square after COVID: quieter">
-                        <source data-src="../videos/trafalgar_timelapse2-1280×720.mp4" type="video/mp4"/>
-                         Your browser does not support the video tag.
-                    </video>
+                    <!--<figure class="right" style="width:40%;">
+                        <img data-src="../figures/paper_figures/census_mobile-correlation-map.png" alt="Comparing census daytime populations to aggregate mobile phone estimates" />
+                        <figcaption>Evaluating aggregate mobile phone population accuracy</figcaption>
+                    </figure>-->
+                    
+                    <h2>New Data</h2>
+                    
+                    <p>Abundance of (new) digital data that tell us about human systems</p>
+                    
+                    <h3>Macro</h3>
+                    <p>Cross-sectional surveys (e.g. the Census), longitudinal surveys (e.g. Born in Bradford; Millennium Cohort Study), 
+                        area-based (e.g. Indices of Multiple Deprivation), ...</p>
+                    
+                    <h3>Micro</h3>
+                    <p>Personal: Mobile phone apps, social media contributions, mobile phone use, 
+                        credit/debit card payments, loyalty cards, ...</p>
+                    <p>Anonymous: pedestrian counters, traffic counters, pollution sensors, ... </p>
+                    
+                    <h3>How to combine??</h3>
                     
                 
                 </section>
-                -->
-
-
+                
+                
+                
+                <!-- ************************************************************
+                ************************* ABM ***********************************
+                ************************************************************ -->
+                
                 <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
                          data-background-video-loop="loop">
                     <div class="whitebackground2 fragment">
-                        <h3>City Simulation</h3>
+                        <img class="right" style="width:40%" data-src="../figures/sims.png"
+                         alt="Diagram of the sims" />
+                        <h2>Introduction to ABM</h2>
+                        <p>Systems are driven by individuals</p>
+                        <p class="l2">(cars, people, ants, trees, whatever)</p>
+                        <p>Bottom-up modelling</p>
+                        <p class="l2">An alternative approach to modelling</p>
+                        <p class="l2">Rather than controlling from the top, try to represent the individuals</p>
+                        <p class="l2">Account for system behaviour directly</p>
+                        <p>Autonomous, interacting agents</p>
+                        <p>Represent individuals or groups</p>
+                        <p>Situated in a virtual environment</p>
+                    </div>
+                    
+                </section>
+                
+                <section id="abm-advantages">    
+                    <h2>Agent-Based Modelling - Appeal</h2>
+                    <img class="right" data-src="../figures/virtual_city.jpeg"/>
+                    <p>Modelling complexity, non-linearity, emergence</p>
+                    <p>Natural description of a system</p>
+                    <p>Bridge between verbal theories and mathematical models</p>
+                    <p>Produces a history of the evolution of the system</p>
+                </section>
+                
+                <section id="abm-advantages-history">
+                    <img style="width:70%;" data-src="../figures/burglar_behaviour-geotime.jpg" />
+                </section>
+                                
+                <section id="abm-Disadvantages">
+                    <h2>Agent-Based Modelling - Difficulties</h2>
+                    <figure class="right" >
+                        <img data-src="../figures/jacobs_choice.png" />
+                        <figcaption>Will I play with the truck, or the duck?<br/><br/>
+                            (<i>actually he played with his trains...</i>)</figcaption>
+                    </figure>
+                    
+                    <p>Tendency towards minimal behavioural complexity</p>
+                    <p>Stochasticity</p>
+                    <p>Computationally expensive (not amenable to optimisation)</p>
+                    <p class="l2">Complicated agent decisions, lots of decisions, multiple model runs</p>
+                    <p>Modelling "soft" human factors</p>
+                    <p class="l2">Need detailed, high-resolution, individual-level data</p>
+                    <p>Individual-level data</p>
+
+                </section>
+                
+                
+                <section id="IntroToABM4" data-background-video="../videos/skylines-walking-1280x720.mp4"
+                         data-background-video-loop="loop">
+                    <div class="whitebackground2 fragment">
+                        <h2>City Simulation</h2>
                         <p>Understanding <i>and predicting</i> the impact of short and long-term urban flows</p>
                     </div>
 
                 </section>
+                
+
+                <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
+                         data-background-video-loop="loop">
+                    <div class="whitebackground2 fragment">
+                        <h2>City Simulation</h2>
+                        <p>Understanding <i>and predicting</i> the impact of short and long-term urban flows</p>
+                    </div>
+
+                </section>
+                
+                <!-- ************************************************************
+                ********************* INNOVATIONS *******************************
+                ************************************************************ -->
+
+                
+                <!-- ************************************************************
+                ************** CONCLUSION / ACKNOWLEDGEMENTS ********************
+                ************************************************************ -->
+
+
+                
+                
+                
+                
+
+
+
 
                  <!-- ************************************************************
                 ************INTRO TO TURING URBAN ANALYTICS **********************

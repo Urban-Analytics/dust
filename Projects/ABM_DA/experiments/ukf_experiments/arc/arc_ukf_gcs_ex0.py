@@ -41,12 +41,14 @@ import sys
 import numpy as np
 from arc import arc
 
-sys.path.append("../modules")
-import default_ukf_gcs_configs as configs
-from ukf_gcs_ex0 import benchmark_params, ex0_save
+sys.path.append("..")
+sys.path.append("../..")
+import modules.default_ukf_gcs_configs as configs
+from modules.ex0.ukf_gcs_ex0 import benchmark_params, ex0_save
 
-sys.path.append('../../../stationsim')
-from ukf2 import ukf_ss
+sys.path.append('../../..')
+sys.path.append('../../../..')
+from stationsim.ukf2 import ukf_ss
 
 # %%
 
@@ -82,6 +84,7 @@ def ex0_parameters(n, parameter_lists, test):
         
     #If testing use some fast test parameters.
     else:
+        n = 5
         sample_rate = 25
         noise = 1
         run_id = "test"
@@ -117,6 +120,11 @@ def arc_ex0_main(n, parameter_lists, test):
     # load in default params
     ukf_params = configs.ukf_params
     model_params = configs.model_params
+    
+    if test:
+        model_params["seed"] = 8
+        model_params["step_limit"] = 100
+        
     # load in experiment 1 parameters
     sample_rate, noise, run_id = ex0_parameters(n, parameter_lists, test)
     # update model and ukf parameters for given experiment and its' parameters
@@ -125,6 +133,8 @@ def arc_ex0_main(n, parameter_lists, test):
                                                              sample_rate, 
                                                              model_params, 
                                                              ukf_params)
+    
+        
     #file name to save results to
     file_name = "gcs_config_agents_{}_rate_{}_noise_{}-{}".format(
         str(n).zfill(3),
@@ -134,19 +144,20 @@ def arc_ex0_main(n, parameter_lists, test):
     destination = "../results/"
     
     # initiate arc class
-    ex0_arc = arc(ukf_params, model_params, base_model, test)
+    ex0_arc = arc(test)
+    arc_args = [ukf_params, model_params, base_model]
     # run ukf_ss filter for arc class
-    u = ex0_arc.arc_main(ukf_ss, file_name)
+    u = ex0_arc.arc_main(ukf_ss, file_name, *arc_args)
     # save entire ukf class as a pickle
     ex0_arc.arc_save(ex0_save, destination, file_name)
 
 if __name__ == '__main__':
-    test = False
+    test = True
     if test:
         print("Test set to true. If you're running an experiment, it wont go well.")
         
     # Lists of parameters to vary over
-    n = 5 # 10 to 30 agent population by 10
+    n = 30 # 10 to 30 agent population by 10
     sample_rate = [1, 2, 5, 10]  # assimilation rates 
     noise = [0, 0.25, 0.5, 1, 2, 5] #gaussian observation noise standard deviation
     run_id = np.arange(0, 30, 1)  # 30 repeats for each combination of the above parameters

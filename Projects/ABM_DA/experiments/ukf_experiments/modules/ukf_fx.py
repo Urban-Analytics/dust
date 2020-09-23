@@ -68,51 +68,17 @@ def fx(model, x = None):
 def fx2(model):
     """Transition function for the StationSim. more efficient attempt
     
-    - Copies current base model
-    - Replaces positions with some sigma points
-    - Step replaced model forwards one time point
-    - record new stationsim positions as forecasted sigmapoint
-    - loop over this in ukf function to get family of forecasted 
-      sigmas
+    step model and return it
     
     Parameters
     ------
-    x : array_like
-        Sigma point of measured state `x`
-    **fx_args
-        arbitrary arguments for transition function fx
-        
+    model : cls
+        stationsim `model`
     Returns
     -----
-    state : array_like
-        predicted measured state for given sigma point
+    model : cls
+        stationsim `model`
     """   
+    # step model
     model.step()
-    return model
-
-def fx3(*fx_args, **fx_kwargs):
-    """ stack new locations and exit estimates 
-    
-
-    Parameters
-    ----------
-    **fx_kwargs : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
-    """
-    model = fx_args[0]
-    gates = fx_kwargs["gates"]
-    state = fx_kwargs["state"]
-    set_gates = fx_kwargs["set_gates"]
-    
-    set_gates_dict = fx_kwargs["set_gates_dict"]
-    
-    model.set_state(state, "location")    
-    set_gates(model, gates, set_gates_dict)
-    model.step()
-
     return model

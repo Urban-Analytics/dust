@@ -140,11 +140,15 @@ def gates_dict(base_model):
     
 def rj_params(n, jump_rate, n_jumps, model_params, ukf_params):
     
+    #update model_params
     model_params["pop_total"] = n
     #model_params["gates_out"] = 3
     model_params["station"] = None
     
+    # initiate base model
     base_model = Model(**model_params)
+    
+    # convert choice of exit gate from intiger to centroid and back.
     model_params["exit_gates"] =  base_model.gates_locations[-model_params["gates_out"]:]
     model_params["get_gates_dict"], model_params["set_gates_dict"] = gates_dict(base_model)
     
@@ -152,23 +156,81 @@ def rj_params(n, jump_rate, n_jumps, model_params, ukf_params):
     ukf_params["jump_rate"] = jump_rate
     ukf_params["n_jumps"] = n_jumps
 
+    #noise structures
     ukf_params["p"] = 1.0 * np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = 1.0 * np.eye(2 * n)
     ukf_params["r"] = 1.0 * np.eye(2 * n)#sensor noise
     
+    # transition function kwargs and updater.
     ukf_params["fx"] = fx2
     ukf_params["fx_kwargs"] = {} 
     ukf_params["fx_kwargs_update"] = None
 
+    #mesurement function kwargs
     ukf_params["hx"] = hx3
     ukf_params["hx_kwargs"] = {"pop_total" : n}
     
+    # Observation Key Function
     ukf_params["obs_key_func"] = obs_key_func
     
+    # Don't store results in ukf class. only store them in rjmcmc_UKF top layer
+    # for space saving.
     ukf_params["record"] = False
     ukf_params["file_name"] =  ex3_pickle_name(n)
     
     return model_params, ukf_params, base_model
+
+def ex3_plots(instance, destination, prefix, save, animate):
+    plts = ukf_plots(instance, destination, prefix, save, animate)
+
+    truths = truth_parser(instance)
+    nan_array= nan_array_parser(instance, truths, instance.base_model)
+    obs, obs_key = obs_parser(instance, True)
+    preds = preds_parser(instance, True)
+    forecasts =  forecasts_parser(instance, True)
+    gates = np.array(instance.estimated_gates).astype('float64')
+    
+    ukf_params = instance.ukf_params
+    #forecasts = np.vstack(instance.forecasts)
+    
+    "remove agents not in model to avoid wierd plots"
+    truths *= nan_array
+    preds *= nan_array
+    forecasts*= nan_array
+    gates *= nan_array[::instance.sample_rate, 0::2]
+    "indices for unobserved agents"
+
+    subset = np.arange(truths.shape[1]//2)
+    subset2 = np.repeat((2*subset), 2)
+    subset2[1::2] +=1
+    
+    if instance.model_params["random_seed"] == 8:
+       subset = np.array([1, 5, 3])
+       subset2 = np.repeat((2*subset), 2)
+       subset2[1::2] +=1
+        
+    #plts.path_plots(obs, "Observed")
+    plts.pair_frame(truths, preds, obs_key, 100, destination)
+
+    error_plot(instance.true_gate, instance.estimated_gates, instance.sample_rate)
+    
+    plts.error_hist(truths[::instance.sample_rate,:], 
+                    preds[::instance.sample_rate,:],"Observed Errors")
+    
+    plts.path_plots(preds[::instance.sample_rate, subset2], "Predicted")
+    plts.path_plots(truths[:, subset2], "True")
+    plts.path_plots(forecasts[::instance.sample_rate, subset2], "Forecasts")
+    plts.dual_path_plots(truths[::instance.sample_rate, subset2], preds[::instance.sample_rate, subset2],
+                         "True and Predicted")
+
+    
+    split_gate_choices(gates[:, subset], instance.sample_rate)
+    if animate:
+        #plts.trajectories(truths, "plots/")
+        plts.pair_frames(truths[::instance.sample_rate], 
+                         preds[::instance.sample_rate],
+                         obs_key[::instance.sample_rate],
+                         truths[::instance.sample_rate].shape[0], "../../plots/")
 
 def error_plot(true_gates, estimated_gates, rate):
     distances = []
@@ -182,12 +244,15 @@ def error_plot(true_gates, estimated_gates, rate):
     plt.xlabel("time")
     plt.ylabel("Error Between Estimated and True Gates. ")
 
+
+
 def ex3_main(n, jump_rate, n_jumps, recall):
     ukf_params = configs.ukf_params
     model_params = configs.model_params
+    model_params["random_seed"] = 8
     destination = "../../plots/"
     pickle_source = "../../pickles/"
-    prefix = "rjmcmc_ukf_"
+    prefix = "rjukf_"
     save = True
     animate = False
     do_pickle = True
@@ -216,49 +281,46 @@ def ex3_main(n, jump_rate, n_jumps, recall):
         model_params, ukf_params = rjmcmc_UKF.model_params, rjmcmc_UKF.ukf_params
             
     instance = rjmcmc_UKF
-    plts = ukf_plots(instance, destination, prefix, save, animate)
-
-    truths = truth_parser(instance)
-    nan_array= nan_array_parser(instance, truths, instance.base_model)
-    obs, obs_key = obs_parser(instance, True)
-    preds = preds_parser(instance, True)
-    forecasts =  forecasts_parser(instance, True)
-    
-    ukf_params = instance.ukf_params
-    #forecasts = np.vstack(instance.forecasts)
-    
-    "remove agents not in model to avoid wierd plots"
-    truths *= nan_array
-    preds *= nan_array
-    forecasts*= nan_array
-    
-    "indices for unobserved agents"
-
-    #plts.path_plots(obs, "Observed")
-    plts.pair_frame(truths, preds, obs_key, 100, destination)
-
-    error_plot(rjmcmc_UKF.true_gate, rjmcmc_UKF.estimated_gates, instance.sample_rate)
-    
-    plts.error_hist(truths[::instance.sample_rate,:], 
-                    preds[::instance.sample_rate,:],"Observed Errors")
-    
-    plts.path_plots(preds[::instance.sample_rate], "Predicted")
-    plts.path_plots(truths, "True")
-    plts.path_plots(preds[::instance.sample_rate], "Forecasts")
-
-    if animate:
-        #plts.trajectories(truths, "plots/")
-        plts.pair_frames(truths[::instance.sample_rate], 
-                         preds[::instance.sample_rate],
-                         obs_key[::instance.sample_rate],
-                         truths[::instance.sample_rate].shape[0], "../../plots/")
+    ex3_plots(instance, destination, prefix, save, animate)
     
     return rjmcmc_UKF
 
+def gate_choices(gates, sample_rate):
+    f, ax = plt.subplots()
+
+    for i in range(gates.shape[1]):
+        plt.plot(np.arange(gates.shape[0])*sample_rate,  (0.02 * i) + gates[:, i], alpha = 0.7)
+    plt.xlabel("Time")
+    plt.ylabel("Gate Choice")
+    ax.set_yticks(np.unique(gates)*1.02)
+    #ax.set_yticks(np.arange(gates.shape[1] + 1))
+    ax.set_yticklabels(np.unique(gates))
+    
+    plt.tight_layout()
+    f.savefig("../../plots/gate_choices.pdf")
+        
+def split_gate_choices(gates, sample_rate):
+    
+    colours = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    f, ax = plt.subplots(1, 3, sharey = True, gridspec_kw = {'wspace' : 0})
+
+    for i in range(gates.shape[1]):
+        ax[i].plot(np.arange(gates.shape[0])*sample_rate,  (0.02 * i) + gates[:, i],
+                   color = colours[i], alpha = 0.7)
+        ax[i].set_xlabel("Time")
+    ax[0].set_ylabel("Gate Choice")
+    ax[0].set_yticks(np.unique(gates))
+    #ax.set_yticks(np.arange(gates.shape[1] + 1))
+    ax[0].set_yticklabels(np.unique(gates))
+    
+    plt.tight_layout()
+    f.savefig("../../plots/split_gate_choices.pdf")
+        
+    
 if __name__ == "__main__":
     
-    n = 5
+    n = 10
     jump_rate = 5 #make this a multiple of sample_rate in the ukf default configs
     n_jumps = 5
-    recall = False
+    recall = True
     rjmcmc_UKF = ex3_main(n, jump_rate, n_jumps, recall)

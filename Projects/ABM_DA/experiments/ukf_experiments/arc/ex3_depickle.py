@@ -4,15 +4,16 @@
 Created on Tue Sep  1 16:30:55 2020
 
 @author: rob
-"""
++"""
 import depickle
 import pandas as pd
 import os
+from arc_ukf_ex3 import ex3_saver
 
 def ex3_grand_position(source, destination, recall):
 
     file_params = {
-        "agents":  [10, 20],
+        "agents":  [10, 20, 30],
         "jump_rate": [5, 10, 20],
         # "source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
         "source": source,
@@ -36,15 +37,15 @@ def ex3_grand_position(source, destination, recall):
     error_array = g_plts.choropleth_array(error_frame)
     "make choropleth"
     g_plts.choropleth_plot(error_array, "Numbers of Agents",
-                           "n_jumps", "")
+                           "jump rate", "")
     "make boxplot"
-    g_plts.boxplot(error_frame, "n_jumps",
+    g_plts.boxplot(error_frame, "jump rate",
                    "Grand Median L2s", "")
 
 def ex3_grand_gates(source, destination, recall):
 
     file_params = {
-        "agents":  [10, 20],
+        "agents":  [10, 20, 30],
         "jump_rate": [5, 10, 20],
         "source": source,
         "destination": destination
@@ -68,6 +69,6 @@ if __name__ == "__main__":
     # add recall function for times sake
     source =  f"/home/rob/ukf_ex3_tests/rj*"
     destination = "../plots/"
-    recall = False
+    recall = True
     ex3_grand_position(source, destination, recall)
     ex3_grand_gates(source, destination, recall)

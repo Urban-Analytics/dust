@@ -111,6 +111,7 @@ def generate_Camera_Cone(pole, centre, arc, boundary):
         return poly
 
 class camera_Sensor():
+    """class for an imitation camera."""
     
     def __init__(self, polygon):
         """init the camera using a single polygon
@@ -129,7 +130,7 @@ class camera_Sensor():
         self.polygon = polygon
         
     def observe(self, state):
-        """ determine what this camera observes of a given state
+        """ determine what this camera observes of a model state at a given time
         
         if an item if in the arc segment polygon take its observations 
         !!with noise?

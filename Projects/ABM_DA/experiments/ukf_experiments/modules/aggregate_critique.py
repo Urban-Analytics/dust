@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Mar 13 10:50:52 2020
-
+Plots of kalman gains and assimilated innovations for aggregate critique.
 @author: medrclaa
 """
 
@@ -54,8 +53,6 @@ def data_extraction(u):
     kmus = np.dstack(kmus)    
     
     return ks, mus, kmus
-
-
 
 def main(f_name):
     

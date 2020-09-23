@@ -3,27 +3,27 @@
 """
 File in which all single run ukf plots are generated.
 """
+
+# from external modules
 import os
 import sys
-sys.path.append("../modules")
-    
+import imageio 
+from shutil import rmtree
+import shutil    
 import numpy as np
 from math import ceil, log10
-from poly_functions import poly_count
-#general plotting
 import matplotlib.pyplot as plt 
-#from seaborn import kdeplot
-#for heatmap plots
 import matplotlib.cm as cm
 import matplotlib.colors as col
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.patches as mpatches
 from matplotlib.collections import PatchCollection
-#for rendering animations
-import imageio 
-from shutil import rmtree
-from default_ukf_configs import marker_attributes as marker_attributes
-import shutil
+
+# from modules
+sys.path.append("../..")
+from modules.default_ukf_configs import marker_attributes as marker_attributes
+from modules.poly_functions import poly_count
+
 
 plt.rcParams.update({'font.size':20})  # make plot font bigger
 
@@ -46,11 +46,11 @@ def L2s(truth, preds):
         matrix of L2 `distances` between truth and preds over time and agents.
     """
     
-    #placeholder note half as many columns from collapsing 2d vectors into scalars
+    # placeholder note half as many columns from collapsing 2d vectors into scalars
     distances = np.ones((truth.shape[0],int(truth.shape[1]/2)))*np.nan
 
-    #loop over each agent
-    #loop over each time point for each agent
+    # loop over each agent
+    # loop over each time point for each agent
     #!!theres probably a better way to do this with apply_along_axis etc.
     for i in range(int(truth.shape[1]/2)):
             #pull one agents xy coords
@@ -81,15 +81,21 @@ class ukf_plots:
             
         save, animate : bool
             `save` plots or `animate` who ABM run?
+        
+        marker_attributes : dict
+            This dictionary `marker_attributes` determines the colour
+            and the shape of a marker given its observation types. 
+            Typically the truth are black circles, unobserved are orange
+            crosses, aggregates are yellow triangles, and GPS observations
+            are blue squares.
         """
+        
         self.filter_class=filter_class
         self.width = filter_class.model_params["width"]
         self.height = filter_class.model_params["height"]
         
-        
-        #markers and colours for pairwise plots
+        # markers and colours for pairwise plots
         # determined in the experiment module
-        #!!create some default markers
         self.markers = marker_attributes["markers"]
         self.colours = marker_attributes["colours"]
         self.labels = marker_attributes["labels"]
@@ -101,8 +107,6 @@ class ukf_plots:
     """animations"""
     
     def trajectories(self,truths, destination):
-        
-        
         """GPS style animation of how agent move
         
         - For each time point
@@ -114,54 +118,61 @@ class ukf_plots:
             `truth` true positions 
         
         """
+        # move to folder to store animation frames
         os.mkdir(destination+"output_positions")
+        # loop over time
         for i in range(truths.shape[0]):
+            #take positions at current time i
             locs = truths[i,:]
             f = plt.figure(figsize=(12,8))
             ax = f.add_subplot(111)
-            "plot density histogram and locations scatter plot assuming at least one agent available"
+            # plot density histogram and locations scatter plot assuming 
+            # at least one agent available
             if np.abs(np.nansum(locs))>0:
-                ax.scatter(locs[0::2],locs[1::2],color="k",label="True Positions",edgecolor="k",s=100)
+                # if there are agents in the model plot them
+                ax.scatter(locs[0::2],locs[1::2],color="k",
+                           label="True Positions",edgecolor="k",s=100)
                 ax.set_ylim(0,self.height)
                 ax.set_xlim(0,self.width)
             else:
+                # if there are no agents in the model use a dummy plot off the 
+                # boundary
+                # dont set alpha = 0 here it messes with the legend
+                # may need to move this fake point if the boundary changes
                 fake_locs = np.array([-10,-10])
-                ax.scatter(fake_locs[0],fake_locs[1],color="k",label="True Positions",edgecolor="k",s=100)
+                ax.scatter(fake_locs[0],fake_locs[1],color="k",
+                           label="True Positions",edgecolor="k",s=100)
             
-            "set boundaries"
+            # set boundaries of stationsim
             ax.set_ylim(0,self.height)
             ax.set_xlim(0,self.width)   
-            
-            "set up cbar. colouration proportional to number of agents"
-            #ticks = np.array([0.001,0.01,0.025,0.05,0.075,0.1,0.5,1.0])
-           
                
-            "set legend to bottom centre outside of plot"
+            # set legend to bottom centre outside of plot
             box = ax.get_position()
             ax.set_position([box.x0, box.y0 + box.height * 0.1,
                              box.width, box.height * 0.9])
             
             ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18),
                       ncol=2)
-            "labels"
+            # labels
             plt.xlabel("Corridor width")
             plt.ylabel("Corridor height")
             plt.title("Agent Positions")
-            """
-            frame number and saving. padded zeroes to keep frames in order.
-            padded to nearest upper order of 10 of number of iterations.
-            """
+            # frame number and saving. padded zeroes to keep frames in order.
+            # number basically ensures the padding up to the nearest order of 10
+            # if there are 100 frames there are 2 padded 0s 001.
+            # if there are 1000 frames there are 3 0001.            
             number = str(i).zfill(ceil(log10(truths.shape[0])))
+            # saver file and close figure
             file = destination + "output_positions/" + self.prefix + f"_{number}"
             f.savefig(file)
             plt.close()
         
-        animations.animate(self,destination + "output_positions/",
+        # stitch the frames together and save it as an mp4.
+        animations.animate(self, destination + "output_positions/",
                            destination + self.prefix + f"positions_{self.filter_class.pop_total}",12)
     
     def pair_frames_main(self, truths, preds, obs_key, plot_range, destination):
-        
-        
         """Main pair wise frame plot
         
         - given some true values and predictions
@@ -181,11 +192,16 @@ class ukf_plots:
             `plot_range` what range of time points (indices) from truths to
             plot. 
         """
+        # some parameters that are used a lot. simpified here for neatness.
         n = self.filter_class.model_params["pop_total"]
         sample_rate = self.filter_class.ukf_params["sample_rate"]
         
+        # loop over time
         for i in plot_range:
-            #loop over each specific time point
+            # if hold repeat every `sample_rate`th frame sample_rate times.
+            # since the truths are at every time step and the preds aren't
+            # holding can make the animations smoother.
+            # this is deprecated just use the ::sample_rate index in numpy
             hold = False
             if hold:
                 truths2 = truths[i - i%sample_rate, :]
@@ -196,7 +212,7 @@ class ukf_plots:
                 preds2 = preds[i, :]
                 obs_key2 = obs_key[i, :]
             ms = 10 #marker_size
-            alpha = 1
+            alpha = 1 # plot opacity. not to be confused with ukf alpha
             
             f = plt.figure(figsize = (12,8))
             ax = plt.subplot(111)
@@ -219,21 +235,41 @@ class ukf_plots:
                     #stop error being thrown when agent not observed
                     if np.isnan(obs_key2[j]):
                         continue
-                    #choose colours and shape from observation type
+                    
+                    # choose colours and shape from observation type
+                    # and marker attribute dictionary
+                    
                     colour = self.colours[key]
                     marker = self.markers[key]
-                    #one scatter for translucent fill. one for opaque edges
-                    ax.scatter(preds2[(2*j)],preds2[(2*j)+1], c="none", marker = marker,
-                               s= ms**2, edgecolors="k",linewidths=1.5)
-                    ax.scatter(preds2[(2*j)],preds2[(2*j)+1],color=colour,marker = marker,
-                               s= ms**2, alpha=alpha, edgecolors="k")
-                    x = np.array([truths2[(2*j)],preds2[(2*j)]])
-                    y = np.array([truths2[(2*j)+1],preds2[(2*j)+1]])
-                    plt.plot(x,y,linewidth=tether_width+2,color="k", linestyle="-")
-                    plt.plot(x,y,linewidth=tether_width,color="w", linestyle="-")
+                    
+                    # two scatter plots for each set of markers here.
+                    # first scatter plot makes translucent centre.
+                    # second plot makes black outline.
+                    
+                    #scatters for predictions
+                    
+                    ax.scatter(preds2[(2*j)], preds2[(2*j)+1], c="none", 
+                               marker = marker, s= ms**2, edgecolors="k",
+                               linewidths=1.5)
+                    ax.scatter(preds2[(2*j)],preds2[(2*j)+1], color=colour,
+                               marker = marker, s= ms**2, alpha=alpha,
+                               edgecolors="k")
+                    
+                    # pairing tethers between truth and prediction
+                    # stack x and ys for truths and preds
+        
+                    x = np.array([truths2[(2*j)], preds2[(2*j)]])
+                    y = np.array([truths2[(2*j)+1], preds2[(2*j)+1]])
+                    
+                    #plot lines between each truths and preds pair
+                    plt.plot(x,y,linewidth=tether_width+2, color="k",
+                             linestyle="-")
+                    plt.plot(x,y,linewidth=tether_width, color="w",
+                             linestyle="-")
 
                     
-            #plotting list of polygons in which observed for ex4
+            # plotting list of polygons in which agents are observed for ex4
+            # ignore anyone ever comes back to it.
             ukf_keys = self.filter_class.ukf_params.keys()
             if 'cameras' in ukf_keys:
                 cameras = self.filter_class.ukf_params["cameras"]
@@ -241,8 +277,8 @@ class ukf_plots:
                 self.plot_polygons(ax, polygons)
                 
             
-            #dummy markers for a consistent legend
-            
+            # dummy markers for a consistent legend
+            # make sure these are outside the stationsim boundary
             for key in self.colours.keys():
                 ax.scatter(-1,-1,color=self.colours[key],label = self.labels[key], s= ms**2,
                            marker=self.markers[key],edgecolors="k",linewidths=1.5)
@@ -258,15 +294,19 @@ class ukf_plots:
             plt.xlabel("corridor width")
             plt.ylabel("corridor height")
             #plt.title("True Positions vs UKF Predictions")
-            #save frame and close plot else struggle for RAM
+            
+            # save frame and close plot else struggle for RAM
+            # see trajectories for more info on this
             number =  str(i).zfill(ceil(log10(truths.shape[0]))) #zfill names files such that sort() does its job properly later
             file = destination + self.prefix + f"pairs{number}"
             
             if len(plot_range) ==1:
+                # show the plot if theres just one frame.
                 plt.show()
                 plt.close()
                         
             if self.save:
+                # save the plot.
                 plt.tight_layout()
                 f.savefig(file)
                 plt.close()
@@ -290,22 +330,23 @@ class ukf_plots:
             `plot_range` what range of time points (indices) from truths to
             plot. 
         """
-        
+        # make directory for frames to go in.
         save_dir = destination +"output_pairs/"
         try:
+            # make the directory if it doesnt exist
             os.mkdir(save_dir)
         except:
+            # else delete the current directory with this name and make another.
             shutil.rmtree(save_dir)
             os.mkdir(save_dir)
         
+        # generate the frames to be animated and animate them.
         self.pair_frames_main(truths, forecasts, obs_key, range(plot_range), save_dir)
         animations.animate(self,save_dir, destination + self.prefix +
                            f"pairwise_gif_{self.filter_class.pop_total}", 6)
         
     
     def pair_frame(self, truths, forecasts, obs_key, frame_number, destination):
-        
-        
         """single frame version of above
         
         - plot truths for a single time point. save as a png in plots.
@@ -321,6 +362,7 @@ class ukf_plots:
             `plot_range` what range of time points (indices) from truths to
             plot. 
         """
+        # just get a frame. dont animate it.
         self.pair_frames_main(truths ,forecasts, obs_key, [frame_number], 
                               destination)
 
@@ -329,12 +371,8 @@ class ukf_plots:
     """aggregate heatmap for experiment 2"""
     
     def heatmap_main(self, truths, plot_range, destination):
-        """main heatmap plot
-        
-        -define custom compression colourmap
-        -
-        
-        
+        """main heatmap plot for aggregates.
+           
         Parameters
         ------ 
         truths : array_like
@@ -344,13 +382,13 @@ class ukf_plots:
             `plot_range` what range of time points (indices) from truths to
             plot. 
         """   
-        
+        # shorter name for params for neatness
         ukf_params = self.filter_class.ukf_params
 
         """Setting up custom colour map. defining bottom value (0) to be black
         and everything else is just cividis
         """
-        
+        # build colourmap and set bad value to black.
         cmap = cm.cividis
         cmaplist = [cmap(i) for i in range(cmap.N)]
         cmaplist[0] = (0.0,0.0,0.0,1.0)
@@ -386,7 +424,7 @@ class ukf_plots:
 
         There's probably a nice kernel alternative to sech
         """
-        
+        # finish building cmap according to above
         n= self.filter_class.model_params["pop_total"]
         n_prop = n*(1-np.tanh(n/ukf_params["bin_size"])**2)
         norm =CompressionNorm(1e-15,0.9*n_prop,0.1,0.9,1e-16,n)
@@ -394,32 +432,31 @@ class ukf_plots:
         sm = cm.ScalarMappable(norm = norm,cmap=cmap)
         sm.set_array([])  
         
+        #  loop over time
         for i in plot_range:
+            # get positions
             locs = truths[i,:]
+            #count how many agents in each square
             counts = poly_count(ukf_params["poly_list"],locs)
             
             f = plt.figure(figsize=(12,8))
             ax = f.add_subplot(111)
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right",size="5%",pad=0.05)
-            "plot density histogram and locations scatter plot assuming at least one agent available"
-            #ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
+            # plot density histogram and locations scatter plot 
+            # assuming at least one agent available"
+            # ax.scatter(locs[0::2],locs[1::2],color="cyan",label="True Positions")
             ax.set_ylim(0,self.height)
             ax.set_xlim(0,self.width)
-            
-            
-            
-            #column = frame["counts"].astype(float)
-            #im = frame.plot(column=column,
-            #                ax=ax,cmap=cmap,norm=norm,vmin=0,vmax = n)
        
+            #plot individual squares with their count and colour
             patches = []
             for item in ukf_params["poly_list"]:
                patches.append(mpatches.Polygon(np.array(item.exterior),closed=True))
             collection = PatchCollection(patches,cmap=cmap, norm=norm, alpha=1.0, edgecolor="w")
             ax.add_collection(collection)
 
-            "if no agents in model for some reason just give a black frame"
+            # if no agents in model for some reason just give a black frame
             if np.nansum(counts)!=0:
                 collection.set_array(np.array(counts))
             else:
@@ -431,36 +468,34 @@ class ukf_plots:
                             ha='center',va="center",color="w",
                                          size = ukf_params["bin_size"])
             
-            "set up cbar. colouration proportional to number of agents"
+            # set up colourbar. colouration proportional to number of agents
             ax.text(0,101,s="Total Agents: " + str(np.sum(counts)),color="k")
-            
-            
             cbar = plt.colorbar(sm,cax=cax,spacing="proportional")
             cbar.set_label("Agent Counts")
             cbar.set_alpha(1)
             #cbar.draw_all()
             
-            "set legend to bottom centre outside of plot"
+            # legend
             box = ax.get_position()
             ax.set_position([box.x0, box.y0 + box.height * 0.1,
                              box.width, box.height * 0.9])
             
-            "labels"
+            # labelling
             ax.set_xlabel("Corridor width")
             ax.set_ylabel("Corridor height")
             #ax.set_title("Agent Densities vs True Positions")
             cbar.set_label(f"Agent Counts (out of {n})")
-            """
-            frame number and saving. padded zeroes to keep frames in order.
-            padded to nearest upper order of 10 of number of iterations.
-            """
+            
+            # frame number and saving frame
+            # see trajectories for more details
             number = str(i).zfill(ceil(log10(truths.shape[0])))
             file = destination + self.prefix + f"heatmap_{number}"
             
-            "show a single frame. dont plot hundreds of them"
+            # if just one frame plot it
             if len(plot_range) ==1:
                 plt.show()
-                
+             
+            # else save it
             if self.save:
                 f.savefig(file)
                 plt.close()
@@ -478,15 +513,15 @@ class ukf_plots:
             plot. 
         """
         
+        # make directory
         save_dir = destination + "output_heatmap/"
         os.mkdir(save_dir)
+        # generate frames and animate them
         self.heatmap_main(truths, range(plot_range), save_dir)
         animations.animate(self, save_dir, destination +
                            self.prefix  + f"heatmap_{self.filter_class.pop_total}_",12)
     
     def heatmap_frame(self, truths, frame_number, destination):
-        
-        
         """single frame version of above
         
         Parameters
@@ -498,12 +533,10 @@ class ukf_plots:
             `frame_number` frame to plot
 
         """
+        # make single frame
         self.heatmap_main(truths, [frame_number], destination)
 
-    "single frame plots"
     def path_plots(self, data, title, polygons = None):
-        
-        
         """spaghetti style plot of some set of trajectories.
         
         data : array_like
@@ -524,7 +557,9 @@ class ukf_plots:
             for poly in polygons:
                 a = poly.boundary.coords.xy
                 plt.plot(a[0],a[1],color='k', alpha = 0.5)
-                
+        
+        # loop over agents.
+        # get each agents xy and plot them
         for i in range(data.shape[1]//2):
             plt.plot(data[:,(2*i)],data[:,(2*i)+1],lw=3)  
             plt.xlim([0,self.filter_class.model_params["width"]])
@@ -533,15 +568,56 @@ class ukf_plots:
             plt.ylabel("Corridor Height")
             plt.title(f"{title} Positions")
             
-
+        #save final figure
         if self.save:
             f.savefig(self.destination + f"{title}_Paths.pdf")
             
+    def dual_path_plots(self, data, data2, title, polygons = None):
+        """spaghetti style plot of 2 set of trajectories.
         
+        data, data2 : array_like
+            `data` and `data2` some array of agent positions to plot
+        
+        title : str
+            `title` of plot 
+            e.g. `True` gives title `True Positions`
+            
+            
+        polygons : list
+            list of `polygons` to plot. good for looking at boundaries 
+            where agents jump
+        """
+        colours = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        f=plt.figure(figsize=(12,8))
+        
+        # plot boundary if not specified
+        if polygons is not None:
+            for poly in polygons:
+                a = poly.boundary.coords.xy
+                plt.plot(a[0],a[1],color='k', alpha = 0.5)
+        
+        # loop over agent
+        # get xy for each data set
+        # plot them both
+        # data 2 will have a thicker, bolder, dashed line.
+        for i in range(data.shape[1]//2):
+            plt.plot(data[:,(2*i)],data[:,(2*i)+1],lw=3, alpha= 0.4, 
+                     color = colours[i])  
+            plt.plot(data2[:,(2*i)],data2[:,(2*i)+1],lw=6, linestyle = "--", 
+                     alpha= 1, color = colours[i])  
+            # limits and labels
+            plt.xlim([0,self.filter_class.model_params["width"]])
+            plt.ylim([0,self.filter_class.model_params["height"]])
+            plt.xlabel("Corridor Width")
+            plt.ylabel("Corridor Height")
+            #plt.title(f"{title} Positions")
+            
+        #save
+        if self.save:
+            f.savefig(self.destination + f"{title}_Paths.pdf")
+            
     def error_hist(self, truths, preds, title):
-        
-        
-        """Plot distribution of median agent errors
+        """Plot distribution of median agent errors as a histogram
         
         
         Parameters
@@ -554,11 +630,15 @@ class ukf_plots:
             e.g. `True` gives title `True Positions`
         """
         
+        # l2 distance between truths and predictions
         distances = L2s(truths,preds)
-        agent_means = np.nanmedian(distances,axis=0)
+        # median l2 error for each agent
+        agent_medians = np.nanmedian(distances,axis=0)
         j = plt.figure(figsize=(12,8))
-        plt.hist(agent_means,density=False,
+        #histogram of median agent errors
+        plt.hist(agent_medians,density=False,
                  bins = self.filter_class.model_params["pop_total"],edgecolor="k")
+        #labels and save
         plt.xlabel("Agent Median L2 Error")
         plt.ylabel("Agent Counts")
         plt.title(title) 
@@ -567,8 +647,18 @@ class ukf_plots:
         if self.save:
             j.savefig(self.destination + f"{title}_Agent_Hist.pdf")        
             
-    def plot_polygons(self,ax, poly_list):
-        """little function to plot shapely polygons of poly_list"""
+    def plot_polygons(self, ax, poly_list):
+        """little function to plot shapely polygons of poly_list
+        
+        
+        Parameters
+        ------
+        ax : ax
+            matplotlib axis `ax` to plot the polygons on
+        
+        poly_list : list
+            `poly_list` list of polygons to plot on the axis.
+        """
         
         for poly in poly_list:
             ax.fill(*poly.exterior.xy, color = "blue", alpha=0.5)
@@ -576,10 +666,8 @@ class ukf_plots:
     
 class CompressionNorm(col.Normalize):
     
-    def __init__(self, vleft,vright,vlc,vrc, vmin=None, vmax=None):
-        
-        
-        """RCs customised matplotlib diverging norm
+    def __init__(self, vleft, vright, vlc, vrc, vmin=None, vmax=None):
+        """Customised matplotlib diverging norm fir bottom heavy data.
         
         The original matplotlib version (DivergingNorm) allowed the user to split their 
         data about some middle point (e.g. 0) and a symmetric colourbar for symmetric plots. 
@@ -593,17 +681,14 @@ class CompressionNorm(col.Normalize):
         vleft=5,vright=6,vlc=0,vrc=0.9,vmin=5,vmax=10
         
         Then the first 90% of the colour bar colours would put themselves between 
-        5 and 6 and the remaining 10% would do 6-10. 
+        5 and 6 and the remaining 10% between 6-10. 
         This gives a bottom heavy colourbar that matches the data.
         
-        This works for generally heavily skewed data and could probably 
-        be generalised further but starts to get very very messy
+        This works for heavily skewed data and could probably 
+        be generalised further but starts to get messy
         
         Parameters
         ----------
-        vcenter : float
-            The data value that defines ``0.5`` in the normalization.
-      
         vleft: float
             left limit to tight band
         vright : flaot
@@ -612,7 +697,7 @@ class CompressionNorm(col.Normalize):
         vlc/vrc: float between 0 and 1 
         
             value left/right colouration.
-            Two floats that indicate how many colours of the  256 colormap colouration
+            Two floats that indicate how many colours of the 256 colormap colours
             are within the vleft/vright band as a percentage.
             If these numbers are 0 and 1 all 256 colours are in the band
             If these numbers are 0.1 and 0,2 then the 
@@ -671,19 +756,27 @@ class CompressionNorm(col.Normalize):
         return result    
     
 class animations():
+    """class to animate frames recorded by several functions into actual mp4s"""
+
     
-    
-    """class to animate frames recorded by several functions into actual mp4s
-    
-    Parameters
-    ------
-    file,name : str
-        which `file` of frames to animate
-        what `name` to give the gif
-    fps : int
-        frames per second `fps` of mp4. higher fps means faster video
-    """
     def animate(self,file,name,fps):
+        """ animate some list of frames into an MP4.
+            
+        Parameters
+        ------
+        file, name : str
+            Which `file` of frames to animate.
+            What `name` to give the mp4.
+            
+        fps : int
+            frames per second `fps` of mp4. higher fps means faster smoother video
+
+        Returns
+        -------
+        None.
+
+        """
+        
         files = sorted(os.listdir(file))
         print('{} frames generated.'.format(len(files)))
         images = []

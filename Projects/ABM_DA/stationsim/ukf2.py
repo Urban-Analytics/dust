@@ -298,16 +298,18 @@ class ukf_ss:
             for i, sigma in enumerate(self.sigmas):
                 self.base_models[i].set_state("location", sigma)
             
-        # non multiprocessing for low populations (its faster)
-        # also used for simpler base stationsim vs gcs.
-        
+        # if the kwargs for fx change update them here. For example, agents 
+        # could leave or enter the base_model
         if self.fx_kwargs_update is not None:
             #self.fx_kwargs_iter = self.pool.starmap(self.fx_kwargs_update, zip(self.base_models, self.fx_kwargs_iter))
             for i, args in enumerate(self.fx_kwargs_iter):
                 self.fx_kwargs_iter[i] = self.fx_kwargs_update(self.base_models[i], self.fx_kwargs_iter[i])
+
+        # non multiprocessing for low populations (its faster)
+        # also used for simpler base stationsim vs gcs.
                 
         print(self.base_models[0].step_id)        
-        if self.pop_total <= 30 and self.station == None:
+        if self.pop_total <= 30:
             with HiddenPrints():
                 for i, model in enumerate(self.base_models):
                     self.base_models[i] = self.fx(model, **self.fx_kwargs_iter[i])
@@ -316,7 +318,7 @@ class ukf_ss:
             #                                       self.fx, 
             #                                       self.base_models, 
             #                                       self.fx_kwargs_iter)
-            with Hidden_Prints():
+            with HiddenPrints():
                 self.base_models = self.pool.map(self.fx, self.base_models)
             
         self.pool.close()

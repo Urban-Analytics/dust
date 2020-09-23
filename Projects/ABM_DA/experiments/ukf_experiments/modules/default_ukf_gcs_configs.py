@@ -74,7 +74,7 @@ ukf_params = {
 "noise" : 0.5,
 "do_batch" : False,
 
-"a": 0.2,
+"a": 0.8,
 "b": 2,
 "k": 0,
 
@@ -83,6 +83,9 @@ ukf_params = {
 "hx_kwargs_update_function": None,
 "hx_update_args": [],
 "obs_key_kwargs_update_function": None,
+
+"record": True,
+
 }
 
 """Default colour scheme for ukf plots given 4 current types of observation."""
@@ -91,4 +94,5 @@ marker_attributes = {
 "colours" : {-1: "black" , 0 : "orangered", 1: "yellow", 2 : "skyblue"},
 "labels" :  {-1: "Pseudo-True Position", 0 : "Unobserved", 
              1: "Aggregated", 2 : "Observed"}
+
 }

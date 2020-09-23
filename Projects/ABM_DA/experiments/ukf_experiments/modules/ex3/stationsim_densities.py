@@ -293,7 +293,7 @@ def plot_vision(cut_bounds, exit_polys, polys, boundary):
             
     ax.set_xlim([0, width])
     ax.set_ylim([0, height])
-    plt.title("Each Agents vision of exit gates. ")
+    plt.title = "Each Agents vision of exit gates."
     plt.show()
 
 def heading_importance_function(position, start_position, theta, boundary, exit_polys):
@@ -347,7 +347,7 @@ def  main(n, importance_function):
         base_model.step()
     
     position = base_model.get_state(sensor = "location")
-    theta = np.pi/10
+    theta = np.pi/12
     #start_position = np.array([50, 50])
     #position = np.array([25, 25])
     #exit_gates = np.array([[0,5], [5,0]])

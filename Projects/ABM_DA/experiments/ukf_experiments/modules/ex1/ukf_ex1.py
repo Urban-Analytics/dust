@@ -23,7 +23,7 @@ from ukf_plots import ukf_plots
 import default_ukf_configs as configs
 
 
-from ukf2 import ukf_ss, pickle_main
+from ukf2 import *
 #from stationsim_model import Model
 from stationsim_density_model import Model
 
@@ -106,9 +106,7 @@ def obs_key_func(state, **hx_kwargs):
     
     return key
 
-def omission_params(n, prop, model_params, ukf_params):
-    
-    
+def omission_params(n, prop, model_params, ukf_params): 
     """update ukf_params with fx/hx and their parameters for experiment 1
     
     - assign population size and proportion observed.
@@ -144,8 +142,8 @@ def omission_params(n, prop, model_params, ukf_params):
     ukf_params["index"], ukf_params["index2"] = omission_index(n, ukf_params["sample_size"])
     
     ukf_params["p"] = np.eye(2 * n) #inital guess at state covariance
-    ukf_params["q"] = 0.1 * np.eye(2 * n)
-    ukf_params["r"] = 0.1 * np.eye(2 * ukf_params["sample_size"])#sensor noise
+    ukf_params["q"] = np.eye(2 * n)
+    ukf_params["r"] = np.eye(2 * ukf_params["sample_size"])#sensor noise
     
     ukf_params["fx"] = fx2
     ukf_params["fx_kwargs"] = {} 
@@ -213,21 +211,20 @@ def ex1_plots(instance, destination, prefix, save, animate):
     
     plts = ukf_plots(instance, destination, prefix, save, animate)
 
-    truths = instance.truth_parser(instance)
-    nan_array= instance.nan_array_parser(instance, truths, instance.base_model)
-    obs, obs_key = instance.obs_parser(instance, True)
-    preds = instance.preds_parser(instance, True)
-    forecasts =  instance.forecasts_parser(instance, True)
+    truths = truth_parser(instance)
+    nan_array= nan_array_parser(instance, truths, instance.base_model)
+    obs, obs_key = obs_parser(instance, True)
+    preds = preds_parser(instance, True)
+    forecasts =  forecasts_parser(instance, True)
     
     ukf_params = instance.ukf_params
     index2 = ukf_params["index2"]
-    #forecasts = np.vstack(instance.forecasts)
     
     "remove agents not in model to avoid wierd plots"
     obs *= nan_array
     truths *= nan_array
     preds *= nan_array
-    #forecasts*= nan_array
+    forecasts*= nan_array
     
     "indices for unobserved agents"
     not_index2 = np.array([i for i in np.arange(truths.shape[1]) if i not in index2])
@@ -241,6 +238,7 @@ def ex1_plots(instance, destination, prefix, save, animate):
     plts.path_plots(obs[::instance.sample_rate] , "Observed")
     plts.path_plots(preds[::instance.sample_rate], "Predicted")
     plts.path_plots(truths, "True")
+    plts.path_plots(forecasts[::instance.sample_rate], "Forecasts")
 
     if animate:
         #plts.trajectories(truths, "plots/")
@@ -272,7 +270,7 @@ def ex1_main(n, prop, recall, do_pickle, source, destination):
     if not recall:
         model_params = configs.model_params
         ukf_params = configs.ukf_params
-        model_params["random_seed"] = 8
+        #model_params["random_seed"] = 8
         model_params, ukf_params, base_model = omission_params(n, prop,
                                                                model_params, ukf_params)
         

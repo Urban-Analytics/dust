@@ -37,17 +37,17 @@ import pickle
 
 from arc import arc
 
+# import ex3 modules
+sys.path.append("..")
 sys.path.append("../modules")
-from ex3.ukf_ex3 import rj_params, get_gates, set_gates
-from ex3.rjmcmc_ukf import rjmcmc_ukf
+from modules.ex3.ukf_ex3 import rj_params, get_gates, set_gates
+from modules.ex3.rjmcmc_ukf import rjmcmc_ukf
+import modules.default_ukf_configs as configs
 
-sys.path.append("../modules")
-import default_ukf_configs as configs
-
+# import stationsim for pickler
 sys.path.append('../../..')
-#sys.path.append('../../../../stationsim')
-
-from stationsim.ukf2 import pickler, ukf_ss
+sys.path.append('../../../../stationsim')
+from stationsim.ukf2 import pickler
 
 # %%
 
@@ -77,16 +77,17 @@ def ex3_parameters(parameter_lists, test):
     """
     
     if not test:
-        "assign parameters according to task array"
+        # assign parameters according to task array
         n = parameter_lists[int(sys.argv[1])-1][0]
         jump_rate = parameter_lists[int(sys.argv[1])-1][1]
         run_id = parameter_lists[int(sys.argv[1])-1][2]
     else:
-        "if testing use these parameters for a single quick run."
+        # if testing use these default parameters for a single quick run.
         n = 5
         jump_rate = 5
         run_id = "test"
-     
+    # Set how many stepwise jumps are made to 5 no matter what.
+    # Add any other fixed parameters too.
     n_jumps = 5
     
     return n, jump_rate, n_jumps, run_id
@@ -119,7 +120,7 @@ def arc_ex3_main(parameter_lists, test):
     if test:
         model_params["seed"] = 8
         
-    # load in experiment 1 parameters
+    # load in experiment 3 parameters
     n, jump_rate, n_jumps, run_id = ex3_parameters(parameter_lists, test)
     # update model and ukf parameters for given experiment and its' parameters
     model_params, ukf_params, base_model =  rj_params(n, jump_rate, n_jumps,
@@ -134,9 +135,9 @@ def arc_ex3_main(parameter_lists, test):
     destination = "../results/" 
     
     # initiate arc class
-    ukf_args =  model_params, ukf_params, base_model, get_gates, set_gates
     ex3_arc = arc(test)
-    # run ukf_ss filter for arc class
+    # run define ukf_args and run ukf_ss filter for arc class
+    ukf_args =  model_params, ukf_params, base_model, get_gates, set_gates
     u = ex3_arc.arc_main(rjmcmc_ukf, file_name, *ukf_args)
     # save entire ukf class as a pickle
     ex3_arc.arc_save(ex3_save, destination, file_name)
@@ -148,6 +149,18 @@ class ex3_saver:
     saves a bunch of space
     """
     def __init__(self, u):
+        """load only necessary parameters for a smaller pickle.
+
+        Parameters
+        ----------
+        u : cls
+            Finished rjmcmc instance `u`.
+
+        Returns
+        -------
+        None.
+
+        """
         self.truths = u.truths
         self.ukf_histories = u.ukf_histories
         self.jump_rate = u.jump_rate
@@ -157,10 +170,27 @@ class ex3_saver:
         self.estimated_gates = u.estimated_gates
         
 def ex3_save(u, destination, file_name):
+    """ function for making and pickling ex3_saver class
+    
+    Parameters
+    ----------
+    u : cls
+        Finished rjmcmc instance `u`.
+    destination , file_name : str
+        `destination` folder and `file_name` name of file
+
+    Returns
+    -------
+    None.
+
+    """
+    # init class with only required attributes
     saved_class = ex3_saver(u)
+    # pickle it at the destination with the file name
     f = open(destination + file_name, "wb")
     pickle.dump(saved_class, f)
     f.close()
+
     
 if __name__ == '__main__':
     

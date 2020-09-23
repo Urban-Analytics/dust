@@ -71,14 +71,16 @@ from scipy.spatial.distance import mahalanobis
 from copy import copy, deepcopy
 import pickle
 
-#imports from stationsim folder
+# imports from stationsim folder
+# double appends so works on arc
 sys.path.append("../../..")
 sys.path.append("../../../..")
 from stationsim.ukf2 import *
 
-#imports from modules
+# imports from modules
 sys.path.append("..")
 sys.path.append("../..")
+# double appends so works on arc
 from modules.sensors import generate_Camera_Rect
 import ex3.stationsim_densities as sd
 
@@ -155,11 +157,13 @@ class rjmcmc_ukf():
         self.forecasts = []  # pure stationsim predictions
         self.truths = []  # noiseless observations
         self.ps = [] #covariances
-        self.true_gates = []
-        self.estimated_gates = []
-        self.model_choices = []
-        self.alphas = []
         
+        #self.model_choices = []
+        #self.alphas = []
+                
+        self.true_gates = self.true_gate
+        self.estimated_gates = []
+
         self.time1 = datetime.datetime.now()
         
         # initial agent postions to initiate ukf and calcualte agent probabilities
@@ -436,7 +440,6 @@ class rjmcmc_ukf():
                                                   self.new_gates,
                                                   self.set_gates_dict)
 
-                
     def rj_choose(self, step):
         """choose which of the two ukfs to keep
         
@@ -452,7 +455,7 @@ class rjmcmc_ukf():
         obs = self.ukf_1.base_model.get_state("location")
         #calculate alpha
         alpha = self.acceptance_probability(self.ukf_1, self.ukf_2, obs)
-        self.alphas.append(alpha)
+        #self.alphas.append(alpha)
         #choose new model
         choice = self.choose_model(alpha)
         if choice:
@@ -462,12 +465,14 @@ class rjmcmc_ukf():
             model_choice = 1
             #model swap. done this way to avoiding using deepcopy (its slow as hell).
             self.ukf_1 = self.ukf_2
+            self.ukf_2 = None
         else:
             #if not choice keep current model ukf_1. assign ukf_2 new gates
             model_choice = 0
+            self.ukf_2 = None
             
         self.estimated_gates.append(self.current_gates)
-        self.model_choices.append(model_choice)
+        #self.model_choices.append(model_choice)
             
     def main(self):
         """main function for rjmcmc_ukf
@@ -516,8 +521,8 @@ class rjmcmc_ukf():
                         
                 self.rj_choose(step)
                 self.rj_assign()
-                self.true_gates.append(self.get_gates(self.ukf_1.base_model,
-                                                  self.get_gates_dict))
+                #self.true_gates.append(self.get_gates(self.ukf_1.base_model,
+                #                                  self.get_gates_dict))
                 
             if step % self.sample_rate == 0 and step > 0:
                 self.forecasts.append(self.ukf_1.forecast)
@@ -525,6 +530,7 @@ class rjmcmc_ukf():
                 self.obs.append(self.ukf_1.obs)
                 self.obs_key.append(self.ukf_1.obs_key)
                 self.ps.append(self.ukf_1.p)
+                
             self.truths.append(self.ukf_1.base_model.get_state(sensor="location"))
             
             if step%100 == 0 :

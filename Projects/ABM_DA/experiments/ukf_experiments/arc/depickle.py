@@ -57,8 +57,11 @@ sys.path.append("../..")
 sys.path.append("../modules")
 sys.path.append("../ukf_old")
 import pandas as pd
-import seaborn as sns
 import glob
+import numpy as np
+import copy
+
+import seaborn as sns
 import matplotlib.lines as lines
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.colors as colors
@@ -66,11 +69,12 @@ import matplotlib.patheffects as pe
 import matplotlib.cm as cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
-import numpy as np
+
+
+
 from ukf_fx import HiddenPrints
 from ukf2 import pickle_main, truth_parser, preds_parser
 from ukf_plots import L2s as L2_parser
-import copy
 
 """
 path appends to keep pickle happy when loading in older experiments.
@@ -540,21 +544,59 @@ class grand_plots:
                     sub_frame = pd.DataFrame(data)
                     sub_frame.columns = ["Error"]
                     sub_frame["time_points"] = sub_frame.index * j
-                    sub_frame[keys[0]] = str(i)
-                    sub_frame[keys[1]] = str(j)
+                    sub_frame[keys[0]] = str(i).zfill(2)
+                    sub_frame[keys[1]] = str(j).zfill(2)
                     data_frame = pd.concat([data_frame, sub_frame])
                 
         return data_frame
                 
     def gates_data_lineplot(self, data_frame, title):
-        for key in self.param_keys[:2]:
-            f = plt.figure()
-            ax = sns.lineplot(x = "time_points", y = "Error", data = data_frame, 
-                              hue = key, legend = "full", palette = cm.viridis)
-            plt.tight_layout()
-            #plt.show()
-            plt.savefig(self.destination + title + key + "_gates_convergance.pdf")
+        # only do legend on first pass
+        legend = True
+        for i in self.p1:
+            data = data_frame.loc[data_frame[self.param_keys[0]].isin([str(i)])]
+            key = self.param_keys[1]
+            f, ax = plt.subplots(1,1)
+            g = sns.lineplot(x = "time_points", y = "Error", data = data,
+                              hue = key, style = key,
+                              palette = sns.color_palette("colorblind", len(self.p2)),
+                              ax = ax)
+            handles,labels = g.get_legend_handles_labels()
+            plt.legend([], [], frameon = False)
             
+            ax.set_xlabel("Time")
+            ax.set_ylabel(None)
+        
+            #give left most plot y label.
+            if legend:
+                ax.set_ylabel("Error")
+                legend = False
+
+            #handles, labels = ax.get_legend_handles_labels()
+            #new_labels = self.p2
+            #if legend:
+                #box = g.get_position()
+                #g.set_position([box.x0, box.y0, box.width * 0.85, box.height]) # resize position
+                #g.legend = None
+                #legend = False
+                #pylab.figlegend(*ax.get_legend_handles_labels(), loc = 'upper left')
+            f.title = f"Population {i}" 
+            f.tight_layout()
+    
+            # produce a legend for the objects in the other figure
+            # save the two figures to files
+            f.savefig(self.destination + title + self.param_keys[0] +  f"_{i}_" + "_gates_convergance.pdf")
+
+        fig_legend = plt.figure(figsize = (3.5, 2.5))
+        axi = fig_legend.add_subplot(111)            
+        fig_legend.legend(handles, labels, loc='center')
+        axi.xaxis.set_visible(False)
+        axi.yaxis.set_visible(False)
+        axi.axis("off")
+        fig_legend.canvas.draw()
+        fig_legend.tight_layout()
+        fig_legend.savefig(self.destination + "catplot_legend")
+        
     def data_framer(self, L2):
         """ turns dictionary of L2 arrays into pandas dataframe for easier plotting
 
@@ -680,17 +722,18 @@ class grand_plots:
         keys = self.param_keys
         data = error_frame
         f_name = title + "_boxplot.pdf"
-        y_name = "Grand Median L2s"
+        y_name = "Log Grand Median L2s"
 
+        error_frame["Log Grand Median L2s"] =  np.log(error_frame["Grand Median L2s"])
         plt.figure()
         cat = sns.catplot(x=str(keys[1]), y=y_name, col=str(
             keys[0]), kind="box", data=data)
         plt.tight_layout()
 
-        for i, ax in enumerate(cat.axes.flatten()):
-            ax.set_xlabel(xlabel)
-            ax.set_ylabel(ylabel)
-            ax.set_title(str(keys[0]).capitalize() + " = " + str(self.p1[i]))
+        #for i, ax in enumerate(cat.axes.flatten()):
+        #    ax.set_xlabel(xlabel)
+        #    ax.set_ylabel(ylabel)
+        #    ax.set_title(str(keys[0]).capitalize() + " = " + str(self.p1[i]))
         plt.title = title
         if self.save:
             plt.tight_layout()

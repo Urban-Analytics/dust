@@ -121,7 +121,7 @@
                     </video>
                     
                     
-                    <img class="fragment" style="width:70%; float:center" data-src="../figures/google_mobility_lockdown_data.png" 
+                    <img class="fragment" style="width:60%; float:center" data-src="../figures/google_mobility_lockdown_data.png" 
                              alt="Google Mobility Data: people spending much more time at home" />
                     
                 
@@ -277,20 +277,110 @@
                 
                 <!-- ************************************************************
                 ***************************     EXAMPLE  ************************
-                ************************************************************ -->                
+                ************************************************************ -->
                 
-                <section id="XXXX">
-                    <h2>HERE - TALK ABOUT GCS AND SHOW SOME RESULTS</h2>
+                <section id="real-time-crowd-modelling" 
+>
+
+                    <h2>Real Time Crowd Modelling</h2>
+                    <img class="right" data-src="../figures/train_station_pedestrian.jpg"
+                                 alt="Image of escalators in a train station" />
+                    <p>Simulating a city in real-time is too hard!! (for now)</p>
+                    <p>For now lets start a crowd</p>
+                    <p class="l2">What methods can we use to incorporate data?</p>
+                    <p class="l2">How much data do we need?</p>
+                    <p class="l3">Track every individual?</p>
+                    <p class="l3">Track some individuals?</p>
+                    <p class="l3">Just aggregate counts (e.g. number of people passing a footfall camera)</p>
+                </section>
+                
+                <section id="gcs" 
+                         data-background-video="../videos/grandcentral-short.mp4"
+                         data-background-video-muted
+                         data-background-video-loop="loop">
+                    
+                    <div class="whitebackground2 fragment">
+                        <h2>Grand Central Terminal (New York)</h2>
+                    
+                        <p>Pedestrian traces</p>
+                        <p class="l2">B. Zhou, X. Wang and X. Tang. (2012) Understanding Collective Crowd Behaviors: Learning a Mixture Model of Dynamic Pedestrian-Agents. In <i>Proceedings of IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</i> 2012</p>
+                        <p class="l2"><a href="http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html"> http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html</a></p>
+                        
+                        
+                        <img class="left", style="width:50%" 
+                             data-src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/grand_central_floorplan.png" 
+                                 alt="Grand Central Terminal floor plan with entrances around the sides and an obstruction in the centre." />
+                        
+                        <img class="right" style="width:30%"
+                                 src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trajectories-structure.png" 
+                                 alt="Pedestrian trajectories estimated from the video" />
+                    
+                        
+                    </div>
+                
+                </section>
+                
+                <section id="pf-experiments">
+                    <h2>Data assimilation with a Particle Filter</h2>
+                    
+                    <img data-src="../figures/PF_flowchart3.png"
+                         alt="Flowchart of the experimental design. Lots of models ('particles') are run simultaneously." />
+
+                </section>
+
+
+                <section id="pf-stationsim2-a" data-transition="fade">
+                    <h2>Crowd Simulation with a Particle Filter</h2>
+                    <img data-src="../figures/pf_animation-static.png"
+                         alt="Animation of a crowding model with data assimilation" />
+                </section>
+
+                <section id="pf-stationsim2-b" data-transition="fade">
+                    <h2>Crowd Simulation with a Particle Filter</h2>
+                    <img data-src="../figures/pf_animation.gif"
+                         alt="Animation of a crowding model with data assimilation" />
+                </section>
+                
+                
+                                
+                <section id="pf_results">
+                    
+                    <h2>XXXX HERE - GCS RESULTS</h2>
+                    
                 </section>
                 
                 
                 
                 <section id="pf-results-wiggle-count">
-                    <h2>Particle Filter Results</h2>
+                    <h2>Difficulties (I)</h2>
                     <h3>Exponential increase in complexity</h3>
-                    <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/wiggle_count.png"
-                         style="width:80%;"
-                         alt="Number of collisions increases exponentially with number of agents" />
+                    <figure>
+                    
+                        <img style="width:70%;" 
+                             data-src="../figures/paper_figures/2018-ParticleFilterFigs/wiggle_count.png"
+                             alt="Number of collisions increases exponentially with number of agents" />
+                        <figcaption>
+                            N. Malleson, K. Minors, Le-Minh Kieu, J. A. Ward, A. West and Alison Heppenstall (2020).
+                            Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter.
+                            <i>Journal of Artificial Societies and Social Simulation (JASSS)</i>
+                            <a href="http://jasss.soc.surrey.ac.uk/23/3/3.html">23(3), 3</a>.
+                        </figcaption>
+                    </figure>
+                </section>
+                
+                
+                <section id="pf-results-nonlinear_trajectories">
+                    <h2>Difficulties (II)</h2>
+                    <h3>Nonlinear trajectories</h3>
+                    <figure >
+                        <img style="width:50%;" accesskey=""src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trais_model_versus_real.png"
+                         alt="SHows that some pedestrian trajectories are linear, others very curved" />
+                        <figcaption>
+                            Ternes, P., J. Ward, A. Heppenstall, V. Kumar, Le-Minh Kieu, N. Malleson (2020) 
+                                Using data assimilation to reduce uncertainty in an agent-based pedestrian simulations in real time.
+                            <i>Under review</i>.
+                        </figcaption>
+                        </figure>
                 </section>
                 
                 
@@ -368,6 +458,13 @@
                 ************************************************************ -->
 
 
+                                                
+                <section id="conclusions-future">
+                    
+                    <h2>XXXX CONCLUSIONS / FUTURE WORK</h2>
+                    
+                </section>
+                
                 
                 
                 

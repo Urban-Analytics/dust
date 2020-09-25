@@ -37,13 +37,27 @@ def ex3_grand_position(source, destination, recall):
     error_array = g_plts.choropleth_array(error_frame)
     "make choropleth"
     g_plts.choropleth_plot(error_array, "Numbers of Agents",
-                           "jump rate", "")
+                           "Reversible Jump Window", "")
     "make boxplot"
-    g_plts.boxplot(error_frame, "jump rate",
-                   "Grand Median L2s", "")
+    g_plts.boxplot(error_frame, "Reversible Jump Window",
+                   "Grand Median L2s (log(metres))", "")
 
 def ex3_grand_gates(source, destination, recall):
+    """ main function for parsing experiment 3 results into summary plots
+    
 
+    Parameters
+    ----------
+    source, destination : str
+        `source` of experiment pickles and `destination` of the resulting plots
+    recall : bool
+        `recall` previously aggregated pickles from a np/pandas frame for speed?
+
+    Returns
+    -------
+    None.
+
+    """
     file_params = {
         "agents":  [10, 20, 30],
         "jump_rate": [5, 10, 20],
@@ -63,7 +77,7 @@ def ex3_grand_gates(source, destination, recall):
         data_frame = pd.read_pickle(os.path.split(source)[:-1][0] + "/rjukf_gates_frame.pkl")
     "make pandas dataframe for seaborn"
     "make choropleth numpy array"
-    g_plts.gates_data_lineplot(data_frame, "rjmcmc_UKF_")
+    g_plts.gates_data_lineplot(data_frame,"Time", "Error (Number of Gates)", "rjmcmc_UKF_")
     
 if __name__ == "__main__":
     # add recall function for times sake

@@ -35,12 +35,13 @@ import numpy as np
 
 from arc import arc
 
-sys.path.append("../modules")
-from ukf_gcs_ex1 import omission_params
-import default_ukf_configs as configs
+sys.path.append("..")
+sys.path.append("../..")
+from modules.ex1.ukf_gcs_ex1 import omission_params
+import modules.default_ukf_configs as configs
 
-sys.path.append('../../../stationsim')
-from ukf2 import pickler, ukf_ss
+sys.path.append('../../../..')
+from stationsim.ukf2 import pickler, ukf_ss
 
 # %%
 
@@ -102,6 +103,9 @@ def arc_ex1_main(parameter_lists, test):
     # load in default params
     ukf_params = configs.ukf_params
     model_params = configs.model_params
+    if test:
+        model_params["random_seed"] = 8
+        model_params["step_limit"] = 100
     # load in experiment 1 parameters
     n, prop, run_id = ex1_parameters(parameter_lists, test)
     # update model and ukf parameters for given experiment and its' parameters
@@ -118,16 +122,17 @@ def arc_ex1_main(parameter_lists, test):
     destination = "../results/" 
     
     # initiate arc class
-    ex1_arc = arc(ukf_params, model_params, base_model, test)
+    ex1_arc = arc(test)
     # run ukf_ss filter for arc class
-    u = ex1_arc.arc_main(ukf_ss, file_name)
+    ukf_args = [ukf_params, model_params, base_model]
+    u = ex1_arc.arc_main(ukf_ss, file_name, *ukf_args)
     # save entire ukf class as a pickle
     ex1_arc.arc_save(pickler, destination, file_name)
 
 if __name__ == '__main__':
     
     #if testing set to True. if running batch experiments set to False
-    test = False
+    test = True
     if test:
         print("Test set to true. If you're running an experiment, it wont go well.")
 

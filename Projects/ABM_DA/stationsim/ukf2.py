@@ -484,7 +484,6 @@ class ukf_ss:
             self.ss_Update(ukf_step, **self.hx_kwargs)
     
     def main(self):
-        
         """main function for applying ukf to gps style station StationSim
     
         - for each time step

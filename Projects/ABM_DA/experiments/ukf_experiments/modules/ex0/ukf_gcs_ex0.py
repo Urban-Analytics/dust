@@ -119,7 +119,7 @@ def ex0_main(n, noise, sampling_rate):
     print(model_params)
     print(ukf_params)
     # run ukf filter
-    u = ukf_ss(model_params,ukf_params,base_model)
+    u = ukf_ss(model_params, ukf_params, base_model)
     u.main()
     ex0_save(u, "../../results/", ukf_params["file_name"])
     return u

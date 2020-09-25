@@ -47,15 +47,16 @@ or the proxy jump version via remote access
 scp -oProxyJump=user@remote-access.leeds.ac.uk
 e.g.
 scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/nobackup/medrclaa/dust/Projects/ABM_DA/experiments/ukf_experiments/results/agg* /Users/medrclaa/new_aggregate_results
+
+
+NOTE: A depickling error may occur with scipy.CKDTree. If it does roll back to scipy 1.2.
+conda install scipy=1.2
 """
 
-"if running this file on its own. this will move working directory up to ukf_experiments."
+
 import os
 import sys
-sys.path.append("../../../stationsim/")
-sys.path.append("../..")
-sys.path.append("../modules")
-sys.path.append("../ukf_old")
+
 import pandas as pd
 import glob
 import numpy as np
@@ -71,10 +72,15 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
 
 
+sys.path.append("../../..")
+sys.path.append("../..")
+sys.path.append("..")
+#sys.path.append("../ukf_old")
 
-from ukf_fx import HiddenPrints
-from ukf2 import pickle_main, truth_parser, preds_parser
-from ukf_plots import L2s as L2_parser
+from stationsim.ukf2 import pickle_main, truth_parser, preds_parser
+
+from modules.ukf_plots import L2s as L2_parser
+from modules.ukf_fx import HiddenPrints
 
 """
 path appends to keep pickle happy when loading in older experiments.
@@ -146,6 +152,8 @@ class grand_plots:
         self.restrict = restrict
         self.kwargs = kwargs
 
+    "various data parsers"
+    
     def numpy_parser(self):
         """ extract numpy form results for plotting (see experiment 0)
 
@@ -180,9 +188,170 @@ class grand_plots:
                     errors[i][j].append(np.load(file))
 
         return errors
+          
+    def depickle_data_parser(self, instance):
+        """extracts truths and preds from a ukf instance (ex1/3)
+        
+        Parameters
+        --------
+        instance : cls
+            ukf `instance` to extract data from
+        Returns
+        ------
 
+        truth : array_like
+            `a` noisy observations of agents positions
+        preds : array_like
+            `b` ukf predictions of said agent positions
+        """
+
+        """pull actual data. note a and b dont have gaps every sample_rate
+        measurements. Need to fill in based on truths (d).
+        """
+        truth = np.vstack(instance.truths)
+        preds2 = np.vstack(instance.ukf_histories)
+
+        "full 'd' size placeholders"
+        preds = np.zeros((truth.shape[0], instance.pop_total*2))*np.nan
+
+        "fill in every sample_rate rows with ukf estimates and observation type key"
+        "!!theres probably an easier way to do this"
+        for j in range(int(preds.shape[0]//instance.sample_rate)):
+            preds[j*instance.sample_rate, :] = preds2[j, :]
+
+        nan_array = np.ones(shape=truth.shape,)*np.nan
+        for i, agent in enumerate(instance.base_model.agents):
+            array = np.array(agent.history_locations)
+            index = np.where(array != None)[0]
+            nan_array[index, 2*i:(2*i)+2] = 1
+
+        return truth*nan_array, preds*nan_array
+
+    def data_extractor(self):
+        """main function for pulling position data from pickles for analysis (ex1/3)
+
+        This is function looks awful... because it is. 
+        Heres what it does:
+
+        - build grand dictionary L2
+        - loop over first parameter e.g. population size
+            - create sub dictionary for given i L2[i]
+            - loop over second parameter e.g. proportion observed (prop)
+                - create placeholder list sub_L2 to store data for given i and j.
+                - load each ukf pickle with the given i and j.
+                - for each pickle extract the data, calculate L2s, and put the 
+                    grand median L2 into sub_L2.
+                - put list sub_L2 as a bnpy array into 
+                dictionary L2[i] with key j.
+
+        This will output a dictionary where for every pair of keys i and j , we accquire
+        an array of grand medians.
+
+        Returns
+        ------
+        L2 : dict
+             dictionary of `L2` distances between ground truth and ukf predictions 
+             over 2 parameters. We have keys [i][j] corresponding to the ith 
+             value of parameter 1 (e.g population) and jth value of parameter 2
+             (e.g proportion observed). Each pair of keys will contain a list of 
+             numpy arrays. Each array is a scalar grand median of an L2 distance matrix
+             output by ukf_plots.L2s
+
+        """
+        "names of first and second parameters. e.g. agents and prop"
+        keys = self.param_keys
+        "placeholder dictionary for all parameters"
+        L2 = {}
+        "loop over first parameter. usually agents."
+        for i in self.p1:
+            print(i)
+            "sub dictionary for parameter i"
+            L2[i] = {}
+            for j in self.p2:
+                print(i, j)
+                "file names for glob to find. note wildcard * is needed"
+                f_name = self.source + f"*{keys[0]}_*{i}_{keys[1]}_*{j}-*"
+                "find all files with given i and j"
+                files = glob.glob(f_name)
+                "placeholder list for grand medians of UKF runs with parameters i and j"
+                sub_L2 = []
+                for file in files:
+                    "open pickle"
+                    f = open(file, "rb")
+                    u = pickle_main(os.path.split(
+                        file)[1], os.path.split(file)[0]+"/", True)
+                    f.close()
+                    "pull raw data"
+                    try:
+                        truth = truth_parser(u)
+                        preds = preds_parser(u, True)
+                    except:
+                        truth, preds = self.depickle_data_parser(u)
+                    # find L2 distances
+                    distances = L2_parser(truth[::u.sample_rate, :],
+                                          preds[::u.sample_rate, :])
+                    if self.restrict is not None:
+                        # if taking some sub set of distances do it now
+                        # e.g. observed/unobserved
+                        distances = self.restrict(distances, u, self.kwargs)
+
+                    "add grand median to sub_L2"
+                    sub_L2.append(np.nanmedian(
+                        np.nanmedian(distances, axis=0)))
+                    "stack list of grand medians as an nx1 vector array"
+                    "put array into grand dictionary with keys i and j"
+                L2[i][j] = np.hstack(sub_L2)
+
+        return L2
+
+    def gates_extractor(self):
+        """ function for extracting gate choices from pickles (ex3)
+        
+
+        Returns
+        -------
+        gate_distances : dict
+            `gate_distances` dictionary of arrays of error gate metrics
+            over time for provided set of pickles.
+        """
+        keys = self.param_keys
+        gate_distances = {}
+        # loop over first parameter. usually population.
+        for i in self.p1:
+            print(i)
+            # sub dictionary for parameter i
+            gate_distances[i] = {}
+            for j in self.p2:
+                print(i, j)
+                # file names for glob to find. note wildcard * is needed
+                f_name = self.source + f"*{keys[0]}_*{i}_{keys[1]}_*{j}-*"
+                # find all files with given i and j
+                files = glob.glob(f_name)
+                # placeholder list for grand medians of UKF runs with parameters i and j
+                sub_distances = []
+                for file in files:
+                    # open pickle
+                    f = open(file, "rb")
+                    u = pickle_main(os.path.split(file)[1], os.path.split(file)[0]+"/", True)
+                    f.close()
+                    # pull raw data
+                    self.jump_rate = u.jump_rate
+                    true_gates = u.true_gate
+                    predicted_gates = np.vstack(u.estimated_gates)
+                    # find L2 distances
+                    distances = (true_gates - predicted_gates != 0) * 1
+                    
+                    sub_distances.append(np.sum(distances, axis=1))
+                    # stack list of grand medians as an nx1 vector array
+                    # put array into grand dictionary with keys i and j
+                gate_distances[i][j] = sub_distances
+                
+        return gate_distances
+                
+    """dictionaries to pandas data frames"""
+    
     def numpy_extractor(self, L2s):
-        """convert dictionary of numpy data from numpy_parser into pandas table
+        """convert dictionary of numpy data from numpy_parser into pandas table (ex0)
         
         This aggregates a dictionary of data into a pandas data frame.
         Data for each pair of parameter keys (e.g. population and proportion 
@@ -251,6 +420,90 @@ class grand_plots:
                 best_array[i, j] = int(frame.loc[x].loc[y]["best"])
 
         return frame, best_array
+
+    def gates_data_frame(self, gate_distances):
+        """stack dictionaries of gate errors into a pandas data frame.
+        
+
+        Parameters
+        ----------
+        gate_distances : dict
+            see `gates_extractor`
+
+        Returns
+        -------
+        data_frame : array_like
+            pandas data frame stacking dictionary into 4 columns. 
+            have time, parameter 1, parameter 2, and error metric.
+
+        """
+        data_frame = pd.DataFrame()
+        keys = self.param_keys
+        for i in self.p1:
+            for j in self.p2:
+                gates_list = gate_distances[i][j]
+                for data in gates_list:
+                    sub_frame = pd.DataFrame(data)
+                    sub_frame.columns = ["Error"]
+                    sub_frame["time_points"] = sub_frame.index * j
+                    sub_frame[keys[0]] = str(i).zfill(2)
+                    sub_frame[keys[1]] = str(j).zfill(2)
+                    data_frame = pd.concat([data_frame, sub_frame])
+                
+        return data_frame
+        
+    def data_framer(self, L2):
+        """ turns dictionary of L2 position arrays into pandas dataframe for easier plotting (ex1/3)
+
+        Returns
+        ------
+        error_frame : array_like
+
+            `error_frame` pandas data frame where each row has parameters 1 and 2 
+            as well as a grand median value for each pair. Each parameter pair will
+            have a sample of grand median L2s which used as a boxplot sample or
+            further aggregated for choropleths.
+
+        """
+        sub_frames = []
+        keys = self.param_keys
+        for i in self.p1:
+            for j in self.p2:
+                "extract L2s from L2 dictionary with corresponding i and j."
+                L2s = L2[i][j]
+                sub_frames.append(pd.DataFrame(
+                    [[i]*len(L2s), [j]*len(L2s), L2s]).T)
+
+        "stack into grand frames and label columns"
+        error_frame = pd.concat(sub_frames)
+        error_frame.columns = [keys[0], keys[1], "Grand Median L2s"]
+
+        return error_frame
+
+    def choropleth_array(self, error_frame):
+        """converts pandas frame into generalised numpy array for choropleth (ex1/3)
+
+        Returns
+        ------
+
+        error_array : array_like
+            `error_array` numpy array whose ith row and jth column correspond
+            to the ith and jth items of the parameter keys. The i,jth entry of
+            the array gives the overall grand median agent L2error for choropleths
+        """
+        error_frame2 = error_frame.groupby(by=[str(self.param_keys[0]),
+                                               str(self.param_keys[1])]).median()
+        error_array = np.ones((len(self.p1), len(self.p2)))*np.nan
+
+        for i, x in enumerate(self.p1):
+            for j, y in enumerate(self.p2):
+                error_array[i, j] = error_frame2.loc[(x, y), ][0]
+
+        return error_array
+
+    """
+    plots
+    """
 
     def comparison_choropleth(self, n, L2, best_array, xlabel, ylabel, title):
         """plot choropleth style for which is best our obs forecasts and ukf
@@ -349,14 +602,18 @@ class grand_plots:
         "take each rate plot l2 error over each noise for preds obs and ukf"
         for i, p1 in enumerate(self.p1):
 
-            def logx1(x):
+            def logx2(x):
+                # take double log(log(x+1)+1)
                 return np.log1p(np.log1p(x))
-
+            
+            # split data by parameter one (usually population.).
+            # take double logs of data too so the plots are clearer.
             sub_data = data.loc[p1]
-            preds = list(logx1(sub_data["forecasts"]))
-            ukf = list(logx1(sub_data["ukf"]))
-            obs = list(logx1(sub_data["obs"]))
+            preds = list(logx2(sub_data["forecasts"]))
+            ukf = list(logx2(sub_data["ukf"]))
+            obs = list(logx2(sub_data["obs"]))
 
+            #
             xs = np.arange(len(self.p2))
             ys = [i]*len(self.p2)
             ax.plot(xs=xs, ys=ys, zs=obs, color=colours[0], linewidth=4,
@@ -364,18 +621,32 @@ class grand_plots:
                                   pe.Normal()], alpha=0.8)
 
             ax.plot(xs=xs, ys=ys, zs=preds, color=colours[1], linewidth=4,
-                    linestyle="-.", path_effects=[pe.Stroke(linewidth=6, foreground='k', alpha=1), pe.Normal()], alpha=0.6)
+                    linestyle="-.", path_effects=[pe.Stroke(linewidth=6, foreground='k', alpha=1),
+                                                  pe.Normal()], alpha=0.6)
             ax.plot(xs=xs, ys=ys, zs=ukf, color=colours[2], linewidth=4,
                     linestyle="--", path_effects=[pe.Stroke(offset=(2, 0), linewidth=6,
-                                                            foreground='k', alpha=1), pe.Normal()], alpha=1)
+                                                            foreground='k', alpha=1),
+                                                  pe.Normal()], alpha=1)
 
         "placeholder dummies for legend"
-        s1 = lines.Line2D([-1], [-1], color=colours[0], label="Observed", linewidth=4, linestyle="-",
-                          path_effects=[pe.Stroke(linewidth=6, foreground='k', alpha=1), pe.Normal()])
-        s2 = lines.Line2D([-1], [-1], color=colours[1], label="StationSim", linewidth=4, linestyle="-.",
-                          path_effects=[pe.Stroke(linewidth=6, foreground='k', alpha=1), pe.Normal()])
-        s3 = lines.Line2D([-1], [-1], color=colours[2], label="UKF Assimilations", linewidth=4, linestyle="--",
-                          path_effects=[pe.Stroke(offset=(2, 0), linewidth=6, foreground='k', alpha=1), pe.Normal()])
+        s1 = lines.Line2D([-1], [-1],
+                          color=colours[0],
+                          label="Observed",
+                          linewidth=4,
+                          linestyle="-",
+                          path_effects=[pe.Stroke(linewidth=6, 
+                                                  foreground='k', alpha=1), pe.Normal()])
+        s2 = lines.Line2D([-1], [-1], color=colours[1],
+                          label="StationSim",
+                          linewidth=4,
+                          linestyle="-.",
+                          path_effects=[pe.Stroke(linewidth=6, 
+                                                  foreground='k', alpha=1), pe.Normal()])
+        s3 = lines.Line2D([-1], [-1],
+                          color=colours[2],
+                          label="UKF Assimilations", linewidth=4, linestyle="--",
+                          path_effects=[pe.Stroke(offset=(2, 0), linewidth=6, 
+                                                  foreground='k', alpha=1), pe.Normal()])
 
         "rest of labelling"
         ax.set_xticks(np.arange(0, len(self.p2)))
@@ -389,263 +660,7 @@ class grand_plots:
             plt.tight_layout
             plt.savefig(self.destination + f"3d_{n}_error_trajectories.pdf")
             plt.close()
-            
-    def depickle_data_parser(self, instance):
-        """simplified version of ukf.data_parser. just pulls truths/preds
-
-        Returns
-        ------
-
-        truth : array_like
-            `a` noisy observations of agents positions
-        preds : array_like
-            `b` ukf predictions of said agent positions
-        """
-
-        """pull actual data. note a and b dont have gaps every sample_rate
-        measurements. Need to fill in based on truths (d).
-        """
-        truth = np.vstack(instance.truths)
-        preds2 = np.vstack(instance.ukf_histories)
-
-        "full 'd' size placeholders"
-        preds = np.zeros((truth.shape[0], instance.pop_total*2))*np.nan
-
-        "fill in every sample_rate rows with ukf estimates and observation type key"
-        "!!theres probably an easier way to do this"
-        for j in range(int(preds.shape[0]//instance.sample_rate)):
-            preds[j*instance.sample_rate, :] = preds2[j, :]
-
-        nan_array = np.ones(shape=truth.shape,)*np.nan
-        for i, agent in enumerate(instance.base_model.agents):
-            array = np.array(agent.history_locations)
-            index = np.where(array != None)[0]
-            nan_array[index, 2*i:(2*i)+2] = 1
-
-        return truth*nan_array, preds*nan_array
-
-    def data_extractor(self):
-        """pull multiple class runs into arrays for analysis
-
-        This is function looks awful... because it is. 
-        Heres what it does:
-
-        - build grand dictionary L2
-        - loop over first parameter e.g. population size
-            - create sub dictionary for given i L2[i]
-            - loop over second parameter e.g. proportion observed (prop)
-                - create placeholder list sub_L2 to store data for given i and j.
-                - load each ukf pickle with the given i and j.
-                - for each pickle extract the data, calculate L2s, and put the 
-                    grand median L2 into sub_L2.
-                - put list sub_L2 as a bnpy array into 
-                dictionary L2[i] with key j.
-
-        This will output a dictionary where for every pair of keys i and j , we accquire
-        an array of grand medians.
-
-        Returns
-        ------
-        L2 : dict
-             dictionary of `L2` distances between ground truth and ukf predictions 
-             over 2 parameters. We have keys [i][j] corresponding to the ith 
-             value of parameter 1 (e.g population) and jth value of parameter 2
-             (e.g proportion observed). Each pair of keys will contain a list of 
-             numpy arrays. Each array is a scalar grand median of an L2 distance matrix
-             output by ukf_plots.L2s
-
-        """
-        "names of first and second parameters. e.g. agents and prop"
-        keys = self.param_keys
-        "placeholder dictionary for all parameters"
-        L2 = {}
-        "loop over first parameter. usually agents."
-        for i in self.p1:
-            print(i)
-            "sub dictionary for parameter i"
-            L2[i] = {}
-            for j in self.p2:
-                print(i, j)
-                "file names for glob to find. note wildcard * is needed"
-                f_name = self.source + f"*{keys[0]}_*{i}_{keys[1]}_*{j}-*"
-                "find all files with given i and j"
-                files = glob.glob(f_name)
-                "placeholder list for grand medians of UKF runs with parameters i and j"
-                sub_L2 = []
-                for file in files:
-                    "open pickle"
-                    f = open(file, "rb")
-                    u = pickle_main(os.path.split(
-                        file)[1], os.path.split(file)[0]+"/", True)
-                    f.close()
-                    "pull raw data"
-                    try:
-                        truth = truth_parser(u)
-                        preds = preds_parser(u, True)
-                    except:
-                        truth, preds = self.depickle_data_parser(u)
-                    "find L2 distances"
-                    distances = L2_parser(truth[::u.sample_rate, :],
-                                          preds[::u.sample_rate, :])
-                    if self.restrict is not None:
-                        distances = self.restrict(distances, u, self.kwargs)
-
-                    "add grand median to sub_L2"
-                    sub_L2.append(np.nanmedian(
-                        np.nanmedian(distances, axis=0)))
-                    "stack list of grand medians as an nx1 vector array"
-                    "put array into grand dictionary with keys i and j"
-                L2[i][j] = np.hstack(sub_L2)
-
-        return L2
-
-    def gates_extractor(self):
-        keys = self.param_keys
-        gate_distances = {}
-        "loop over first parameter. usually agents."
-        for i in self.p1:
-            print(i)
-            "sub dictionary for parameter i"
-            gate_distances[i] = {}
-            for j in self.p2:
-                print(i, j)
-                "file names for glob to find. note wildcard * is needed"
-                f_name = self.source + f"*{keys[0]}_*{i}_{keys[1]}_*{j}-*"
-                "find all files with given i and j"
-                files = glob.glob(f_name)
-                "placeholder list for grand medians of UKF runs with parameters i and j"
-                sub_distances = []
-                for file in files:
-                    "open pickle"
-                    f = open(file, "rb")
-                    u = pickle_main(os.path.split(file)[1], os.path.split(file)[0]+"/", True)
-                    f.close()
-                    "pull raw data"
-                    self.jump_rate = u.jump_rate
-                    true_gates = u.true_gate
-                    predicted_gates = np.vstack(u.estimated_gates)
-                    "find L2 distances"
-                    distances = (true_gates - predicted_gates != 0) * 1
-                    
-                    sub_distances.append(np.sum(distances, axis=1))
-                    "stack list of grand medians as an nx1 vector array"
-                    "put array into grand dictionary with keys i and j"
-                gate_distances[i][j] = sub_distances
-        return gate_distances
-                
-    def gates_data_frame(self, gate_distances):
-        
-        data_frame = pd.DataFrame()
-        keys = self.param_keys
-        for i in self.p1:
-            for j in self.p2:
-                gates_list = gate_distances[i][j]
-                for data in gates_list:
-                    sub_frame = pd.DataFrame(data)
-                    sub_frame.columns = ["Error"]
-                    sub_frame["time_points"] = sub_frame.index * j
-                    sub_frame[keys[0]] = str(i).zfill(2)
-                    sub_frame[keys[1]] = str(j).zfill(2)
-                    data_frame = pd.concat([data_frame, sub_frame])
-                
-        return data_frame
-                
-    def gates_data_lineplot(self, data_frame, title):
-        # only do legend on first pass
-        legend = True
-        for i in self.p1:
-            data = data_frame.loc[data_frame[self.param_keys[0]].isin([str(i)])]
-            key = self.param_keys[1]
-            f, ax = plt.subplots(1,1)
-            g = sns.lineplot(x = "time_points", y = "Error", data = data,
-                              hue = key, style = key,
-                              palette = sns.color_palette("colorblind", len(self.p2)),
-                              ax = ax)
-            handles,labels = g.get_legend_handles_labels()
-            plt.legend([], [], frameon = False)
-            
-            ax.set_xlabel("Time")
-            ax.set_ylabel(None)
-        
-            #give left most plot y label.
-            if legend:
-                ax.set_ylabel("Error")
-                legend = False
-
-            #handles, labels = ax.get_legend_handles_labels()
-            #new_labels = self.p2
-            #if legend:
-                #box = g.get_position()
-                #g.set_position([box.x0, box.y0, box.width * 0.85, box.height]) # resize position
-                #g.legend = None
-                #legend = False
-                #pylab.figlegend(*ax.get_legend_handles_labels(), loc = 'upper left')
-            f.title = f"Population {i}" 
-            f.tight_layout()
-    
-            # produce a legend for the objects in the other figure
-            # save the two figures to files
-            f.savefig(self.destination + title + self.param_keys[0] +  f"_{i}_" + "_gates_convergance.pdf")
-
-        fig_legend = plt.figure(figsize = (3.5, 2.5))
-        axi = fig_legend.add_subplot(111)            
-        fig_legend.legend(handles, labels, loc='center')
-        axi.xaxis.set_visible(False)
-        axi.yaxis.set_visible(False)
-        axi.axis("off")
-        fig_legend.canvas.draw()
-        fig_legend.tight_layout()
-        fig_legend.savefig(self.destination + "catplot_legend")
-        
-    def data_framer(self, L2):
-        """ turns dictionary of L2 arrays into pandas dataframe for easier plotting
-
-        Returns
-        ------
-        error_frame : array_like
-
-            `error_frame` pandas data frame where each row has parameters 1 and 2 
-            as well as a grand median value for each pair. Each parameter pair will
-            have a sample of grand median L2s which used as a boxplot sample or
-            further aggregated for choropleths.
-
-        """
-        sub_frames = []
-        keys = self.param_keys
-        for i in self.p1:
-            for j in self.p2:
-                "extract L2s from L2 dictionary with corresponding i and j."
-                L2s = L2[i][j]
-                sub_frames.append(pd.DataFrame(
-                    [[i]*len(L2s), [j]*len(L2s), L2s]).T)
-
-        "stack into grand frames and label columns"
-        error_frame = pd.concat(sub_frames)
-        error_frame.columns = [keys[0], keys[1], "Grand Median L2s"]
-
-        return error_frame
-
-    def choropleth_array(self, error_frame):
-        """converts pandas frame into generalised numpy array for choropleth
-
-        Returns
-        ------
-
-        error_array : array_like
-            `error_array` numpy array whose ith row and jth column correspond
-            to the ith and jth items of the parameter keys. The i,jth entry of
-            the array gives the overall grand median agent L2error for choropleths
-        """
-        error_frame2 = error_frame.groupby(by=[str(self.param_keys[0]),
-                                               str(self.param_keys[1])]).median()
-        error_array = np.ones((len(self.p1), len(self.p2)))*np.nan
-
-        for i, x in enumerate(self.p1):
-            for j, y in enumerate(self.p2):
-                error_array[i, j] = error_frame2.loc[(x, y), ][0]
-
-        return error_array
-
+  
     def choropleth_plot(self, error_array, xlabel, ylabel, title):
         """choropleth style plot for grand medians
 
@@ -722,160 +737,94 @@ class grand_plots:
         keys = self.param_keys
         data = error_frame
         f_name = title + "_boxplot.pdf"
-        y_name = "Log Grand Median L2s"
+        y_name = "Log Grand Median L2s (log(metres))"
 
-        error_frame["Log Grand Median L2s"] =  np.log(error_frame["Grand Median L2s"])
-        plt.figure()
+        error_frame[y_name] =  np.log(error_frame["Grand Median L2s"])
+        f, ax = plt.subplots(1, 1)
         cat = sns.catplot(x=str(keys[1]), y=y_name, col=str(
-            keys[0]), kind="box", data=data)
+            keys[0]), kind="box", data=data, ax =ax)
+        
         plt.tight_layout()
-
         #for i, ax in enumerate(cat.axes.flatten()):
         #    ax.set_xlabel(xlabel)
-        #    ax.set_ylabel(ylabel)
+        ax.set_ylabel(ylabel)
         #    ax.set_title(str(keys[0]).capitalize() + " = " + str(self.p1[i]))
         plt.title = title
         if self.save:
             plt.tight_layout()
             plt.savefig(self.destination + f_name)
+            
+    def gates_data_lineplot(self, data_frame, xlabel, ylabel, title):
+        """ plot confidence interval for rjukf gate convergance
+        
 
+        Parameters
+        ----------
+        data_frame : array_like
+            pandas `data_frame` containing gate distance errors for multiple
+            rjukf runs to be aggregated by lineplot
+            DESCRIPTION.
+        xlabel, ylabel, title : str
+            `xlabel` x label `ylabel` y label and `title` custom definitions
+            for custom labels.
 
-def ex0_grand(source, destination):
-    n = 30  # population size
-    file_params = {
-        "rate":  [1.0, 5.0, 10.0, 25.0, 50.0],
-        "noise": [0., 0.25, 0.5, 1.0, 2.0, 5.0,],
-        # "source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
-        "source": source,
-        "destination": destination,
-    }
+        Returns
+        -------
+        None.
 
-    g_plts = grand_plots(file_params, True)
-    L2 = g_plts.numpy_parser()
-    L2_frame, best_array = g_plts.numpy_extractor(L2)
-    g_plts.comparison_choropleth(n, L2_frame, best_array,
-                                 "Observation Noise Standard Deviation",
-                                 "Data Assimilation Window", "bench")
-    g_plts.comparisons_3d(n, L2_frame, best_array)
+        """
+        # only do legend on first pass
+        legend = True
+        for i in self.p1:
+            data = data_frame.loc[data_frame[self.param_keys[0]].isin([str(i)])]
+            key = self.param_keys[1]
+            f, ax = plt.subplots(1,1)
+            g = sns.lineplot(x = "time_points", y = "Error", data = data,
+                              hue = key, style = key,
+                              palette = sns.color_palette("colorblind", len(self.p2)),
+                              ax = ax)
+            handles,labels = g.get_legend_handles_labels()
+            plt.legend([], [], frameon = False)
+            
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(None)
+        
+            #give left most plot y label.
+            if legend:
+                ax.set_ylabel(ylabel)
+                legend = False
 
+            #handles, labels = ax.get_legend_handles_labels()
+            #new_labels = self.p2
+            #if legend:
+                #box = g.get_position()
+                #g.set_position([box.x0, box.y0, box.width * 0.85, box.height]) # resize position
+                #g.legend = None
+                #legend = False
+                #pylab.figlegend(*ax.get_legend_handles_labels(), loc = 'upper left')
+            f.title = f"Population {i}" 
+            f.tight_layout()
+    
+            # produce a legend for the objects in the other figure
+            # save the two figures to files
+            f.savefig(self.destination + title + self.param_keys[0] +  f"_{i}_" + "_gates_convergance.pdf")
 
-def ex1_restrict(distances, instance, *args):
-    """split L2s for separate observed unobserved plots.
+        fig_legend = plt.figure(figsize = (3.5, 2.5))
+        axi = fig_legend.add_subplot(111)   
+        labels[0] = "Jump Window (R)"         
+        fig_legend.legend(handles, labels, loc='center', title = None)
+        axi.xaxis.set_visible(False)
+        axi.yaxis.set_visible(False)
+        axi.axis("off")
+        fig_legend.canvas.draw()
+        fig_legend.tight_layout()
+        fig_legend.savefig(self.destination + "catplot_legend")
 
-    """
-    try:
-        observed = args[0]["observed"]
-    except:
-        observed = args["observed"]
-    index = instance.index
-
-    if observed:
-        distances = distances[:, index]
-    elif not observed:
-        distances = np.delete(distances, index, axis=1)
-
-    return distances
-
-
-def ex1_grand(source, destination):
-
-    file_params = {
-        "agents":  [30, 50, 100, 200],
-        "prop": [0.25, 0.5, int(1)],
-        # "source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
-        "source": source,
-        "destination": destination
-    }
-
-    "plot observed/unobserved plots"
-    obs_bools = [True, False]
-    obs_titles = ["Observed", "Unobserved"]
-    for i in range(len(obs_bools)):
-        "initialise plot for observed/unobserved agents"
-        g_plts = grand_plots(file_params, True, restrict=ex1_restrict,
-                             observed=obs_bools[i])
-        "make dictionary"
-        with HiddenPrints():
-            L2 = g_plts.data_extractor()
-        "make pandas dataframe for seaborn"
-        error_frame = g_plts.data_framer(L2)
-        "make choropleth numpy array"
-        error_array = g_plts.choropleth_array(error_frame)
-        "make choropleth"
-        g_plts.choropleth_plot(error_array, "Numbers of Agents", "Proportion Observed",
-                               obs_titles[i])
-        "make boxplot"
-        g_plts.boxplot(error_frame, "Proportion Observed", "Grand Median L2s",
-                       obs_titles[i])
-
-
-def ex1_grand_no_split(source, destination):
-
-    file_params = {
-        "agents":  [10, 20, 30],
-        "prop": [0.25, 0.5, 0.75, int(1)],
-        # "source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
-        "source": source,
-        "destination": destination
-    }
-
-    "plot observed/unobserved plots"
-    obs_bools = [True, False]
-    obs_titles = ["Observed", "Unobserved"]
-    "initialise plot for observed/unobserved agents"
-    g_plts = grand_plots(file_params, True, restrict=None, observed=True)
-    "make dictionary"
-    with HiddenPrints():
-        L2 = g_plts.data_extractor()
-    "make pandas dataframe for seaborn"
-    error_frame = g_plts.data_framer(L2)
-    "make choropleth numpy array"
-    error_array = g_plts.choropleth_array(error_frame)
-    "make choropleth"
-    g_plts.choropleth_plot(error_array, "Numbers of Agents",
-                           "Proportion Observed", "Mixed")
-    "make boxplot"
-    g_plts.boxplot(error_frame, "Proportion Observed",
-                   "Grand Median L2s", "Mixed")
-
-
-def ex2_grand(source, destination):
-
-    file_params = {
-        "agents":  [10, 20],
-        "bin": [10, 25],
-        # "source" : "/home/rob/dust/Projects/ABM_DA/experiments/ukf_experiments/ukf_results/agg_ukf_",
-        "source": source,
-        "destination": destination,
-    }
-
-    "init plot class"
-    g_plts = grand_plots(file_params, True)
-    "make dictionary"
-    with HiddenPrints():
-        L2 = g_plts.data_extractor()
-    "make pandas dataframe for seaborn"
-    error_frame = g_plts.data_framer(L2)
-    "make choropleth numpy array"
-    error_array = g_plts.choropleth_array(error_frame)
-    "make choropleth"
-    g_plts.choropleth_plot(error_array, "Numbers of Agents",
-                           "Proportion Observed", "Aggregate")
-    "make boxplot"
-    g_plts.boxplot(error_frame, "Grid Square Size",
-                   "Grand Median L2s", "Aggregate")
-
-
-def main(experiment_function, source, destination):
-    experiment_function(source, destination)
-
+def main(experiment_function, source, destination, recall):
+    experiment_function(source, destination, recall)
 
 # %%
 if __name__ == "__main__":
 
-    main(ex0_grand,  f"/Users/medrclaa/gcs_results/gcs*", "../plots/")
-    #main(ex1_grand, "/Users/medrclaa/scalability_results/ukf*", "../plots/")
-    #main(ex1_grand_no_split, "/Users/medrclaa/ukf_results/ukf*", "../plots/")
-
-    #main(ex2_grand, "/Users/medrclaa/new_aggregate_results/agg_ukf*", "../plots")
+    print("Please use the ex@_depickle files for actual results. This is just the base class.")
 

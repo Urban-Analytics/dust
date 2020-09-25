@@ -10,7 +10,6 @@ Created on Mon Dec  2 11:16:33 2019
 import sys
 import os
 
-sys.path.append("..")
 sys.path.append("../../../../stationsim")
 
 import numpy as np
@@ -18,13 +17,15 @@ from math import floor
 import multiprocessing
 
 "local imports"
-from ukf_fx import fx2
-from ukf_plots import ukf_plots
-import default_ukf_configs as configs
+sys.path.append("..")
+sys.path.append("../..")
+from modules.ukf_fx import fx2
+from modules.ukf_plots import ukf_plots
+import modules.default_ukf_configs as configs
 
-
-from ukf2 import *
-#from stationsim_model import Model
+sys.path.append("../../../..")
+sys.path.append("../../..")
+from stationsim.ukf2 import *
 from stationsim_density_model import Model
 
 def omission_index(n, sample_size):
@@ -302,7 +303,7 @@ if __name__ == "__main__":
     do_pickle = True #pickle new run
     pickle_source = "../../pickles/" #where to load/save pickles from
     destination = "../../plots/"
-    n = 5 #population size
+    n = 50 #population size
     prop = 1.0 #proportion observed
 
     u = ex1_main(n, prop, recall, do_pickle, pickle_source, destination)

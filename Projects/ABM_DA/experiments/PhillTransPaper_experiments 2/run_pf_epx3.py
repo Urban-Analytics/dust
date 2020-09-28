@@ -11,8 +11,9 @@
 import sys
 from particle_filter_gcs_temper import ParticleFilter
 #from particle_filter_gcs_orig import ParticleFilter
-from stationsim_gcs_model_orig import Model
 #from stationsim_gcs_model_orig import Model
+#from stationsim_gcs_model_temper import Model
+from stationsim_density_model_temper import Model
 import os
 import glob
 import time
@@ -56,7 +57,7 @@ model_params = {'pop_total': 274, 'batch_iterations': 3000, 'step_limit': 3000
                 , 'station': 'Grand_Central'}
 filter_params = {'agents_to_visualise': 200, 'number_of_runs': 1, 'multi_step': False, 'particle_std': 1.0, 'model_std': 1.0, 'do_save': True, 'plot_save': False,
                  'do_ani': True, 'show_ani': False, 'do_external_data': True, 'resample_window': 100,
-                 'number_of_particles': 5000,
+                 'number_of_particles': 100,
                  'do_resample': True, # True for experiments with D.A.
                  'external_info': ['gcs_final_real_data/', True, True]}  # [Real data dir, Use external velocit?, Use external gate_out?]
 
@@ -102,6 +103,8 @@ variances = [ pf.variances[j]   for j in range(len(pf.variances))   if not pf.be
 errors = [ pf.mean_errors[j] for j in range(len(pf.mean_errors)) if not pf.before_resample[j] ]
 windows = list(range(1, len([x for x in pf.before_resample if x==True]) +1 ) )
 data=pd.DataFrame(list(zip(windows, errors, variances)), columns=["Window", "Error", "Variance"])
+print("Finished single run")
+
 data.to_csv('1000p_tempered.csv')
 
 print("Run: {}, particles: {}, agents: {}, took: {}(s), result: {}".format(1, filter_params['number_of_particles'], model_params['pop_total'], round(time.time() - start_time), result), flush=True)

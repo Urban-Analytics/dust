@@ -7,9 +7,10 @@
 # Need to append the main project directory (ABM_DA) and stationsim folders to the path, otherwise either
 # this script will fail, or the code in the stationsim directory will fail.
 import sys
-from particle_filter_gcs_temper import ParticleFilter
-#from particle_filter_gcs_orig import ParticleFilter
-from stationsim_gcs_model import Model
+#from particle_filter_gcs_temper import ParticleFilter
+from particle_filter_gcs_orig import ParticleFilter
+from stationsim_density_model import Model
+#from stationsim_gcs_model import Model
 #from stationsim_gcs_model_orig import Model
 import os
 import glob
@@ -37,10 +38,10 @@ while True:
         N_folders +=1
 
 
-model_params = {'pop_total': 274, 'batch_iterations': 2000, 'step_limit': 2000, 'birth_rate': 25./15, 'do_history': False, 'do_print': False, 'station': 'Grand_Central'}
+model_params = {'pop_total': 274, 'batch_iterations': 3100, 'step_limit': 3100, 'birth_rate': 25./15, 'do_history': False, 'do_print': False, 'station': 'Grand_Central'}
 filter_params = {'agents_to_visualise': 100, 'number_of_runs': 1, 'multi_step': False, 'particle_std': 1.0, 'model_std': 1.0, 'do_save': True, 'plot_save': False,
                  'do_ani': True, 'show_ani': False, 'do_external_data': True, 'resample_window': 100,
-                 'number_of_particles': 100,
+                 'number_of_particles': 5000,
                  'do_resample': True, # True for experiments with D.A.
                  'external_info': ['gcs_final_real_data/', False, False]}  # [Real data dir, Use external velocit?, Use external gate_out?]
 
@@ -81,6 +82,13 @@ pf = ParticleFilter(Model, model_params, filter_params)
 result = pf.step()
 pf.pool.close()
 
+
+variances = [ pf.variances[j]   for j in range(len(pf.variances))   if not pf.before_resample[j] ]
+errors = [ pf.mean_errors[j] for j in range(len(pf.mean_errors)) if not pf.before_resample[j] ]
+windows = list(range(1, len([x for x in pf.before_resample if x==True]) +1 ) )
+data=pd.DataFrame(list(zip(windows, errors, variances)), columns=["Window", "Error", "Variance"])
+data.to_csv('exp4_5000.csv')
+
 # Save the animation
 for i in range (len(pf.animation)):
     save_name = "_ani-{}agents-{}particles-window{}.png".format(
@@ -104,7 +112,7 @@ print("Run: {}, particles: {}, agents: {}, took: {}(s), result: {}".format(1, fi
 
 print("Finished single run")
 
-pf.estimate_model.get_distace_plot('gcs_final_real_data/frame_', 1500, 2000)
+pf.estimate_model.get_distace_plot('gcs_final_real_data/frame_', 1500, 3100)
 
 # Save the log file:
 f = open(outfile, 'a')
@@ -126,8 +134,3 @@ for i in range(len(pf.estimate_model.graphX2)):
     print(pf.estimate_model.graphX2[i], pf.estimate_model.graphY2[i], pf.estimate_model.graphERR2[i], file=save_file)
 save_file.close()
 
-
-variances = [ pf.variances[j]   for j in range(len(pf.variances))   if not pf.before_resample[j] ]
-errors = [ pf.mean_errors[j] for j in range(len(pf.mean_errors)) if not pf.before_resample[j] ]
-windows = list(range(1, len([x for x in pf.before_resample if x==True]) +1 ) )
-data=pd.DataFrame(list(zip(windows, errors, variances)), columns=["Window", "Error", "Variance"])

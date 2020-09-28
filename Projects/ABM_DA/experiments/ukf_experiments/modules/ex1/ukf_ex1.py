@@ -19,14 +19,14 @@ import multiprocessing
 "local imports"
 sys.path.append("..")
 sys.path.append("../..")
-from modules.ukf_fx import fx2
+from modules.ukf_fx import fx
 from modules.ukf_plots import ukf_plots
 import modules.default_ukf_configs as configs
 
 sys.path.append("../../../..")
 sys.path.append("../../..")
 from stationsim.ukf2 import *
-from stationsim_density_model import Model
+from stationsim_model import Model
 
 def omission_index(n, sample_size):
     """randomly pick agents without replacement to observe 
@@ -72,7 +72,8 @@ def hx1(state, **hx_kwargs):
     """
     
     index2 = hx_kwargs["index2"]
-    return  state[index2] 
+    state = state[index2] 
+    return state
 
 def obs_key_func(state, **hx_kwargs):
     
@@ -146,17 +147,20 @@ def omission_params(n, prop, model_params, ukf_params):
     ukf_params["q"] = np.eye(2 * n)
     ukf_params["r"] = np.eye(2 * ukf_params["sample_size"])#sensor noise
     
-    ukf_params["fx"] = fx2
-    ukf_params["fx_kwargs"] = {} 
+    ukf_params["fx"] = fx
+    ukf_params["fx_kwargs"] = {"base_model" : base_model} 
     ukf_params["fx_kwargs_update"] = None
     
     ukf_params["hx"] = hx1
-    ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"], "n" : n,
+    ukf_params["hx_kwargs"] = {"index2" : ukf_params["index2"], 
+                               "n" : n,
                                "index" : ukf_params["index"],}
     
     ukf_params["obs_key_func"] = obs_key_func    
     ukf_params["file_name"] =  ex1_pickle_name(n, prop)
     
+    ukf_params["light"] = True
+    ukf_params["record"] = True
     return model_params, ukf_params, base_model
 
 def ex1_pickle_name(n, prop):
@@ -214,18 +218,19 @@ def ex1_plots(instance, destination, prefix, save, animate):
 
     truths = truth_parser(instance)
     nan_array= nan_array_parser(instance, truths, instance.base_model)
-    obs, obs_key = obs_parser(instance, True)
+    #obs, obs_key = obs_parser(instance, True)
+    obs_key = obs_key_parser(instance, True)
     preds = preds_parser(instance, True)
-    forecasts =  forecasts_parser(instance, True)
+    #forecasts =  forecasts_parser(instance, True)
     
     ukf_params = instance.ukf_params
     index2 = ukf_params["index2"]
     
     "remove agents not in model to avoid wierd plots"
-    obs *= nan_array
+    #obs *= nan_array
     truths *= nan_array
     preds *= nan_array
-    forecasts*= nan_array
+    #forecasts*= nan_array
     
     "indices for unobserved agents"
     not_index2 = np.array([i for i in np.arange(truths.shape[1]) if i not in index2])
@@ -236,10 +241,10 @@ def ex1_plots(instance, destination, prefix, save, animate):
         plts.error_hist(truths[::instance.sample_rate, not_index2], 
                         preds[::instance.sample_rate, not_index2],"Unobserved Errors")
         
-    plts.path_plots(obs[::instance.sample_rate] , "Observed")
+    #plts.path_plots(obs[::instance.sample_rate] , "Observed")
     plts.path_plots(preds[::instance.sample_rate], "Predicted")
     plts.path_plots(truths, "True")
-    plts.path_plots(forecasts[::instance.sample_rate], "Forecasts")
+    #plts.path_plots(forecasts[::instance.sample_rate], "Forecasts")
 
     if animate:
         #plts.trajectories(truths, "plots/")

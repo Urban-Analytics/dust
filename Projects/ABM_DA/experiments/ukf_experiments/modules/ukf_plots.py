@@ -602,9 +602,9 @@ class ukf_plots:
         # data 2 will have a thicker, bolder, dashed line.
         for i in range(data.shape[1]//2):
             plt.plot(data[:,(2*i)],data[:,(2*i)+1],lw=3, alpha= 0.4, 
-                     color = colours[i])  
+                     color = colours[i%len(colours)])  
             plt.plot(data2[:,(2*i)],data2[:,(2*i)+1],lw=6, linestyle = "--", 
-                     alpha= 1, color = colours[i])  
+                     alpha= 1, color = colours[i%len(colours)])  
             # limits and labels
             plt.xlim([0,self.filter_class.model_params["width"]])
             plt.ylim([0,self.filter_class.model_params["height"]])

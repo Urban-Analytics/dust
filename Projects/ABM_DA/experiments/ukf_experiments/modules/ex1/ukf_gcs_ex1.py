@@ -19,7 +19,7 @@ import multiprocessing
 
 sys.path.append("..")
 sys.path.append("../..")
-from modules.ukf_fx import fx2
+from modules.ukf_fx import fx
 from modules.ukf_plots import ukf_plots
 import modules.default_ukf_gcs_configs as configs
 from modules.ex1.ukf_ex1 import omission_index, hx1, obs_key_func, ex1_pickle_name, ex1_plots
@@ -75,8 +75,8 @@ def omission_params(n, prop, model_params, ukf_params):
     ukf_params["r"] = np.eye(2 * ukf_params["sample_size"])# sensor noise
     
     # Kalman functions and their experiment specific kwargs
-    ukf_params["fx"] = fx2
-    ukf_params["fx_kwargs"] = {"base_model":base_model} 
+    ukf_params["fx"] = fx
+    ukf_params["fx_kwargs"] = {"base_model": base_model} 
     ukf_params["fx_kwargs_update"] = None
     
     ukf_params["hx"] = hx1
@@ -88,6 +88,7 @@ def omission_params(n, prop, model_params, ukf_params):
     
     # what to save experiment as. This is a default and is often overwritten.
     ukf_params["record"] = True
+    ukf_params["light"] = True
     ukf_params["file_name"] =  ex1_pickle_name(n, prop)
         
     return model_params, ukf_params, base_model
@@ -115,13 +116,11 @@ def ex1_main(n, prop, pool, recall, do_pickle, source, destination):
     if not recall:
         # load parameters
         model_params = configs.model_params
-        model_params["step_limit"] = 100
+        #model_params["step_limit"] = 100
         ukf_params = configs.ukf_params
         #update parameters for ex1 and init model
         model_params, ukf_params, base_model = omission_params(n, prop,
                                                                model_params, ukf_params)
-        for _ in range(5):
-            base_model.step()
         print(f"Population: {n}")
         print(f"Proportion Observed: {prop}")
         
@@ -150,7 +149,7 @@ if __name__ == "__main__":
     do_pickle = True #pickle new run
     pickle_source = "../../pickles/" #where to load/save pickles from
     destination = "../../plots/"
-    n = 50 #population size
+    n = 5 #population size
     prop = 1.0 #proportion observed
     pool = multiprocessing.Pool(processes = multiprocessing.cpu_count())
 

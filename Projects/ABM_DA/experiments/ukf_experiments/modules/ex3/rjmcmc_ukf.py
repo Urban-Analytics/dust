@@ -169,7 +169,8 @@ class rjmcmc_ukf():
         # initial agent postions to initiate ukf and calcualte agent probabilities
         self.start_position = self.base_model.get_state("location")
         
-    def agent_probabilities(self, base_model, theta, get_gate_dict):
+    def agent_probabilities(self, start_position, current_position, base_model,
+                            theta, get_gate_dict):
         """calculate probabilities an agent is heading to each exit gate.
 
         - calculate heading using line between start and current position
@@ -180,8 +181,9 @@ class rjmcmc_ukf():
         Parameters
         --------
         
-        base_model : cls
-            `base_model` some instance of the user given ABM.
+        start_position, current_position : array_like
+            `start_position` starting location and `current_position` based on
+            current observation. 
             
         theta : float
             how wide is half the agents field of vision in radians `theta`. 
@@ -199,24 +201,32 @@ class rjmcmc_ukf():
             `gate_probabilites` (n_agent x n_gates) transition probability matrix. 
             Element i in row j gives the chance the agent i is heading to gate j.
         """
-
-        position = base_model.get_state(sensor = "location")
-        
-        angles = sd.start_gate_heading(self.start_position, position)
-        polys = sd.vision_polygon(position, angles, theta, 
+        # generate angle agent is heading drawing a line through its start and
+        # current observations
+        angles = sd.start_gate_heading(self.start_position, current_position)
+        # generate an arc of vision at the current position centered on this heading
+        # some 2theta radians wide.
+        polys = sd.vision_polygon(current_position, angles, theta, 
                                        self.boundary)
+        # find the intersection of this vision arc with the stationsim boundary
         cut_bounds = sd.cut_boundaries(polys, self.boundary)
+        # find the proportion of each gate in the agents vision and normalise
+        # them to 1 for empirical probabilities.
         gate_probabilities = sd.exit_gate_probabilities(self.exit_polys, cut_bounds)
+        
+        # loop over each agent and assign them a new gate.
         for i in range(gate_probabilities.shape[0]):
             #if np.sum(gate_probabilities[i, :]) == 0:
-            if np.sum(gate_probabilities[i, :] == 0) or base_model.agents[i].status != 1:
-                try:
-                    current_gate = base_model.agents[i].gate_out
-                except:
-                    current_gate = self.get_gates_dict[str(base_model.agents[i].loc_desire)]
-
+            # dont redraw agents with 0 visible gates or if theyre not active
+            if np.sum(gate_probabilities[i, :]) == 0 or base_model.agents[i].status != 1:
+                # get the current gate for the agent and assign it probability 1
+                # basically keep the agent doing what it was doing before
+                # this is an easy way to avoid errors at the start of the model run
+                current_gate = self.current_gates[i]
+             
                 gate_probabilities[i, :] = 0     
                 gate_probabilities[i, current_gate] = 1
+                
         return gate_probabilities
             
         
@@ -261,7 +271,7 @@ class rjmcmc_ukf():
     #acceptance probability
     ########
     
-    def transition_probability(self, gates_distribution, new_gates):
+    def transition_probability(self, old_gates, new_gates, gates_distribution):
         """ how likely is a given set of gates to be drawn from the gate probability distribution
         
         E.g. if we have three agents and 2 gates assume this probability distrubiton
@@ -289,8 +299,18 @@ class rjmcmc_ukf():
 
         """
         prob = 1
+        
         for i, gate in enumerate(new_gates):
-            prob *= gates_distribution[i, gate]
+            
+            new_gate_prob =  gates_distribution[i, new_gates[i]]
+            old_gate_prob = gates_distribution[i, old_gates[i]]
+            
+            if old_gate_prob == 0:
+                prob = np.inf
+                break
+            else:
+                new_over_old_gate_ratio = new_gate_prob/old_gate_prob 
+                prob *= new_over_old_gate_ratio
         return prob
     
     def ratio_of_mv_normals(self, ukf_1, ukf_2, obs):
@@ -354,13 +374,16 @@ class rjmcmc_ukf():
         
         #transition probabilities from old to new model and vice versa
         new_gates = self.get_gates(ukf_2.base_model, self.get_gates_dict)
-        old_new_transition = self.transition_probability(self.gate_probabilities,
-                                                         new_gates)
+        #old_new_transition = self.transition_probability(self.gate_probabilities,
+        #                                                 new_gates)
         old_gates = self.get_gates(ukf_1.base_model, self.get_gates_dict)
-        new_old_transition = self.transition_probability(self.gate_probabilities,
-                                                         old_gates)
-        prob *= new_old_transition
-        prob /= old_new_transition
+        #new_old_transition = self.transition_probability(self.gate_probabilities,
+        #                                                 old_gates)
+        
+        prob *= self.transition_probability(old_gates, new_gates, 
+                                            self.gate_probabilities)
+        #prob *= new_old_transition
+        #prob /= old_new_transition
 
         #if old_new_transition != 0:
         #    print("Warning. 0 chance of moving from current to new gates.")
@@ -435,11 +458,14 @@ class rjmcmc_ukf():
 
         self.ukf_2 =  pickle.loads(pickle.dumps(self.ukf_1, -1))
         #self.ukf_2 = deepcopy(self.ukf_1) #generally slower
-        for i, model in enumerate(self.ukf_2.base_models):
-            self.ukf_2.base_models[i] = self.set_gates(model, 
-                                                  self.new_gates,
+        #for i, model in enumerate(self.ukf_2.base_models):
+        #    self.ukf_2.base_models[i] = self.set_gates(model, 
+        #                                          self.new_gates,
+        #                                          self.set_gates_dict)
+        self.ukf_2.base_model = self.set_gates(self.ukf_2.base_model, 
+                                                 self.new_gates,
                                                   self.set_gates_dict)
-
+        
     def rj_choose(self, step):
         """choose which of the two ukfs to keep
         
@@ -452,9 +478,10 @@ class rjmcmc_ukf():
         Returns
         ------
         """
-        obs = self.ukf_1.base_model.get_state("location")
+        obs = self.base_model.get_state("location")
         #calculate alpha
         alpha = self.acceptance_probability(self.ukf_1, self.ukf_2, obs)
+        print(alpha)
         #self.alphas.append(alpha)
         #choose new model
         choice = self.choose_model(alpha)
@@ -494,13 +521,13 @@ class rjmcmc_ukf():
         no_gates_model = self.set_gates(no_gates_model, 
                                           [0]*(self.pop_total),
                                           self.set_gates_dict)
-        no_gates_models = []
-        for i in range(((4*self.pop_total) + 1)):
-            no_gates_models.append(deepcopy(no_gates_model))
-        self.estimated_gates.append([0]*(self.pop_total))
+        #no_gates_models = []
+        #for i in range(((4*self.pop_total) + 1)):
+        #    no_gates_models.append(deepcopy(no_gates_model))
+        self.current_gates = [0]*(self.pop_total)
+        self.estimated_gates.append(self.current_gates)
         
-        self.ukf_1 = ukf_ss(self.model_params, self.ukf_params, self.base_model,
-                            no_gates_models)
+        self.ukf_1 = ukf_ss(self.model_params, self.ukf_params, no_gates_model)
         self.ukf_2 = deepcopy(self.ukf_1)
         
         for step in range(self.step_limit):    
@@ -508,14 +535,26 @@ class rjmcmc_ukf():
             
             self.ukf_1.step(step)
             self.ukf_2.step(step)
-        
-            if step % self.jump_rate == 0 and step >= self.sample_rate:       
-                self.gate_probabilities = self.agent_probabilities(self.ukf_1.base_model,
+            self.base_model.step()
+            
+            if step % self.jump_rate == 0 and step >= self.sample_rate:  
+                
+                self.obs = self.base_model.get_state(sensor="location").astype(float)
+                if self.noise != 0:
+                    noise_array = np.ones(self.pop_total*2)
+                    noise_array[np.repeat([agent.status != 1 for
+                                           agent in self.base_model.agents], 2)] = 0
+                    noise_array *= np.random.normal(0, self.noise, self.pop_total*2)
+                    self.obs += noise_array
+            
+                self.gate_probabilities = self.agent_probabilities(self.start_position,
+                                                                   self.obs,
+                                                                   self.base_model,
                                                                    self.vision_angle, 
                                                                    self.get_gates_dict)
-                self.current_gates = self.get_gates(self.ukf_1.base_models[0],
+                self.current_gates = self.get_gates(self.ukf_1.base_model,
                                                             self.get_gates_dict)
-                
+                print(self.current_gates)
                 self.new_gates = self.draw_new_gates(self.gate_probabilities, 
                                                      self.current_gates, self.n_jumps)
                         
@@ -525,18 +564,18 @@ class rjmcmc_ukf():
                 #                                  self.get_gates_dict))
                 
             if step % self.sample_rate == 0 and step > 0:
-                self.forecasts.append(self.ukf_1.forecast)
+                #self.forecasts.append(self.ukf_1.forecast)
                 self.ukf_histories.append(self.ukf_1.prediction)  # append histories
-                self.obs.append(self.ukf_1.obs)
+                #self.obs.append(self.ukf_1.obs)
                 self.obs_key.append(self.ukf_1.obs_key)
-                self.ps.append(self.ukf_1.p)
+                #self.ps.append(self.ukf_1.p)
                 
-            self.truths.append(self.ukf_1.base_model.get_state(sensor="location"))
+            self.truths.append(self.base_model.get_state(sensor="location"))
             
             if step%100 == 0 :
                 logging.info(f"Iterations: {step}")
                 
-            finished = self.ukf_1.base_model.pop_finished == self.pop_total
+            finished = self.base_model.pop_finished == self.pop_total
             if finished:  # break condition
                 logging.info("ukf broken early. all agents finished")
                 break

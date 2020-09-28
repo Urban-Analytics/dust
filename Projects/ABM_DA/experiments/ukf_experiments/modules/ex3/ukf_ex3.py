@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 sys.path.append("..")
 sys.path.append("../..")
 import modules.default_ukf_configs as configs
-from modules.ukf_fx import fx2
+from modules.ukf_fx import fx
 from modules.ukf_plots import ukf_plots
 
 from ex3.rjmcmc_ukf import rjmcmc_ukf
@@ -31,7 +31,7 @@ from stationsim.ukf2 import *
 def hx3(state, **hx_kwargs):
     return state
 
-def ex3_pickle_name(n):
+def ex3_pickle_name(n, jump_rate):
     
     
     """build name for pickle file
@@ -48,7 +48,7 @@ def ex3_pickle_name(n):
         return `f_name` file name to save pickle as
     """
     
-    f_name = f"rjukf_agents_{n}.pkl"
+    f_name = f"rjukf_agents_{n}_jump_rate_{jump_rate}.pkl"
     return f_name
 
 def obs_key_func(state, **hx_kwargs):
@@ -152,18 +152,18 @@ def rj_params(n, jump_rate, n_jumps, model_params, ukf_params):
     model_params["exit_gates"] =  base_model.gates_locations[-model_params["gates_out"]:]
     model_params["get_gates_dict"], model_params["set_gates_dict"] = gates_dict(base_model)
     
-    ukf_params["vision_angle"] = np.pi/12
+    ukf_params["vision_angle"] = np.pi/8
     ukf_params["jump_rate"] = jump_rate
     ukf_params["n_jumps"] = n_jumps
 
     #noise structures
     ukf_params["p"] = 1.0 * np.eye(2 * n) #inital guess at state covariance
     ukf_params["q"] = 1.0 * np.eye(2 * n)
-    ukf_params["r"] = 1.0 * np.eye(2 * n)#sensor noise
+    ukf_params["r"] = 0.1 * np.eye(2 * n)#sensor noise
     
     # transition function kwargs and updater.
-    ukf_params["fx"] = fx2
-    ukf_params["fx_kwargs"] = {} 
+    ukf_params["fx"] = fx
+    ukf_params["fx_kwargs"] = {"base_model" : base_model} 
     ukf_params["fx_kwargs_update"] = None
 
     #mesurement function kwargs
@@ -176,7 +176,7 @@ def rj_params(n, jump_rate, n_jumps, model_params, ukf_params):
     # Don't store results in ukf class. only store them in rjmcmc_UKF top layer
     # for space saving.
     ukf_params["record"] = False
-    ukf_params["file_name"] =  ex3_pickle_name(n)
+    ukf_params["file_name"] =  ex3_pickle_name(n, jump_rate)
     
     return model_params, ukf_params, base_model
 
@@ -185,9 +185,10 @@ def ex3_plots(instance, destination, prefix, save, animate):
 
     truths = truth_parser(instance)
     nan_array= nan_array_parser(instance, truths, instance.base_model)
-    obs, obs_key = obs_parser(instance, True)
+    #obs, obs_key = obs_parser(instance, True)
+    obs_key = obs_key_parser(instance, True)
     preds = preds_parser(instance, True)
-    forecasts =  forecasts_parser(instance, True)
+    #forecasts =  forecasts_parser(instance, True)
     gates = np.array(instance.estimated_gates).astype('float64')
     
     ukf_params = instance.ukf_params
@@ -196,35 +197,35 @@ def ex3_plots(instance, destination, prefix, save, animate):
     "remove agents not in model to avoid wierd plots"
     truths *= nan_array
     preds *= nan_array
-    forecasts*= nan_array
-    gates *= nan_array[::instance.sample_rate, 0::2]
+    #forecasts*= nan_array
+    #gates *= nan_array[::instance.jump_rate, 0::2][1:,]
     "indices for unobserved agents"
 
     subset = np.arange(truths.shape[1]//2)
     subset2 = np.repeat((2*subset), 2)
     subset2[1::2] +=1
     
-    if instance.model_params["random_seed"] == 8:
-       subset = np.array([1, 5, 3])
-       subset2 = np.repeat((2*subset), 2)
-       subset2[1::2] +=1
+    #if instance.model_params["random_seed"] == 8:
+    #   subset = np.array([1, 5, 3])
+    #   subset2 = np.repeat((2*subset), 2)
+    #   subset2[1::2] +=1
         
     #plts.path_plots(obs, "Observed")
-    plts.pair_frame(truths, preds, obs_key, 100, destination)
+    plts.pair_frame(truths, preds, obs_key, 50, destination)
 
     error_plot(instance.true_gate, instance.estimated_gates, instance.sample_rate)
     
     plts.error_hist(truths[::instance.sample_rate,:], 
                     preds[::instance.sample_rate,:],"Observed Errors")
     
-    plts.path_plots(preds[::instance.sample_rate, subset2], "Predicted")
-    plts.path_plots(truths[:, subset2], "True")
-    plts.path_plots(forecasts[::instance.sample_rate, subset2], "Forecasts")
+    plts.path_plots(preds[::instance.sample_rate, ], "Predicted")
+    plts.path_plots(truths, "True")
+    #plts.path_plots(forecasts[::instance.sample_rate, subset2], "Forecasts")
     plts.dual_path_plots(truths[::instance.sample_rate, subset2], preds[::instance.sample_rate, subset2],
                          "True and Predicted")
 
-    
-    split_gate_choices(gates[:, subset], instance.sample_rate)
+    gate_choices(gates[:,], instance.sample_rate)    
+    #split_gate_choices(gates[:, subset], instance.sample_rate)
     if animate:
         #plts.trajectories(truths, "plots/")
         plts.pair_frames(truths[::instance.sample_rate], 
@@ -249,7 +250,7 @@ def error_plot(true_gates, estimated_gates, rate):
 def ex3_main(n, jump_rate, n_jumps, recall):
     ukf_params = configs.ukf_params
     model_params = configs.model_params
-    model_params["random_seed"] = 8
+    #model_params["random_seed"] = 8
     destination = "../../plots/"
     pickle_source = "../../pickles/"
     prefix = "rjukf_"
@@ -270,7 +271,7 @@ def ex3_main(n, jump_rate, n_jumps, recall):
         instance = rjmcmc_UKF.ukf_1
         pickle_main(ukf_params["file_name"],pickle_source, do_pickle, rjmcmc_UKF)
     if recall:
-        f_name = ex3_pickle_name(n)
+        f_name = ex3_pickle_name(n, jump_rate)
         
         "try loading class_dicts first. If no dict then class instance."
         try:
@@ -305,8 +306,8 @@ def split_gate_choices(gates, sample_rate):
     f, ax = plt.subplots(1, 3, sharey = True, gridspec_kw = {'wspace' : 0})
 
     for i in range(gates.shape[1]):
-        ax[i].plot(np.arange(gates.shape[0])*sample_rate,  (0.02 * i) + gates[:, i],
-                   color = colours[i], alpha = 0.7)
+        ax[i].plot(np.arange(gates.shape[0])*sample_rate, gates[:, i],
+                   color = colours[i%len(colours)], alpha = 0.7)
         ax[i].set_xlabel("Time")
     ax[0].set_ylabel("Gate Choice")
     ax[0].set_yticks(np.unique(gates))
@@ -319,8 +320,8 @@ def split_gate_choices(gates, sample_rate):
     
 if __name__ == "__main__":
     
-    n = 10
+    n = 20
     jump_rate = 5 #make this a multiple of sample_rate in the ukf default configs
-    n_jumps = 5
-    recall = True
+    n_jumps = 10
+    recall = False
     rjmcmc_UKF = ex3_main(n, jump_rate, n_jumps, recall)

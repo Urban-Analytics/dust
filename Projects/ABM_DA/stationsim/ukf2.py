@@ -26,17 +26,12 @@ from itertools import repeat
 """functions to modify starmap to allow additional kwargs
 """
 
-def starmap_with_kwargs(pool, fn, args_iter, kwargs_iter):
-    args_for_starmap = zip(repeat(fn), args_iter, kwargs_iter)
+def starmap_with_kwargs(pool, fn, sigmas, kwargs_iter):
+    args_for_starmap = zip(repeat(fn), sigmas, kwargs_iter)
     return pool.starmap(apply_args_and_kwargs, args_for_starmap)
 
-def apply_args_and_kwargs(fn, args, kwargs):
-    return fn(*[args], **kwargs)
-
-def model_step(model):
-    with HiddenPrints():
-        model.step()
-    return model
+def apply_args_and_kwargs(fn, sigmas, kwargs):
+    return fn(sigmas, **kwargs)
 
 class HiddenPrints:
     """stop repeat printing from stationsim 
@@ -214,16 +209,19 @@ class ukf_ss:
             setattr(self, key, model_params[key])
         for key in ukf_params.keys():
             setattr(self, key, ukf_params[key])
-
+            
+        #low memory version uses just one base_model deepcopied.
+        #self.light = self.ukf_params["light"]
+        
         #list of particle models
-        if base_models is None:
-            self.base_models = []
-            for i in range(int((4 * self.pop_total) + 1)):
-                self.base_models.append(deepcopy(self.base_model))
+        #if base_models is None and not self.light:
+        #    self.base_models = []
+        #    for i in range(int((4 * self.pop_total) + 1)):
+        #        self.base_models.append(deepcopy(self.base_model))
         else:
             self.base_models = base_models
             
-        #initial hx_kwargs iterable for starmap
+        #kwargs iterables for kalman functions used with starmap_with_kwargs
         self.hx_kwargs_iter = [self.hx_kwargs] * (4 * (self.pop_total) + 1)
         self.fx_kwargs_iter = [self.fx_kwargs] * (4 * (self.pop_total) + 1)
 
@@ -247,7 +245,7 @@ class ukf_ss:
         self.wc = self.wm.copy()
         self.wc[0] += (1-self.a**2+self.b)
 
-                
+         
         self.verbose = False
         
         if self.verbose:
@@ -259,14 +257,14 @@ class ukf_ss:
         
         #placeholder lists for various things
         if self.record:
-            self.obs = []  # actual sensor observations
-            self.ukf_histories = []  # ukf predictions
-            self.forecasts = []  # pure stationsim predictions
             self.truths = []  # noiseless observations
-            self.ps = []
+            self.ukf_histories = []  # ukf predictions
+            if self.verbose:
+                self.forecasts = []  # pure stationsim predictions
+                self.obs = []  # actual sensor observations
+                self.ps = []
         
-            self.obs_key = []  # which agents are observed (0 not, 1 agg, 2 gps)
-            
+        self.obs_key = []  # which agents are observed (0 not, 1 agg, 2 gps)
         self.status_key = [] #status of agents over time (0 not started, 1 in progress, 2 finished)
         #timer
         self.time1 = datetime.datetime.now()  # timer
@@ -280,7 +278,7 @@ class ukf_ss:
         
         Parameters
         ------
-        step : int
+        ukf_step : int
             time point of main base_model
         """
         
@@ -291,40 +289,47 @@ class ukf_ss:
             # update transition function fx_kwargs if necessary. not necessary for stationsim but easy to add later.
             #self.fx_kwargs_update_function(*update_fx_args)
         
-        self.pool = multiprocessing.Pool()
         
-        if self.sigmas is None:
-            self.sigmas = MSSP(self.x, self.p, self.g)
-            for i, sigma in enumerate(self.sigmas):
-                self.base_models[i].set_state("location", sigma)
+       # if self.sigmas is None:
+       #     self.sigmas = MSSP(self.x, self.p, self.g)
+       #     for i, sigma in enumerate(self.sigmas):
+       #         self.base_models[i].set_state("location", sigma)
             
         # if the kwargs for fx change update them here. For example, agents 
         # could leave or enter the base_model
-        if self.fx_kwargs_update is not None:
-            #self.fx_kwargs_iter = self.pool.starmap(self.fx_kwargs_update, zip(self.base_models, self.fx_kwargs_iter))
-            for i, args in enumerate(self.fx_kwargs_iter):
-                self.fx_kwargs_iter[i] = self.fx_kwargs_update(self.base_models[i], self.fx_kwargs_iter[i])
+       # if self.fx_kwargs_update is not None:
+       #     #self.fx_kwargs_iter = self.pool.starmap(self.fx_kwargs_update, zip(self.base_models, self.fx_kwargs_iter))
+       #     for i, args in enumerate(self.fx_kwargs_iter):
+       #         self.fx_kwargs_iter[i] = self.fx_kwargs_update(self.base_models[i], self.fx_kwargs_iter[i])
 
         # non multiprocessing for low populations (its faster)
         # also used for simpler base stationsim vs gcs.
-                
-        print(self.base_models[0].step_id)        
-        if self.pop_total <= 30 and self.station == None:
-            with HiddenPrints():
-                for i, model in enumerate(self.base_models):
-                    self.base_models[i] = self.fx(model, **self.fx_kwargs_iter[i])
-        else:
-            #self.base_models = starmap_with_kwargs(self.pool,
-            #                                       self.fx, 
-            #                                       self.base_models, 
-            #                                       self.fx_kwargs_iter)
-            with HiddenPrints():
-                self.base_models = self.pool.map(self.fx, self.base_models)
-            
-        self.pool.close()
-        self.pool.join()     
-        self.pool = None
         
+       # print(self.base_models[0].step_id)        
+       # if self.pop_total <= 30 and self.station == None:
+       #    with HiddenPrints():
+       #         for i, model in enumerate(self.base_models):
+       #             self.base_models[i] = self.fx(model, **self.fx_kwargs_iter[i])
+       # else:
+       #     #self.base_models = starmap_with_kwargs(self.pool,
+       #     #                                       self.fx, 
+       #     #                                       self.base_models, 
+       #     #                                       self.fx_kwargs_iter)
+       #     with HiddenPrints():
+       #         self.base_models = self.pool.map(self.fx, self.base_models)
+        
+        if self.sigmas is None:
+            self.sigmas = MSSP(self.x, self.p, self.g)
+            
+        # if the kwargs for fx change update them here. For example, agents 
+        # could leave or enter the base_model
+        # non multiprocessing for low populations (its faster)
+        # also used for simpler base stationsim vs gcs.
+        print(self.base_model.step_id)        
+
+        self.sigmas = starmap_with_kwargs(self.pool, self.fx, self.sigmas, self.fx_kwargs_iter)
+
+       
         
     def ss_Update(self, ukf_step, **hx_kwargs):
         """ Update step of UKF for stationsim.
@@ -350,7 +355,8 @@ class ukf_ss:
         None.
         """
         #final predicted sigma points after some amount of model steps.
-        self.sigmas = [model.get_state("location") for model in self.base_models]
+        #if not self.light:
+        #    self.sigmas = [model.get_state("location") for model in self.base_models]
         #unscented mean
         xhat = unscented_Mean(self.sigmas, self.wm)
         #stack sigmas in numpy for easy matrix manipulation
@@ -423,19 +429,24 @@ class ukf_ss:
         #record various data for diagnostics. Warning this makes the pickles rather large
         
         if self.record:
-            self.forecasts.append(xhat)
             self.ukf_histories.append(self.x)  # append histories
-            self.obs.append(new_state)
             self.obs_key.append(key)
-            self.ps.append(self.p)
+            if self.verbose:
+                self.obs.append(new_state)
+                self.ps.append(self.p)
+                self.forecasts.append(xhat)
+
         else:
             # if keeping the lists outside the class for pickle efficiency. 
             # update variables for append lists later.
-            self.forecast = xhat
+           
             self.prediction = self.x
-            self.obs = new_state
             self.obs_key = key
-                        
+            
+            if self.verbose:
+                self.forecast = xhat
+                self.obs = new_state
+
         if self.verbose:
             self.pxxs.append(pxx)
             self.pxys.append(pxy)
@@ -470,7 +481,14 @@ class ukf_ss:
         # allows use of pickling classes in ex3 rather than deepcopy
         # to copy classes uniquely (I.E objects in each class can be manipulated separately)
         # making it a lot faster
-        self.ss_Predict(ukf_step)
+        #if not self.light:
+        #    self.ss_Predict(ukf_step)
+        #else:
+        #    self.ss_Predict_Light(ukf_step) 
+    
+        self.pool = multiprocessing.Pool()
+
+        self.ss_Predict(ukf_step)    
         self.status_key.append([agent.status for agent in self.base_model.agents])
         self.base_model.step()
         
@@ -482,7 +500,11 @@ class ukf_ss:
         if ukf_step % self.sample_rate == 0 and ukf_step > 0:
             #assimilate new values
             self.ss_Update(ukf_step, **self.hx_kwargs)
-    
+            
+        self.pool.close()
+        self.pool.join()     
+        self.pool = None
+            
     def main(self):
         """main function for applying ukf to gps style station StationSim
     
@@ -510,7 +532,7 @@ class ukf_ss:
                     
             #forecast next StationSim state and jump model forwards
             self.step(ukf_step)
-            if ukf_step%100 == 0 :
+            if ukf_step % 100 == 0 :
                 logging.info(f"Iterations: {ukf_step}")
             if self.base_model.pop_finished == self.pop_total:  # break condition
                 logging.info("ukf broken early. all agents finished")
@@ -673,6 +695,14 @@ def obs_parser(self, full_mode):
         #if not full_mode returns preds as is
         obs = obs
     return obs, obs_key
+
+def obs_key_parser(self, full_mode):
+    
+    raw_obs_key = np.vstack(self.obs_key)
+    obs_key = np.zeros((len(self.truths), self.pop_total))*np.nan
+    obs_key[self.sample_rate::self.sample_rate, :] = raw_obs_key
+
+    return obs_key
 
 def nan_array_parser(self, truths, base_model):
     """ Indicate when an agent leaves the model to ignore any outputs.

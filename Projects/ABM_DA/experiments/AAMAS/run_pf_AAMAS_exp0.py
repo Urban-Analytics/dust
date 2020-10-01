@@ -8,8 +8,8 @@
 # this script will fail, or the code in the stationsim directory will fail.
 import sys
 #from particle_filter_AAMAS import ParticleFilter
-#from stationsim_density_model import Model
 from particle_filter_AAMAS_temmper import ParticleFilter
+#from stationsim_density_model import Model
 from stationsim_density_model_temper import Model
 import os
 import glob
@@ -36,10 +36,10 @@ while True:
         N_folders +=1
 
 
-model_params = {'pop_total': 274, 'batch_iterations': 500, 'step_limit': 500, 'birth_rate': 25./15, 'do_history': False, 'do_print': False, 'station': 'Grand_Central'}
-filter_params = {'agents_to_visualise': 100, 'number_of_runs': 1, 'multi_step': True, 'particle_std': 1.0, 'model_std': 1.0, 'do_save': True, 'plot_save': False,
-                 'do_ani': False, 'show_ani': False, 'do_external_data': True, 'resample_window': 100,
-                 'number_of_particles': 5,#10000,
+model_params = {'pop_total': 274, 'batch_iterations': 1000, 'step_limit': 1000, 'birth_rate': 25./15, 'do_history': False, 'do_print': False, 'station': 'Grand_Central'}
+filter_params = {'agents_to_visualise': 200, 'number_of_runs': 1, 'multi_step': False, 'particle_std': 1.0, 'model_std': 1.0, 'do_save': True, 'plot_save': False,
+                 'do_ani': True, 'show_ani': False, 'do_external_data': True, 'resample_window': 100,
+                 'number_of_particles': 10,#10000,
                  'do_resample': True, # False for experiments without D.A.
 #                 'external_info': ['../../GCT_final_real_data/', True, True]}  # [Real data dir, Use external velocit?, Use external gate_out?]
                  'external_info': ['GCT_final_real_data/', True, True]}

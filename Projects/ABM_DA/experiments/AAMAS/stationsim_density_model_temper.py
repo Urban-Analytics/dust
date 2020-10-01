@@ -231,7 +231,7 @@ class Agent:
         new_direction = self.set_direction(direction, self.local_density)
 
         velocity = self.speed * (1.0 - self.local_density)
-
+        
         self.location = self.location + velocity * new_direction # velocity * new_direction * time_step
         self.location = self.model.re_bound(self, self.location)
 
@@ -243,17 +243,16 @@ class Agent:
          
         '''
 
-        rand_direction= np.array((float(np.random.uniform(-1,1,1)),float(np.random.uniform(-1,1,1))))
-
-
-
         
-        #for set distance of 5m (70 pixels)
-        f=rand_direction[0]/rand_direction[1]
-        z=70/((f**2)+1)**0.5
-        dist_vect=np.array([z*f,z])
+        #for set distance of 2.5m (35 pixels)
+        rand_dir= np.array((float(np.random.uniform(-1,1,1)),float(np.random.uniform(-1,1,1))))
+        f=rand_dir[0]/rand_dir[1]
+        z=35/((f**2)+1)**0.5
+        dist_vect=np.array([np.random.choice([1,-1])*z,np.random.choice([-1,1])*(z*np.abs(f))])
+
         self.location = self.location + dist_vect
-        
+
+
         self.location = self.model.re_bound(self, self.location)
 
 

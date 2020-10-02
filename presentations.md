@@ -8,7 +8,7 @@ tagline: Presentations about, or relating to, the surf project
 
 **2020**
 
-  - [Simulating the City with Agent-Based Modelling]({{site.baseurl}}/p/2020-09-Turing_AIUK_SimulatingTheCity.html). Invited presentation to [AI UK - Smart cities](https://www.turing.ac.uk/events/ai-uk-smart-cities) at the [Alan Turing Institute](https://www.turing.ac.uk/). 28 September 2020.
+  - [Simulating the City with Agent-Based Modelling]({{site.baseurl}}/p/2020-09-Turing_AIUK_SimulatingTheCity.html). Invited presentation to [AI UK - Smart cities](https://www.turing.ac.uk/events/ai-uk-smart-cities) at the [Alan Turing Institute](https://www.turing.ac.uk/). 28 September 2020. Also presented at the [Digital Catapult](https://www.digicatapult.org.uk/) seminar on [Agent-Based Modelling for Policy](https://www.eventbrite.co.uk/e/agent-based-modelling-for-policy-webinar-registration-100107141154) (slides [here]({{site.baseurl}}/p/2020-10-05-DigitalCatapult-SimulatingTheCity.html)), 5th October 2020.
 
   - [Building cities from slime mould, agents and quantum field theory](https://underline.io/lecture/60-building-cities-from-slime-mould,-agents-and-quantum-field-theory). Keynote presentation by [Alison Heppenstall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) to AAMAS 2020. [Abstract (pdf)]({{site.baseurl}}/papers/2020-AAMAS-Heppenstall.pdf). [DOI: 10.5555/3398761.3398765](https://dl.acm.org/doi/abs/10.5555/3398761.3398765).
 

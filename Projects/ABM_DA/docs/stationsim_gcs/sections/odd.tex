@@ -25,10 +25,17 @@ The Overview section of ODD aims to provide a cursory overview of the model that
 is being documented.
 This includes subsections on each of the following topics:
 \begin{enumerate}
-    \item Purpose and patterns
-    \item Entities, state variables and scales
-    \item Process overview and scheduling
+    \item Purpose and patterns: What can a user  expect the model to do/achieve,
+        and what patterns might the model be fit to simulation
+        \cite{grimm2012pattern}?
+    \item Entities, state variables and scales: What types of agents and
+        environments are we looking to model, what variables are we using to
+        represent them, and what spatial and temporal scales are we working at?
+    \item Process overview and scheduling: What processes govern the
+        interactions in the model, and in what order to they occur?
 \end{enumerate}
+This information should enable others to develop and outline of the what the
+model looks like at a functional level.
 
 \subsection{Design Concepts}
 \label{sub:odd:design_concepts}
@@ -55,10 +62,15 @@ These design concepts are detailed in greater depth in \cite{grimm2010odd}.
 \subsection{Details}
 \label{sub:odd:details}
 
+The Details section of ODD aims to build upon the above sections, providing the
+specifics required to build a fully functioning model.
+This takes the form of the following topics:
 \begin{enumerate}
-    \item Initialisation
-    \item Input data
-    \item Submodels
+    \item Initialisation: What information is required to start the model with
+        respect to defining the initial model state and calibrating parameter
+        values?
+    \item Input data: What information does the model require as it runs?
+    \item Submodels: How do the individual processes governing model behaviour
+        work?
 \end{enumerate}
-
 

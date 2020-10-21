@@ -10,11 +10,13 @@
 StationSim GCS is an updated version of the StationSim model.
 The original StationSim aimed to simulate the motion of pedestrians across a
 hypothetical rectangular station with 3 entrances on one side and 2 exits on the
-opposite side.
+opposite side as shown in Figure \ref{fig:stationsim_env}.
 The new StationSim GCS also aims to simulation the motion of pedestrians across
 a station; however, in this case the model is based on the real-world example of
 Grand Central Station in New York, focusing specifically on the concourse area
-highlighted in Figure X.
+highlighted in Figure \ref{fig:gcs_concourse}.
+This is reflected in the simulation environment shown in Figure
+\ref{fig:stationsim_gcs_env}.
 The environment consists of X gates which act simultaneously as both entrances
 and exits.
 Each pedestrian in the simulation is assigned an entrance and an exit and, upon
@@ -23,6 +25,27 @@ assigned exit without colliding with other pedestrians.
 Where collisions are more likely to occur (e.g. close to entrances/exits and
 around solid obstacles), we typically observe crowding as population densities
 increase.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{sample_model_run}
+    \caption{Layout of environment in original StationSim model.}
+    \label{fig:stationsim_env}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{sample_model_run}
+    \caption{Layout of Grand Central Station concourse.}
+    \label{fig:gcs_concourse}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{sample_model_run}
+    \caption{Layout of environment in StationSim GCS model.}
+    \label{fig:stationsim_gcs_env}
+\end{figure}
 
 \subsubsection{Entities, state variables and scales}
 \label{subs:stationsim:overview:entities}

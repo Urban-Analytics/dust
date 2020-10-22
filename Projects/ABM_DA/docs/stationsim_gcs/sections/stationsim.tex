@@ -26,10 +26,13 @@ Where collisions are more likely to occur (e.g. close to entrances/exits and
 around solid obstacles), we typically observe crowding as population densities
 increase.
 
+\todo{What are the patterns}
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.7\textwidth]{sample_model_run}
     \caption{Layout of environment in original StationSim model.}
+
     \label{fig:stationsim_env}
 \end{figure}
 
@@ -50,39 +53,133 @@ increase.
 \subsubsection{Entities, state variables and scales}
 \label{subs:stationsim:overview:entities}
 
-The StationSim GCS model consists of agents representing pedestrians moving
-around an environment.
-Agent attributes are detailed in Table X.
+The StationSim GCS model is made up of 4 different types of entities:
+\begin{enumerate}
+    \item Agents,
+    \item The environment,
+    \item Gates around the edge of the environment, and
+    \item Obstacles in the environment.
+\end{enumerate}
+These entities aim to simulate the scenario outlined in Section
+\ref{sub:stationsim:overview}.
+The agents in this model represent pedestrians; these are portrayed as
+two-dimensional circular entities with finite radius.
+The variables pertaining to these agents can be found in Table
+\ref{tab:agent_variables}.
+The environment in this model represents the concourse of Grand Central Station
+in New York; this is portrayed as two-dimensional continuous space bounded by
+rectangular walls within which agents may move.
+The model is designed such that the left-hand side of the environment
+represents the South side of the concourse, the right-hand side the North side,
+the top side the West side and the bottom side the East side.
+The variables pertaining to the environment entity can be found in Table
+\ref{tab:environment_variables}.
 
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{lX}
+        \toprule
+        Variable Name & Description \\
+        \midrule
+        \texttt{location} & Agent's $x$-$y$ coordinates in 2-dimensional
+                            continuous space; bounded by the height and width of
+                            the environment \\
+        \texttt{status} & Agent's status; 0 indicates agent has not started, 1
+                          indicates agent is active, 2 indicates agent has
+                          finished \\
+        \texttt{size} & Radius of agent's circular body \\
+        \texttt{speed} & Agent's speed; indicative of the distance covered by an
+                         agent in a single time-step \\
+        \texttt{unique\_id} & Unique numerical identifier for a specific agent
+                              in a model \\
+        \texttt{gate\_in} & Number of the gate through which of the gates the
+                            agent enters the environment ($0 \leq n \leq 9$) \\
+        \texttt{gate\_out} & Number of the gate through which of the gates the
+                             agent exits the environment ($0 \leq n \leq 9$) \\
+        \texttt{loc\_desire} & $x$-$y$ coordinate of the agent's target
+                               destination; defined by taking the $x$-$y$
+                               coordinates of \texttt{gate\_out} and adding some
+                               uniformly distributed random noise \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Table of state variables pertaining to gate entities.}
+    \label{tab:agent_variables}
+\end{table}
 
-INSERT TABLES OF VARIABLES
+\begin{table}
+    \centering
+    \begin{tabularx}{lll}
+        \toprule
+        Variable Name & Description \\
+        \midrule
+        \texttt{height} & Agent's x-coordinate \\
+        \texttt{width} & Agent's y-coordinate \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Table of state variables pertaining to the environment entity.}
+    \label{tab:environment_variables}
+\end{table}
 
-\begin{itemize}
-    \item Agents
-    \begin{itemize}
-        \item
-    \end{itemize}
-    \item Gates
-    \begin{itemize}
-        \item
-    \end{itemize}
-    \item Environment
-    \begin{itemize}
-        \item
-    \end{itemize}
-    \item Obstacles
-    \begin{itemize}
-        \item
-    \end{itemize}
-\end{itemize}
+Along the edge of these boundaries are located gates: one gate is located on the
+South side, five gates are located on the North side, two gates are located on
+the West side and two gates are located on the East side.
+The gates are points along the boundary of the environment at which agents may
+either enter or exit.
+These have specific fixed $x-y$ coordinates.
+Upon initialisation, each agent is provided with a start gate and end gate, from
+which it draws its initial location and target destination; in defining its
+target destination, the agent introduces some random noise to the $x-y$
+coordinate in order to emulate the non-zero width of the gate.
+The variables pertaining to the gate entities can be found in Table
+\ref{tab:gate_variables}.
+
+\begin{table}
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        Variable Name & Variable Type & Description \\
+        \midrule
+        x & & Agent's x-coordinate \\
+        y & & Agent's y-coordinate \\
+        \bottomrule
+    \end{tabular}
+    \caption{Table of state variables pertaining to agent entities.}
+    \label{tab:gate_variables}
+\end{table}
+
+The environment also contains a single obstacle which represents a clock.
+As shown in Figure \ref{fig:gcs_concourse}, this lies in the centre of the
+concourse.
+From a model architecture perspective, this obstacle is treated as a stationary
+agent; other agents therefore treat it as they would any other agent and make
+efforts to avoid colliding with it.
+The variables pertaining to the obstacle entity can be found in Table
+\ref{tab:obstacle_variables}.
+
+\begin{table}
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        Variable Name & Variable Type & Description \\
+        \midrule
+        x & & Agent's x-coordinate \\
+        y & & Agent's y-coordinate \\
+        \bottomrule
+    \end{tabular}
+    \caption{Table of state variables pertaining to the obstacle entity.}
+    \label{tab:obstacle_variables}
+\end{table}
 
 \subsubsection{Process overview and scheduling}
 \label{subs:stationsim:overview:process}
 
-INSERT FLOW DIAGRAM OF OVERARCHING PROCESS OF MODEL
+\todo{INSERT FLOW DIAGRAM OF OVERARCHING PROCESS OF MODEL}
 
 \subsection{Design Concepts}
 \label{sub:stationsim:design_concepts}
+
+\todo{Which of these design concepts are involved in StationSim?}
+\todo{Give a very brief of how each concept is relevant.}
 
 \begin{enumerate}
     \item Basic principles

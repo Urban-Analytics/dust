@@ -108,12 +108,16 @@ The variables pertaining to the environment entity can be found in Table
 
 \begin{table}
     \centering
-    \begin{tabularx}{lll}
+    \begin{tabularx}{\textwidth}{lX}
         \toprule
         Variable Name & Description \\
         \midrule
-        \texttt{height} & Agent's x-coordinate \\
-        \texttt{width} & Agent's y-coordinate \\
+        \texttt{height} & Environment's height \\
+        \texttt{width} & Environment's width \\
+        \texttt{gates\_in} & Number of gates through which agents can enter the
+                             environment \\
+        \texttt{gates\_out} & Number of gates through which agents can exit the
+                              environment \\
         \bottomrule
     \end{tabularx}
     \caption{Table of state variables pertaining to the environment entity.}

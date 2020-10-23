@@ -601,9 +601,9 @@ class ukf_plots:
         # plot them both
         # data 2 will have a thicker, bolder, dashed line.
         for i in range(data.shape[1]//2):
-            plt.plot(data[:,(2*i)],data[:,(2*i)+1],lw=3, alpha= 0.4, 
+            plt.plot(data[:,(2*i)],data[:,(2*i)+1],lw=8, alpha= 0.5, 
                      color = colours[i%len(colours)])  
-            plt.plot(data2[:,(2*i)],data2[:,(2*i)+1],lw=6, linestyle = "--", 
+            plt.plot(data2[:,(2*i)],data2[:,(2*i)+1],lw=4, linestyle = "--", 
                      alpha= 1, color = colours[i%len(colours)])  
             # limits and labels
             plt.xlim([0,self.filter_class.model_params["width"]])
@@ -636,8 +636,10 @@ class ukf_plots:
         agent_medians = np.nanmedian(distances,axis=0)
         j = plt.figure(figsize=(12,8))
         #histogram of median agent errors
-        plt.hist(agent_medians,density=False,
-                 bins = self.filter_class.model_params["pop_total"],edgecolor="k")
+        plt.hist(agent_medians, 
+                 density=False,
+                 bins = self.filter_class.model_params["pop_total"],
+                 edgecolor="k")
         #labels and save
         plt.xlabel("Agent Median L2 Error")
         plt.ylabel("Agent Counts")
@@ -663,7 +665,39 @@ class ukf_plots:
         for poly in poly_list:
             ax.fill(*poly.exterior.xy, color = "blue", alpha=0.5)
             #plt.plot(*poly.exterior.xy)
+
+
+    def gate_choices(self, gates, sample_rate):
+        f, ax = plt.subplots()
     
+        for i in range(gates.shape[1]):
+            plt.plot(np.arange(gates.shape[0])*sample_rate,  (0.02 * i) + gates[:, i], alpha = 0.7)
+        plt.xlabel("Time")
+        plt.ylabel("Gate Choice")
+        ax.set_yticks(np.unique(gates)*1.02)
+        #ax.set_yticks(np.arange(gates.shape[1] + 1))
+        ax.set_yticklabels(np.unique(gates))
+        
+        plt.tight_layout()
+        f.savefig("../../plots/gate_choices.pdf")
+            
+    def split_gate_choices(gates, sample_rate):
+        
+        colours = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        f, ax = plt.subplots(1, 3, sharey = True, gridspec_kw = {'wspace' : 0})
+    
+        for i in range(gates.shape[1]):
+            ax[i].plot(np.arange(gates.shape[0])*sample_rate, gates[:, i],
+                       color = colours[i%len(colours)], alpha = 0.7)
+            ax[i].set_xlabel("Time")
+        ax[0].set_ylabel("Gate Choice")
+        ax[0].set_yticks(np.unique(gates))
+        #ax.set_yticks(np.arange(gates.shape[1] + 1))
+        ax[0].set_yticklabels(np.unique(gates))
+        
+        plt.tight_layout()
+        f.savefig("../../plots/split_gate_choices.pdf")    
+        
 class CompressionNorm(col.Normalize):
     
     def __init__(self, vleft, vright, vlc, vrc, vmin=None, vmax=None):

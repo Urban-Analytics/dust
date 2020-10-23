@@ -35,7 +35,7 @@ from modules.ex0.ukf_ex0 import hx0, obs_key_0, ex0_save
 sys.path.append("../../..")
 sys.path.append("../../../..")
 from stationsim.ukf2 import *
-from stationsim.stationsim_gcs_model import Model
+from stationsim.stationsim_density_model import Model
 
 
 def benchmark_params(n, noise, sample_rate, model_params, ukf_params):

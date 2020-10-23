@@ -157,6 +157,7 @@ class rjmcmc_ukf():
         self.forecasts = []  # pure stationsim predictions
         self.truths = []  # noiseless observations
         self.ps = [] #covariances
+        self.status_key = []
         
         #self.model_choices = []
         #self.alphas = []
@@ -481,7 +482,7 @@ class rjmcmc_ukf():
         obs = self.base_model.get_state("location")
         #calculate alpha
         alpha = self.acceptance_probability(self.ukf_1, self.ukf_2, obs)
-        print(alpha)
+        #print(alpha)
         #self.alphas.append(alpha)
         #choose new model
         choice = self.choose_model(alpha)
@@ -524,6 +525,7 @@ class rjmcmc_ukf():
         #no_gates_models = []
         #for i in range(((4*self.pop_total) + 1)):
         #    no_gates_models.append(deepcopy(no_gates_model))
+        
         self.current_gates = [0]*(self.pop_total)
         self.estimated_gates.append(self.current_gates)
         
@@ -533,9 +535,10 @@ class rjmcmc_ukf():
         for step in range(self.step_limit):    
             #one step burn in so we have kalman gains for ukf
             
-            self.ukf_1.step(step)
-            self.ukf_2.step(step)
             self.base_model.step()
+            state = noisy_State(self.base_model, self.noise)
+            self.ukf_1.step(step, state)
+            self.ukf_2.step(step, state)
             
             if step % self.jump_rate == 0 and step >= self.sample_rate:  
                 
@@ -554,10 +557,11 @@ class rjmcmc_ukf():
                                                                    self.get_gates_dict)
                 self.current_gates = self.get_gates(self.ukf_1.base_model,
                                                             self.get_gates_dict)
-                print(self.current_gates)
                 self.new_gates = self.draw_new_gates(self.gate_probabilities, 
                                                      self.current_gates, self.n_jumps)
-                        
+                
+                print(self.true_gates)
+                print(self.current_gates)                
                 self.rj_choose(step)
                 self.rj_assign()
                 #self.true_gates.append(self.get_gates(self.ukf_1.base_model,
@@ -571,7 +575,8 @@ class rjmcmc_ukf():
                 #self.ps.append(self.ukf_1.p)
                 
             self.truths.append(self.base_model.get_state(sensor="location"))
-            
+            self.status_key.append([agent.status for agent in self.base_model.agents])
+
             if step%100 == 0 :
                 logging.info(f"Iterations: {step}")
                 
@@ -580,7 +585,6 @@ class rjmcmc_ukf():
                 logging.info("ukf broken early. all agents finished")
                 break
     
-        self.status_key = self.ukf_1.status_key
         self.time2 = datetime.datetime.now()  # timer
         if not finished:
             logging.info(f"ukf timed out. max iterations {self.step_limit} of stationsim reached")

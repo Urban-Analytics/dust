@@ -85,7 +85,7 @@ def covariance_to_ellipse(mean, cov, alpha, color, linestyle = '-'):
     ell.set_facecolor('none')
     return ell
 
-f, axs = plt.subplots(3, 1, False, False)
+f, axs = plt.subplots(3, 1, True, False, figsize = (6, 4))
 
 for i in range(axs.shape[0]):
     axs[i].set_xlim([0, width])
@@ -101,12 +101,12 @@ for ax in axs.ravel():
 
 
 #first row of plots
-axs[0].plot(agent_position[0], agent_position[1], color = "k", marker = "x")
+mean_position = axs[0].scatter(agent_position[0], agent_position[1], color = "k", marker = "x")
 ell = covariance_to_ellipse(agent_position, agent_cov, 0.5, 'k')
 sigmas_ell = covariance_to_ellipse(sigmas_mean, sigmas_cov, 1, 'red', "--")
 axs[0].add_artist(sigmas_ell)
 axs[0].add_artist(ell)
-axs[0].scatter(sigmas[0, :], sigmas[1, :], color = "red", alpha = 0.4, s = 50,
+sigmas = axs[0].scatter(sigmas[0, :], sigmas[1, :], color = "red", alpha = 0.4, s = 50,
                  edgecolor = 'k')
 
 #second row of plots
@@ -124,17 +124,24 @@ axs[1].plot(new_agent_position[0], new_agent_position[1], color = "k", marker = 
 new_ell = covariance_to_ellipse(new_agent_position, agent_cov, 0.5, 'k')
 new_sigmas_ell = covariance_to_ellipse(sigmas_mean_2, sigmas_cov_2, 1.0, "red", "--")
 
-axs[2].add_artist(new_ell)
+ell2 = axs[2].add_artist(new_ell)
 axs[2].plot(new_agent_position[0], new_agent_position[1], color = "k", marker = "x")
-axs[2].plot(sigmas_mean_2[0], sigmas_mean_2[1], color = "red", marker = "x")
+mean_estimate = axs[2].scatter(sigmas_mean_2[0], sigmas_mean_2[1], color = "red", marker = "x")
 #axs[2].scatter(gate_2_sigmas[0, :], gate_2_sigmas[1, :],
 #               color = "orange", alpha = 0.4, s = 50, marker = "o",
 #               edgecolor = "k")
-axs[2].add_artist(new_sigmas_ell)
+ell3 = axs[2].add_artist(new_sigmas_ell)
 
+axs[0].text(19, 17, "(a)", fontsize = 15)
+axs[1].text(19, 17, "(b)", fontsize = 15)
+axs[2].text(19, 17, "(c)", fontsize = 15)
+handles = [ell, ell3, sigmas, mean_position, mean_estimate]
+labels = ["State Covariance", "Estimated State Covariance",
+          "Sigma Points", "State Mean", "Estimated State Mean"]
+axs[2].legend(handles, labels, loc = 3)
 plt.tight_layout()
 #plt.suptitle("PF vs. UKF for Unknown Exit Gates")
-plt.savefig("ukf_sigma_points.pdf")
+plt.savefig("ukf_sigma_points.png")
 
 """
 ax = []

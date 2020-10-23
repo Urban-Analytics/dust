@@ -37,7 +37,7 @@ pip install imageio
 pip install ffmpeg
 pip install seaborn
 
-#for experiment 2:
+#for experiment 3:
 
 pip install shapely
 ```
@@ -263,7 +263,5 @@ scp -oProxyJump=medrclaa@remote-access.leeds.ac.uk medrclaa@arc4.leeds.ac.uk:/no
 With data on a local machine we can now process this using `depickle.py`. Data can be extracted in a number of ways, for experiment 1 we unpickle entire ukf classes, extract the assimilated and true positions, and measure the euclidean distance between them in a distance matrix. Each column of this matrix will represent the distance between truth and assimilation for a single agent over time. Likewise, each row of the matrix provides the distances of all agents for a given time point. For general analysis we take the median error of each agent (column) as well as the grand median (median of median agent errors) of an individual ukf run.  
 
 We use two types of plots for ukf experiment 1. First, a choropleth plot takes another median of grand medians for each population and proportion pair. We had 20 repeats for each pair so would take a median of 20 results. We plot these scalar accuracy values for each pair in a choropleth to see how the ukf performs as we vary these parameters. We can also use boxplots, made by seaborn's `catplot`, where we plot a boxplot of these 20 grand medians for each parameter pair. These results give more detail than the choropleths including iqr bands and outliers.
-
-!! add example plots
 
 These are just one example of the visualisation that can be done. For a further example look at experiment 0 for its parsing of numpy arrays and 3d choropleths instead.

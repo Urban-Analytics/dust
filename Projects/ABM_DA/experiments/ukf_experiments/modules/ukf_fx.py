@@ -31,6 +31,9 @@ class HiddenPrints:
 
 def fx(x, **fx_kwargs):
     """Transition function for the StationSim
+    This seems long winded but means only 1 stationsim instance is needed.
+    Uses much less memory and is generally more efficient than
+    running the full 2n + 1 stationsims particularly when multiprocessing.
     
     - Copies current base model
     - Replaces positions with some sigma points
@@ -64,21 +67,3 @@ def fx(x, **fx_kwargs):
     state = model.get_state(sensor="location")
     
     return state
-
-def fx2(model):
-    """Transition function for the StationSim. more efficient attempt
-    
-    step model and return it
-    
-    Parameters
-    ------
-    model : cls
-        stationsim `model`
-    Returns
-    -----
-    model : cls
-        stationsim `model`
-    """   
-    # step model
-    model.step()
-    return model

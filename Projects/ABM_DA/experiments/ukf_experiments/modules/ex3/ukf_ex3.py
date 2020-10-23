@@ -86,10 +86,8 @@ def get_gates(base_model, get_gates_dict):
         to.
     """
     #gate centroids from model
-    gates = [agent.loc_desire for agent in base_model.agents]
+    gates = [get_gates_dict[str(agent.loc_desire)] for agent in base_model.agents]
     #convert centroid into intigers using gates_dict
-    for i, desire in enumerate(gates):
-        gates[i] = get_gates_dict[str(desire)]
     return gates
 
 def set_gates(base_model, new_gates, set_gates_dict):
@@ -201,9 +199,9 @@ def ex3_plots(instance, destination, prefix, save, animate):
     #gates *= nan_array[::instance.jump_rate, 0::2][1:,]
     "indices for unobserved agents"
 
-    subset = np.arange(truths.shape[1]//2)
-    subset2 = np.repeat((2*subset), 2)
-    subset2[1::2] +=1
+    #subset = np.arange(truths.shape[1]//2)
+    #subset2 = np.repeat((2*subset), 2)
+    #subset2[1::2] +=1
     
     #if instance.model_params["random_seed"] == 8:
     #   subset = np.array([1, 5, 3])
@@ -215,16 +213,16 @@ def ex3_plots(instance, destination, prefix, save, animate):
 
     error_plot(instance.true_gate, instance.estimated_gates, instance.sample_rate)
     
-    plts.error_hist(truths[::instance.sample_rate,:], 
-                    preds[::instance.sample_rate,:],"Observed Errors")
+    plts.error_hist(truths[::instance.sample_rate, :], 
+                    preds[::instance.sample_rate, :],"Observed Errors")
     
     plts.path_plots(preds[::instance.sample_rate, ], "Predicted")
-    plts.path_plots(truths, "True")
+    plts.path_plots(truths[::instance.sample_rate, :], "True")
     #plts.path_plots(forecasts[::instance.sample_rate, subset2], "Forecasts")
-    plts.dual_path_plots(truths[::instance.sample_rate, subset2], preds[::instance.sample_rate, subset2],
+    plts.dual_path_plots(truths[::instance.sample_rate, :], preds[::instance.sample_rate, :],
                          "True and Predicted")
 
-    gate_choices(gates[:,], instance.sample_rate)    
+    plts.gate_choices(gates[:,], instance.sample_rate)    
     #split_gate_choices(gates[:, subset], instance.sample_rate)
     if animate:
         #plts.trajectories(truths, "plots/")
@@ -285,43 +283,12 @@ def ex3_main(n, jump_rate, n_jumps, recall):
     ex3_plots(instance, destination, prefix, save, animate)
     
     return rjmcmc_UKF
-
-def gate_choices(gates, sample_rate):
-    f, ax = plt.subplots()
-
-    for i in range(gates.shape[1]):
-        plt.plot(np.arange(gates.shape[0])*sample_rate,  (0.02 * i) + gates[:, i], alpha = 0.7)
-    plt.xlabel("Time")
-    plt.ylabel("Gate Choice")
-    ax.set_yticks(np.unique(gates)*1.02)
-    #ax.set_yticks(np.arange(gates.shape[1] + 1))
-    ax.set_yticklabels(np.unique(gates))
-    
-    plt.tight_layout()
-    f.savefig("../../plots/gate_choices.pdf")
-        
-def split_gate_choices(gates, sample_rate):
-    
-    colours = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    f, ax = plt.subplots(1, 3, sharey = True, gridspec_kw = {'wspace' : 0})
-
-    for i in range(gates.shape[1]):
-        ax[i].plot(np.arange(gates.shape[0])*sample_rate, gates[:, i],
-                   color = colours[i%len(colours)], alpha = 0.7)
-        ax[i].set_xlabel("Time")
-    ax[0].set_ylabel("Gate Choice")
-    ax[0].set_yticks(np.unique(gates))
-    #ax.set_yticks(np.arange(gates.shape[1] + 1))
-    ax[0].set_yticklabels(np.unique(gates))
-    
-    plt.tight_layout()
-    f.savefig("../../plots/split_gate_choices.pdf")
         
     
 if __name__ == "__main__":
     
-    n = 20
+    n = 10
     jump_rate = 5 #make this a multiple of sample_rate in the ukf default configs
-    n_jumps = 10
-    recall = False
+    n_jumps = 5
+    recall = True
     rjmcmc_UKF = ex3_main(n, jump_rate, n_jumps, recall)

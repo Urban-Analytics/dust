@@ -172,6 +172,18 @@ def unscented_Mean(sigmas, wm):
         
         return u_mean
 
+def noisy_State(base_model, noise):
+    state = base_model.get_state(sensor="location").astype(float)    
+    pop_total = len(base_model.agents)    
+    if noise != 0:
+        noise_array = np.ones(pop_total*2)
+        noise_array[np.repeat([agent.status != 1 for
+                               agent in base_model.agents], 2)] = 0
+        noise_array *= np.random.normal(0, noise, pop_total*2)
+        state += noise_array
+        
+    return state
+
 # %%
 class ukf_ss:
 
@@ -331,7 +343,7 @@ class ukf_ss:
 
        
         
-    def ss_Update(self, ukf_step, **hx_kwargs):
+    def ss_Update(self, ukf_step, state):
         """ Update step of UKF for stationsim.
         - if step is a multiple of sample_rate
         - step base_models forwards
@@ -346,9 +358,6 @@ class ukf_ss:
         --------
         ukf_step : int
             `ukf_step` base model step id
-        hx_kwargs : kwargs
-            `hx_kwargs` any kwargs other than the true base model state needed to 
-            run hx.
             
         Returns
         ------
@@ -368,14 +377,14 @@ class ukf_ss:
         self.x = xhat  # update xhat
 
         #add gaussian (both x and y directions) noise to base_model true state
-        state = self.base_model.get_state(sensor="location").astype(float)
-        if self.noise != 0:
-            noise_array = np.ones(self.pop_total*2)
-            noise_array[np.repeat([agent.status != 1 for
-                                   agent in self.base_model.agents], 2)] = 0
-            noise_array *= np.random.normal(0, self.noise, self.pop_total*2)
-            state += noise_array
-
+        #state = self.base_model.get_state(sensor="location").astype(float)
+        #if self.noise != 0:
+        #    noise_array = np.ones(self.pop_total*2)
+        #    noise_array[np.repeat([agent.status != 1 for
+        #                           agent in self.base_model.agents], 2)] = 0
+        #   noise_array *= np.random.normal(0, self.noise, self.pop_total*2)
+        #    state += noise_array
+        
         """if hx function arguements need updating it is done here. 
         for example if observed index changes e.g. if an agent
         changes from observed to unobserved due to leaving a camera's
@@ -455,8 +464,13 @@ class ukf_ss:
             self.mus.append(mu)
             
 
-    def step(self, ukf_step):
-        """ukf step function
+    def step(self, ukf_step, state):
+        """ukf step function. Step the UKF forwards just one step
+        
+        Not to be confused with self.main that runs the entire ABM.
+        This is used in ex3 mainly but allows for controlled stepping of UKF
+        instance. 
+        
         - initiates ukf
         - while any agents are still active
         - predict with ukf
@@ -469,10 +483,7 @@ class ukf_ss:
         --------
         ukf_step : int
             `ukf_step` base model step id
-        hx_kwargs : kwargs
-            `hx_kwargs` any kwargs other than the true base model state needed to 
-            run hx.
-            
+
         Returns
         ------
         None.
@@ -499,7 +510,7 @@ class ukf_ss:
             
         if ukf_step % self.sample_rate == 0 and ukf_step > 0:
             #assimilate new values
-            self.ss_Update(ukf_step, **self.hx_kwargs)
+            self.ss_Update(ukf_step, state)
             
         self.pool.close()
         self.pool.join()     
@@ -521,8 +532,9 @@ class ukf_ss:
         """
 
         #initialise UKF
-
+        self.pool = multiprocessing.Pool()
         logging.info("ukf start")
+        
         for ukf_step in range(self.step_limit):
             
             #if self.batch:
@@ -531,14 +543,31 @@ class ukf_ss:
             #        print("ran out of truths. maybe batch model ended too early.")
                     
             #forecast next StationSim state and jump model forwards
-            self.step(ukf_step)
+            self.ss_Predict(ukf_step)    
+            self.status_key.append([agent.status for agent in self.base_model.agents])
+            self.base_model.step()
+          
+            if self.record:
+                self.truths.append(self.base_model.get_state(sensor="location"))    
+            else:
+                self.truth = self.base_model.get_state(sensor="location")
+                
+            if ukf_step % self.sample_rate == 0 and ukf_step > 0:
+                #assimilate new values
+                state = noisy_State(self.base_model, self.noise)
+                self.ss_Update(ukf_step, state)
+                
             if ukf_step % 100 == 0 :
                 logging.info(f"Iterations: {ukf_step}")
             if self.base_model.pop_finished == self.pop_total:  # break condition
                 logging.info("ukf broken early. all agents finished")
                 break
             if ukf_step == self.step_limit:
-                logging.info(f"ukf timed out. max iterations {self.step_limit} of stationsim reached.")
+                logging.info(f"ukf timed out. max iterations {self.step_limit} of stationsim reached.") 
+        self.pool.close()
+        self.pool.join()     
+        self.pool = None
+          
 
         self.time2 = datetime.datetime.now()  # timer
         time = self.time2-self.time1

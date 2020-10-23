@@ -25,13 +25,13 @@ The code that actually does the filtering is in the [`stationsim`](../../station
 
 Breakdown of each of the folders at this level.
 
-arc - Running of multiple UKF experiments using Leeds' HPC ARC4 as well as summary plots for these results.
-misc_plots - Various miscellanious plots for papers and visualisation.
-pickles - Storage of local ukf results as pickle files.
-plots - Where all plots are saved.
-results - Storage of pickles for arc4 multiple model runs. Kept separate from pickles folder for local storage so only make summary plots with the desired results. 
-sphinx - Sphinx files for conversion of arc readme into an html.
-tests - Testing for UKF.
+arc - Running of multiple UKF experiments using Leeds' HPC ARC4 as well as summary plots for these results.\
+misc_plots - Various miscellanious plots for papers and visualisation.\
+pickles - Storage of local ukf results as pickle files.\
+plots - Where all plots are saved.\
+results - Storage of pickles for arc4 multiple model runs. Kept separate from pickles folder for local storage so only make summary plots with the desired results. \
+sphinx - Sphinx files for conversion of arc readme into an html.\
+tests - Testing for UKF.\
 ukf_old - Various deprecated items.
 
 #Experiments

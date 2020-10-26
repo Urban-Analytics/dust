@@ -7,13 +7,13 @@
 StationSim GCS is an updated version of the StationSim model.
 The original StationSim aimed to simulate the motion of pedestrians across a
 hypothetical rectangular station with 3 entrances on one side and 2 exits on the
-opposite side as shown in Figure \ref{fig:stationsim_env}.
+opposite side as shown in Figure\~\ref{fig:stationsim_env}.
 The new StationSim GCS also aims to simulation the motion of pedestrians across
 a station; however, in this case the model is based on the real-world example of
 Grand Central Station in New York, focusing specifically on the concourse area
-highlighted in Figure \ref{fig:gcs_concourse}.
-This is reflected in the simulation environment shown in Figure
-\ref{fig:stationsim_gcs_env}.
+highlighted in Figure\~\ref{fig:gcs_concourse}.
+This is reflected in the simulation environment shown in
+Figure\~\ref{fig:stationsim_gcs_env}.
 The environment consists of X gates which act simultaneously as both entrances
 and exits.
 Each pedestrian in the simulation is assigned an entrance and an exit and, upon
@@ -57,20 +57,20 @@ The StationSim GCS model is made up of 4 different types of entities:
     \item Gates around the edge of the environment, and
     \item Obstacles in the environment.
 \end{enumerate}
-These entities aim to simulate the scenario outlined in Section
-\ref{sub:stationsim:overview}.
+These entities aim to simulate the scenario outlined in
+Section\~\ref{sub:stationsim:overview}.
 The agents in this model represent pedestrians; these are portrayed as
 two-dimensional circular entities with finite radius.
-The variables pertaining to these agents can be found in Table
-\ref{tab:agent_variables}.
+The variables pertaining to these agents can be found in
+Table\~\ref{tab:agent_variables}.
 The environment in this model represents the concourse of Grand Central Station
 in New York; this is portrayed as two-dimensional continuous space bounded by
 rectangular walls within which agents may move.
 The model is designed such that the left-hand side of the environment
 represents the South side of the concourse, the right-hand side the North side,
 the top side the West side and the bottom side the East side.
-The variables pertaining to the environment entity can be found in Table
-\ref{tab:environment_variables}.
+The variables pertaining to the environment entity can be found in
+Table\~\ref{tab:environment_variables}.
 
 \begin{table}
     \centering
@@ -131,8 +131,8 @@ Upon initialisation, each agent is provided with a start gate and end gate, from
 which it draws its initial location and target destination; in defining its
 target destination, the agent introduces some random noise to the $x$-$y$
 coordinate in order to emulate the non-zero width of the gate.
-The variables pertaining to the gate entities can be found in Table
-\ref{tab:gate_variables}.
+The variables pertaining to the gate entities can be found in
+Table\~\ref{tab:gate_variables}.
 
 \begin{table}
     \centering
@@ -150,13 +150,13 @@ The variables pertaining to the gate entities can be found in Table
 \end{table}
 
 The environment also contains a single obstacle which represents a clock.
-As shown in Figure \ref{fig:gcs_concourse}, this lies in the centre of the
+As shown in Figure\~\ref{fig:gcs_concourse}, this lies in the centre of the
 concourse.
 From a model architecture perspective, this obstacle is treated as a stationary
 agent; other agents therefore treat it as they would any other agent and make
 efforts to avoid colliding with it.
-The variables pertaining to the obstacle entity can be found in Table
-\ref{tab:obstacle_variables}.
+The variables pertaining to the obstacle entity can be found in
+Table\~\ref{tab:obstacle_variables}.
 
 \begin{table}
     \centering
@@ -174,9 +174,9 @@ The variables pertaining to the obstacle entity can be found in Table
     \label{tab:obstacle_variables}
 \end{table}
 
-Of the variables detailed for each of the entities in Tables
-\ref{tab:agent_variables}, \ref{tab:environment_variables},
-\ref{tab:gate_variables} and \ref{tab:obstacle_variables}, the majority are set
+Of the variables detailed for each of the entities in
+Tables\~\ref{tab:agent_variables},\~\ref{tab:environment_variables},\~\ref{tab:gate_variables}
+and\~\ref{tab:obstacle_variables}, the majority are set
 to fixed values upon model initialisation.
 The variables that change as the model runs are the \texttt{location} and
 \texttt{status} variables pertaining to the agent entities.

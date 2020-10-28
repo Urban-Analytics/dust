@@ -54,3 +54,14 @@ def get_loc_exit_data():
                      (agent_locations2, exits2, expected2)]
 
     return loc_exit_data
+
+
+def get_gate_location_data():
+    gate_numbers = list(range(10))
+    gate_locations = [[20, 400], [170, 400], [200, 340], [200, 275],
+                      [200, 200], [200, 125], [200, 60], [170, 0],
+                      [20, 0], [0, 200]]
+
+    gate_location_data = [(gate_numbers[i], gate_locations[i]) for i in
+                          range(len(gate_numbers))]
+    return gate_location_data

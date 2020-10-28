@@ -2,6 +2,9 @@
 from generate_data.stationsim_gcs_model_data import *
 import numpy as np
 import pytest
+import sys
+sys.path.append('../stationsim')
+from stationsim_gcs_model import Agent
 
 
 # Data
@@ -69,7 +72,16 @@ def test_gate_setup_location(gate_number, gate_location):
 
 
 def test_clock_setup():
-    pass
+    model = set_up_model()
+    # Radius of 10
+    size = model.clock.size == 10
+    # Stationary
+    speed = model.clock.speed == 0 
+    # Location
+    location = model.clock.location == [100, 200]
+    # isAgent
+    cl = isinstance(model.clock, Agent)
+    assert all([size, speed, location, cl])
 
 
 def test_gate_out_allocation():

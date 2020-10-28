@@ -1,4 +1,5 @@
 # Imports
+from math import sqrt
 import numpy as np
 import sys
 sys.path.append('../stationsim')
@@ -68,9 +69,11 @@ def get_gate_location_data():
 
 
 def get_distance_data():
-    location1s = [[3, 17], [322, 154], [128, 307]]
-    location2s = [[6, 21], [310, 149], [113, 315]]
-    distances = [5, 13, 17]
+    location1s = [[3, 17], [322, 154], [128, 307],
+                  [123, 321], [172, 13], [111, 60]]
+    location2s = [[6, 21], [310, 149], [113, 315],
+                  [133, 316], [320, 116], [111, 60]]
+    distances = [5, 13, 17, 5 * sqrt(5), sqrt(32513), 0]
 
     assert len(location1s) == len(location2s)
     assert len(location1s) == len(distances)

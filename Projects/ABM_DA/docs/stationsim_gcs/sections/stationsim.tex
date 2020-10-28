@@ -189,22 +189,47 @@ scheduling}\label{subs:stationsim:overview:process}
 
 \subsection{Design Concepts}\label{sub:stationsim:design_concepts}
 
-\todo{Which of these design concepts are involved in StationSim?}
-\todo{Give a very brief of how each concept is relevant.}
-
+Of the design concepts outlined in~\cite{grimm2010odd}, the following are
+considered relevant to this model:
 \begin{enumerate}
-    \item Basic principles
     \item Emergence
     \item Adaptation
-    \item Objectives
-    \item Learning
     \item Prediction
     \item Sensing
     \item Interaction
     \item Stochasticity
-    \item Collectives
     \item Observation
 \end{enumerate}
+
+As outlined in Section~\ref{subs:stationsim:overview:process}, in each time-step
+agents engage in collision avoidance (both with each other and with walls and
+obstacles).
+This is achieved by \emph{predicting} the paths that agents would take if they
+were to continue moving towards their target destinations; this is made possible
+through the use of a $k$-d tree which emulates a form of \emph{sensing} whereby
+each agent is aware of the position of other agents who are likely to collide
+with them.
+In cases where collisions would occur, the agent paths are \emph{adapted}.
+Such adaptations can be considered an indirect form of \emph{interaction}
+between an agent and other agents (as well as stationary objects in the
+environment).
+
+\emph{Stochasticity} is incorporated in the model in number of different ways.
+Upon initialisation, agents are randomly allocated an entrance gate and an exit
+gate; entrance gates are sampled from a uniform discrete distribution, and exit
+gates are sampled from a uniform discrete distribution excluding the gate
+through which the agent is entering.
+In cases where pedestrians are predicted to collide, part of the avoidance
+process involves the addition of normally distributed random noise to the
+agent's movement vector.
+Finally the time at which each agent enters the model is sampled from an
+exponential distribution.
+
+Whilst the model is running, \emph{observation} is undertaken by collecting
+information on the positions of each agent at each time-step for comparison with
+pseudo-truth data.
+In scenarios where pedestrian density is sufficiently high, we observe the
+\emph{emergence} of crowding behaviour.
 
 \subsection{Details}\label{sub:stationsim:details}
 

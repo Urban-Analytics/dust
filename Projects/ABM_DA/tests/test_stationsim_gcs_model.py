@@ -42,7 +42,9 @@ def test_get_state_loc_exit(agent_locations, exits, expected):
 
 # Model tests
 def test_station_setup():
-    pass
+    model = set_up_model()
+    assert model.width == 200
+    assert model.height == 400
 
 
 def test_gate_setup():

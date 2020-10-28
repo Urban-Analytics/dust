@@ -21,7 +21,8 @@ def test_get_state_location(agent_locations, expected):
     assert np.array_equal(model.get_state('location'), expected)
 
 
-@pytest.mark.parametrize('agent_locations, expected', get_state_location2D_data)
+@pytest.mark.parametrize('agent_locations, expected',
+                         get_state_location2D_data)
 def test_get_state_location2D(agent_locations, expected):
     model = set_up_model()
     for i, agent in enumerate(model.agents):

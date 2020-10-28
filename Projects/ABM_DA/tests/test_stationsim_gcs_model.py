@@ -16,6 +16,8 @@ get_state_loc_exit_data = get_loc_exit_data()
 
 gate_location_data = get_gate_location_data()
 
+distance_data = get_distance_data()
+
 
 # Tests
 @pytest.mark.parametrize('agent_locations, expected', get_state_location_data)
@@ -93,8 +95,9 @@ def test_speed_allocation():
     pass
 
 
-def test_distance_calculation():
-    pass
+@pytest.mark.parametrize('location1, location2, distance', distance_data)
+def test_distance_calculation(location1, location2, distance):
+    assert Agent.distance(location1, location2) == distance
 
 
 def test_direction_calculation():

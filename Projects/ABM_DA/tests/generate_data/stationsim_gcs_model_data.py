@@ -65,3 +65,20 @@ def get_gate_location_data():
     gate_location_data = [(gate_numbers[i], gate_locations[i]) for i in
                           range(len(gate_numbers))]
     return gate_location_data
+
+
+def get_distance_data():
+    location1s = [[3, 17], [322, 154], [128, 307]]
+    location2s = [[6, 21], [310, 149], [113, 315]]
+    distances = [5, 13, 17]
+
+    assert len(location1s) == len(location2s)
+    assert len(location1s) == len(distances)
+
+    distance_data = list()
+
+    for i in range(len(distances)):
+        t = (location1s[i], location2s[i], distances[i])
+        distance_data.append(t)
+
+    return distance_data

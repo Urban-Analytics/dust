@@ -60,7 +60,19 @@ def test_clock_setup():
 
 
 def test_gate_out_allocation():
-    pass
+    diff_gates = list()
+    num_models = 100
+    population_size = 5
+
+    for _ in range(num_models):
+        model = set_up_model(population_size)
+        # Check that each agent's entrance is different from its exit
+        model_diff_gates = [agent.gate_in != agent.gate_out for agent in
+                            model.agents]
+        diff_gates.append(all(model_diff_gates))
+
+    # Check that this is true for each model run
+    assert all(diff_gates)
 
 
 @pytest.mark.parametrize('agent_locations, expected', get_state_location_data)

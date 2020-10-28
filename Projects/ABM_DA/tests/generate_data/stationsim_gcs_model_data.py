@@ -8,8 +8,8 @@ from stationsim_gcs_model import Model
 
 
 # Functions
-def set_up_model():
-    model_params = {'pop_total': 3,
+def set_up_model(population_size=3):
+    model_params = {'pop_total': population_size,
                     'station': 'Grand_Central'}
     model = Model(**model_params)
     return model

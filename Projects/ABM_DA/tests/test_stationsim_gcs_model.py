@@ -38,3 +38,53 @@ def test_get_state_loc_exit(agent_locations, exits, expected):
         agent.location = agent_locations[i]
         agent.gate_out = exits[i]
     assert model.get_state('loc_exit') == expected
+
+
+# Model tests
+def test_station_setup():
+    pass
+
+
+def test_gate_setup():
+    pass
+
+
+def test_clock_setup():
+    pass
+
+
+def test_gate_out_allocation():
+    pass
+
+
+# Agent tests
+def test_speed_allocation():
+    pass
+
+
+def test_distance_calculation():
+    pass
+
+
+def test_direction_calculation():
+    pass
+
+
+def test_normal_direction_calculation():
+    pass
+
+
+def test_agent_activation():
+    pass
+
+
+def test_agent_deactivation():
+    pass
+
+
+def test_set_agent_location():
+    pass
+
+
+def test_set_wiggle():
+    pass

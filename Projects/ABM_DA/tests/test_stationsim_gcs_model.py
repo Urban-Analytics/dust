@@ -51,7 +51,7 @@ def test_clock_setup():
     # Radius of 10
     size = model.clock.size == 10
     # Stationary
-    speed = model.clock.speed == 0 
+    speed = model.clock.speed == 0
     # Location
     location = model.clock.location == [100, 200]
     # isAgent

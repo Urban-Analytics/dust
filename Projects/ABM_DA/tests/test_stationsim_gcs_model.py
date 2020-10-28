@@ -45,24 +45,27 @@ def test_get_state_loc_exit(agent_locations, exits, expected):
 # Model tests
 def test_station_setup():
     model = set_up_model()
-    assert model.width == 200
-    assert model.height == 400
+    a = model.width == 200
+    b = model.height == 400
+    assert a and b
 
 
 def test_gate_setup_number():
     model = set_up_model()
     # Check for correct number of gates
-    assert model.gates_in == 10
-    assert model.gates_out == 10
+    a = model.gates_in == 10
+    b = model.gates_out == 10
+    assert a and b
 
 
 @pytest.mark.parametrize('gate_number, gate_location', gate_location_data)
 def test_gate_setup_location(gate_number, gate_location):
     model = set_up_model()
     # Correct x
-    assert model.gates_locations[gate_number][0] == gate_location[0]
+    a = model.gates_locations[gate_number][0] == gate_location[0]
     # Correct y
-    assert model.gates_locations[gate_number][1] == gate_location[1]
+    b = model.gates_locations[gate_number][1] == gate_location[1]
+    assert a and b
 
 
 def test_clock_setup():

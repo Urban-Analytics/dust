@@ -102,6 +102,10 @@ def test_get_state_loc_exit(agent_locations, exits, expected):
     assert model.get_state('loc_exit') == expected
 
 
+def test_model_deactivation():
+    pass
+
+
 # Agent tests
 def test_speed_allocation():
     pass

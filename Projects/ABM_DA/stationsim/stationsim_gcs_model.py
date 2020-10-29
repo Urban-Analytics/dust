@@ -719,7 +719,7 @@ class Model:
                 x = locs[frame-1][0]
                 y = locs[frame-1][1]
                 for agent in range(self.pop_total):
-                    if(x[agent] != None):
+                    if(x[agent] is not None):
                         print(agent, x[agent], y[agent], file=save_file)
                 save_file.close()
 

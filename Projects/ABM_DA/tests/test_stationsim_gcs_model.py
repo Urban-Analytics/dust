@@ -155,7 +155,25 @@ def test_agent_deactivation():
 
 
 def test_set_agent_location():
-    pass
+    model = set_up_model()
+    agent = model.agents[0]
+
+    location_data, gate_numbers_by_side = get_agent_gate_location_data()
+    results = list()
+
+    for side, gate_numbers in gate_numbers_by_side.items():
+        for i, gate_number in enumerate(gate_numbers):
+            # Test multiple times because set_agent_location has
+            # some randomness
+            for _ in range(50):
+                test_location = agent.set_agent_location(gate_number)
+                gate_upper = location_data[side]['upper'][i]
+                gate_lower = location_data[side]['lower'][i]
+                test_result = __is_valid_location(test_location, gate_upper,
+                                                  gate_lower, side)
+                results.append(test_result)
+
+    assert all(results)
 
 
 def test_set_wiggle():

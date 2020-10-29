@@ -22,6 +22,7 @@ class Agent:
     '''
     A class representing a generic agent for the StationSim ABM.
     '''
+
     def __init__(self, model, unique_id):
         '''
         Initialise a new agent.
@@ -95,10 +96,10 @@ class Agent:
                 self.model.tree = cKDTree(state)
                 for _ in range(10):
                     new_location = self.set_agent_location(self.gate_in)
-                    neighbouring_agents = self.model.tree.query_ball_point(
+                    neighbour_agents = self.model.tree.query_ball_point(
                         new_location, self.size*1.1)
-                    if (neighbouring_agents == [] or
-                            neighbouring_agents == [self.unique_id]):
+                    if (neighbour_agents == [] or
+                            neighbour_agents == [self.unique_id]):
                         self.location = new_location
                         self.status = 1
                         self.model.pop_active += 1
@@ -201,14 +202,15 @@ class Agent:
             if self.model.do_history:
                 self.history_collisions += 1
                 self.model.history_collision_locs.append(new_location)
-                self.model.history_collision_times.append(self.model.total_time)
+                tt = self.model.total_time
+                self.model.history_collision_times.append(tt)
 
             # Check if the new location is possible
-            neighbouring_agents = self.model.tree.query_ball_point(new_location,
-                                                              self.size*1.1)
+            neighbour_agents = self.model.tree.query_ball_point(new_location,
+                                                                self.size*1.1)
             dist = self.distance(new_location, self.model.clock.location)
-            if ((neighbouring_agents == [] or
-                    neighbouring_agents == [self.unique_id]) and
+            if ((neighbour_agents == [] or
+                    neighbour_agents == [self.unique_id]) and
                     (dist > (self.size + self.model.clock.size))):
                 self.location = new_location
 
@@ -281,13 +283,15 @@ class Agent:
         vy = self.speed*direction[1]  # vertical velocity
 
         if(vy > 0):  # collision in botton wall
-            collisionTime = (self.model.height - self.size - self.location[1]) / vy
+            collisionTime = (self.model.height - self.size -
+                             self.location[1]) / vy
         elif (vy < 0):  # collision in top wall
             collisionTime = (self.size - self.location[1]) / vy
         if (collisionTime < tmin):
             tmin = collisionTime
         if(vx > 0):  # collision in right wall
-            collisionTime = (self.model.width - self.size - self.location[0]) / vx
+            collisionTime = (self.model.width - self.size -
+                             self.location[0]) / vx
         elif (vx < 0):  # collision in left wall
             collisionTime = (self.size - self.location[0]) / vx
         if (collisionTime < tmin):
@@ -325,6 +329,7 @@ class Model:
         get_wiggle_map()
         get_ani()
     '''
+
     def __init__(self, unique_id=None, **kwargs):
         '''
         Create a new model, reading parameters from a keyword argument
@@ -449,7 +454,7 @@ class Model:
 
     def is_within_bounds(self, agent, loc):
         return all((self.boundaries[0] + agent.size) < loc) and\
-               all(loc < (self.boundaries[1] - agent.size))
+            all(loc < (self.boundaries[1] - agent.size))
 
     def re_bound(self, agent, loc):
         return np.clip(loc, self.boundaries[0] + agent.size*1.1,
@@ -481,7 +486,7 @@ class Model:
         # '''
         # # Why? Does this do anything?
         # if self.step_id == 0:
-            # state = self.get_state('location2D')
+        # state = self.get_state('location2D')
 
         # # print('model status', self.status)
 
@@ -493,49 +498,49 @@ class Model:
         # # Or is is just a proxy for the other conditions?
         # # It's also in the else statement, so maybe redundant?
         # if self.pop_finished < self.pop_total and\
-                # self.step_id < self.step_limit and self.status == 1:
-            # if self.do_print and self.step_id % 100 == 0:
-                # print(f'\tIteration: {self.step_id}/{self.step_limit}')
+        # self.step_id < self.step_limit and self.status == 1:
+        # if self.do_print and self.step_id % 100 == 0:
+        # print(f'\tIteration: {self.step_id}/{self.step_limit}')
 
-            # # Go through each agent, and activate the ones that should be active
-            # # by now
-            # [agent.activate() for agent in self.agents]
+        # # Go through each agent, and activate the ones that should be active
+        # # by now
+        # [agent.activate() for agent in self.agents]
 
-            # # Make a table of the potential collisions
-            # # if the soonest collision is not inside a single iteration
-            # # then just step every agent by 1 timestep
-            # collisionTable, tmin = self.get_collisionTable()
-            # if (tmin > 1.0):
-                # [agent.step(1) for agent in self.agents]
-                # self.total_time += 1
-            # # Otherwise, step them slightly less than the time to the next
-            # # collision
-            # # find the agents that would be about to collide
-            # # make them wiggle to avoid the collision.
-            # else:
-                # # Why specifically 0.98?
-                # tmin *= 0.98  # stop just before the collision
-                # [agent.step(tmin) for agent in self.agents]
-                # # Find agents that would collide, and make them wiggle
-                # wiggleTable = self.get_wiggleTable(collisionTable, tmin)
-                # [self.agents[i].set_wiggle() for i in wiggleTable]
-                # self.total_time += tmin
-
-            # if self.do_history:
-                # # total_time % 1.0 <= 1 for all total_time!
-                # if (self.total_time % 1.0 <= 1 and
-                        # int(self.total_time) not in self.time_save):
-                    # self.time_save.append(int(self.total_time))
-                    # state = self.get_state('location2D')
-                    # self.history_state.append(state)
-                    # [agent.history() for agent in self.agents]
-
-            # self.step_id += 1
+        # # Make a table of the potential collisions
+        # # if the soonest collision is not inside a single iteration
+        # # then just step every agent by 1 timestep
+        # collisionTable, tmin = self.get_collisionTable()
+        # if (tmin > 1.0):
+        # [agent.step(1) for agent in self.agents]
+        # self.total_time += 1
+        # # Otherwise, step them slightly less than the time to the next
+        # # collision
+        # # find the agents that would be about to collide
+        # # make them wiggle to avoid the collision.
         # else:
-            # if self.do_print and self.status == 1:
-                # print(f'StationSim {self.unique_id} - Everyone made it!')
-                # self.status = 0
-                # self.max_time = max(self.time_save)
+        # # Why specifically 0.98?
+        # tmin *= 0.98  # stop just before the collision
+        # [agent.step(tmin) for agent in self.agents]
+        # # Find agents that would collide, and make them wiggle
+        # wiggleTable = self.get_wiggleTable(collisionTable, tmin)
+        # [self.agents[i].set_wiggle() for i in wiggleTable]
+        # self.total_time += tmin
+
+        # if self.do_history:
+        # # total_time % 1.0 <= 1 for all total_time!
+        # if (self.total_time % 1.0 <= 1 and
+        # int(self.total_time) not in self.time_save):
+        # self.time_save.append(int(self.total_time))
+        # state = self.get_state('location2D')
+        # self.history_state.append(state)
+        # [agent.history() for agent in self.agents]
+
+        # self.step_id += 1
+        # else:
+        # if self.do_print and self.status == 1:
+        # print(f'StationSim {self.unique_id} - Everyone made it!')
+        # self.status = 0
+        # self.max_time = max(self.time_save)
 
     def step(self):
         '''
@@ -571,7 +576,8 @@ class Model:
                 self.total_time += tmin
 
             if self.do_history:
-                if (self.total_time % 1.0 <= 1 and int(self.total_time) not in self.time_save):
+                if (self.total_time % 1.0 <= 1 and
+                        int(self.total_time) not in self.time_save):
                     self.time_save.append(int(self.total_time))
                     state = self.get_state('location2D')
                     self.history_state.append(state)
@@ -702,15 +708,16 @@ class Model:
         if not(os.path.exists(directory)):
             os.mkdir(directory)
         locs = np.array([agent.history_locations for agent in
-                         self.agents[:agents]]).transpose((1, 2, 0))        
+                         self.agents[:agents]]).transpose((1, 2, 0))
         if(sensor == 'frame'):
             for frame in self.time_save:
-                save_file = open(directory+'/frame_'+ str(frame) +'.dat', 'w')
+                save_file = open(directory+'/frame_' +
+                                 str(frame) + '.dat', 'w')
                 print('#agentID', 'x', 'y', file=save_file)
                 x = locs[frame-1][0]
                 y = locs[frame-1][1]
                 for agent in range(self.pop_total):
-                    if(x[agent]!=None):
+                    if(x[agent] != None):
                         print(agent, x[agent], y[agent], file=save_file)
                 save_file.close()
 
@@ -733,11 +740,11 @@ class Model:
                                      self.agents]),
             # 'GateWiggles': sum(wig[0]<self.gates_space for wig in
             # self.history_wiggle_locs)/self.pop_total
-            }
+        }
         return analytics
 
-    def get_trails(self, plot_axis=False, plot_legend=True, colours=('b', 'g',
-                   'r'), xlim=None, ylim=None):
+    def get_trails(self, plot_axis=False, plot_legend=True,
+                   colours=('b', 'g', 'r'), xlim=None, ylim=None):
         '''
         Make a figure showing the trails of the agents.
 
@@ -785,7 +792,8 @@ class Model:
         fig = plt.figure(figsize=self._figsize, dpi=self._dpi)
         fmax = max(np.amax(self.steps_exped), np.amax(self.steps_taken),
                    np.amax(self.steps_delay))
-        sround = lambda x, p: float(f'%.{p-1}e' % x)
+
+        def sround(x, p): return float(f'%.{p-1}e' % x)
         bins = np.linspace(0, sround(fmax, 2), 20)
         plt.hist(self.steps_exped, bins=bins+4, alpha=.5, label='Expected')
         plt.hist(self.steps_taken, bins=bins+2, alpha=.5, label='Taken')
@@ -861,7 +869,7 @@ class Model:
                 wiggle_map=False):
         # Load Data
         locs = np.array([agent.history_locations for agent in
-                        self.agents[:agents]]).transpose((1, 2, 0))
+                         self.agents[:agents]]).transpose((1, 2, 0))
         markersize1 = self.separation * 216*self._rel  # 3*72px/in=216
         markersize2 = 216*self._rel
         #
@@ -898,6 +906,7 @@ class Model:
         new_seed = int.from_bytes(os.urandom(4), byteorder='little')\
             if seed is None else seed
         np.random.seed(new_seed)
+
 
 if __name__ == '__main__':
     warnings.warn("The stationsim_gcs_model.py code should not be run directly"

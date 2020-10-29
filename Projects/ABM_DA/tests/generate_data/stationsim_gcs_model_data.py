@@ -57,11 +57,16 @@ def get_loc_exit_data():
     return loc_exit_data
 
 
-def get_gate_location_data():
+def __get_gate_locations():
     gate_numbers = list(range(10))
     gate_locations = [[20, 400], [170, 400], [200, 340], [200, 275],
                       [200, 200], [200, 125], [200, 60], [170, 0],
                       [20, 0], [0, 200]]
+    return gate_numbers, gate_locations
+
+
+def get_gate_location_data():
+    gate_numbers, gate_locations = __get_gate_locations()
 
     gate_location_data = [(gate_numbers[i], gate_locations[i]) for i in
                           range(len(gate_numbers))]

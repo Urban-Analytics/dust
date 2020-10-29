@@ -471,7 +471,8 @@ class Model:
                     if 'do_' not in key:
                         dict2[key] = dict1[key]
             else:
-                print(f'BadKeyWarning: {key} is not a model parameter.')
+                warnings.warn(f'{key} is not a model parameter.',
+                              RuntimeWarning)
         return dict0, dict2
 
     # def step(self):

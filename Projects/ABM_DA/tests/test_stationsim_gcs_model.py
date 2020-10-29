@@ -36,7 +36,7 @@ def __is_valid_location_left_right(agent_location, upper, lower):
 
 
 def __is_valid_location_top_bottom(agent_location, upper, lower):
-    x = lower[0] <= agent[0] <= upper[0]
+    x = lower[0] <= agent_location[0] <= upper[0]
     y = agent_location[1] == upper[1] and agent_location[1] == lower[1]
     return x and y
 

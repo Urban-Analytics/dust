@@ -19,6 +19,28 @@ gate_location_data = get_gate_location_data()
 distance_data = get_distance_data()
 
 
+# Helper functions
+def __is_valid_location(agent_location, upper, lower, side):
+    if side == 'left' or side == 'right':
+        return __is_valid_location_left_right(agent_location, upper, lower)
+    elif side == 'top' or side == 'bottom':
+        return __is_valid_location_top_bottom(agent_location, upper, lower)
+    else:
+        raise ValueError(f'Invalid side provided: {side}')
+
+
+def __is_valid_location_left_right(agent_location, upper, lower):
+    x = agent_location[0] == upper[0] and agent_location[0] == lower[0]
+    y = lower[1] <= agent_location[1] <= upper[1]
+    return x and y
+
+
+def __is_valid_location_top_bottom(agent_location, upper, lower):
+    x = lower[0] <= agent[0] <= upper[0]
+    y = agent_location[1] == upper[1] and agent_location[1] == lower[1]
+    return x and y
+
+
 # Tests
 # Model tests
 def test_station_setup():

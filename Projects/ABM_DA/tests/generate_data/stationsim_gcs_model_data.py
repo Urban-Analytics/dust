@@ -90,3 +90,60 @@ def get_distance_data():
         distance_data.append(t)
 
     return distance_data
+
+
+def __generate_side_locations(indices, gate_locations):
+    side_locations = [gate_locations[i] for i in indices]
+    return side_locations
+
+
+def __generate_upper_lower_bounds(side_locations, side):
+    sides = {'left': {'upper': [1.05, 10], 'lower': [1.05, -10]},
+             'right': {'upper': [-1.05, 10], 'lower': [-1.05, -10]},
+             'top': {'upper': [10, -1.05], 'lower': [-10, -1.05]},
+             'bottom': {'upper': [10, 1.05], 'lower': [-10, 1.05]}}
+
+    upper_bounds, lower_bounds = list(), list()
+    for sl in side_locations:
+        upper_bound = [sl[0] + sides[side]['upper'][0],
+                       sl[1] + sides[side]['upper'][1]]
+        lower_bound = [sl[0] + sides[side]['lower'][0],
+                       sl[1] + sides[side]['lower'][1]]
+        upper_bounds.append(upper_bound)
+        lower_bounds.append(lower_bound)
+
+    return upper_bounds, lower_bounds
+
+
+def __get_side_bounds(gate_numbers, gate_locations, side_name):
+    side_locations = __generate_side_locations(gate_numbers, gate_locations)
+    side_upper, side_lower = __generate_upper_lower_bounds(side_locations,
+                                                           side_name)
+    return side_upper, side_lower
+
+
+def get_agent_gate_location_data():
+    gate_numbers, gate_locations = __get_gate_locations()
+
+    # Top and bottom
+    i_top = [0, 1]
+    i_bottom = [7, 8]
+    top_upper, top_lower = __get_side_bounds(i_top, gate_locations, 'top')
+    bottom_upper, bottom_lower = __get_side_bounds(i_bottom, gate_locations,
+                                                   'bottom')
+
+    # Left and right
+    i_left = [9]
+    i_right = [2, 3, 4, 5, 6]
+    left_upper, left_lower = __get_side_bounds(i_left, gate_locations, 'left')
+    right_upper, right_lower = __get_side_bounds(i_right, gate_locations,
+                                                 'right')
+
+    output = {'top': {'upper': top_upper, 'lower': top_lower},
+              'bottom': {'upper': bottom_upper, 'lower': bottom_lower},
+              'left': {'upper': left_upper, 'lower': left_lower},
+              'right': {'upper': right_upper, 'lower': right_lower}}
+
+    gate_indices = {'top': i_top, 'bottom': i_bottom,
+                    'left': i_left, 'right': i_right}
+    return output, gate_indices

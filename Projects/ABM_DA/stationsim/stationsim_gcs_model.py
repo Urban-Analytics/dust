@@ -103,7 +103,8 @@ class Agent:
                         self.location = new_location
                         self.status = 1
                         self.model.pop_active += 1
-                        self.step_start = self.model.total_time  # self.model.step_id
+                        # self.mode.step_id
+                        self.step_start = self.model.total_time
                         self.loc_start = self.location
                         break
 
@@ -111,7 +112,7 @@ class Agent:
         """
         set_agent_locations
 
-        Provide a set of coordinates in 2d space pertaining to the provided gate
+        Provide coordinates in 2d space pertaining to the provided gate
         number.
         A perturbation is introduced to ensure that the agent in question
         remains a set distance from the wall of the environment (based on the
@@ -225,7 +226,8 @@ class Agent:
         Determine whether the agent should leave the model and, if so,
         remove them. Otherwise do nothing.
         '''
-        if self.distance(self.location, self.loc_desire) < self.model.gates_space:
+        dist = self.distance(self.location, self.loc_desire)
+        if dist < self.model.gates_space:
             print('deactivating agent')
             self.status = 2
             self.model.pop_active -= 1

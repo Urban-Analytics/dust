@@ -59,7 +59,7 @@ class Agent:
         self.speeds = np.arange(speed_max, model.speed_min, - model.speed_step)
         self.speed = np.random.choice((self.speeds))
         # Others
-        self.steps_activate = np.random.exponential(model.gates_speed)
+        self.time_activate = np.random.exponential(model.gates_speed)
 
         # History
         if model.do_history:
@@ -91,7 +91,7 @@ class Agent:
         possible, activate the agent on next time step.
         '''
         if self.status == 0:
-            if self.model.total_time > self.steps_activate:
+            if self.model.total_time > self.time_activate:
                 state = self.model.get_state('location2D')
                 self.model.tree = cKDTree(state)
                 for _ in range(10):

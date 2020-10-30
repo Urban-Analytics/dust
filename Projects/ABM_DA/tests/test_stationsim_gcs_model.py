@@ -1,5 +1,6 @@
 # Imports
 from generate_data.stationsim_gcs_model_data import *
+from math import floor
 import numpy as np
 import pytest
 import sys
@@ -147,7 +148,22 @@ def test_normal_direction_calculation():
 
 
 def test_agent_activation():
-    pass
+    model = set_up_model(population_size=1)
+    agent = model.agents[0]
+    agent_activation_time = agent.time_activate
+
+    # Agent should be inactive at start of model
+    assert agent.status == 0
+
+    # Run model until model time exceeds activation time
+    while model.total_time < agent_activation_time:
+        assert agent.status == 0
+        model.step()
+
+    # Agent activated on next step
+    model.step()
+
+    assert agent.status == 1
 
 
 def test_agent_deactivation():

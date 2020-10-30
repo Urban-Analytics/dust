@@ -126,8 +126,35 @@ def test_get_state_loc_exit(agent_locations, exits, expected):
     assert model.get_state('loc_exit') == expected
 
 
-def test_model_deactivation():
-    pass
+def test_model_deactivation_time():
+    # When should model finish?
+    # A) When timer runs out
+    # B) When all agents have finished
+
+    # When should the model not finish?
+    # If there are still active agents and time remaining
+
+    model = set_up_model(step_limit=20, population_size=1)
+    # Check model status upon init - should be 1
+    assert model.status == 1
+
+    while model.step_id < model.step_limit:
+        model.step()
+
+    model.step()
+    assert model.status == 0
+
+
+def test_model_deactivation_agents():
+    model = set_up_model(population_size=1)
+    assert model.status == 1
+    agent = model.agents[0]
+
+    while (agent.status == 0 or agent.status == 1):
+        model.step()
+
+    model.step()
+    assert model.status == 0
 
 
 # Agent tests

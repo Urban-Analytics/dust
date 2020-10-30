@@ -8,9 +8,10 @@ from stationsim_gcs_model import Model
 
 
 # Functions
-def set_up_model(population_size=3):
+def set_up_model(population_size=3, step_limit=3600):
     model_params = {'pop_total': population_size,
-                    'station': 'Grand_Central'}
+                    'station': 'Grand_Central',
+                    'step_limit': step_limit}
     model = Model(**model_params)
     return model
 

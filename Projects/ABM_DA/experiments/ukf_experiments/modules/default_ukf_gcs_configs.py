@@ -41,7 +41,7 @@ model_params = {
 'gates_speed': 1,
 
 'speed_min': .2,
-'speed_mean': 10,
+'speed_mean': 5,
 'speed_std': 1,
 'speed_steps': 3,
 

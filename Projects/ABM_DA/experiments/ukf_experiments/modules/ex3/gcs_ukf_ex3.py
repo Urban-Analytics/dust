@@ -21,7 +21,7 @@ from modules.ex3.rjmcmc_ukf import rjmcmc_ukf
 sys.path.append("../../..")
 sys.path.append("../../../..")
 #from stationsim.stationsim_gcs_model import Model
-from stationsim.stationsim_density_model import Model
+from stationsim.stationsim_gcs_model import Model
 from stationsim.ukf2 import *
 
 
@@ -361,7 +361,7 @@ def ex3_main(n, jump_rate, n_jumps, recall):
         pickle_main(ukf_params["file_name"], pickle_source, do_pickle, rjmcmc_UKF)
     # if recalling load a pickled run
     if recall:
-        f_name = ex3_pickle_name(n)
+        f_name = ex3_pickle_name(n, jump_rate)
 
         "try loading class_dicts first. If no dict then class instance."
         try:
@@ -379,8 +379,8 @@ def ex3_main(n, jump_rate, n_jumps, recall):
 
 
 if __name__ == "__main__":
-    n = 30
-    jump_rate = 20
+    n = 5
+    jump_rate = 5
     n_jumps = 5
-    recall = False
+    recall = True
     rjmcmc_UKF = ex3_main(n, jump_rate, n_jumps, recall)

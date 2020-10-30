@@ -31,7 +31,7 @@ pickles - Storage of local ukf results as pickle files.
 plots - Where all plots are saved.
 results - Storage of pickles for arc4 multiple model runs. Kept separate from pickles folder for local storage so only make summary plots with the desired results. 
 sphinx - Sphinx files for conversion of arc readme into an html.
-tests - Testing for UKF.
+tests - Testing for UKF. (WIP)
 ukf_old - Various deprecated items.
 
 #Experiments

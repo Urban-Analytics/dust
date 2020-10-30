@@ -82,7 +82,7 @@ sys.path.append("..")
 sys.path.append("../..")
 # double appends so works on arc
 from modules.sensors import generate_Camera_Rect
-import ex3.stationsim_densities as sd
+import modules.ex3.stationsim_densities as sd
 
 class rjmcmc_ukf():
     

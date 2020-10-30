@@ -38,6 +38,7 @@ import numpy as np
 from arc import arc
 
 sys.path.append("../..")
+sys.path.append("..")
 from modules.ex3.gcs_ukf_ex3 import rj_params,  get_gates, set_gates
 from modules.ex3.rjmcmc_ukf import rjmcmc_ukf
 import modules.default_ukf_configs as configs

@@ -1,4 +1,5 @@
 # Imports
+from stationsim_gcs_model import Agent
 from generate_data.stationsim_gcs_model_data import *
 from math import floor
 import numpy as np
@@ -167,7 +168,29 @@ def test_agent_activation():
 
 
 def test_agent_deactivation():
-    pass
+    # Given that there is only 1 agent in the system, the time taken per step
+    # should be 1
+    # We should therefore find the case where the distance between the agent
+    # and its target destination is 1 * speed
+    # Until this point, the agent should have a status of either 0 or 1
+    # If we step the agent again then it should reach its destination and be
+    # deactivated
+    model = set_up_model(population_size=1)
+    agent = model.agents[0]
+
+    assert agent.status == 0
+
+    distance = agent.distance(agent.location, agent.loc_desire)
+
+    assert distance != 0
+
+    while distance > agent.speed + model.gates_space:
+        assert (agent.status == 0 or agent.status == 1)
+        model.step()
+        distance = agent.distance(agent.location, agent.loc_desire)
+
+    model.step()
+    assert agent.status == 2
 
 
 def test_set_agent_location():

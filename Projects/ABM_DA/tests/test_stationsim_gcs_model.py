@@ -1,5 +1,4 @@
 # Imports
-from stationsim_gcs_model import Agent
 from generate_data.stationsim_gcs_model_data import *
 from math import floor
 import numpy as np

@@ -123,7 +123,7 @@ becomes
 Now everything is ready to run the experiment in arc. To do this we use the simple command `qsub`.
 
 ```
-qsub arc.sh
+qsub arc.sh arc_ukf_ex1.py
 ```
 !!discuss arc.sh script.
 This initiates the job which comes with several useful commands and outputs.

@@ -244,6 +244,8 @@ In scenarios where pedestrian density is sufficiently high, we observe the
 
 \subsubsection{Submodels}\label{subs:stationsim:details:submodels}
 
+\paragraph{StationSim Setup}\label{para:submodels:setup}
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.3\textwidth]{stationsim_gcs-set_up_station}
@@ -251,12 +253,16 @@ In scenarios where pedestrian density is sufficiently high, we observe the
     \label{fig:flow:set_up_station}
 \end{figure}
 
+\paragraph{Agent Initialisation}\label{para:submodels:agent_init}
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.3\textwidth]{stationsim_gcs-initialise_agent}
     \caption{Flow diagram of process by which agents are initialised}
     \label{fig:flow:agent_initialisation}
 \end{figure}
+
+\paragraph{Agent Entrance Allocation}\label{para:submodels:agent_entrance}
 
 \begin{figure}[h]
     \centering
@@ -266,12 +272,17 @@ In scenarios where pedestrian density is sufficiently high, we observe the
     \label{fig:flow:agent_entrance}
 \end{figure}
 
+\paragraph{Agent Exit Allocation}\label{para:submodels:agent_exit}
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.3\textwidth]{stationsim_gcs-choose_agent_exit}
     \caption{Flow diagram of process by which agents' exits gates are selected}
     \label{fig:flow:agent_exit}
 \end{figure}
+
+\paragraph{Allocating Agent Location based on Gate
+Number}\label{para:submodels:location_allocation}
 
 \begin{figure}[h]
     \centering
@@ -282,6 +293,12 @@ In scenarios where pedestrian density is sufficiently high, we observe the
     \label{fig:flow:allocate_agent_location}
 \end{figure}
 
+\paragraph{Allocating Agent Speed}\label{para:submodels:agent_speed}
+
+\paragraph{Model Step}\label{para:submodels:model_step}
+
+\paragraph{Checking for Agent Activation}\label{para:submodels:agent_activation}
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{stationsim_gcs-check_agent_activation}
@@ -290,6 +307,17 @@ In scenarios where pedestrian density is sufficiently high, we observe the
     \label{fig:flow:check_agent_activation}
 \end{figure}
 
+\paragraph{Checking for Potential Collisions}\label{para:submodels:collisions}
+
+\paragraph{Agent Step}\label{para:submodels:agent_step}
+
+\paragraph{Agent Movement}\label{para:submodels:agent_movement}
+
+\paragraph{Agent Wiggle}\label{para:submodels:agent_wiggle}
+
+\paragraph{Checking for Agent
+Deactivation}\label{para:submodels:agent_deactivation}
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.4\textwidth]{stationsim_gcs-check_agent_deactivation}
@@ -297,4 +325,7 @@ In scenarios where pedestrian density is sufficiently high, we observe the
     deactivated}
     \label{fig:flow:check_agent_deactivation}
 \end{figure}
+
+\paragraph{Checking for Model
+Deactivation}\label{para:submodels:model_deactivation}
 

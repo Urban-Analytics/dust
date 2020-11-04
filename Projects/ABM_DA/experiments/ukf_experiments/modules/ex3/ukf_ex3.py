@@ -287,8 +287,8 @@ def ex3_main(n, jump_rate, n_jumps, recall):
     
 if __name__ == "__main__":
     
-    n = 10
+    n = 30
     jump_rate = 5 #make this a multiple of sample_rate in the ukf default configs
     n_jumps = 5
-    recall = True
+    recall = False
     rjmcmc_UKF = ex3_main(n, jump_rate, n_jumps, recall)

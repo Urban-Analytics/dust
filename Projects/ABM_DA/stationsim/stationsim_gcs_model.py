@@ -1,7 +1,7 @@
 '''
 StationSim - GrandCentral version
     author: patricia-ternes
-    created: 27/05/2020
+    modified: 19/06/2020
 '''
 
 import warnings
@@ -66,17 +66,22 @@ class Agent:
             self.history_wiggles = 0
             self.history_collisions = 0
             self.step_start = None
-    
+        else:
+            self.history_locations = []  # necessary in Particle Filter
+            self.step_start = None
+
     def set_gate_out(self):
         '''
         Set a exit gate for the agent.
-        - The exit gate ca be any gate that is on a different side of
-        the entrance gate.
+        - ['Grand_Central'] The exit gate can be any gate that is on a
+                            different side of the entrance gate.
+        - ['Other'] The exit gate can be any gate in the opposite side of
+                  the entrance gate.
         '''
+
         if (self.model.station == 'Grand_Central'):
             if (self.gate_in == 0):
                 self.gate_out = np.random.random_integers(1, 10)
-                #self.gate_out = np.random.choice( (1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
             elif (self.gate_in == 1 or self.gate_in == 2):
                 self.gate_out = np.random.choice( (0, 3, 4, 5, 6, 7, 8, 9, 10))
@@ -84,8 +89,6 @@ class Agent:
                 self.gate_out = np.random.choice( (0, 1, 2, 7, 8, 9, 10))
             else:
                 self.gate_out = np.random.random_integers(0, 6)
-                #self.gate_out = np.random.choice( (0, 1, 2, 3, 4, 5, 6))
-
         else:
             self.gate_out = np.random.randint(self.model.gates_out) + self.model.gates_in
 
@@ -171,13 +174,21 @@ class Agent:
         return norm
 
     def get_direction(self, loc_desire, location):
-        return (loc_desire - location) / self.distance(loc_desire, location)
+    	'''
+		 Function to get the direction of movement.
+    	'''
 
+        if (self.distance(loc_desire, location) == 0):
+            direction = np.array([0, 0])
+        else:    
+            direction =  (loc_desire - location) / self.distance(loc_desire, location)
+        return direction
+        
     @staticmethod
     def get_normal_direction(direction):
         '''
-        Rotate a two-dimensional array by 90 degrees in clockwise or
-        counter clockwise direction (np.random.choice((-1, 1))).
+         A helpful function to rotate a two-dimensional array by 90
+         degrees in clockwise or counter clockwise direction (-1, 1).
         '''
         return np.array([direction[1], direction[0] *
                          np.random.choice((-1, 1))])
@@ -474,6 +485,7 @@ class Model:
             self.agent_size = 7.0  # 0.5 m
             self.speed_mean = 0.839236  # pixel / frame
             self.speed_std = 0.349087  # pixel / frame
+            self.speed_min = 0.2  # pixel / frame
             self.gates_space = 28.0  # 2 m
         else:
             self.gates_locations = np.concatenate([
@@ -880,6 +892,43 @@ class Model:
         frames = self.step_id
         ani = FuncAnimation(fig, func, frames, init, interval=100, blit=True)
         return ani
+
+    def get_distace_plot(self, real_data_dir, frame_i, frame_f, dt):
+        self.graphX1 = []; self.graphY1 = []; self.graphERR1 = [] # x, y, dy
+        data = []
+        for frame in range(frame_i, frame_f, dt):
+            ID, x, y = np.loadtxt(real_data_dir + str(frame) + '.0.dat', unpack=True)
+            dist = []
+            for i in range(len(ID)):
+                agent_ID = int(ID[i])
+                r1 = self.agents[agent_ID].history_locations[int(frame/dt)]
+                r2 = (x[i], y[i])
+                if np.all(r1 != (None, None)):
+                    distance = self.agents[agent_ID].distance(r1, r2)
+                    dist.append(distance)
+                    time = int(frame - self.agents[agent_ID].step_start)
+                    data.append([time, distance])
+            dist = np.asarray(dist)
+            self.graphX1.append(frame); self.graphY1.append(dist.mean()); self.graphERR1.append(dist.std())
+
+        from operator import itemgetter
+        #sort by frame
+        data1 = sorted(data, key=itemgetter(0))
+
+        frame = data1[0][0]
+        self.graphX2 = []; self.graphY2 = []; self.graphERR2 = [] # x, y, dy
+        dist = []
+        for line in data1:
+            if (line[0]==frame):
+                dist.append(line[1])
+            else:
+                dist = np.asarray(dist)
+                self.graphX2.append(frame); self.graphY2.append(dist.mean()); self.graphERR2.append(dist.std())
+                frame = line[0]
+                dist = []
+                dist.append(line[1])
+        dist = np.asarray(dist)
+        self.graphX2.append(frame); self.graphY2.append(dist.mean()); self.graphERR2.append(dist.std())
 
     @classmethod
     def set_random_seed(cls, seed=None):

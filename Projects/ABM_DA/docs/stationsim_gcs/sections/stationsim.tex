@@ -29,23 +29,22 @@ modelling) --- what are the patterns?}
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.7\textwidth]{sample_model_run}
-    \caption{Layout of environment in original StationSim model.}
-
-    \label{fig:stationsim_env}
+    \caption{Layout of environment in original StationSim
+    model.}\label{fig:stationsim_env}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.7\textwidth]{sample_model_run}
-    \caption{Layout of Grand Central Station concourse.}
-    \label{fig:gcs_concourse}
+    \caption{Layout of Grand Central Station
+    concourse.}\label{fig:gcs_concourse}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.7\textwidth]{sample_model_run}
-    \caption{Layout of environment in StationSim GCS model.}
-    \label{fig:stationsim_gcs_env}
+    \caption{Layout of environment in StationSim GCS
+    model.}\label{fig:stationsim_gcs_env}
 \end{figure}
 
 \subsubsection{Entities, state variables and
@@ -100,8 +99,8 @@ Table~\ref{tab:environment_variables}.
                                uniformly distributed random noise \\
         \bottomrule
     \end{tabularx}
-    \caption{Table of state variables pertaining to gate entities.}
-    \label{tab:agent_variables}
+    \caption{Table of state variables pertaining to gate
+    entities.}\label{tab:agent_variables}
 \end{table}
 
 \begin{table}
@@ -118,8 +117,8 @@ Table~\ref{tab:environment_variables}.
                               environment \\
         \bottomrule
     \end{tabularx}
-    \caption{Table of state variables pertaining to the environment entity.}
-    \label{tab:environment_variables}
+    \caption{Table of state variables pertaining to the environment
+    entity.}\label{tab:environment_variables}
 \end{table}
 
 Along the edge of these boundaries are located gates: one gate is located on the
@@ -146,8 +145,8 @@ Table~\ref{tab:gate_variables}.
                             environment \\
         \bottomrule
     \end{tabularx}
-    \caption{Table of state variables pertaining to gate entities.}
-    \label{tab:gate_variables}
+    \caption{Table of state variables pertaining to gate
+    entities.}\label{tab:gate_variables}
 \end{table}
 
 The environment also contains a single obstacle which represents a clock.
@@ -171,8 +170,8 @@ Table~\ref{tab:obstacle_variables}.
                          of 0 \\
         \bottomrule
     \end{tabularx}
-    \caption{Table of state variables pertaining to the obstacle entity.}
-    \label{tab:obstacle_variables}
+    \caption{Table of state variables pertaining to the obstacle
+    entity.}\label{tab:obstacle_variables}
 \end{table}
 
 Of the variables detailed for each of the entities in
@@ -188,8 +187,7 @@ scheduling}\label{subs:stationsim:overview:process}
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{stationsim_gcs-main_algorithm}
-    \caption{Flow diagram of StationSim GCS}
-    \label{fig:flow:stationsim}
+    \caption{Flow diagram of StationSim GCS}\label{fig:flow:stationsim}
 \end{figure}
 
 \subsection{Design Concepts}\label{sub:stationsim:design_concepts}
@@ -249,8 +247,8 @@ In scenarios where pedestrian density is sufficiently high, we observe the
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.3\textwidth]{stationsim_gcs-set_up_station}
-    \caption{Flow diagram of process to set up StationSim GCS}
-    \label{fig:flow:set_up_station}
+    \caption{Flow diagram of process to set up StationSim
+    GCS}\label{fig:flow:set_up_station}
 \end{figure}
 
 \paragraph{Agent Initialisation}\label{para:submodels:agent_init}
@@ -258,8 +256,8 @@ In scenarios where pedestrian density is sufficiently high, we observe the
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.3\textwidth]{stationsim_gcs-initialise_agent}
-    \caption{Flow diagram of process by which agents are initialised}
-    \label{fig:flow:agent_initialisation}
+    \caption{Flow diagram of process by which agents are
+    initialised}\label{fig:flow:agent_initialisation}
 \end{figure}
 
 \paragraph{Agent Entrance Allocation}\label{para:submodels:agent_entrance}
@@ -268,8 +266,7 @@ In scenarios where pedestrian density is sufficiently high, we observe the
     \centering
     \includegraphics[width=0.2\textwidth]{stationsim_gcs-choose_agent_entrance}
     \caption{Flow diagram of process by which agents' entrance gates are
-    selected}
-    \label{fig:flow:agent_entrance}
+    selected}\label{fig:flow:agent_entrance}
 \end{figure}
 
 \paragraph{Agent Exit Allocation}\label{para:submodels:agent_exit}
@@ -277,8 +274,8 @@ In scenarios where pedestrian density is sufficiently high, we observe the
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.3\textwidth]{stationsim_gcs-choose_agent_exit}
-    \caption{Flow diagram of process by which agents' exits gates are selected}
-    \label{fig:flow:agent_exit}
+    \caption{Flow diagram of process by which agents' exits gates are
+    selected}\label{fig:flow:agent_exit}
 \end{figure}
 
 \paragraph{Allocating Agent Location based on Gate
@@ -289,8 +286,7 @@ Number}\label{para:submodels:location_allocation}
     \includegraphics[width=\textwidth]{stationsim_gcs-allocate_agent_location}
     \caption{Flow diagram of process by which an agent's location is allocated
     given a specific gate number; used to allocate initial and final locations
-    for agents}
-    \label{fig:flow:allocate_agent_location}
+    for agents}\label{fig:flow:allocate_agent_location}
 \end{figure}
 
 \paragraph{Allocating Agent Speed}\label{para:submodels:agent_speed}
@@ -298,8 +294,8 @@ Number}\label{para:submodels:location_allocation}
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{stationsim_gcs-allocate_agent_speeds}
-    \caption{Flow diagram of process by which an agent's speed is allocated}
-    \label{fig:flow:allocate_agent_speed}
+    \caption{Flow diagram of process by which an agent's speed is
+    allocated}\label{fig:flow:allocate_agent_speed}
 \end{figure}
 
 \paragraph{Model Step}\label{para:submodels:model_step}
@@ -307,8 +303,8 @@ Number}\label{para:submodels:location_allocation}
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{stationsim_gcs-model_step}
-    \caption{Flow diagram of how the model step works}
-    \label{fig:flow:model_step}
+    \caption{Flow diagram of how the model step
+    works}\label{fig:flow:model_step}
 \end{figure}
 
 \paragraph{Checking for Agent Activation}\label{para:submodels:agent_activation}
@@ -317,8 +313,7 @@ Number}\label{para:submodels:location_allocation}
     \centering
     \includegraphics[width=0.8\textwidth]{stationsim_gcs-check_agent_activation}
     \caption{Flow diagram of process to check whether an agent should be
-    activated}
-    \label{fig:flow:check_agent_activation}
+    activated}\label{fig:flow:check_agent_activation}
 \end{figure}
 
 \paragraph{Checking for Potential Collisions}\label{para:submodels:collisions}
@@ -327,16 +322,14 @@ Number}\label{para:submodels:location_allocation}
     \centering
     \includegraphics[width=0.8\textwidth]{stationsim_gcs-collisions_agents}
     \caption{Flow diagram of how the time to the next collision between two
-    agents is calculated}
-    \label{fig:flow:agent_collisions}
+    agents is calculated}\label{fig:flow:agent_collisions}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{stationsim_gcs-collisions_walls}
     \caption{Flow diagram of how the time to the next collision between two an
-    agent and a wall is calculated}
-    \label{fig:flow:wall_collisions}
+    agent and a wall is calculated}\label{fig:flow:wall_collisions}
 \end{figure}
 
 \paragraph{Agent Step}\label{para:submodels:agent_step}
@@ -344,8 +337,8 @@ Number}\label{para:submodels:location_allocation}
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.4\textwidth]{stationsim_gcs-agent_step}
-    \caption{Flow diagram of how the agent step works}
-    \label{fig:flow:agent_step}
+    \caption{Flow diagram of how the agent step
+    works}\label{fig:flow:agent_step}
 \end{figure}
 
 \paragraph{Agent Movement}\label{para:submodels:agent_movement}
@@ -353,8 +346,8 @@ Number}\label{para:submodels:location_allocation}
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.4\textwidth]{stationsim_gcs-agent_movement}
-    \caption{Flow diagram of how agent movements are calculated}
-    \label{fig:flow:agent_movement}
+    \caption{Flow diagram of how agent movements are
+    calculated}\label{fig:flow:agent_movement}
 \end{figure}
 
 \paragraph{Agent Wiggle}\label{para:submodels:agent_wiggle}
@@ -362,8 +355,8 @@ Number}\label{para:submodels:location_allocation}
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{stationsim_gcs-wiggles}
-    \caption{Flow diagram of how agent wiggles are carried out}
-    \label{fig:flow:agent_wiggles}
+    \caption{Flow diagram of how agent wiggles are carried
+    out}\label{fig:flow:agent_wiggles}
 \end{figure}
 
 \paragraph{Checking for Agent
@@ -373,8 +366,7 @@ Deactivation}\label{para:submodels:agent_deactivation}
     \centering
     \includegraphics[width=0.4\textwidth]{stationsim_gcs-check_agent_deactivation}
     \caption{Flow diagram of process to check whether an agent should be
-    deactivated}
-    \label{fig:flow:check_agent_deactivation}
+    deactivated}\label{fig:flow:check_agent_deactivation}
 \end{figure}
 
 \paragraph{Checking for Model

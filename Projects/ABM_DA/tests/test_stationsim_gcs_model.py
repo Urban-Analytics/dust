@@ -168,7 +168,26 @@ def test_model_speed_defaults():
 
 # Agent tests
 def test_speed_allocation():
-    pass
+    model = set_up_model(population_size=1)
+    agent = model.agents[0]
+
+    # Agent speed params
+    speed_max = max(agent.speeds)
+    assert speed_max > model.speed_min
+    assert min(agent.speeds) >= model.speed_min
+    assert agent.speed in agent.speeds
+
+    # Ensure that 68% of the agent max speeds lie within 1 sd of mean
+    n_trials = 500
+    count = 0
+    for _ in range(n_trials):
+        model = set_up_model()
+        agent = model.agents[0]
+        speed_max = max(agent.speeds)
+        if speed_max < 2:
+            count += 1
+    proportion = count / n_trials
+    assert proportion > 0.68
 
 
 @pytest.mark.parametrize('location1, location2, distance', distance_data)

@@ -184,6 +184,56 @@ The variables that change as the model runs are the \texttt{location} and
 \subsubsection{Process overview and
 scheduling}\label{subs:stationsim:overview:process}
 
+The overall model process is relatively simple; it is outlined in
+Figure~\ref{fig:flow:stationsim}.
+This process consists of 4 components:
+\begin{enumerate}
+    \item Set up the station.
+    \item Initialise agents.
+    \item Step the model forward.
+    \item Check whether the model should be deactivated.
+\end{enumerate}
+The process of setting up the station involves defining the state of the
+non-agent entities in the model, i.e. the model boundaries, the gates and the
+central clock obstacle, as outlined in
+Tables~\ref{tab:environment_variables},~\ref{tab:gate_variables}
+and~\ref{tab:obstacle_variables} respectively.
+
+The process of initialising the agents in the model involves allocating their
+entrance and exit gates (along with their target destination), their speed and
+the time at which they will be activated (i.e. when they will attempt to enter
+the system).
+
+The processes of stepping the model forward and checking for model deactivation
+are run iteratively whilst the model is still deemed active.
+After having stepped the model forward, it is checked whether the model should
+remain active; if so, the model stepping process is repeated, else the model run
+is completed.
+
+The process of stepping the model forward involves the following set of
+subprocesses:
+\begin{enumerate}
+    \item Checking whether inactive agents should be activated.
+    \item Identifying all of the potential collisions that may occur between
+        agents and between agents and parts of the environment (i.e. the model
+        boundaries and the clock obstacle).
+    \item Moving each of the active agents for a specific time interval based on
+        the when the soonest collision will occur.
+    \item Where necessary, instruct agents to engage a sidestepping mechanic to
+        avoid obstacles.
+\end{enumerate}
+Each agent is stepped sequentially as part of the model stepping process; the
+agent stepping process involves moving from its present location towards its
+target destination in a linear fashion.
+The movement vector is the product of the agents velocity vector and the
+time-step, which is dependent on the time interval to the next expected
+collision.
+As a consequence, although the agents are stepped sequentially and, no
+collisions or interactions are missed.
+
+Each of the above processes are outlined in more detail in
+Section~\ref{para:submodels:setup}.
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{stationsim_gcs-main_algorithm}

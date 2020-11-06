@@ -156,6 +156,16 @@ def test_model_deactivation_agents():
     assert model.status == 0
 
 
+def test_model_speed_defaults():
+    model = set_up_model(population_size=1)
+
+    # Model speed params
+    assert model.speed_min == 0.2
+    assert model.speed_mean == 1
+    assert model.speed_std == 1
+    assert model.speed_steps == 3
+
+
 # Agent tests
 def test_speed_allocation():
     pass

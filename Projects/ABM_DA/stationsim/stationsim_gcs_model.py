@@ -1,6 +1,7 @@
 '''
 StationSim - GrandCentral version
-    created: 21/04/2020
+    author: patricia-ternes
+    created: 30/04/2020
 '''
 
 import warnings
@@ -45,12 +46,9 @@ class Agent:
         self.size = model.agent_size
 
         self.gate_in = np.random.randint(model.gates_in)
-        gate_out = np.random.randint(model.gates_out) + model.gates_in
-        while (gate_out == self.gate_in or
-               gate_out >= len(model.gates_locations)):
-            gate_out = np.random.randint(model.gates_out)
-        self.loc_desire = self.set_agent_location(gate_out)
-
+        self.set_gate_out()
+        self.loc_desire = self.set_agent_location(self.gate_out)
+        
         # Speed
         speed_max = 0
         while speed_max <= model.speed_min:
@@ -67,6 +65,36 @@ class Agent:
             self.history_wiggles = 0
             self.history_collisions = 0
             self.step_start = None
+    
+    def set_gate_out(self):
+        '''
+        Set a exit gate for the agent.
+        - The exit gate ca be any gate that is on a different side of
+        the entrance gate.
+        '''
+        if (self.model.station == 'Grand_Central'):
+            if (self.gate_in == 0):
+                self.gate_out = np.random.choice( (1, 2, 3, 4, 5, 6, 7, 8, 9))
+            elif (self.gate_in == 1 or self.gate_in == 2):
+                self.gate_out = np.random.choice( (0, 3, 4, 5, 6, 7, 8, 9))
+            elif (self.gate_in == 3 or self.gate_in == 4):
+                self.gate_out = np.random.choice( (0, 1, 2, 5, 6, 7, 8, 9))
+            else:
+                self.gate_out = np.random.choice( (0, 1, 2, 3, 4))
+
+            '''
+            Use this while statement if exit gates at same side of 
+            entrance gate are allowed. With the above if statement, this
+            while statement never will be access, so if needed, comment
+            the above if statement.
+            '''
+            '''
+            while (self.gate_out == self.gate_in or
+                   self.gate_out >= len(self.model.gates_locations)):
+                self.gate_out = np.random.randint(self.model.gates_out)
+            '''
+        else:
+        	self.gate_out = np.random.randint(self.model.gates_out) + self.model.gates_in
 
     def step(self, time):
         '''
@@ -381,7 +409,6 @@ class Model:
                        range(self.pop_total)]
 
         if self.do_history:
-            self.time_save = []
             self.history_state = []
             self.history_wiggle_locs = []
             self.history_collision_locs = []
@@ -466,10 +493,11 @@ class Model:
 
     def step(self):
         '''
-        Iterate model forward one step.
+        Iterate model forward one second.
         '''
         if self.step_id == 0:
             state = self.get_state('location2D')
+
 
         if self.pop_finished < self.pop_total and\
                 self.step_id < self.step_limit and self.status == 1:
@@ -478,21 +506,22 @@ class Model:
 
             [agent.activate() for agent in self.agents]
 
-            collisionTable, tmin = self.get_collisionTable()
-            if (tmin > 1.0):
-                [agent.step(1) for agent in self.agents]
-                self.total_time += 1
-            else:
-                tmin *= 0.98  # stop just before the collision
-                [agent.step(tmin) for agent in self.agents]
-                wiggleTable = self.get_wiggleTable(collisionTable, tmin)
-                [self.agents[i].set_wiggle() for i in wiggleTable]
-                self.total_time += tmin
+            t = 1.0
+            while (t>=0):
+                collisionTable, tmin = self.get_collisionTable()
+                if (tmin > t):
+                    [agent.step(t) for agent in self.agents]
+                    self.total_time += t
+                    t -= tmin
+                else:
+                    tmin *= 0.98  # stop just before the collision
+                    t -= tmin
+                    [agent.step(tmin) for agent in self.agents]
+                    wiggleTable = self.get_wiggleTable(collisionTable, tmin)
+                    [self.agents[i].set_wiggle() for i in wiggleTable]
+                    self.total_time += tmin
 
-            if self.do_history:
-                if (self.total_time % 1.0 <= 1 and 
-                        int(self.total_time) not in self.time_save):
-                    self.time_save.append(int(self.total_time))
+                if self.do_history:
                     state = self.get_state('location2D')
                     self.history_state.append(state)
                     [agent.history() for agent in self.agents]
@@ -567,6 +596,7 @@ class Model:
             state = np.ravel(state)
         elif sensor is 'location2D':
             state = [agent.location for agent in self.agents]
+
         return state
 
     def set_state(self, state, sensor=None):
@@ -610,14 +640,29 @@ class Model:
         locs = np.array([agent.history_locations for agent in
                          self.agents[:agents]]).transpose((1, 2, 0))        
         if(sensor == 'frame'):
-            for frame in self.time_save:
-                save_file = open(directory+'/frame_'+ str(frame) +'.dat', 'w')
+            for frame in range (self.step_id):
+                save_file = open(directory+'/frame_'+ str(frame+1) +'.dat', 'w')
                 print('#agentID', 'x', 'y', file=save_file)
                 x = locs[frame-1][0]
                 y = locs[frame-1][1]
                 for agent in range(self.pop_total):
                     if(x[agent]!=None):
                         print(agent, x[agent], y[agent], file=save_file)
+                save_file.close()
+        elif(sensor == 'activation'):
+            save_file = open(directory+'/activation.dat', 'w')
+            print('#agentID', 'time_activation', 'gate_in', 'gate_out', 'speed', 'loc_desireX', 'loc_desireY', file=save_file)
+            for agent in self.agents:
+                print(agent.unique_id, agent.step_start, agent.gate_in, agent.gate_out, agent.speed, agent.loc_desire[0], agent.loc_desire[1], file=save_file)
+                #print(agent.unique_id, agent.step_start, agent.loc_start[0], agent.loc_start[1], agent.gate_out, file=save_file)
+            save_file.close()
+        elif(sensor == 'trails'):
+            for agent in self.agents:
+                save_file = open(directory+'/agent_{}.dat'.format(agent.unique_id), 'w')
+                loc = agent.history_locations
+                for xy in loc:
+                    if(xy[0]!=None):
+                        print(xy[0], xy[1], file=save_file)
                 save_file.close()
 
     # Analytics
@@ -791,7 +836,7 @@ class Model:
                 ln0.set_data(*locs[frame])
             ln1.set_data(*locs[frame])
             return ln0, ln1,
-        frames = len(self.time_save)
+        frames = self.step_id
         ani = FuncAnimation(fig, func, frames, init, interval=100, blit=True)
         return ani
 

@@ -95,7 +95,8 @@ class Agent:
             else:
                 raise ValueError(f'Invalid gate_in chosen: {self.gate_in}')
         else:
-            self.gate_out = np.random.randint(self.model.gates_out) + self.model.gates_in
+            random_out = np.random.randint(self.model.gates_out)
+            self.gate_out = random_out + self.model.gates_in
 
     def step(self, time):
         '''
@@ -131,7 +132,8 @@ class Agent:
                         self.location = new_location
                         self.status = 1
                         self.model.pop_active += 1
-                        self.step_start = self.model.total_time  # self.model.step_id
+                        # self.model.step_id
+                        self.step_start = self.model.total_time
                         self.loc_start = self.location
                         break
 
@@ -187,7 +189,8 @@ class Agent:
         if (self.distance(loc_desire, location) == 0):
             direction = np.array([0, 0])
         else:
-            direction = (loc_desire - location) / self.distance(loc_desire, location)
+            distance = self.distance(loc_desire, location)
+            direction = (loc_desire - location) / distance
         return direction
 
     @staticmethod
@@ -244,11 +247,13 @@ class Agent:
                 self.model.history_collision_times.append(self.model.total_time)
 
             # Check if the new location is possible
-            neighbouring_agents = self.model.tree.query_ball_point(new_location,
-                                                                   self.size*1.1)
+            tree = self.model.tree
+            neighbouring_agents = tree.query_ball_point(new_location,
+                                                        self.size*1.1)
             dist = self.distance(new_location, self.model.clock.location)
             if (dist > (self.size + self.model.clock.size)):
-                if (neighbouring_agents == [] or neighbouring_agents == [self.unique_id]):
+                if (neighbouring_agents == [] or
+                        neighbouring_agents == [self.unique_id]):
                     self.location = new_location
                     # wiggle_map
                     if self.model.do_history:
@@ -274,7 +279,8 @@ class Agent:
         Determine whether the agent should leave the model and, if so,
         remove them. Otherwise do nothing.
         '''
-        if self.distance(self.location, self.loc_desire) < self.model.gates_space:
+        distance = self.distance(self.location, self.loc_desire)
+        if distance < self.model.gates_space:
             self.status = 2
             self.model.pop_active -= 1
             self.model.pop_finished += 1
@@ -327,17 +333,19 @@ class Agent:
         collisionTime = 1.0e300
 
         direction = self.get_direction(self.loc_desire, self.location)
-        vx = self.speed*direction[0]  # horizontal velocity
-        vy = self.speed*direction[1]  # vertical velocity
+        vx = self.speed * direction[0]  # horizontal velocity
+        vy = self.speed * direction[1]  # vertical velocity
 
-        if(vy > 0):  # collision in botton wall
-            collisionTime = (self.model.height - self.size - self.location[1]) / vy
+        if vy > 0:  # collision in botton wall
+            ydistance = self.model.height - self.size - self.location[1]
+            collisionTime = ydistance / vy
         elif (vy < 0):  # collision in top wall
             collisionTime = (self.size - self.location[1]) / vy
         if (collisionTime < tmin):
             tmin = collisionTime
         if(vx > 0):  # collision in right wall
-            collisionTime = (self.model.width - self.size - self.location[0]) / vx
+            xdistance = self.model.width - self.size - self.location[0]
+            collisionTime = (xdistance) / vx
         elif (vx < 0):  # collision in left wall
             collisionTime = (self.size - self.location[0]) / vx
         if (collisionTime < tmin):
@@ -709,7 +717,8 @@ class Model:
                          self.agents[:agents]]).transpose((1, 2, 0))
         if(sensor == 'frame'):
             for frame in range(self.step_id):
-                save_file = open(directory+'/frame_' + str(frame+1) + '.dat', 'w')
+                save_file = open(directory+'/frame_' +
+                                 str(frame+1) + '.dat', 'w')
                 print('#agentID', 'x', 'y', file=save_file)
                 x = locs[frame-1][0]
                 y = locs[frame-1][1]
@@ -719,10 +728,14 @@ class Model:
                 save_file.close()
         elif(sensor == 'activation'):
             save_file = open(directory+'/activation.dat', 'w')
-            print('#agentID', 'time_activation', 'gate_in', 'gate_out', 'speed', 'loc_desireX', 'loc_desireY', file=save_file)
+            print('#agentID', 'time_activation', 'gate_in', 'gate_out',
+                  'speed', 'loc_desireX', 'loc_desireY', file=save_file)
             for agent in self.agents:
-                print(agent.unique_id, agent.step_start, agent.gate_in, agent.gate_out, agent.speed, agent.loc_desire[0], agent.loc_desire[1], file=save_file)
-                # print(agent.unique_id, agent.step_start, agent.loc_start[0], agent.loc_start[1], agent.gate_out, file=save_file)
+                print(agent.unique_id, agent.step_start, agent.gate_in,
+                      agent.gate_out, agent.speed, agent.loc_desire[0],
+                      agent.loc_desire[1], file=save_file)
+                # print(agent.unique_id, agent.step_start, agent.loc_start[0],
+                #       agent.loc_start[1], agent.gate_out, file=save_file)
             save_file.close()
         elif(sensor == 'trails'):
             for agent in self.agents:
@@ -914,7 +927,8 @@ class Model:
         self.graphERR1 = []  # x, y, dy
         data = []
         for frame in range(frame_i, frame_f, dt):
-            ID, x, y = np.loadtxt(real_data_dir + str(frame) + '.0.dat', unpack=True)
+            ID, x, y = np.loadtxt(real_data_dir + str(frame) + '.0.dat',
+                                  unpack=True)
             dist = []
             for i in range(len(ID)):
                 agent_ID = int(ID[i])

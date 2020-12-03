@@ -28,7 +28,8 @@ class EnsembleKalmanFilter(Filter):
     A class to represent a general EnKF.
     """
 
-    def __init__(self, model, filter_params, model_params, benchmarking=False):
+    def __init__(self, model, filter_params, model_params,
+                 filtering=True, benchmarking=False):
         """
         Initialise the Ensemble Kalman Filter.
 
@@ -43,44 +44,50 @@ class EnsembleKalmanFilter(Filter):
         # Instantiates the base model and starts time at 0
         super().__init__(model, model_params)
 
-        # Filter attributes - outlines the expected params
         self.__assign_filter_defaults()
-
-        # Get filter attributes from params, warn if unexpected attribute
         self.__assign_filter_params(filter_params)
+        self.filtering = filtering
+        self.run_vanilla = benchmarking
 
-        # Set up ensemble of models
-        self.models = self.__set_up_models()
-        # Make sure that models have state
-        # for m in self.models:
-        # if not hasattr(m, 'state'):
-        # raise AttributeError("Model has no 'state' attribute.")
+        if self.filtering:
+            # Filter attributes - outlines the expected params
 
-        # We're going to need H.T very often, so just do it once and store
-        self.H_transpose = self.H.T
+            # Get filter attributes from params, warn if unexpected attribute
 
-        # Make sure that we have a data covariance matrix
-        """
-        https://arxiv.org/pdf/0901.3725.pdf -
-        Covariance matrix R describes the estimate of the error of the data;
-        if the random errors in the entries of the data vector d are
-        independent, R is diagonal and its diagonal entries are the squares
-        of the standard deviation (“error size”) of the error of the
-        corresponding entries of the data vector d.
-        """
-        if not self.data_covariance:
-            self.data_covariance = np.diag(self.R_vector)
+            # Set up ensemble of models
+            self.models = self.__set_up_models()
+            # Make sure that models have state
+            # for m in self.models:
+            # if not hasattr(m, 'state'):
+            # raise AttributeError("Model has no 'state' attribute.")
 
-        # Create placeholders for ensembles
-        self.__set_up_ensembles()
+            # We're going to need H.T very often, so just do it once and store
+            self.H_transpose = self.H.T
+
+            # Make sure that we have a data covariance matrix
+            """
+            https://arxiv.org/pdf/0901.3725.pdf -
+            Covariance matrix R describes the estimate of the error of the
+            data; if the random errors in the entries of the data vector d are
+            independent, R is diagonal and its diagonal entries are the squares
+            of the standard deviation (“error size”) of the error of the
+            corresponding entries of the data vector d.
+            """
+            if not self.data_covariance:
+                self.data_covariance = np.diag(self.R_vector)
+
+            # Create placeholders for ensembles
+            self.__set_up_ensembles()
+
+        # Vanilla params
+        if self.run_vanilla:
+            self.vanilla_ensemble_size = filter_params['vanilla_ensemble_size']
+            self.__set_up_baseline()
 
         # Errors stats at update steps
         self.metrics = list()
         self.forecast_error = list()
 
-        # Vanilla params
-        if self.run_vanilla:
-            self.__set_up_baseline()
 
         self.update_state_ensemble()
         self.update_state_means()
@@ -92,17 +99,17 @@ class EnsembleKalmanFilter(Filter):
         self.agent_number = 6
 
         self.__print_start_summary()
-        self.original_state = self.state_mean
-        self.exits = [self.state_mean[2*self.population_size:]]
+        # self.original_state = self.state_mean
+        # self.exits = [self.state_mean[2*self.population_size:]]
 
     def __set_up_baseline(self):
         # Ensemble of vanilla models is always 10 (control variable)
-        self.vanilla_ensemble_size = 10
         self.vanilla_models = self.__set_up_models(self.vanilla_ensemble_size)
         # self.vanilla_models = [dcopy(self.base_model) for _ in
         #                        range(self.vanilla_ensemble_size)]
         self.vanilla_state_mean = None
         s = (self.state_vector_length, self.vanilla_ensemble_size)
+        print(s)
         self.vanilla_state_ensemble = np.zeros(shape=s)
         self.vanilla_metrics = list()
         self.vanilla_results = list()
@@ -240,6 +247,27 @@ class EnsembleKalmanFilter(Filter):
         # print('time: {0}, models: {1}'.format(self.time, [m.pop_active for
         #                                                   m in self.models]))
 
+    def baseline_step(self):
+        # Check if any of the models are active
+        self.__update_status()
+        # Only predict-update if there is at least one active model
+        if self.active:
+            self.predict()
+            self.update_state_ensemble()
+            self.update_state_means()
+
+            truth = self.base_model.get_state(sensor=self.sensor_type)
+
+            f = self.error_func(truth, self.vanilla_state_mean)[0]
+
+            forecast_error = {'time': self.time,
+                              'forecast': f}
+            self.forecast_error.append(forecast_error)
+
+            self.time += 1
+
+            self.vanilla_results.append(self.vanilla_state_mean)
+
     def predict(self):
         """
         Step the model forward by one time-step to produce a prediction.
@@ -250,8 +278,9 @@ class EnsembleKalmanFilter(Filter):
             None
         """
         self.base_model.step()
-        for i in range(self.ensemble_size):
-            self.models[i].step()
+        if self.filtering:
+            for i in range(self.ensemble_size):
+                self.models[i].step()
         if self.run_vanilla:
             for i in range(self.vanilla_ensemble_size):
                 self.vanilla_models[i].step()
@@ -308,9 +337,10 @@ class EnsembleKalmanFilter(Filter):
         """
         Update self.state_ensemble based on the states of the models.
         """
-        for i in range(self.ensemble_size):
-            state_vector = self.models[i].get_state(sensor=self.sensor_type)
-            self.state_ensemble[:, i] = state_vector
+        if self.filtering:
+            for i in range(self.ensemble_size):
+                state_vector = self.models[i].get_state(sensor=self.sensor_type)
+                self.state_ensemble[:, i] = state_vector
         if self.run_vanilla:
             for i in range(self.vanilla_ensemble_size):
                 st = self.sensor_type
@@ -318,7 +348,8 @@ class EnsembleKalmanFilter(Filter):
                 self.vanilla_state_ensemble[:, i] = state_vector
 
     def update_state_means(self):
-        self.state_mean = self.update_state_mean(self.state_ensemble)
+        if self.filtering:
+            self.state_mean = self.update_state_mean(self.state_ensemble)
         if self.run_vanilla:
             state_ensemble = self.vanilla_state_ensemble
             self.vanilla_state_mean = self.update_state_mean(state_ensemble)
@@ -553,8 +584,17 @@ class EnsembleKalmanFilter(Filter):
         The filter should be active if and only if there is at least 1 active
         model in the ensemble.
         """
-        model_statuses = [m.status == 1 for m in self.models]
-        self.active = any(model_statuses)
+        if self.filtering:
+            m_statuses = [m.status == 1 for m in self.models]
+        else:
+            m_statuses = [False]
+
+        if self.run_vanilla:
+            vanilla_m_statuses = [m.status == 1 for m in self.vanilla_models]
+        else:
+            vanilla_m_statuses = [False]
+
+        self.active = any(m_statuses) or any(vanilla_m_statuses)
 
     @classmethod
     def __round_destinations(cls, destinations, n_destinations):
@@ -580,3 +620,4 @@ class EnsembleKalmanFilter(Filter):
                             c='red', s=0.1)
 
         plt.savefig(f'./results/figures/{when}_{self.time}.pdf')
+        plt.close()

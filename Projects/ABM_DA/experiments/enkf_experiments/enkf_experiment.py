@@ -31,8 +31,8 @@ np.random.seed(42)
 # process_batch(read_time=True)
 
 # d = {'station': 'Grand_Central'}
-Modeller.run_all(its=1000, pop_size=25, ensemble_size=10,
-                 assimilation_period=50)
 # Modeller.run_repeat_combos(resume=False)
 # Modeller.run_for_endtime()
 # Modeller.run_experiment_1()
+# Modeller.run_all(ensemble_size=10)
+Modeller.run_enkf_benchmark(ensemble_size=100, pop_size=100)

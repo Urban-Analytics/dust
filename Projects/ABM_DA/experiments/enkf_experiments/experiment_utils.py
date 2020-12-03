@@ -29,14 +29,14 @@ class Modeller():
         pass
 
     @classmethod
-    def run_all(cls, pop_size=20, its=300, assimilation_period=50,
-                ensemble_size=10, mode=EnsembleKalmanFilterType.DUAL_EXIT):
+    def run_all(cls, pop_size=20, its=1000, assimilation_period=20,
+                ensemble_size=20, obs_noise_std=1,
+                mode=EnsembleKalmanFilterType.STATE):
         """
         Overall function to run everything.
         """
         # Set up params
         model_params = {'pop_total': pop_size,
-                        'station': 'Grand_Central',
                         'do_print': True}
         # model_params = {'width': 200,
         #                 'height': 100,
@@ -56,7 +56,6 @@ class Modeller():
         #                 'do_print': False}
 
         # Set up filter parameters
-        OBS_NOISE_STD = 1
         observation_operator = cls.__make_observation_operator(pop_size, mode)
         state_vec_length = cls.__make_state_vector_length(pop_size, mode)
         data_mode = EnsembleKalmanFilterType.STATE
@@ -70,22 +69,20 @@ class Modeller():
                          'data_vector_length': data_vec_length,
                          'mode': mode,
                          'H': observation_operator,
-                         'R_vector': OBS_NOISE_STD * np.ones(data_vec_length),
+                         'R_vector': obs_noise_std * np.ones(data_vec_length),
                          'keep_results': True,
                          'run_vanilla': False,
                          'vis': False}
 
         # Run enkf and process results
         enkf = cls.run_enkf(model_params, filter_params)
-        for agent in enkf.base_model.agents:
-            print(agent.gate_out)
 
         # Plotting
         Visualiser.plot_error_timeseries(enkf, model_params,
                                          filter_params, True)
         Visualiser.plot_forecast_error_timeseries(enkf, model_params,
                                                   filter_params, True)
-        Visualiser.plot_exits(enkf)
+        # Visualiser.plot_exits(enkf)
 
         # Plotting to look at accuracy of exit estimations
         if mode == EnsembleKalmanFilterType.DUAL_EXIT:
@@ -116,13 +113,12 @@ class Modeller():
         enkf = EnsembleKalmanFilter(Model, filter_params, model_params)
 
         num_steps = filter_params['max_iterations']
+        i = 0
 
-        for i in range(num_steps):
-            # if i % 25 == 0:
-            #     print('step {0}'.format(i))
-            #     # print(enkf.models[0].get_state('loc_exit'))
-            print('step {0}'.format(i))
+        while enkf.active and i < num_steps:
             enkf.step()
+            i += 1
+
         return enkf
 
     @classmethod
@@ -468,6 +464,28 @@ class Modeller():
         except:
             print('failure')
             return None
+
+    @classmethod
+    def run_enkf_benchmark(cls, ensemble_size=20, pop_size=20,
+                           mode=EnsembleKalmanFilterType.STATE):
+        # Set up filter parameters
+        state_vec_length = cls.__make_state_vector_length(pop_size, mode)
+
+        # Initialise filter with StationSim and params
+        filter_params = {'vanilla_ensemble_size': ensemble_size,
+                         'state_vector_length': state_vec_length,
+                         'mode': mode}
+        model_params = {'pop_total': pop_size,
+                        'do_print': True}
+        enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
+                                    filtering=False, benchmarking=True)
+
+        while enkf.active:
+            enkf.baseline_step()
+
+        Visualiser.plot_forecast_error_timeseries(enkf, model_params,
+                                                  filter_params, do_save=True,
+                                                  plot_period=False)
 
 
 class Processor():
@@ -1104,9 +1122,10 @@ class Visualiser():
         """
         results = pd.DataFrame(enkf.forecast_error)
         plt.figure(figsize=(8, 8))
-        plt.scatter(results['time'], results['forecast'], s=0.75)
-        plt.xlabel('iteration')
-        plt.ylabel('forecast rmse')
+        plt.plot(results['time'], results['forecast'])
+        # plt.scatter(results['time'], results['forecast'], s=0.75)
+        plt.xlabel('Timestep')
+        plt.ylabel('Average error per agent')
 
         if plot_period:
             period = filter_params['assimilation_period']

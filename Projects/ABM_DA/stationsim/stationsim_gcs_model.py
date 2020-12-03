@@ -559,9 +559,6 @@ class Model:
         '''
         Iterate model forward one second.
         '''
-        if self.step_id == 0:
-            state = self.get_state('location2D')
-
         if self.pop_finished < self.pop_total and\
                 self.step_id < self.step_limit and self.status == 1:
             if self.do_print and self.step_id % 100 == 0:

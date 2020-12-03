@@ -487,6 +487,13 @@ class Model:
             self.speed_std = 0.349087  # pixel / frame
             self.speed_min = 0.2  # pixel / frame
             self.gates_space = 28.0  # 2 m
+
+            # Group gate numbers by side
+            self.gates_left = [0]
+            self.gates_top = [1, 2]
+            self.gates_right = [3, 4, 5, 6]
+            self.gates_bottom = [7, 8, 9, 10]
+
         else:
             self.gates_locations = np.concatenate([
                 Model._gates_init(0, self.height, self.gates_in),

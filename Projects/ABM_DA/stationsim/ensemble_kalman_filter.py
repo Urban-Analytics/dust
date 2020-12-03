@@ -63,10 +63,10 @@ class EnsembleKalmanFilter(Filter):
         """
         https://arxiv.org/pdf/0901.3725.pdf -
         Covariance matrix R describes the estimate of the error of the data;
-        if the random errors in the entries of the data vector d are independent,
-        R is diagonal and its diagonal entries are the squares of the standard
-        deviation (“error size”) of the error of the corresponding entries of the
-        data vector d.
+        if the random errors in the entries of the data vector d are
+        independent, R is diagonal and its diagonal entries are the squares
+        of the standard deviation (“error size”) of the error of the
+        corresponding entries of the data vector d.
         """
         if not self.data_covariance:
             self.data_covariance = np.diag(self.R_vector)
@@ -88,7 +88,6 @@ class EnsembleKalmanFilter(Filter):
         self.results = list()
 #        self.results = [self.state_mean]
 
-
         # Agent to plot individually
         self.agent_number = 6
 
@@ -101,10 +100,10 @@ class EnsembleKalmanFilter(Filter):
         self.vanilla_ensemble_size = 10
         self.vanilla_models = self.__set_up_models(self.vanilla_ensemble_size)
         # self.vanilla_models = [dcopy(self.base_model) for _ in
-                               # range(self.vanilla_ensemble_size)]
+        #                        range(self.vanilla_ensemble_size)]
         self.vanilla_state_mean = None
-        self.vanilla_state_ensemble = np.zeros(shape=(self.state_vector_length,
-                                                      self.vanilla_ensemble_size))
+        s = (self.state_vector_length, self.vanilla_ensemble_size)
+        self.vanilla_state_ensemble = np.zeros(shape=s)
         self.vanilla_metrics = list()
         self.vanilla_results = list()
 
@@ -238,8 +237,8 @@ class EnsembleKalmanFilter(Filter):
 
         # print('time: {0}, base: {1}'.format(self.time,
             # self.base_model.pop_active))
-        # print('time: {0}, models: {1}'.format(self.time, [m.pop_active for m in
-            # self.models]))
+        # print('time: {0}, models: {1}'.format(self.time, [m.pop_active for
+        #                                                   m in self.models]))
 
     def predict(self):
         """
@@ -314,13 +313,15 @@ class EnsembleKalmanFilter(Filter):
             self.state_ensemble[:, i] = state_vector
         if self.run_vanilla:
             for i in range(self.vanilla_ensemble_size):
-                state_vector = self.vanilla_models[i].get_state(self.sensor_type)
+                st = self.sensor_type
+                state_vector = self.vanilla_models[i].get_state(st)
                 self.vanilla_state_ensemble[:, i] = state_vector
 
     def update_state_means(self):
         self.state_mean = self.update_state_mean(self.state_ensemble)
         if self.run_vanilla:
-            self.vanilla_state_mean = self.update_state_mean(self.vanilla_state_ensemble)
+            state_ensemble = self.vanilla_state_ensemble
+            self.vanilla_state_mean = self.update_state_mean(state_ensemble)
 
     def update_state_mean(self, state_ensemble):
         """
@@ -445,7 +446,8 @@ class EnsembleKalmanFilter(Filter):
         without = list()
 
         for i, result in enumerate(self.results):
-            distance_error, x_error, y_error = self.__make_errors(result, truth[i])
+            distance_error, x_error, y_error = self.__make_errors(result,
+                                                                  truth[i])
             x_mean_errors.append(np.mean(x_error))
             y_mean_errors.append(np.mean(y_error))
             distance_mean_errors.append(np.mean(distance_error))
@@ -455,8 +457,9 @@ class EnsembleKalmanFilter(Filter):
             without.append(np.mean(wo))
 
         # if self.vis:
-            # self.plot_results(distance_mean_errors, x_mean_errors, y_mean_errors)
-            # self.plot_results2(distance_mean_errors, without)
+        #     self.plot_results(distance_mean_errors,
+        #                       x_mean_errors, y_mean_errors)
+        #     self.plot_results2(distance_mean_errors, without)
 
         # Save results to csv if required
         if self.keep_results:

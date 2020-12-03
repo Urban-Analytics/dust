@@ -145,14 +145,15 @@ class Agent:
         wd = self.model.gates_width[gate] / 2.0
         perturb = np.random.uniform(-wd, +wd)
         if(self.model.gates_locations[gate][0] == 0):
-            new_location = self.model.gates_locations[gate] + [1.05*self.size, perturb]
+            xy_perturb = [1.05*self.size, perturb]
         elif(self.model.gates_locations[gate][0] == self.model.width):
-            new_location = self.model.gates_locations[gate] + [-1.05*self.size, perturb]
+            xy_perturb = [-1.05*self.size, perturb]
         elif(self.model.gates_locations[gate][1] == 0):
-            new_location = self.model.gates_locations[gate] + [perturb, 1.05*self.size]
+            xy_perturb = [perturb, 1.05*self.size]
         else:
-            new_location = self.model.gates_locations[gate] + [perturb, -1.05*self.size]
+            xy_perturb = [perturb, -1.05*self.size]
 
+        new_location = self.model.gates_locations[gate] + xy_perturb
         '''
             As there are gates near the corners it is possible to create
             a position outside the station. To fix this, rebound:

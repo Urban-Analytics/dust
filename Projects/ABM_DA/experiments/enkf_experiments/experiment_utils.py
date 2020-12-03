@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 from os import listdir
 import pandas as pd
 from pathlib import Path
-import queue
+# import queue
 import seaborn as sns
-import threading
+# import threading
 import sys
 from time import sleep
 
@@ -39,21 +39,21 @@ class Modeller():
                         'station': 'Grand_Central',
                         'do_print': True}
         # model_params = {'width': 200,
-                        # 'height': 100,
-                        # 'pop_total': pop_size,
-                        # 'gates_in': 3,
-                        # 'gates_space': 2,
-                        # 'gates_speed': 4,
-                        # 'gates_out': 2,
-                        # 'speed_min': .1,
-                        # 'speed_mean': 1,
-                        # 'speed_std': 1,
-                        # 'speed_steps': 3,
-                        # 'separation': 4,
-                        # 'max_wiggle': 1,
-                        # 'step_limit': its,
-                        # 'do_history': True,
-                        # 'do_print': False}
+        #                 'height': 100,
+        #                 'pop_total': pop_size,
+        #                 'gates_in': 3,
+        #                 'gates_space': 2,
+        #                 'gates_speed': 4,
+        #                 'gates_out': 2,
+        #                 'speed_min': .1,
+        #                 'speed_mean': 1,
+        #                 'speed_std': 1,
+        #                 'speed_steps': 3,
+        #                 'separation': 4,
+        #                 'max_wiggle': 1,
+        #                 'step_limit': its,
+        #                 'do_history': True,
+        #                 'do_print': False}
 
         # Set up filter parameters
         OBS_NOISE_STD = 1
@@ -119,8 +119,8 @@ class Modeller():
 
         for i in range(num_steps):
             # if i % 25 == 0:
-                # print('step {0}'.format(i))
-                # # print(enkf.models[0].get_state('loc_exit'))
+            #     print('step {0}'.format(i))
+            #     # print(enkf.models[0].get_state('loc_exit'))
             print('step {0}'.format(i))
             enkf.step()
         return enkf
@@ -145,21 +145,21 @@ class Modeller():
                         'station': 'Grand_Central',
                         'do_print': False}
         # model_params = {'width': 200,
-                        # 'height': 100,
-                        # 'pop_total': p,
-                        # 'gates_in': 3,
-                        # 'gates_space': 2,
-                        # 'gates_speed': 4,
-                        # 'gates_out': 2,
-                        # 'speed_min': .1,
-                        # 'speed_mean': 1,
-                        # 'speed_std': 1,
-                        # 'speed_steps': 3,
-                        # 'separation': 4,
-                        # 'max_wiggle': 1,
-                        # 'step_limit': 500,
-                        # 'do_history': True,
-                        # 'do_print': False}
+        #                 'height': 100,
+        #                 'pop_total': p,
+        #                 'gates_in': 3,
+        #                 'gates_space': 2,
+        #                 'gates_speed': 4,
+        #                 'gates_out': 2,
+        #                 'speed_min': .1,
+        #                 'speed_mean': 1,
+        #                 'speed_std': 1,
+        #                 'speed_steps': 3,
+        #                 'separation': 4,
+        #                 'max_wiggle': 1,
+        #                 'step_limit': 500,
+        #                 'do_history': True,
+        #                 'do_print': False}
 
         OBS_NOISE_STD = s
         vec_length = 2 * model_params['pop_total']
@@ -261,70 +261,70 @@ class Modeller():
             i += 1
 
     # def run_repeat_combos_mt(num_worker_threads=2):
-        # print('getting started with {0} threads'.format(num_worker_threads))
+    #     print('getting started with {0} threads'.format(num_worker_threads))
 
-        # def do_work():
-            # i = 0
-            # tn = threading.current_thread().getName()
-            # print('starting {0}'.format(tn))
-            # while True:
-                # item = q.get()
-                # if item is None:
-                    # break
+    #     def do_work():
+    #         i = 0
+    #         tn = threading.current_thread().getName()
+    #         print('starting {0}'.format(tn))
+    #         while True:
+    #             item = q.get()
+    #             if item is None:
+    #                 break
 
-                # if i % 40 == 25:
-                    # print('Taking a short break.\n\n\n')
-                    # sleep(30)
-                # if i % 200 == 123:
-                    # print('Taking a long break.\n\n\n')
-                    # sleep(120)
+    #             if i % 40 == 25:
+    #                 print('Taking a short break.\n\n\n')
+    #                 sleep(30)
+    #             if i % 200 == 123:
+    #                 print('Taking a long break.\n\n\n')
+    #                 sleep(120)
 
-                # ts = ''
-                # for k, v in item.items():
-                    # ts = ts + '{0}: {1} '.format(k, v)
+    #             ts = ''
+    #             for k, v in item.items():
+    #                 ts = ts + '{0}: {1} '.format(k, v)
 
-                # print('{0} is running {1}'.format(tn, ts))
+    #             print('{0} is running {1}'.format(tn, ts))
 
-                # self.run_repeat(**item)
+    #             self.run_repeat(**item)
 
-                # i += 1
-                # q.task_done()
+    #             i += 1
+    #             q.task_done()
 
-        # ap = [2, 5, 10, 20, 50]
-        # es = [2, 5, 10, 20, 50, 100]
-        # pop = [1+(5 * i) for i in range(0, 11)]
-        # sigma = [0.5 * i for i in range(1, 6)]
+    #     ap = [2, 5, 10, 20, 50]
+    #     es = [2, 5, 10, 20, 50, 100]
+    #     pop = [1+(5 * i) for i in range(0, 11)]
+    #     sigma = [0.5 * i for i in range(1, 6)]
 
-        # combos = list()
+    #     combos = list()
 
-        # for a in ap:
-            # for e in es:
-                # for p in pop:
-                    # for s in sigma:
-                        # t = {'a': a, 'e': e, 'p': p,
-                             # 's': s, 'N': 10, 'write_json': True}
-                        # # t = (a, e, p, s)
-                        # combos.append(t)
+    #     for a in ap:
+    #         for e in es:
+    #             for p in pop:
+    #                 for s in sigma:
+    #                     t = {'a': a, 'e': e, 'p': p,
+    #                          's': s, 'N': 10, 'write_json': True}
+    #                     # t = (a, e, p, s)
+    #                     combos.append(t)
 
-        # # combos.reverse()
+    #     # combos.reverse()
 
-        # q = queue.Queue()
-        # for c in combos:
-            # q.put(c)
+    #     q = queue.Queue()
+    #     for c in combos:
+    #         q.put(c)
 
-        # print('{} jobs to complete'.format(len(combos)))
-        # threads = list()
+    #     print('{} jobs to complete'.format(len(combos)))
+    #     threads = list()
 
-        # for _ in range(num_worker_threads):
-            # t = threading.Thread(target=do_work)
-            # threads.append(t)
-            # t.start()
+    #     for _ in range(num_worker_threads):
+    #         t = threading.Thread(target=do_work)
+    #         threads.append(t)
+    #         t.start()
 
-        # q.join()
-        # for _ in range(num_worker_threads):
-            # q.put(None)
-        # for t in threads:
-            # t.join()
+    #     q.join()
+    #     for _ in range(num_worker_threads):
+    #         q.put(None)
+    #     for t in threads:
+    #         t.join()
 
     @staticmethod
     def run_for_endtime(N=250):
@@ -333,7 +333,7 @@ class Modeller():
         taken for all agents to reach their assigned exit varies with
         population size.
 
-        Run stationsim_gcs for a range of population sizes. 
+        Run stationsim_gcs for a range of population sizes.
         For each population size, run the model N times, collecting the time at
         the model finds that all of its agents have reached their assigned
         exits.
@@ -559,19 +559,19 @@ class Processor():
 
         Extract an array of the mean errors with two parameters varying; other
         parameters are kept fixed.
-        First define the default values for each of the four possible parameters
-        (assimilation period, ensemble size, population size and observation noise
-        standard deviation).
+        First define the default values for each of the four possible
+        parameters (assimilation period, ensemble size, population size and
+        observation noise standard deviation).
         Get the sorted values that each of the chosen parameters take.
         Create an array of the data that fits the above conditions, and convert
-        into an array with column indices taking the values of the first parameter
-        and the row indices taking the value of the second parameter.
+        into an array with column indices taking the values of the first
+        parameter and the row indices taking the value of the second parameter.
 
         Parameters
         ----------
         df : pandas dataframe
-            A pandas dataframe containing all of the mean errors for each of the
-            parameter combinations.
+            A pandas dataframe containing all of the mean errors for each of
+            the parameter combinations.
         var1 : string
             Name of the first variable that we want to consider variation with
             respect to.
@@ -615,14 +615,15 @@ class Processor():
         """
         process_repeat_results
 
-        Takes the results of running the enkf repeatedly and restructures it into
-        separate data structures for forecasts, analyses and observations.
+        Takes the results of running the enkf repeatedly and restructures it
+        into separate data structures for forecasts, analyses and observations.
 
         Parameters
         ----------
         results : list(list(dict()))
-            Each list entry is a list of dictionaries which stores the time-series
-            of the forecast, analysis and observations for that realisation.
+            Each list entry is a list of dictionaries which stores the
+            time-series of the forecast, analysis and observations for that
+            realisation.
             Each dictionary contains entries for:
                 - time
                 - forecast
@@ -657,7 +658,6 @@ class Processor():
         observations = cls.make_dataframe(observations, times)
         return forecasts, analyses, observations
 
-
     @staticmethod
     def make_dataframe(dataset, times):
         """
@@ -677,8 +677,8 @@ class Processor():
         dataset : list(list())
             List of lists containing data.
             Each inner list contains a single time-series.
-            The outer list contains a collection of inner lists, each pertaining to
-            a realisation of the model.
+            The outer list contains a collection of inner lists, each
+            pertaining to a realisation of the model.
         times : list-like
             List of times at which data is provided.
         """
@@ -704,15 +704,16 @@ class Visualiser():
         """
         Make a collection of error heatmaps.
 
-        Use plot_heatmap() to produce heatmaps showing how the mean error varies
-        with respect to assimilation period and population size, ensemble size and
-        population size, and obsevation standard deviation and population size.
+        Use plot_heatmap() to produce heatmaps showing how the mean error
+        varies with respect to assimilation period and population size,
+        ensemble size and population size, and observation standard deviation
+        and population size.
 
         Parameters
         ----------
         data : pandas dataframe
-            A pandas dataframe containing mean errors and values for each of the
-            input parameters.
+            A pandas dataframe containing mean errors and values for each of
+            the input parameters.
         """
         # plot_heatmap(data, 'assimilation_period', 'ensemble_size')
         cls.plot_heatmap(data, 'assimilation_period', 'population_size')
@@ -724,22 +725,23 @@ class Visualiser():
     @staticmethod
     def plot_heatmap(data, var1, var2):
         """
-        Plotting a heat map of variation of errors with respect to two variables.
+        Plotting a heat map of variation of errors with respect to two
+        variables.
 
         Extract the appropriate data array from the data.
-        Produce a matplotlib contour plot of the variation of the mean error with
-        respect to var1 and var2.
+        Produce a matplotlib contour plot of the variation of the mean error
+        with respect to var1 and var2.
         Save as a pdf figure with name based on the two variables.
 
         Parameters
         ----------
         data : pandas dataframe
-            A pandas dataframe in which each row pertains to the error resulting
-            from an input set of parameters. Consequently, each row contains the
-            mean error, as well as the relevant parameter values.
+            A pandas dataframe in which each row pertains to the error
+            resulting from an input set of parameters. Consequently, each row
+            contains the mean error, as well as the relevant parameter values.
         var1 : string
-            The first variable against which we would like to measure the variation
-            of the mean error.
+            The first variable against which we would like to measure the
+            variation of the mean error.
         var2 : string
             The second variable against which we would like to measure the
             variation of the mean error.
@@ -773,15 +775,15 @@ class Visualiser():
         plot_results
 
         Plot results for a single dataset (i.e. either forecast, analysis or
-        observations). Produces a line graph containing individual lines for each
-        realisation (low alpha and dashed), and a line for the mean of the
-        realisations (full alpha and bold).
+        observations). Produces a line graph containing individual lines for
+        each realisation (low alpha and dashed), and a line for the mean of
+        the realisations (full alpha and bold).
 
         Parameters
         ----------
         dataset : pandas dataframe
-            pandas dataframe of data containing multiple realisations and mean of
-            all realisations indexed on time.
+            pandas dataframe of data containing multiple realisations and mean
+            of all realisations indexed on time.
         """
         no_plot = ['sd', 'up_diff', 'down_diff']
         colnames = list(dataset)
@@ -823,7 +825,8 @@ class Visualiser():
         colnames = list(forecast)
         for col in colnames:
             if col == 'mean':
-                ax1.plot(forecast[col], 'b-', linewidth=2, label='forecast mean')
+                ax1.plot(forecast[col], 'b-', linewidth=2,
+                         label='forecast mean')
             elif col not in no_plot:
                 ax1.plot(forecast[col], 'b--', alpha=0.25, label='_nolegend_')
         ax1.legend(loc='upper left')
@@ -832,7 +835,8 @@ class Visualiser():
         colnames = list(analysis)
         for col in colnames:
             if col == 'mean':
-                ax2.plot(analysis[col], 'g-', linewidth=2, label='analysis mean')
+                ax2.plot(analysis[col], 'g-', linewidth=2,
+                         label='analysis mean')
             elif col not in no_plot:
                 ax2.plot(analysis[col], 'g--', alpha=0.25, label='_nolegend_')
         ax2.legend(loc='upper left')
@@ -841,9 +845,11 @@ class Visualiser():
         colnames = list(observation)
         for col in colnames:
             if col == 'mean':
-                ax3.plot(observation[col], 'k-', linewidth=2, label='observation mean')
+                ax3.plot(observation[col], 'k-', linewidth=2,
+                         label='observation mean')
             elif col not in no_plot:
-                ax3.plot(observation[col], 'k--', alpha=0.25, label='_nolegend_')
+                ax3.plot(observation[col], 'k--', alpha=0.25,
+                         label='_nolegend_')
         ax3.legend(loc='upper left')
         ax3.set_xlabel('time')
         ax3.set_ylabel('RMSE')
@@ -915,7 +921,8 @@ class Visualiser():
         if len(obs) > 0:
             obs_x, obs_y = enkf.separate_coords(obs)
         if enkf.run_vanilla:
-            vanilla_x, vanilla_y = enkf.separate_coords(enkf.vanilla_state_mean)
+            state_mean = enkf.vanilla_state_mean
+            vanilla_x, vanilla_y = enkf.separate_coords(state_mean)
 
         # Plot agents
         plot_width = 8
@@ -961,7 +968,8 @@ class Visualiser():
         if len(obs) > 0:
             obs_x, obs_y = enkf.separate_coords(obs)
         if enkf.run_vanilla:
-            vanilla_x, vanilla_y = enkf.separate_coords(enkf.vanilla_state_mean)
+            state_mean = enkf.vanilla_state_mean
+            vanilla_x, vanilla_y = enkf.separate_coords(state_mean)
 
         # Plot agents
         plot_width = 8
@@ -974,10 +982,12 @@ class Visualiser():
         plt.scatter(base_x[enkf.agent_number],
                     base_y[enkf.agent_number], label='Ground truth')
         plt.scatter(mean_x[enkf.agent_number],
-                    mean_y[enkf.agent_number], marker='x', label='Ensemble mean')
+                    mean_y[enkf.agent_number], marker='x',
+                    label='Ensemble mean')
         if len(obs) > 0:
             plt.scatter(obs_x[enkf.agent_number],
-                        obs_y[enkf.agent_number], marker='*', label='Observation')
+                        obs_y[enkf.agent_number], marker='*',
+                        label='Observation')
         if enkf.run_vanilla:
             plt.scatter(vanilla_x, vanilla_y, alpha=0.5, label='mean w/o da',
                         color='black')
@@ -1041,7 +1051,8 @@ class Visualiser():
         plt.show()
 
     @staticmethod
-    def plot_error_timeseries(enkf, model_params, filter_params, do_save=False):
+    def plot_error_timeseries(enkf, model_params, filter_params,
+                              do_save=False):
         results = pd.DataFrame(enkf.metrics)
         plt.figure(figsize=(8, 8))
         plt.plot(results['time'], results['obs'], label='observations')
@@ -1088,8 +1099,8 @@ class Visualiser():
         do_save : boolean
             Indicates whether or not to save a copy of the plots.
         plot_period : boolean
-            Indicates whether or not to plot vertical lines indicating timesteps
-            at which data have been assimilated.
+            Indicates whether or not to plot vertical lines indicating
+            timesteps at which data have been assimilated.
         """
         results = pd.DataFrame(enkf.forecast_error)
         plt.figure(figsize=(8, 8))

@@ -1,6 +1,7 @@
 '''
 StationSim - GrandCentral version
-    created: 21/04/2020
+    author: patricia-ternes
+    modified: 19/06/2020
 '''
 
 import warnings
@@ -12,7 +13,7 @@ from matplotlib.animation import FuncAnimation
 # Dont automatically load seaborn as it isn't needed on the HPC
 try:
     from seaborn import kdeplot as sns_kdeplot
-except ImportError:
+except ImportError as e:
     warnings.warn("The seaborn module is not available. If you try to create "
                   "kde plots for this model (i.e. a wiggle map or density "
                   "map) then it will fail.")
@@ -26,7 +27,7 @@ class Agent:
         '''
         Initialise a new agent.
 
-        Description:
+        Desctiption:
             Creates a new agent and gives it a randomly chosen exit,
             and desired speed.
             All agents start with active state 0 ('not started').
@@ -45,10 +46,7 @@ class Agent:
         self.size = model.agent_size
 
         self.gate_in = np.random.randint(model.gates_in)
-        self.gate_out = np.random.randint(model.gates_out) + model.gates_in
-        while (self.gate_out == self.gate_in or
-                self.gate_out >= model.gates_out):
-            self.gate_out = np.random.randint(model.gates_out)
+        self.set_gate_out()
         self.loc_desire = self.set_agent_location(self.gate_out)
 
         # Speed
@@ -58,7 +56,8 @@ class Agent:
         self.speeds = np.arange(speed_max, model.speed_min, - model.speed_step)
         self.speed = np.random.choice((self.speeds))
         # Others
-        self.steps_activate = np.random.exponential(model.gates_speed)
+
+        self.steps_activate = self.unique_id * 25.0 / model.birth_rate
 
         # History
         if model.do_history:
@@ -67,6 +66,31 @@ class Agent:
             self.history_wiggles = 0
             self.history_collisions = 0
             self.step_start = None
+        else:
+            self.history_locations = []  # necessary in Particle Filter
+            self.step_start = None
+
+    def set_gate_out(self):
+        '''
+        Set a exit gate for the agent.
+        - ['Grand_Central'] The exit gate can be any gate that is on a
+                            different side of the entrance gate.
+        - ['Other'] The exit gate can be any gate in the opposite side of
+                  the entrance gate.
+        '''
+
+        if (self.model.station == 'Grand_Central'):
+            if (self.gate_in == 0):
+                self.gate_out = np.random.random_integers(1, 10)
+
+            elif (self.gate_in == 1 or self.gate_in == 2):
+                self.gate_out = np.random.choice((0, 3, 4, 5, 6, 7, 8, 9, 10))
+            elif (self.gate_in == 3 or self.gate_in == 4 or self.gate_in == 5 or self.gate_in == 6):
+                self.gate_out = np.random.choice((0, 1, 2, 7, 8, 9, 10))
+            else:
+                self.gate_out = np.random.random_integers(0, 6)
+        else:
+            self.gate_out = np.random.randint(self.model.gates_out) + self.model.gates_in
 
     def step(self, time):
         '''
@@ -107,29 +131,31 @@ class Agent:
                         break
 
     def set_agent_location(self, gate):
-        """
-        set_agent_locations
+        '''
+            Define one final or initial position for the agent.
 
-        Provide a set of coordinates in 2d space pertaining to the provided gate
-        number.
-        A perturbation is introduced to ensure that the agent in question
-        remains a set distance from the wall of the environment (based on the
-        agent's size).
-
-        Parameters
-        ----------
-        gate : int
-            Number of the gate in the collection of gates in the model.
-        """
-        perturb = self.model.gates_space * np.random.uniform(-10, +10)
+            It is necessary to ensure that the agent has a distance from
+            the station wall compatible with its own size.
+        '''
+        wd = self.model.gates_width[gate] / 2.0
+        perturb = np.random.uniform(-wd, +wd)
         if(self.model.gates_locations[gate][0] == 0):
-            return self.model.gates_locations[gate] + [1.05*self.size, perturb]
+            new_location = self.model.gates_locations[gate] + [1.05*self.size, perturb]
         elif(self.model.gates_locations[gate][0] == self.model.width):
-            return self.model.gates_locations[gate] + [-1.05*self.size, perturb]
+            new_location = self.model.gates_locations[gate] + [-1.05*self.size, perturb]
         elif(self.model.gates_locations[gate][1] == 0):
-            return self.model.gates_locations[gate] + [perturb, 1.05*self.size]
+            new_location = self.model.gates_locations[gate] + [perturb, 1.05*self.size]
         else:
-            return self.model.gates_locations[gate] + [perturb, -1.05*self.size]
+            new_location = self.model.gates_locations[gate] + [perturb, -1.05*self.size]
+
+        '''
+            As there are gates near the corners it is possible to create
+            a position outside the station. To fix this, rebound:
+        '''
+        if not self.model.is_within_bounds(self, new_location):
+            new_location = self.model.re_bound(self, new_location)
+
+        return new_location
 
     @staticmethod
     def distance(loc1, loc2):
@@ -148,13 +174,21 @@ class Agent:
         return norm
 
     def get_direction(self, loc_desire, location):
-        return (loc_desire - location) / self.distance(loc_desire, location)
+        '''
+                 Function to get the direction of movement.
+        '''
+
+        if (self.distance(loc_desire, location) == 0):
+            direction = np.array([0, 0])
+        else:
+            direction = (loc_desire - location) / self.distance(loc_desire, location)
+        return direction
 
     @staticmethod
     def get_normal_direction(direction):
         '''
-        Rotate a two-dimensional array by 90 degrees in clockwise or
-        counter clockwise direction (np.random.choice((-1, 1))).
+         A helpful function to rotate a two-dimensional array by 90
+         degrees in clockwise or counter clockwise direction (-1, 1).
         '''
         return np.array([direction[1], direction[0] *
                          np.random.choice((-1, 1))])
@@ -191,7 +225,7 @@ class Agent:
             normal_direction = self.get_normal_direction(direction)
             new_location = self.location +\
                 normal_direction *\
-                np.random.normal(self.size, self.size/2.0)
+                np.random.normal(self.size, self.size)
 
             # Rebound
             if not self.model.is_within_bounds(self, new_location):
@@ -205,8 +239,18 @@ class Agent:
 
             # Check if the new location is possible
             neighbouring_agents = self.model.tree.query_ball_point(new_location,
-                                                              self.size*1.1)
+                                                                   self.size*1.1)
             dist = self.distance(new_location, self.model.clock.location)
+            if (dist > (self.size + self.model.clock.size)):
+                if (neighbouring_agents == [] or neighbouring_agents == [self.unique_id]):
+                    self.location = new_location
+                    # wiggle_map
+                    if self.model.do_history:
+                        self.history_wiggles += 1
+                        self.model.history_wiggle_locs.append(new_location)
+                    break
+
+            '''
             if ((neighbouring_agents == [] or
                     neighbouring_agents == [self.unique_id]) and
                     (dist > (self.size + self.model.clock.size))):
@@ -217,6 +261,7 @@ class Agent:
                     self.history_wiggles += 1
                     self.model.history_wiggle_locs.append(new_location)
                 break
+            '''
 
     def deactivate(self):
         '''
@@ -224,7 +269,6 @@ class Agent:
         remove them. Otherwise do nothing.
         '''
         if self.distance(self.location, self.loc_desire) < self.model.gates_space:
-            print('deactivating agent')
             self.status = 2
             self.model.pop_active -= 1
             self.model.pop_finished += 1
@@ -327,7 +371,7 @@ class Model:
     '''
     def __init__(self, unique_id=None, **kwargs):
         '''
-        Create a new model, reading parameters from a keyword argument
+        Create a new model, reading parameters from a keyword arguement
         dictionary.
         '''
         self.unique_id = unique_id
@@ -336,14 +380,13 @@ class Model:
         params = {
             'pop_total': 100,
             'agent_size': 1.0,  # new parameter
+            'birth_rate': 1.0,  # new parameter
 
             'width': 400,
             'height': 200,
-
             'gates_in': 3,
             'gates_out': 2,
-            'gates_space': 1,
-            'gates_speed': 100,  # new default value
+            'gates_space': 1.0,
 
             'speed_min': .2,
             'speed_mean': 1,
@@ -352,7 +395,7 @@ class Model:
 
             'separation': 5,  # just used in animation
 
-            'step_limit': 3600,
+            'step_limit': 10000,
 
             'do_history': True,
             'do_print': True,
@@ -363,6 +406,7 @@ class Model:
             'station': None  # None or Grand_Central  # new parameter
 
         }
+
         if len(kwargs) == 0:
             warnings.warn(
                 "No parameters have been passed to the model; using the "
@@ -383,14 +427,12 @@ class Model:
 
         # Initialise station
         self.set_station()
-        self.boundaries = np.array([[0, 0], [self.width, self.height]])
 
         # Initialise agents
         self.agents = [Agent(self, unique_id) for unique_id in
                        range(self.pop_total)]
 
         if self.do_history:
-            self.time_save = []
             self.history_state = []
             self.history_wiggle_locs = []
             self.history_collision_locs = []
@@ -416,26 +458,41 @@ class Model:
         number of gates, gate size, etc.
         '''
         if(self.station == 'Grand_Central'):
-            self.width = 200
-            self.height = 400
-            # gates ordered clockwise from west side
+            self.width = 740  # 53 m
+            self.height = 700  # 50 m
+            self.boundaries = np.array([[0, 0], [self.width, self.height]])
             self.gates_locations =\
-                np.array([[20, self.height], [170, self.height],  # west
-                          [self.width, 340], [self.width, 275],   # north
-                          [self.width, 200], [self.width, 125],   # north
-                          [self.width, 60],                       # north
-                          [170, 0], [20, 0],                      # east
-                          [0, self.height/2]])                    # south
+                np.array([[0, 275],  # gate 0
+                          [125, 700],   # gate 1
+                          [577.5, 700],  # gate 2
+                          [740, 655],  # gate 3
+                          [740, 475],  # gate 4
+                          [740, 265],   # gate 5
+                          [740, 65],   # gate 6
+                          [647.5, 0],   # gate 7
+                          [462.5, 0],   # gate 8
+                          [277.5, 0],   # gate 9
+                          [92.5, 0]])   # gate 10
+
+            self.gates_width = [250, 250, 245, 90, 150, 150, 120, 185, 185, 185, 185]
+
             self.gates_in = len(self.gates_locations)
             self.gates_out = len(self.gates_locations)
             self.clock = Agent(self, self.pop_total)
-            self.clock.size = 10.0
-            self.clock.location = [self.width/2.0, self.height/2.0]
+            self.clock.size = 56.0  # 4 m
+            self.clock.location = [370, 275]  # 26.4 m, 20 m
             self.clock.speed = 0.0
+            self.agent_size = 7.0  # 0.5 m
+            self.speed_mean = 0.839236  # pixel / frame
+            self.speed_std = 0.349087  # pixel / frame
+            self.speed_min = 0.2  # pixel / frame
+            self.gates_space = 28.0  # 2 m
         else:
             self.gates_locations = np.concatenate([
                 Model._gates_init(0, self.height, self.gates_in),
                 Model._gates_init(self.width, self.height, self.gates_out)])
+            self.gates_width = [20 for _ in range(len(self.gates_locations))]
+            self.boundaries = np.array([[0, 0], [self.width, self.height]])
             # create a clock outside the station.
             self.clock = Agent(self, self.pop_total)
             self.clock.speed = 0.0
@@ -448,8 +505,8 @@ class Model:
                 )
 
     def is_within_bounds(self, agent, loc):
-        return all((self.boundaries[0] + agent.size) < loc) and\
-               all(loc < (self.boundaries[1] - agent.size))
+        return all((self.boundaries[0] + agent.size*2.0) < loc) and\
+               all(loc < (self.boundaries[1] - agent.size*2.0))
 
     def re_bound(self, agent, loc):
         return np.clip(loc, self.boundaries[0] + agent.size*1.1,
@@ -474,116 +531,45 @@ class Model:
                 print(f'BadKeyWarning: {key} is not a model parameter.')
         return dict0, dict2
 
-    # def step(self):
-        # '''
-        # Iterate model forward one step.
-        # '''
-        # # Why? Does this do anything?
-        # if self.step_id == 0:
-            # state = self.get_state('location2D')
-
-        # # print('model status', self.status)
-
-        # # If there are still agents in the model
-        # # AND we are within the time limit
-        # # AND?
-        # # What is status supposed to represent here?
-        # # Do we need it?
-        # # Or is is just a proxy for the other conditions?
-        # # It's also in the else statement, so maybe redundant?
-        # if self.pop_finished < self.pop_total and\
-                # self.step_id < self.step_limit and self.status == 1:
-            # if self.do_print and self.step_id % 100 == 0:
-                # print(f'\tIteration: {self.step_id}/{self.step_limit}')
-
-            # # Go through each agent, and activate the ones that should be active
-            # # by now
-            # [agent.activate() for agent in self.agents]
-
-            # # Make a table of the potential collisions
-            # # if the soonest collision is not inside a single iteration
-            # # then just step every agent by 1 timestep
-            # collisionTable, tmin = self.get_collisionTable()
-            # if (tmin > 1.0):
-                # [agent.step(1) for agent in self.agents]
-                # self.total_time += 1
-            # # Otherwise, step them slightly less than the time to the next
-            # # collision
-            # # find the agents that would be about to collide
-            # # make them wiggle to avoid the collision.
-            # else:
-                # # Why specifically 0.98?
-                # tmin *= 0.98  # stop just before the collision
-                # [agent.step(tmin) for agent in self.agents]
-                # # Find agents that would collide, and make them wiggle
-                # wiggleTable = self.get_wiggleTable(collisionTable, tmin)
-                # [self.agents[i].set_wiggle() for i in wiggleTable]
-                # self.total_time += tmin
-
-            # if self.do_history:
-                # # total_time % 1.0 <= 1 for all total_time!
-                # if (self.total_time % 1.0 <= 1 and
-                        # int(self.total_time) not in self.time_save):
-                    # self.time_save.append(int(self.total_time))
-                    # state = self.get_state('location2D')
-                    # self.history_state.append(state)
-                    # [agent.history() for agent in self.agents]
-
-            # self.step_id += 1
-        # else:
-            # if self.do_print and self.status == 1:
-                # print(f'StationSim {self.unique_id} - Everyone made it!')
-                # self.status = 0
-                # self.max_time = max(self.time_save)
-
     def step(self):
         '''
-        Iterate model forward one step.
+        Iterate model forward one second.
         '''
-        # Why? Does this do anything?
         if self.step_id == 0:
             state = self.get_state('location2D')
 
-        # If there are still agents in the model
-        # AND we are within the time limit
-        # AND?
-        # What is status supposed to represent here?
-        # Do we need it?
-        # Or is is just a proxy for the other conditions?
-        # It's also in the else statement, so maybe redundant?
         if self.pop_finished < self.pop_total and\
                 self.step_id < self.step_limit and self.status == 1:
             if self.do_print and self.step_id % 100 == 0:
                 print(f'\tIteration: {self.step_id}/{self.step_limit}')
 
             [agent.activate() for agent in self.agents]
-            collisionTable, tmin = self.get_collisionTable()
 
-            if (tmin > 1.0):
-                [agent.step(1) for agent in self.agents]
-                self.total_time += 1
-            else:
-                tmin *= 0.98
-                [agent.step(tmin) for agent in self.agents]
-                wiggleTable = self.get_wiggleTable(collisionTable, tmin)
-                [self.agents[i].set_wiggle() for i in wiggleTable]
-                self.total_time += tmin
+            t = 1.0
+            while (t > 0):
+                collisionTable, tmin = self.get_collisionTable()
+                if (tmin > t):
+                    [agent.step(t) for agent in self.agents]
+                    self.total_time += t
+                    t -= tmin
+                else:
+                    tmin *= 0.98  # stop just before the collision
+                    t -= tmin
+                    [agent.step(tmin) for agent in self.agents]
+                    wiggleTable = self.get_wiggleTable(collisionTable, tmin)
+                    [self.agents[i].set_wiggle() for i in wiggleTable]
+                    self.total_time += tmin
 
             if self.do_history:
-                if (self.total_time % 1.0 <= 1 and int(self.total_time) not in self.time_save):
-                    self.time_save.append(int(self.total_time))
-                    state = self.get_state('location2D')
-                    self.history_state.append(state)
-                    [agent.history() for agent in self.agents]
+                state = self.get_state('location2D')
+                self.history_state.append(state)
+                [agent.history() for agent in self.agents]
 
             self.step_id += 1
-
-        elif self.do_print and self.status == 1:
-            print(f'StationSim {self.unique_id} - Everyone made it!')
-            self.status = 0
-            self.max_time = max(self.time_save)
         else:
-            print(self.unique_id, 'pass')
+            if self.do_print and self.status == 1:
+                print(f'StationSim {self.unique_id} - Everyone made it!')
+                self.status = 0
 
     # information about next collision
     def get_collisionTable(self):
@@ -617,6 +603,8 @@ class Model:
         try:
             tmin = min(collisionTable)
             tmin = tmin[0]
+            if tmin <= 1.0e-10:
+                tmin = 0.02
         except:
             tmin = 1.0e300
 
@@ -649,11 +637,12 @@ class Model:
             state = np.ravel(state)
         elif sensor == 'location2D':
             state = [agent.location for agent in self.agents]
-        elif sensor == 'loc_exit':
-            locations = self.get_state('location2D')
-            x, y = [l[0] for l in locations], [l[1] for l in locations]
-            exits = [agent.gate_out for agent in self.agents]
-            state = x + y + exits
+        elif sensor == 'locationVel':
+            state0 = [agent.location for agent in self.agents]
+            state0 = np.ravel(state0)
+            state1 = [agent.speed for agent in self.agents]
+            state1 = np.ravel(state1)
+            state = [state0, state1]
         return state
 
     def set_state(self, state, sensor=None):
@@ -673,12 +662,12 @@ class Model:
         elif sensor == 'location2D':
             for i, agent in enumerate(self.agents):
                 agent.location = state[i, :]
-        elif sensor == 'exit':
+        elif sensor == 'locationVel':
+            state0 = np.reshape(state[0], (self.pop_total, 2))
+            state1 = np.reshape(state[1], (self.pop_total, 1))
             for i, agent in enumerate(self.agents):
-                agent.gate_out = state[i]
-                agent.loc_desire = agent.set_agent_location(state[i])
-        else:
-            raise ValueError('Sensor type not recognised.')
+                agent.location = state0[i, :]
+                agent.speed = state1[i, :]
 
     # TODO: Deprecated, update PF
     def agents2state(self, do_ravel=True):
@@ -701,16 +690,31 @@ class Model:
         if not(os.path.exists(directory)):
             os.mkdir(directory)
         locs = np.array([agent.history_locations for agent in
-                         self.agents[:agents]]).transpose((1, 2, 0))        
+                         self.agents[:agents]]).transpose((1, 2, 0))
         if(sensor == 'frame'):
-            for frame in self.time_save:
-                save_file = open(directory+'/frame_'+ str(frame) +'.dat', 'w')
+            for frame in range(self.step_id):
+                save_file = open(directory+'/frame_' + str(frame+1) + '.dat', 'w')
                 print('#agentID', 'x', 'y', file=save_file)
                 x = locs[frame-1][0]
                 y = locs[frame-1][1]
                 for agent in range(self.pop_total):
-                    if(x[agent]!=None):
+                    if(x[agent] is not None):
                         print(agent, x[agent], y[agent], file=save_file)
+                save_file.close()
+        elif(sensor == 'activation'):
+            save_file = open(directory+'/activation.dat', 'w')
+            print('#agentID', 'time_activation', 'gate_in', 'gate_out', 'speed', 'loc_desireX', 'loc_desireY', file=save_file)
+            for agent in self.agents:
+                print(agent.unique_id, agent.step_start, agent.gate_in, agent.gate_out, agent.speed, agent.loc_desire[0], agent.loc_desire[1], file=save_file)
+                # print(agent.unique_id, agent.step_start, agent.loc_start[0], agent.loc_start[1], agent.gate_out, file=save_file)
+            save_file.close()
+        elif(sensor == 'trails'):
+            for agent in self.agents:
+                save_file = open(directory+'/agent_{}.dat'.format(agent.unique_id), 'w')
+                loc = agent.history_locations
+                for xy in loc:
+                    if(xy[0] is not None):
+                        print(xy[0], xy[1], file=save_file)
                 save_file.close()
 
     # Analytics
@@ -884,9 +888,56 @@ class Model:
                 ln0.set_data(*locs[frame])
             ln1.set_data(*locs[frame])
             return ln0, ln1,
-        frames = len(self.time_save)
+        frames = self.step_id
         ani = FuncAnimation(fig, func, frames, init, interval=100, blit=True)
         return ani
+
+    def get_distace_plot(self, real_data_dir, frame_i, frame_f, dt):
+        self.graphX1 = []
+        self.graphY1 = []
+        self.graphERR1 = []  # x, y, dy
+        data = []
+        for frame in range(frame_i, frame_f, dt):
+            ID, x, y = np.loadtxt(real_data_dir + str(frame) + '.0.dat', unpack=True)
+            dist = []
+            for i in range(len(ID)):
+                agent_ID = int(ID[i])
+                r1 = self.agents[agent_ID].history_locations[int(frame/dt)]
+                r2 = (x[i], y[i])
+                if np.all(r1 != (None, None)):
+                    distance = self.agents[agent_ID].distance(r1, r2)
+                    dist.append(distance)
+                    time = int(frame - self.agents[agent_ID].step_start)
+                    data.append([time, distance])
+            dist = np.asarray(dist)
+            self.graphX1.append(frame)
+            self.graphY1.append(dist.mean())
+            self.graphERR1.append(dist.std())
+
+        from operator import itemgetter
+        # sort by frame
+        data1 = sorted(data, key=itemgetter(0))
+
+        frame = data1[0][0]
+        self.graphX2 = []
+        self.graphY2 = []
+        self.graphERR2 = []  # x, y, dy
+        dist = []
+        for line in data1:
+            if (line[0] == frame):
+                dist.append(line[1])
+            else:
+                dist = np.asarray(dist)
+                self.graphX2.append(frame)
+                self.graphY2.append(dist.mean())
+                self.graphERR2.append(dist.std())
+                frame = line[0]
+                dist = []
+                dist.append(line[1])
+        dist = np.asarray(dist)
+        self.graphX2.append(frame)
+        self.graphY2.append(dist.mean())
+        self.graphERR2.append(dist.std())
 
     @classmethod
     def set_random_seed(cls, seed=None):
@@ -897,6 +948,7 @@ class Model:
         new_seed = int.from_bytes(os.urandom(4), byteorder='little')\
             if seed is None else seed
         np.random.seed(new_seed)
+
 
 if __name__ == '__main__':
     warnings.warn("The stationsim_gcs_model.py code should not be run directly"

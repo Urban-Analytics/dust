@@ -80,15 +80,20 @@ class Agent:
         '''
 
         if (self.model.station == 'Grand_Central'):
-            if (self.gate_in == 0):
+            if self.gate_in in self.model.gates_left:
                 self.gate_out = np.random.random_integers(1, 10)
 
-            elif (self.gate_in == 1 or self.gate_in == 2):
+            elif self.gate_in in self.model.gates_top:
                 self.gate_out = np.random.choice((0, 3, 4, 5, 6, 7, 8, 9, 10))
-            elif (self.gate_in == 3 or self.gate_in == 4 or self.gate_in == 5 or self.gate_in == 6):
+
+            elif self.gate_in in self.model.gates_right:
                 self.gate_out = np.random.choice((0, 1, 2, 7, 8, 9, 10))
-            else:
+
+            elif self.gate_in in self.model.gates_bottom:
                 self.gate_out = np.random.random_integers(0, 6)
+
+            else:
+                raise ValueError(f'Invalid gate_in chosen: {self.gate_in}')
         else:
             self.gate_out = np.random.randint(self.model.gates_out) + self.model.gates_in
 
@@ -478,6 +483,14 @@ class Model:
 
             self.gates_in = len(self.gates_locations)
             self.gates_out = len(self.gates_locations)
+
+            # Group gate numbers by side
+            self.gates_left = [0]
+            self.gates_top = [1, 2]
+            self.gates_right = [3, 4, 5, 6]
+            self.gates_bottom = [7, 8, 9, 10]
+
+            # Set up clock
             self.clock = Agent(self, self.pop_total)
             self.clock.size = 56.0  # 4 m
             self.clock.location = [370, 275]  # 26.4 m, 20 m
@@ -487,12 +500,6 @@ class Model:
             self.speed_std = 0.349087  # pixel / frame
             self.speed_min = 0.2  # pixel / frame
             self.gates_space = 28.0  # 2 m
-
-            # Group gate numbers by side
-            self.gates_left = [0]
-            self.gates_top = [1, 2]
-            self.gates_right = [3, 4, 5, 6]
-            self.gates_bottom = [7, 8, 9, 10]
 
         else:
             self.gates_locations = np.concatenate([

@@ -1,12 +1,11 @@
 '''
-Particle Filter - external data version
+Particle Filter - GCT data version
     modified by: patricia-ternes
-    created: 30/04/2020
+    modified: 19/06/2020
 '''
+#import sys
 from filter import Filter
 from stationsim_gcs_model import Model
-
-
 import numpy as np
 import matplotlib.pyplot as plt
 from copy import deepcopy
@@ -43,8 +42,15 @@ class ParticleFilter(Filter):
                                     and displayed
          - show_ani:                If false then don't actually show the animation. The individual
                                     can be retrieved later from self.animation
-         - external_data:           Boolean to determine whether base data should be created internally or loaded from external files.
-        
+         - do_external_data:     	Boolean to determine whether base data should be created 
+                                    internally (False) or loaded from external files (True).
+         - external_info:           List with 3 elements. The first element is the 'directory/' with
+                                    the external data. The second element is a boolean to determine 
+                                    whether it is to determine the speed using external data (True) 
+                                    or internally (False). The third element is a boolean to determine 
+                                    whether it is to determine the gate_out using external data (True) 
+                                    or internally (False).
+        - pf_method:                The name of the desired PF method: 'sir', 'hybrid', 'tempered'                                    
         DESCRIPTION
         Firstly, set all attributes using filter parameters. Set time and
         initialise base model using model parameters. Initialise particle
@@ -56,10 +62,12 @@ class ParticleFilter(Filter):
             setattr(self, key, value)
         self.time = 0
         self.number_of_iterations = model_params['batch_iterations']
-        self.base_model = ModelClass(**model_params) # (Model does not need a unique id)        
-        if self.external_data:
-            self.set_initial_conditions()
+        self.base_model = ModelClass(**model_params) # (Model does not need a unique id)
         self.models = list([deepcopy(self.base_model) for _ in range(self.number_of_particles)])
+        # To store the final result
+        self.estimate_model = ModelClass(**model_params)
+        if self.do_external_data:
+            self.set_initial_conditions()
         self.dimensions = len(self.base_model.get_state(sensor='location'))
         self.states = np.zeros((self.number_of_particles, self.dimensions))
         self.weights = np.ones(self.number_of_particles)
@@ -99,7 +107,8 @@ class ParticleFilter(Filter):
         print("Running filter with {} particles and {} runs (on {} cores) with {} agents.".format(
             filter_params['number_of_particles'], filter_params['number_of_runs'], numcores, model_params["pop_total"]),
             flush=True)
-
+        
+        #self.estimate_model.history_locations_err = []
     def initial_state(self, particle_number, base_model_state):
         """
         Set the state of the particles to the state of the
@@ -110,22 +119,68 @@ class ParticleFilter(Filter):
 
     def set_initial_conditions(self):
         '''
-         to use external file to determine some agents parameters values;
+         To use external file to determine some agents parameters values;
+         self.external_info[0]: directory name
+         self.external_info[1]: boolean to use speed
+         self.external_info[2]: boolean to use gate_out
         '''
-        file_name = 'base_model/activation.dat'
-        agentID, time_activation, gate_in, gate_out, speed, loc_desireX, loc_desireY = np.loadtxt(file_name,unpack=True)
-        i = 0
-        for agent in self.base_model.agents:
-            agent.unique_id = int(agentID[i])
-            agent.gate_in = int(gate_in[i])
-            agent.gate_out = int(gate_out[i])
-            agent.loc_desire = [loc_desireX[i], loc_desireY[i]]
-            agent.steps_activate = time_activation[i]
-            agent.speed = speed[i]
-            i += 1
+        file_name = self.external_info[0] + 'activation.dat'
+        ID, time, gateIn, gateOut, speed_ = np.loadtxt(file_name,unpack=True)
+        for i in range(self.base_model.pop_total):
+            self.base_model.agents[i].steps_activate = time[i]
+            self.estimate_model.agents[i].step_start = time[i]
+            self.base_model.agents[i].gate_in = int(gateIn[i])
+            for model in self.models:
+                model.agents[i].steps_activate = time[i]
+                model.agents[i].gate_in = int(gateIn[i])
+            if self.external_info[1]:
+                self.base_model.agents[i].speed = speed_[i]
+                for model in self.models:
+                    model.agents[i].speed = speed_[i]
+            if self.external_info[2]:
+                self.base_model.agents[i].loc_desire = self.base_model.agents[i].set_agent_location(int(gateOut[i]))
+                for model in self.models:
+                    model.agents[i].loc_desire = self.base_model.agents[i].loc_desire
+
+        '''
+         If the speed is not obteined from external data, generate new speeds
+         for all agents in all particles.
+        '''
+        if not self.external_info[1]:
+            for model in self.models:
+                for agent in model.agents:
+                    speed_max = 0
+                    while speed_max <= model.speed_min:
+                        speed_max = np.random.normal(model.speed_mean, model.speed_std)
+                    agent.speeds = np.arange(speed_max, model.speed_min, - model.speed_step)
+                    agent.speed = np.random.choice((agent.speeds))
+
+        '''
+         If the gate_out is not obteined from external data, generate new 
+         gate_out for all agents in all particles.
+        '''
+        if not self.external_info[2]:
+            for model in self.models:
+                for agent in model.agents:
+                    agent.set_gate_out()
+                    agent.loc_desire = agent.set_agent_location(agent.gate_out)
+
 
     @classmethod
     def assign_agents(cls, particle_num: int, state: np.array, model: Model):
+        """
+        Assign the state of the particles to the
+        locations of the agents.
+        :param particle_num
+        :param state: The state of the particle to be assigned
+        :param model: The model to assign the state to
+        :type model: Return the model after having the agents assigned according to the state.
+        """
+        model.set_state(state, sensor='location')
+        return model
+
+    @classmethod
+    def assign_agentsVEL(cls, particle_num: int, state: np.array, model: Model):
         """
         Assign the state of the particles to the
         locations of the agents.
@@ -206,7 +261,6 @@ class ParticleFilter(Filter):
 
                 # See if some particles still have active agents
                 if any([agent.status != 2 for agent in self.base_model.agents]):
-                    # print(self.time/self.number_of_iterations)
 
                     self.predict(numiter=numiter)
 
@@ -221,7 +275,8 @@ class ParticleFilter(Filter):
                         if self.do_resample: # Can turn off resampling for benchmarking
                             self.reweight()
                             self.resample()
-
+                            #self.get_state_estimate()
+                        #self.get_state_estimate()
                         # Store the model states before and after resampling
                         if self.do_save or self.p_save:
                             self.save(before=False)
@@ -241,6 +296,7 @@ class ParticleFilter(Filter):
                 else:
                     pass # Don't print the message below any more
                     #print("\tNo more active agents. Finishing particle step")
+
 
             if self.plot_save:
                 self.p_save()
@@ -297,10 +353,59 @@ class ParticleFilter(Filter):
 
         :param numiter: The number of iterations to step (usually either 1, or the  resample window
         '''
-        if not self.external_data:
+
+        time = self.time - numiter
+
+        if self.do_external_data:
+            for i in range(numiter):
+                time = time + 1
+                file_name = self.external_info[0] + 'frame_' + str(time)+ '.0.dat'
+                try:
+                    agentID, x, y = np.loadtxt(file_name,unpack=True)
+                    j = 0
+                    for agent in self.base_model.agents:
+                        if (agent.unique_id in agentID):
+                            
+                            agent.status = 1
+                            agent.location = [x[j], y[j]]
+                            j += 1
+                        elif (agent.status == 1):
+                            agent.status = 2
+                except TypeError:
+                    '''
+                    This error occurs when only one agent is active. In
+                    this case, the data is read as a float instead of an
+                    array.
+                    '''
+                    for agent in self.base_model.agents:
+                        if (agent.unique_id == agentID):
+                            agent.status = 1
+                            agent.location = [x, y]
+                        elif (agent.status == 1):
+                            agent.status = 2
+                except ValueError:
+                    '''
+                     This error occurs when there is no active agent in
+                     the frame.
+                     - Deactivate all active agents.
+                    '''
+                    for agent in self.base_model.agents:
+                        if (agent.status == 1):
+                            agent.status = 2
+
+                except OSError:
+                    '''
+                    This error occurs when there is no external file to
+                    read. It should only occur at the end of the simulation.
+                    - Deactivate all agent.
+                    '''
+                    for agent in self.base_model.agents:
+                        agent.status = 2
+                
+        else:
             for i in range(numiter):
                 self.base_model.step()
-
+        
         stepped_particles = self.pool.starmap(ParticleFilter.step_particle, list(zip( \
             range(self.number_of_particles),  # Particle numbers (in integer)
             [m for m in self.models],  # Associated Models (a Model object)
@@ -311,7 +416,22 @@ class ParticleFilter(Filter):
 
         self.models = [stepped_particles[i][0] for i in range(len(stepped_particles))]
         self.states = np.array([stepped_particles[i][1] for i in range(len(stepped_particles))])
+        self.get_state_estimate()
+        
 
+        '''
+        for i in range (numiter):
+            stepped_particles = self.pool.starmap(ParticleFilter.step_particle, list(zip( \
+            range(self.number_of_particles),  # Particle numbers (in integer)
+            [m for m in self.models],  # Associated Models (a Model object)
+            [1] * self.number_of_particles,  # Number of iterations to step each particle (an integer)
+            [self.particle_std] * self.number_of_particles,  # Particle std (for adding noise) (a float)
+            [s.shape for s in self.states],  # Shape (for adding noise) (a tuple)
+        )))
+            self.models = [stepped_particles[i][0] for i in range(len(stepped_particles))]
+            self.states = np.array([stepped_particles[i][1] for i in range(len(stepped_particles))])
+            self.get_state_estimate()
+        '''
         return
 
     def reweight(self):
@@ -325,51 +445,7 @@ class ParticleFilter(Filter):
         state and then calculate the new particle weights as 1/distance.
         Add a small term to avoid dividing by 0. Normalise the weights.
         '''
-        if self.external_data:
-            file_name = 'base_model/frame_' + str(self.time)+ '.dat'
-
-            try:
-                agentID, x, y = np.loadtxt(file_name,unpack=True)
-                j = 0
-                for agent in self.base_model.agents:
-                    if (agent.unique_id in agentID):
-                        
-                        agent.status = 1
-                        agent.location = [x[j], y[j]]
-                        j += 1
-                    elif (agent.status == 1):
-                        agent.status = 2
-            except TypeError:
-                '''
-                This error occurs when only one agent is active. In
-                this case, the data is read as a float instead of an
-                array.
-                '''
-                for agent in self.base_model.agents:
-                    if (agent.unique_id == agentID):
-                        agent.status = 1
-                        agent.location = [x, y]
-                    elif (agent.status == 1):
-                        agent.status = 2
-            except ValueError:
-                '''
-                 This error occurs when there is no active agent in
-                 the frame.
-                 - Deactivate all active agents.
-                '''
-                for agent in self.base_model.agents:
-                    if (agent.status == 1):
-                        agent.status = 2
-
-            except OSError:
-                '''
-                This error occurs when there is no external file to
-                read. It should only occur at the end of the simulation.
-                - Deactivate all agent.
-                '''
-                for agent in self.base_model.agents:
-                    agent.status = 2
-            
+        if self.do_external_data: 
             measured_state = self.base_model.get_state(sensor='location')
         else:        
             measured_state = (self.base_model.get_state(sensor='location')
@@ -406,9 +482,24 @@ class ParticleFilter(Filter):
 
         self.states[:] = self.states[self.indexes]
         self.weights[:] = self.weights[self.indexes]
-
-        # self.unique_particles.append(len(np.unique(self.states,axis=0)))
-
+        
+        if self.pf_method is 'sir':
+            '''
+             In addition to updating and resampling the position of agents 
+             (self.states), we will also resample the speed and gate_out. The
+             ideal would be to pass this information on self.states, but this
+             would require a change in many parts of the code.
+            '''
+            #for the hybrid version, the speed and the gate_out are not resampled!!!
+            for i in range(self.number_of_particles):
+                if (i != self.indexes[i]):
+                    model1 = self.models[i]
+                    model2 = self.models[self.indexes[i]]
+                    for i in range(self.base_model.pop_total):
+                        model1.agents[i].speed = model2.agents[i].speed
+                        model1.agents[i].loc_desire = model2.agents[i].loc_desire
+        
+       
         # Could use pool.starmap here, but it's quicker to do it in a single process
         self.models = list(itertools.starmap(ParticleFilter.assign_agents, list(zip(
             range(self.number_of_particles),  # Particle numbers (in integer)
@@ -416,6 +507,25 @@ class ParticleFilter(Filter):
             [m for m in self.models]  # Associated Models (a Model object)
         ))))
         return
+    
+    def get_state_estimate(self):
+        '''
+        # Save particles location estimate.
+        '''
+        active_states = [agent.status == 1 for agent in self.base_model.agents for _ in range(2)]
+        if any(active_states):
+            # Mean and variance state of all particles, weighted by their distance to the observation
+            mean = np.average(self.states[:, active_states], weights=self.weights, axis=0)
+            #variance = np.average((self.states[:, active_states] - mean) ** 2, weights=self.weights, axis=0)
+
+        i = 0
+        for agent in self.base_model.agents:
+            unique_id = agent.unique_id
+            if agent.status == 1:                
+                self.estimate_model.agents[unique_id].history_locations.append((mean[i], mean[i+1]))
+                i += 2
+            else:
+                self.estimate_model.agents[unique_id].history_locations.append((None, None))
 
     def save(self, before: bool):
         '''

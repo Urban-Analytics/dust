@@ -1,7 +1,7 @@
 # README
 
 This directory has scripts and other files that can be used to run experiments using the new version of StationSim model.
-The new version of StationSim code itself is available in the [stationsim_gcs](../..) folder, called [stationsim_gcs_model.py](../../stationsim_gcs_model.py). 
+The new version of StationSim code itself is available with the other versions in the [stationsim](../../stationsim) folder, called [stationsim_gcs_model.py](../../stationsim/stationsim_gcs_model.py). 
 
 
 ## Running Experiments

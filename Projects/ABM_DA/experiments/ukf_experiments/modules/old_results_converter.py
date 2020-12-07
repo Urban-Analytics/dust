@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Feb 21 12:20:53 2020
+Attempt at salvaging old pickles using earlier scipy versions.
 
 @author: medrclaa
 """
@@ -11,9 +11,6 @@ os.chdir("..")
 import sys
 import os
 import glob
-
-
-
 
 sys.path.append("../../")
 from stationsim.ukf2 import depickler, pickler, class_dict_to_instance

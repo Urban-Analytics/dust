@@ -26,11 +26,11 @@ A interval of the Grand Central Terminal (New York City) data was selected and p
 ### Video interval
 From frame 20000 to frame 23000
 
-### Folder: GCT_final_real_data
+### Folder: [GCT_final_real_data](./GCT_final_real_data)
 * Trajectories organized by frames;
-* Activation file with informations about each pedestrian (pedestrian ID, activation time, entance gate, exit gate);
+* Activation file with information about each pedestrian (pedestrian ID, activation time, entance gate, exit gate);
 
 ## Notebooks
 
-* [GCT-data: ](GCT-data.ipynb) Notebook with a data overview;
-* [Real_Data_correct_trails: ](Real_Data_correct_trails.ipynb) Notebook with the trajectories reconstruction process;
+* [GCT-data:](GCT-data.ipynb) Notebook with a data overview;
+* [Real_Data_correct_trails:](Real_Data_correct_trails.ipynb) Notebook with the trajectories reconstruction process;

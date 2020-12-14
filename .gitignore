@@ -92,3 +92,7 @@ Projects/ABM_DA/experiments/enkf_experiments/data.json
 
 # Vim files
 *.vim
+
+# calibration data
+Projects/ABM_DA/experiments/stationsim_gcs_calibration/inputs/*.dat
+Projects/ABM_DA/experiments/stationsim_gcs_calibration/outputs/.dat

@@ -191,11 +191,12 @@ class Agent:
         '''
                  Function to get the direction of movement.
         '''
+        distance = self.distance(loc_desire, location)
 
-        if (self.distance(loc_desire, location) == 0):
+        if (distance == 0):
             direction = np.array([0, 0])
         else:
-            direction = (loc_desire - location) / self.distance(loc_desire, location)
+            direction = (loc_desire - location) / distance
         return direction
 
     @staticmethod

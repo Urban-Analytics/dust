@@ -80,15 +80,25 @@ class Agent:
         '''
 
         if (self.model.station == 'Grand_Central'):
-            if (self.gate_in == 0):
-                self.gate_out = np.random.random_integers(1, 10)
+            # Use set differences to allocate gate_out on different side to
+            # gate_in
+            gates = set(range(self.model.gates_out))
+            gates_left = {0}
+            gates_top = {1, 2}
+            gates_right = {3, 4, 5, 6}
+            gates_bottom = {7, 8, 9, 10}
 
-            elif (self.gate_in == 1 or self.gate_in == 2):
-                self.gate_out = np.random.choice((0, 3, 4, 5, 6, 7, 8, 9, 10))
-            elif (self.gate_in == 3 or self.gate_in == 4 or self.gate_in == 5 or self.gate_in == 6):
-                self.gate_out = np.random.choice((0, 1, 2, 7, 8, 9, 10))
+            if (self.gate_in in gates_left):
+                options = list(gates - gates_left)
+            elif (self.gate_in in gates_top):
+                options = list(gates - gates_top)
+            elif (self.gate_in in gates_right):
+                options = list(gates - gates_right)
+            elif (self.gate_in in gates_bottom):
+                options = list(gates - gates_bottom)
             else:
-                self.gate_out = np.random.random_integers(0, 6)
+                raise ValueError(f'Invalid entrance gates: {self.gate_in}')
+            self.gate_out = np.random.choice(options)
         else:
             self.gate_out = np.random.randint(self.model.gates_out) + self.model.gates_in
 

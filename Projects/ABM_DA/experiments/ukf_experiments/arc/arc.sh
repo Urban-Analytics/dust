@@ -16,4 +16,4 @@
 # This number is determined by the length of the param_list list. 
 #$ -t 1-2
 #Run the executable pf.py
-python3 arc.py $SGE_TASK_ID
+python3 $1 $SGE_TASK_ID

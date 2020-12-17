@@ -150,14 +150,17 @@ class Agent:
         '''
         wd = self.model.gates_width[gate] / 2.0
         perturb = np.random.uniform(-wd, +wd)
-        if(self.model.gates_locations[gate][0] == 0):
-            new_location = self.model.gates_locations[gate] + [1.05*self.size, perturb]
-        elif(self.model.gates_locations[gate][0] == self.model.width):
-            new_location = self.model.gates_locations[gate] + [-1.05*self.size, perturb]
-        elif(self.model.gates_locations[gate][1] == 0):
-            new_location = self.model.gates_locations[gate] + [perturb, 1.05*self.size]
+        gate_location = self.model.gates_locations[gate]
+        if(gate_location[0] == 0):
+            new_location = gate_location + [1.05*self.size, perturb]
+        elif(gate_location[0] == self.model.width):
+            new_location = gate_location + [-1.05*self.size, perturb]
+        elif(gate_location[1] == 0):
+            new_location = gate_location + [perturb, 1.05*self.size]
+        elif(gate_location[1] == self.model.height):
+            new_location = gate_location + [perturb, -1.05*self.size]
         else:
-            new_location = self.model.gates_locations[gate] + [perturb, -1.05*self.size]
+            raise ValueError(f'Invalid gate location: {gate_location}')
 
         '''
             As there are gates near the corners it is possible to create

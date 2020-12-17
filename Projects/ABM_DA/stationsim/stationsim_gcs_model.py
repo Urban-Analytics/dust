@@ -254,11 +254,13 @@ class Agent:
                 self.model.history_collision_times.append(tt)
 
             # Check if the new location is possible
-            neighbouring_agents = self.model.tree.query_ball_point(new_location,
-                                                                   self.size*1.1)
+            tree = self.model.tree
+            neighbouring_agents = tree.query_ball_point(new_location,
+                                                        self.size*1.1)
             dist = self.distance(new_location, self.model.clock.location)
             if (dist > (self.size + self.model.clock.size)):
-                if (neighbouring_agents == [] or neighbouring_agents == [self.unique_id]):
+                if (neighbouring_agents == [] or
+                        neighbouring_agents == [self.unique_id]):
                     self.location = new_location
                     # wiggle_map
                     if self.model.do_history:

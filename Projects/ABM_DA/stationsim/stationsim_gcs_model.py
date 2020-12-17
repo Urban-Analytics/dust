@@ -497,7 +497,10 @@ class Model:
                           [277.5, 0],   # gate 9
                           [92.5, 0]])   # gate 10
 
-            self.gates_width = [250, 250, 245, 90, 150, 150, 120, 185, 185, 185, 185]
+            self.gates_width = [250,
+                                250, 245,
+                                90, 150, 150, 120,
+                                185, 185, 185, 185]
 
             self.gates_in = len(self.gates_locations)
             self.gates_out = len(self.gates_locations)

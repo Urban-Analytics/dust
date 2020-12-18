@@ -128,15 +128,15 @@ def get_agent_gate_location_data():
     gate_numbers, gate_locations = __get_gate_locations()
 
     # Top and bottom
-    i_top = [0, 1]
-    i_bottom = [7, 8]
+    i_top = [1, 2]
+    i_bottom = [7, 8, 9, 10]
     top_upper, top_lower = __get_side_bounds(i_top, gate_locations, 'top')
     bottom_upper, bottom_lower = __get_side_bounds(i_bottom, gate_locations,
                                                    'bottom')
 
     # Left and right
-    i_left = [9]
-    i_right = [2, 3, 4, 5, 6]
+    i_left = [0]
+    i_right = [3, 4, 5, 6]
     left_upper, left_lower = __get_side_bounds(i_left, gate_locations, 'left')
     right_upper, right_lower = __get_side_bounds(i_right, gate_locations,
                                                  'right')

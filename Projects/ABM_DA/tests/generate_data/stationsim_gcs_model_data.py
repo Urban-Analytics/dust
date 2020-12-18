@@ -59,10 +59,11 @@ def get_loc_exit_data():
 
 
 def __get_gate_locations():
-    gate_numbers = list(range(10))
-    gate_locations = [[20, 400], [170, 400], [200, 340], [200, 275],
-                      [200, 200], [200, 125], [200, 60], [170, 0],
-                      [20, 0], [0, 200]]
+    gate_numbers = list(range(11))
+    gate_locations = [[0, 275], [125, 700], [577.5, 700],
+                      [740, 655], [740, 475], [740, 265], [740, 65],
+                      [647.5, 0], [462.5, 0], [277.5, 0], [92.5, 0]]
+
     return gate_numbers, gate_locations
 
 

@@ -735,7 +735,8 @@ class Model:
                          self.agents[:agents]]).transpose((1, 2, 0))
         if(sensor == 'frame'):
             for frame in range(self.step_id):
-                save_file = open(directory+'/frame_' + str(frame+1) + '.dat', 'w')
+                filename = directory + '/frame_' + str(frame+1) + '.dat'
+                save_file = open(filename, 'w')
                 print('#agentID', 'x', 'y', file=save_file)
                 x = locs[frame-1][0]
                 y = locs[frame-1][1]
@@ -745,14 +746,19 @@ class Model:
                 save_file.close()
         elif(sensor == 'activation'):
             save_file = open(directory+'/activation.dat', 'w')
-            print('#agentID', 'time_activation', 'gate_in', 'gate_out', 'speed', 'loc_desireX', 'loc_desireY', file=save_file)
+            print('#agentID', 'time_activation', 'gate_in', 'gate_out',
+                  'speed', 'loc_desireX', 'loc_desireY', file=save_file)
             for agent in self.agents:
-                print(agent.unique_id, agent.step_start, agent.gate_in, agent.gate_out, agent.speed, agent.loc_desire[0], agent.loc_desire[1], file=save_file)
-                # print(agent.unique_id, agent.step_start, agent.loc_start[0], agent.loc_start[1], agent.gate_out, file=save_file)
+                print(agent.unique_id, agent.step_start, agent.gate_in,
+                      agent.gate_out, agent.speed, agent.loc_desire[0],
+                      agent.loc_desire[1], file=save_file)
+                # print(agent.unique_id, agent.step_start, agent.loc_start[0]
+                #       agent.loc_start[1], agent.gate_out, file=save_file)
             save_file.close()
         elif(sensor == 'trails'):
             for agent in self.agents:
-                save_file = open(directory+'/agent_{}.dat'.format(agent.unique_id), 'w')
+                filename = directory + f'/agent_{agent.unique_id}.dat'
+                save_file = open(filename, 'w')
                 loc = agent.history_locations
                 for xy in loc:
                     if(xy[0] is not None):
@@ -936,10 +942,11 @@ class Model:
         return ani
 
     def get_distace_plot(self, real_data_dir, frame_i, frame_f, dt):
-        self.graphX1 = []; self.graphY1 = []; self.graphERR1 = []  # x, y, dy
+        self.graphX1, self.graphY1, self.graphERR1 = [], [], []  # x, y, dy
         data = []
         for frame in range(frame_i, frame_f, dt):
-            ID, x, y = np.loadtxt(real_data_dir + str(frame) + '.0.dat', unpack=True)
+            ID, x, y = np.loadtxt(real_data_dir + str(frame) + '.0.dat',
+                                  unpack=True)
             dist = []
             for i in range(len(ID)):
                 agent_ID = int(ID[i])
@@ -951,26 +958,32 @@ class Model:
                     time = int(frame - self.agents[agent_ID].step_start)
                     data.append([time, distance])
             dist = np.asarray(dist)
-            self.graphX1.append(frame); self.graphY1.append(dist.mean()); self.graphERR1.append(dist.std())
+            self.graphX1.append(frame)
+            self.graphY1.append(dist.mean())
+            self.graphERR1.append(dist.std())
 
         from operator import itemgetter
         # sort by frame
         data1 = sorted(data, key=itemgetter(0))
 
         frame = data1[0][0]
-        self.graphX2 = []; self.graphY2 = []; self.graphERR2 = [] # x, y, dy
+        self.graphX2, self.graphY2, self.graphERR2 = [], [], []  # x, y, dy
         dist = []
         for line in data1:
             if (line[0] == frame):
                 dist.append(line[1])
             else:
                 dist = np.asarray(dist)
-                self.graphX2.append(frame); self.graphY2.append(dist.mean()); self.graphERR2.append(dist.std())
+                self.graphX2.append(frame)
+                self.graphY2.append(dist.mean())
+                self.graphERR2.append(dist.std())
                 frame = line[0]
                 dist = []
                 dist.append(line[1])
         dist = np.asarray(dist)
-        self.graphX2.append(frame); self.graphY2.append(dist.mean()); self.graphERR2.append(dist.std())
+        self.graphX2.append(frame)
+        self.graphY2.append(dist.mean())
+        self.graphERR2.append(dist.std())
 
     @classmethod
     def set_random_seed(cls, seed=None):

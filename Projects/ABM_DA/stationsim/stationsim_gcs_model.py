@@ -100,7 +100,8 @@ class Agent:
                 raise ValueError(f'Invalid entrance gates: {self.gate_in}')
             self.gate_out = np.random.choice(options)
         else:
-            self.gate_out = np.random.randint(self.model.gates_out) + self.model.gates_in
+            random_gate_out = np.random.randint(self.model.gates_out)
+            self.gate_out = random_gate_out + self.model.gates_in
 
     def step(self, time):
         '''
@@ -124,7 +125,7 @@ class Agent:
         possible, activate the agent on next time step.
         '''
         if self.status == 0:
-            if self.model.total_time > self.time_activate:
+            if self.model.total_time > self.steps_activate:
                 state = self.model.get_state('location2D')
                 self.model.tree = cKDTree(state)
                 for _ in range(10):
@@ -598,7 +599,6 @@ class Model:
         elif self.do_print and self.status == 1:
             print(f'StationSim {self.unique_id} - Everyone made it!')
             self.status = 0
-            self.max_time = max(self.time_save)
         else:
             print(self.unique_id, 'pass')
 

@@ -206,7 +206,7 @@ def test_normal_direction_calculation():
 def test_agent_activation():
     model = set_up_model(population_size=1)
     agent = model.agents[0]
-    agent_activation_time = agent.time_activate
+    agent_activation_time = agent.steps_activate
 
     # Agent should be inactive at start of model
     assert agent.status == 0
@@ -217,6 +217,7 @@ def test_agent_activation():
         model.step()
 
     # Agent activated on next step
+    model.step()
     model.step()
 
     assert agent.status == 1

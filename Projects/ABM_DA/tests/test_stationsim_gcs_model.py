@@ -46,16 +46,16 @@ def __is_valid_location_top_bottom(agent_location, upper, lower):
 # Model tests
 def test_station_setup():
     model = set_up_model()
-    a = model.width == 200
-    b = model.height == 400
+    a = model.width == 740
+    b = model.height == 700
     assert a and b
 
 
 def test_gate_setup_number():
     model = set_up_model()
     # Check for correct number of gates
-    a = model.gates_in == 10
-    b = model.gates_out == 10
+    a = model.gates_in == 11
+    b = model.gates_out == 11
     assert a and b
 
 
@@ -72,11 +72,11 @@ def test_gate_setup_location(gate_number, gate_location):
 def test_clock_setup():
     model = set_up_model()
     # Radius of 10
-    size = model.clock.size == 10
+    size = model.clock.size == 56
     # Stationary
     speed = model.clock.speed == 0
     # Location
-    location = model.clock.location == [100, 200]
+    location = model.clock.location == [370, 275]
     # isAgent
     cl = isinstance(model.clock, Agent)
     assert all([size, speed, location, cl])
@@ -161,8 +161,8 @@ def test_model_speed_defaults():
 
     # Model speed params
     assert model.speed_min == 0.2
-    assert model.speed_mean == 1
-    assert model.speed_std == 1
+    assert model.speed_mean == 0.839236
+    assert model.speed_std == 0.349087
     assert model.speed_steps == 3
 
 

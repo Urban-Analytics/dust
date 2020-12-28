@@ -9,6 +9,18 @@ from stationsim_gcs_model import Model
 
 # Functions
 def set_up_model(population_size=3, step_limit=3600):
+    """
+    Set up model.
+
+    Set up a basic instance of the stationsim_gcs model.
+
+    Parameters
+    ----------
+    population_size : int, optional
+        The number of agents in the model population, default value of 3.
+    step_limit : int, optional
+        The number of steps to run the model, default value of 3600.
+    """
     model_params = {'pop_total': population_size,
                     'station': 'Grand_Central',
                     'step_limit': step_limit}
@@ -17,6 +29,11 @@ def set_up_model(population_size=3, step_limit=3600):
 
 
 def get_location_data():
+    """
+    Get location data.
+
+    Generate data to test turning a list of agent locations into a state vector.
+    """
     agent_locations1 = [(1, 2), (3, 4), (5, 6)]
     agent_locations2 = [(20, 10), (45, 80), (99, 32)]
 
@@ -30,6 +47,12 @@ def get_location_data():
 
 
 def get_location2D_data():
+    """
+    Get location data.
+
+    Generate data to test turning a list of agent locations into a 2D state
+    vector.
+    """
     agent_locations1 = [(1, 2), (3, 4), (5, 6)]
     agent_locations2 = [(20, 10), (45, 80), (99, 32)]
 
@@ -43,6 +66,12 @@ def get_location2D_data():
 
 
 def get_loc_exit_data():
+    """
+    Get location-exit data.
+
+    Generate data to test turning a list of agent locations and a list of agent
+    destination gate numbers into a state vector.
+    """
     agent_locations1 = [(1, 2), (3, 4), (5, 6)]
     agent_locations2 = [(20, 10), (45, 80), (99, 32)]
 
@@ -59,6 +88,12 @@ def get_loc_exit_data():
 
 
 def __get_gate_locations():
+    """
+    Get gate locations.
+
+    Generate data regarding the (x, y) locations of the gates in the model,
+    along with indexes for each of them.
+    """
     gate_numbers = list(range(11))
     gate_locations = [[0, 275], [125, 700], [577.5, 700],
                       [740, 655], [740, 475], [740, 265], [740, 65],
@@ -68,6 +103,11 @@ def __get_gate_locations():
 
 
 def __get_gate_widths():
+    """
+    Get gate widths.
+
+    Generate data regarding the widths of each of the gates in the model.
+    """
     gate_widths = [250, 250, 245,
                    90, 150, 150, 120,
                    185, 185, 185, 185]
@@ -76,6 +116,13 @@ def __get_gate_widths():
 
 
 def get_gate_location_data():
+    """
+    Get gate location data.
+
+    Generate data to test the location of gates with the environment. Produces a
+    list of tuples, each of which contains the index of the gate along with the
+    (x, y) location of the gate.
+    """
     gate_numbers, gate_locations = __get_gate_locations()
 
     gate_location_data = [(gate_numbers[i], gate_locations[i]) for i in
@@ -84,6 +131,12 @@ def get_gate_location_data():
 
 
 def get_distance_data():
+    """
+    Get distance data.
+
+    Generate data to test the calculation of Euclidean distance between two
+    locations in the environment.
+    """
     location1s = [[3, 17], [322, 154], [128, 307],
                   [123, 321], [172, 13], [111, 60]]
     location2s = [[6, 21], [310, 149], [113, 315],
@@ -103,6 +156,21 @@ def get_distance_data():
 
 
 def __get_left_right_gate_location_data(gate_locations, gate_widths):
+    """
+    Get agent gate-location data for left and right edges of the environment.
+
+    Generate data regarding permissible locations for agents to enter the
+    environment at each of the entrance gates on the left and right edges of the
+    environment.
+
+    Parameters
+    ----------
+    gate_locations : list_like
+        List of location tuples, with each tuple describing the (x, y) location
+        of a gate.
+    gate_widths : list_like
+        List of floats, with each float describing the width of a gate.
+    """
     gate_data = list()
     left_gate_ids = [0]
     right_gate_ids = [3, 4, 5, 6]
@@ -132,6 +200,21 @@ def __get_left_right_gate_location_data(gate_locations, gate_widths):
 
 
 def __get_top_bottom_gate_location_data(gate_locations, gate_widths):
+    """
+    Get agent gate-location data for top and bottom edges of the environment.
+
+    Generate data regarding permissible locations for agents to enter the
+    environment at each of the entrance gates on the top and bottom edges of the
+    environment.
+
+    Parameters
+    ----------
+    gate_locations : list_like
+        List of location tuples, with each tuple describing the (x, y) location
+        of a gate.
+    gate_widths : list_like
+        List of floats, with each float describing the width of a gate.
+    """
     gate_data = list()
     top_gate_ids = [1, 2]
     bottom_gate_ids = [7, 8, 9, 10]
@@ -161,6 +244,15 @@ def __get_top_bottom_gate_location_data(gate_locations, gate_widths):
 
 
 def get_agent_gate_location_data():
+    """
+    Get agent gate-location data.
+
+    Generate data to test the correct allocation of entrance locations to agents
+    given an entrance gate number. This function acts as a wrapper for two other
+    functions: one to generate data for gate locations on the left and right
+    edges of the environment, the other to generate data for gate locations on
+    the top and bottom edge of the environment.
+    """
     gate_numbers, gate_locations = __get_gate_locations()
     gate_widths = __get_gate_widths()
 

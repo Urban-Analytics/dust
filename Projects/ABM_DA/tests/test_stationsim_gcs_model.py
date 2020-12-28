@@ -31,14 +31,18 @@ def __is_valid_location(agent_location, upper, lower, side):
 
 
 def __is_valid_location_left_right(agent_location, upper, lower):
-    x = agent_location[0] == upper[0] and agent_location[0] == lower[0]
+    x_diff_upper = agent_location[0] - upper[0]
+    x_diff_lower = agent_location[0] - lower[0]
+    x = x_diff_upper == pytest.approx(0) and x_diff_lower == pytest.approx(0)
     y = lower[1] <= agent_location[1] <= upper[1]
     return x and y
 
 
 def __is_valid_location_top_bottom(agent_location, upper, lower):
     x = lower[0] <= agent_location[0] <= upper[0]
-    y = agent_location[1] == upper[1] and agent_location[1] == lower[1]
+    y_diff_upper = agent_location[1] - upper[1]
+    y_diff_lower = agent_location[1] - lower[1]
+    y = y_diff_upper == pytest.approx(0) and y_diff_lower == pytest.approx(0)
     return x and y
 
 
@@ -253,20 +257,15 @@ def test_set_agent_location():
     model = set_up_model()
     agent = model.agents[0]
 
-    location_data, gate_numbers_by_side = get_agent_gate_location_data()
     results = list()
+    location_data = get_agent_gate_location_data()
 
-    for side, gate_numbers in gate_numbers_by_side.items():
-        for i, gate_number in enumerate(gate_numbers):
-            # Test multiple times because set_agent_location has
-            # some randomness
-            for _ in range(50):
-                test_location = agent.set_agent_location(gate_number)
-                gate_upper = location_data[side]['upper'][i]
-                gate_lower = location_data[side]['lower'][i]
-                test_result = __is_valid_location(test_location, gate_upper,
-                                                  gate_lower, side)
-                results.append(test_result)
+    for gate in location_data:
+        test_location = agent.set_agent_location(gate['gate_number'])
+        test_result = __is_valid_location(test_location, gate['upper'],
+                                          gate['lower'], gate['side'])
+        results.append(test_result)
+        print(test_location, gate['upper'], gate['lower'], '\n')
 
     assert all(results)
 

@@ -67,6 +67,14 @@ def __get_gate_locations():
     return gate_numbers, gate_locations
 
 
+def __get_gate_widths():
+    gate_widths = [250, 250, 245,
+                   90, 150, 150, 120,
+                   185, 185, 185, 185]
+
+    return gate_widths
+
+
 def get_gate_location_data():
     gate_numbers, gate_locations = __get_gate_locations()
 
@@ -94,58 +102,74 @@ def get_distance_data():
     return distance_data
 
 
-def __generate_side_locations(indices, gate_locations):
-    side_locations = [gate_locations[i] for i in indices]
-    return side_locations
+def __get_left_right_gate_location_data(gate_locations, gate_widths):
+    gate_data = list()
+    left_gate_ids = [0]
+    right_gate_ids = [3, 4, 5, 6]
+    gate_ids = [{'side': 'left', 'ids': left_gate_ids},
+                {'side': 'right', 'ids': right_gate_ids}]
+    x_left = 7.35
+    x_right = 732.65
+
+    for side_dict in gate_ids:
+        side = side_dict['side']
+        ids = side_dict['ids']
+        for gate_number in ids:
+            d = dict()
+            d['side'] = side
+            d['gate_number'] = gate_number
+            x = x_left if side == 'left' else x_right
+            location = gate_locations[gate_number]
+            width = gate_widths[gate_number]
+            y_upper = location[1] + (width / 2)
+            y_lower = location[1] - (width / 2)
+            d['upper'] = (x, y_upper)
+            d['lower'] = (x, y_lower)
+
+            gate_data.append(d)
+
+    return gate_data
 
 
-def __generate_upper_lower_bounds(side_locations, side):
-    sides = {'left': {'upper': [1.05, 10], 'lower': [1.05, -10]},
-             'right': {'upper': [-1.05, 10], 'lower': [-1.05, -10]},
-             'top': {'upper': [10, -1.05], 'lower': [-10, -1.05]},
-             'bottom': {'upper': [10, 1.05], 'lower': [-10, 1.05]}}
+def __get_top_bottom_gate_location_data(gate_locations, gate_widths):
+    gate_data = list()
+    top_gate_ids = [1, 2]
+    bottom_gate_ids = [7, 8, 9, 10]
+    gate_ids = [{'side': 'top', 'ids': top_gate_ids},
+                {'side': 'bottom', 'ids': bottom_gate_ids}]
+    y_top = 692.65
+    y_bottom = 7.35
 
-    upper_bounds, lower_bounds = list(), list()
-    for sl in side_locations:
-        upper_bound = [sl[0] + sides[side]['upper'][0],
-                       sl[1] + sides[side]['upper'][1]]
-        lower_bound = [sl[0] + sides[side]['lower'][0],
-                       sl[1] + sides[side]['lower'][1]]
-        upper_bounds.append(upper_bound)
-        lower_bounds.append(lower_bound)
+    for side_dict in gate_ids:
+        side = side_dict['side']
+        ids = side_dict['ids']
+        for gate_number in ids:
+            d = dict()
+            d['side'] = side
+            d['gate_number'] = gate_number
+            y = y_top if side == 'top' else y_bottom
+            location = gate_locations[gate_number]
+            width = gate_widths[gate_number]
+            x_upper = location[0] + (width / 2)
+            x_lower = location[0] - (width / 2)
+            d['upper'] = (x_upper, y)
+            d['lower'] = (x_lower, y)
 
-    return upper_bounds, lower_bounds
+            gate_data.append(d)
 
-
-def __get_side_bounds(gate_numbers, gate_locations, side_name):
-    side_locations = __generate_side_locations(gate_numbers, gate_locations)
-    side_upper, side_lower = __generate_upper_lower_bounds(side_locations,
-                                                           side_name)
-    return side_upper, side_lower
+    return gate_data
 
 
 def get_agent_gate_location_data():
     gate_numbers, gate_locations = __get_gate_locations()
+    gate_widths = __get_gate_widths()
 
-    # Top and bottom
-    i_top = [1, 2]
-    i_bottom = [7, 8, 9, 10]
-    top_upper, top_lower = __get_side_bounds(i_top, gate_locations, 'top')
-    bottom_upper, bottom_lower = __get_side_bounds(i_bottom, gate_locations,
-                                                   'bottom')
+    output = list()
+    left_right_gates = __get_left_right_gate_location_data(gate_locations,
+                                                           gate_widths)
+    top_bottom_gates = __get_top_bottom_gate_location_data(gate_locations,
+                                                           gate_widths)
+    output.extend(left_right_gates)
+    output.extend(top_bottom_gates)
 
-    # Left and right
-    i_left = [0]
-    i_right = [3, 4, 5, 6]
-    left_upper, left_lower = __get_side_bounds(i_left, gate_locations, 'left')
-    right_upper, right_lower = __get_side_bounds(i_right, gate_locations,
-                                                 'right')
-
-    output = {'top': {'upper': top_upper, 'lower': top_lower},
-              'bottom': {'upper': bottom_upper, 'lower': bottom_lower},
-              'left': {'upper': left_upper, 'lower': left_lower},
-              'right': {'upper': right_upper, 'lower': right_lower}}
-
-    gate_indices = {'top': i_top, 'bottom': i_bottom,
-                    'left': i_left, 'right': i_right}
-    return output, gate_indices
+    return output

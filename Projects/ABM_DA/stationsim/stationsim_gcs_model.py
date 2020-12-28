@@ -150,25 +150,30 @@ class Agent:
             the station wall compatible with its own size.
         '''
         wd = self.model.gates_width[gate] / 2.0
-        perturb = np.random.uniform(-wd, +wd)
+        lateral_perturb = np.random.uniform(-wd, +wd)
+        wall_offset = 1.05 * self.size
         gate_location = self.model.gates_locations[gate]
+
         if(gate_location[0] == 0):
-            new_location = gate_location + [1.05*self.size, perturb]
+            perturb = np.array([wall_offset, lateral_perturb])
         elif(gate_location[0] == self.model.width):
-            new_location = gate_location + [-1.05*self.size, perturb]
+            perturb = np.array([-wall_offset, lateral_perturb])
         elif(gate_location[1] == 0):
-            new_location = gate_location + [perturb, 1.05*self.size]
+            perturb = np.array([lateral_perturb, wall_offset])
         elif(gate_location[1] == self.model.height):
-            new_location = gate_location + [perturb, -1.05*self.size]
+            perturb = np.array([lateral_perturb, -wall_offset])
         else:
             raise ValueError(f'Invalid gate location: {gate_location}')
 
-        '''
-            As there are gates near the corners it is possible to create
-            a position outside the station. To fix this, rebound:
-        '''
-        if not self.model.is_within_bounds(self, new_location):
-            new_location = self.model.re_bound(self, new_location)
+        new_location = gate_location + perturb
+        # print(gate_location, perturb, new_location)
+        # '''
+        #     As there are gates near the corners it is possible to create
+        #     a position outside the station. To fix this, rebound:
+        # '''
+        # if not self.model.is_within_bounds(self, new_location):
+        #     print('bounce')
+        #     new_location = self.model.re_bound(self, new_location)
 
         return new_location
 

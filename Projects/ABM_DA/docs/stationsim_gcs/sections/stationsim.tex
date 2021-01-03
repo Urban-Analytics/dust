@@ -381,6 +381,17 @@ between $0$ and $10$ (inclusive).
 
 \paragraph{Agent Exit Allocation}\label{para:submodels:agent_exit}
 
+The process of choosing an exit gate is slightly more complicated; it is
+considered unlikely that pedestrians will exit through a gate on the same edge
+of the environment as the gate through which they enter, and as such the agent's
+exit gate is chosen at random from the gates on the sides of the environment
+other than the side on which the agent's entrance gate resides (again, with each
+potential exit gate carrying equal probability).
+In practice, this means that if an agent is allocated an entrance gate on the
+North boundary of the model environment, then its exit will be chosen at random
+from the gates residing on the East, South and West boundaries.
+This process is outlined in Figure~\ref{fig:flow:agent_exit}.
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.3\textwidth]{stationsim_gcs-choose_agent_exit}

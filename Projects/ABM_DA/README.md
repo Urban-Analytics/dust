@@ -17,7 +17,7 @@ The original version of the stationsim model. This is an Agent-Based Simulation 
 
 In this version of the StationSim model, a new collision definition is used so that agents can collide from any direction (in the original version the movements of the agents were assumed to be from the left of the environment to the right).
 
-In addition, a new station structure is available. To understand these changes, see the jupyter notebook: [StationSim - Grand Central Station version](../experiments/gcs_experimentsStationSim_GrandCentral_version.ipynb)
+In addition, a new station structure is available. To understand these changes, see the jupyter notebook: [StationSim - Grand Central Station version](./experiments/gcs_experiments/StationSim_GrandCentral_version.ipynb)
 
 To run experiments with the new model, see [`gcs_experiments`](../experiments/gcs_experiments/gcs_experiments.ipynb).
 

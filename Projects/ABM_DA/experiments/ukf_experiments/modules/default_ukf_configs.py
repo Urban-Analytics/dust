@@ -32,7 +32,7 @@ do_ bools for saving plotting and animating data.
 """
 model_params = {
 
-'width': 200,
+'width': 50,
 'height': 100,
 
 'gates_in': 3,
@@ -68,14 +68,32 @@ not 100% sure what kappa does. think its a bias parameter.
 """
 
 ukf_params = {      
-   
+
 'sample_rate' : 5,
 "bring_noise" : True,
 "noise" : 0.5,
 "do_batch" : False,
 
-"a": 1,
+"a": 0.3,
 "b": 2,
 "k": 0,
 
+# whether ukf.step() stores data in class or outputs it for storing elsewhere
+# this is good when dealing with multiple UKFs and prevents the class getting
+# too large
+"record" : True,
+
+"fx_kwargs_update_function": None,
+"fx_update_args": [],
+"hx_kwargs_update_function": None,
+"hx_update_args": [],
+"obs_key_kwargs_update_function": None,
+}
+
+"""Default colour scheme for ukf plots given 4 current types of observation."""
+marker_attributes = {
+"markers" : {-1: "o", 0 : "X", 1: "^", 2 : "s"},
+"colours" : {-1: "black" , 0 : "orangered", 1: "yellow", 2 : "skyblue"},
+"labels" :  {-1: "Pseudo-True Position", 0 : "Unobserved", 
+             1: "Aggregated", 2 : "Observed"}
 }

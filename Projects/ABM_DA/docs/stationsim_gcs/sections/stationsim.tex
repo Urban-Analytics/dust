@@ -304,6 +304,24 @@ each process works.
 
 \paragraph{StationSim Setup}\label{para:submodels:setup}
 
+The initial setup of StationSim involves setting up three entities: the model
+boundaries, the gates around the edges of the model and environment and the
+clock obstacle at the centre of the environment.
+The environment is defined by its dimensions which are outlined in
+Section~\ref{subs:stationsim:overview:entities}.
+Based on these values, an array of boundaries are defined.
+Given each of these boundaries, the gates are defined; these are defined as a
+series of 11 sets of coordinates located on the edges of the model environment.
+Each of the gates are also allocated a width which reflects their width in the
+real station.
+Finally, the clock is defined; the clock is initialised as a stationary agent
+with size and location given in Section~\ref{subs:stationsim:overview:entities}.
+These process occur sequentially as outlined in
+Figure~\ref{fig:flow:set_up_station}.
+
+In addition to setting up each of these entities, variables outlining the
+distribution of agent speeds are also initialised.
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.3\textwidth]{stationsim_gcs-set_up_station}

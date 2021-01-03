@@ -331,6 +331,33 @@ distribution of agent speeds are also initialised.
 
 \paragraph{Agent Initialisation}\label{para:submodels:agent_init}
 
+Following the process of setting up the model station, agents are initialised to
+characterise a pedestrian population in the model (as shown in
+Figure~\ref{fig:flow:stationsim}).
+For each agent, the initialisation process involves a number of steps, the first
+of which is to define the agent's status as inactive (i.e.\ not started); it is
+worth noting that an agent's status can take one of three values --- inactive
+(not started), active and inactive (finished).
+
+Agents are then allocated an entrance gate --- this process is described in
+Section~\ref{para:submodels:agent_entrance}.
+The agent's exit gate is then chosen --- the process by which this happens is
+outlined in Section~\ref{para:submodels:agent_exit}.
+Given an exit gate, the agent's target destination location and speed are
+allocated as per the processes outlined in
+Section~\ref{para:submodels:location_allocation}
+and~\ref{para:submodels:agent_speed}.
+Finally, the agent is allocated an activation time, i.e.\ a model time-step at
+which is should change its status from inactive to active and proceed towards
+its target destination.
+The time at which the agent should be activated is governed by the model
+birth-rate:
+\begin{equation}
+    t_{a} = i \times \frac{25}{\lambda}
+\end{equation}
+where $t_{a}$ is the agent's activation time, $i$ is the agent ID and $\lambda$
+is the model birth-rate.
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.3\textwidth]{stationsim_gcs-initialise_agent}

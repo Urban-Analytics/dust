@@ -294,7 +294,8 @@ class Agent:
         '''
         dist = self.distance(self.location, self.loc_desire)
         if dist < self.model.gates_space:
-            print('deactivating agent')
+            if self.model.do_print:
+                print('deactivating agent')
             self.status = 2
             self.model.pop_active -= 1
             self.model.pop_finished += 1
@@ -610,13 +611,16 @@ class Model:
 
             self.step_id += 1
 
-        elif self.do_print and self.status == 1:
-            print(f'StationSim {self.unique_id} - Everyone made it!')
-            self.status = 0
-        else:
-            if self.do_print and self.status == 1:
+        elif self.status == 1:
+            if self.do_print:
                 print(f'StationSim {self.unique_id} - Everyone made it!')
-                self.status = 0
+            self.status = 0
+            self.finish_step_id = self.step_id
+        # else:
+        #     if self.do_print and self.status == 1:
+        #         print(f'StationSim {self.unique_id} - Everyone made it!')
+        #         self.status = 0
+        #         self.finish_step_id = self.step_id
 
     # information about next collision
     def get_collisionTable(self):

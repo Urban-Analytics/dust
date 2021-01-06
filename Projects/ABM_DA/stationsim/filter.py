@@ -7,6 +7,7 @@ A general base class on which to base filters
 # Imports
 import warnings as warns
 
+
 # Classes
 class Filter:
     """
@@ -23,7 +24,7 @@ class Filter:
             None
         """
         # Instantiate the base model
-        self.base_model = model(**model_params)
+        self.base_model = model(**model_params, unique_id='base')
         self.time = 0
 
         # Ensure that the model has the correct attributes
@@ -38,7 +39,7 @@ class Filter:
     @classmethod
     def is_good_model(cls, model):
         """
-        A utility function to ensure that we've been provided with a good model.
+        A function to ensure that we've been provided with a good model.
         This means that the model should have the following:
         - step (method)
         - state (attribute)

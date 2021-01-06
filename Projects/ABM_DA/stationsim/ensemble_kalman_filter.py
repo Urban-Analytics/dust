@@ -156,8 +156,8 @@ class EnsembleKalmanFilter(Filter):
         self.active = True
         self.sensor_types = {EnsembleKalmanFilterType.STATE: 'location',
                              EnsembleKalmanFilterType.DUAL_EXIT: 'loc_exit'}
-        self.error_funcs = {EnsembleKalmanFilterType.STATE: self.__make_errors,
-                            EnsembleKalmanFilterType.DUAL_EXIT: self.__make_dual_errors}
+        self.error_funcs = {EnsembleKalmanFilterType.STATE: self.make_errors,
+                            EnsembleKalmanFilterType.DUAL_EXIT: self.make_dual_errors}
 
     def __set_up_models(self, n=None):
         # Set up ensemble of models
@@ -169,7 +169,7 @@ class EnsembleKalmanFilter(Filter):
             for model in models:
                 for agent in model.agents:
                     # Randomise the destination of each agent in each model
-                    gate_out = self.__make_random_destination(model.gates_in,
+                    gate_out = self.make_random_destination(model.gates_in,
                                                               model.gates_out,
                                                               agent.gate_in)
                     agent.gate_out = gate_out
@@ -178,7 +178,7 @@ class EnsembleKalmanFilter(Filter):
             raise ValueError('Filter type not recognised.')
         return models
 
-    def __make_random_destination(self, gates_in, gates_out, gate_in):
+    def make_random_destination(self, gates_in, gates_out, gate_in):
         # Ensure that their destination is not the same as their origin
         gate_out = np.random.randint(gates_out) + gates_in
         while (gate_out == gate_in or gate_out >= self.n_exits):
@@ -196,7 +196,7 @@ class EnsembleKalmanFilter(Filter):
             None
         """
         # Check if any of the models are active
-        self.__update_status()
+        self.update_status()
         # Only predict-update if there is at least one active model
         if self.active:
             self.predict()
@@ -213,7 +213,7 @@ class EnsembleKalmanFilter(Filter):
 
             if self.time % self.assimilation_period == 0:
                 # Construct observations
-                data, obs_truth = self.__make_data()
+                data, obs_truth = self.make_data()
 
                 # Plot model state
                 self.plot_model_state('before')
@@ -224,7 +224,7 @@ class EnsembleKalmanFilter(Filter):
                 self.update_models()
 
                 metrics = forecast_error.copy()
-                metrics = self.__make_metrics(metrics, truth, obs_truth, data)
+                metrics = self.make_metrics(metrics, truth, obs_truth, data)
                 self.metrics.append(metrics)
 
                 if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
@@ -306,16 +306,16 @@ class EnsembleKalmanFilter(Filter):
         X = self.state_ensemble + gain_matrix @ diff
         self.state_ensemble = X
 
-    def __make_metrics(self, metrics, truth, obs_truth, data):
+    def make_metrics(self, metrics, truth, obs_truth, data):
         # Calculating prior and likelihood errors
-        metrics['obs'] = self.__make_errors(obs_truth, data)[0]
+        metrics['obs'] = self.make_errors(obs_truth, data)[0]
 
         # Analysis error
         if self.mode == EnsembleKalmanFilterType.STATE:
-            d, _, _ = self.__make_analysis_errors(truth, self.state_mean)
+            d, _, _ = self.make_analysis_errors(truth, self.state_mean)
         elif self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
             # USE ANALYSIS ERRORS
-            d, _, _, e = self.__make_analysis_errors(truth, self.state_mean)
+            d, _, _, e = self.make_analysis_errors(truth, self.state_mean)
             metrics['exit_accuracy'] = e
         metrics['analysis'] = d
 
@@ -326,7 +326,7 @@ class EnsembleKalmanFilter(Filter):
 
         return metrics
 
-    def __make_data(self):
+    def make_data(self):
         # Construct observations
         obs_truth = self.base_model.get_state(sensor='location')
         noise = np.random.normal(0, self.R_vector, obs_truth.shape)
@@ -363,7 +363,7 @@ class EnsembleKalmanFilter(Filter):
         # Round exits if they are in the state vectors
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
             destinations = state_mean[2*self.population_size:]
-            destinations = self.__round_destinations(destinations,
+            destinations = self.round_destinations(destinations,
                                                      self.n_exits)
             state_mean[2*self.population_size:] = destinations
 
@@ -399,7 +399,7 @@ class EnsembleKalmanFilter(Filter):
 
                 # Update destinations
                 destinations = state_vector[2*self.population_size:]
-                destinations = self.__round_destinations(destinations,
+                destinations = self.round_destinations(destinations,
                                                          self.n_exits)
                 self.models[i].set_state(destinations, sensor='exit')
 
@@ -444,17 +444,19 @@ class EnsembleKalmanFilter(Filter):
         return C @ self.H_transpose @ np.linalg.inv(diff)
 
     @staticmethod
-    def __separate_coords(arr):
+    def separate_coords(arr):
         """
         Function to split a flat array into xs and ys.
         Assumes that xs and ys alternate.
         i.e.
         [x0, y0, x1, y1] -> ([x0, x1], [y0, y1])
         """
+        if len(arr) % 2 != 0:
+            raise ValueError('Please provide an array of even length.')
         return arr[::2], arr[1::2]
 
     @staticmethod
-    def __pair_coords(arr1, arr2):
+    def pair_coords(arr1, arr2):
         if len(arr1) != len(arr2):
             raise ValueError('Both arrays should be the same length.')
         results = list()
@@ -484,7 +486,7 @@ class EnsembleKalmanFilter(Filter):
             distance_mean_errors.append(np.mean(distance_error))
 
         for i, result in enumerate(self.vanilla_results):
-            wo, j, k = self.__make_errors(result, truth[i])
+            wo, j, k = self.make_errors(result, truth[i])
             without.append(np.mean(wo))
 
         # if self.vis:
@@ -527,56 +529,56 @@ class EnsembleKalmanFilter(Filter):
         data.to_csv(data_path, index=False)
 
     @classmethod
-    def __make_errors(cls, truth, result):
+    def make_errors(cls, truth, result):
         """
         Method to calculate x-errors and y-errors
         """
-        x_result, y_result = cls.__separate_coords(result)
-        x_truth, y_truth = cls.__separate_coords(truth)
+        x_result, y_result = cls.separate_coords(result)
+        x_truth, y_truth = cls.separate_coords(truth)
 
-        d, x, y = cls.__calculate_rmse(x_truth, y_truth, x_result, y_result)
+        d, x, y = cls.calculate_rmse(x_truth, y_truth, x_result, y_result)
 
         return d, x, y
 
     @staticmethod
-    def __make_distance_error(x_error, y_error):
+    def make_distance_error(x_error, y_error):
         agent_distances = np.sqrt(np.square(x_error) + np.square(y_error))
         return np.mean(agent_distances)
 
-    def __separate_coords_exits(self, state_vector):
+    def separate_coords_exits(self, state_vector):
         x = state_vector[:self.population_size]
         y = state_vector[self.population_size: 2 * self.population_size]
         e = state_vector[2 * self.population_size:]
         return x, y, e
 
-    def __make_dual_errors(self, truth, result):
-        x_result, y_result, exit_result = self.__separate_coords_exits(result)
-        x_truth, y_truth, exit_truth = self.__separate_coords_exits(truth)
+    def make_dual_errors(self, truth, result):
+        x_result, y_result, exit_result = self.separate_coords_exits(result)
+        x_truth, y_truth, exit_truth = self.separate_coords_exits(truth)
 
-        d, x, y = self.__calculate_rmse(x_truth, y_truth, x_result, y_result)
+        d, x, y = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
         exit_accuracy = accuracy_score(exit_truth, exit_result)
 
         return d, x, y, exit_accuracy
 
-    def __make_analysis_errors(self, truth, result):
+    def make_analysis_errors(self, truth, result):
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
-            return self.__make_dual_errors(truth, result)
+            return self.make_dual_errors(truth, result)
         elif self.mode == EnsembleKalmanFilterType.STATE:
-            return self.__make_errors(truth, result)
+            return self.make_errors(truth, result)
 
     @classmethod
-    def __calculate_rmse(cls, x_truth, y_truth, x_result, y_result):
+    def calculate_rmse(cls, x_truth, y_truth, x_result, y_result):
         """
         Method to calculate the rmse over all agents for a given data set at a
         single time-step.
         """
         x_error = np.mean(np.abs(x_result - x_truth))
         y_error = np.mean(np.abs(y_result - y_truth))
-        distance_error = cls.__make_distance_error(x_error, y_error)
+        distance_error = cls.make_distance_error(x_error, y_error)
 
         return distance_error, x_error, y_error
 
-    def __update_status(self):
+    def update_status(self):
         """
         update_status
 
@@ -597,12 +599,12 @@ class EnsembleKalmanFilter(Filter):
         self.active = any(m_statuses) or any(vanilla_m_statuses)
 
     @classmethod
-    def __round_destinations(cls, destinations, n_destinations):
-        vfunc = np.vectorize(cls.__round_destination)
+    def round_destinations(cls, destinations, n_destinations):
+        vfunc = np.vectorize(cls.round_destination)
         return vfunc(destinations, n_destinations)
 
     @staticmethod
-    def __round_destination(destination, n_destinations):
+    def round_destination(destination, n_destinations):
         dest = int(round(destination))
         return dest % n_destinations
 

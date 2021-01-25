@@ -216,7 +216,8 @@ class EnsembleKalmanFilter(Filter):
                 data, obs_truth = self.make_data()
 
                 # Plot model state
-                self.plot_model_state('before')
+                if self.vis:
+                    self.plot_model_state('before')
 
                 # Update
                 self.update(data)
@@ -232,7 +233,8 @@ class EnsembleKalmanFilter(Filter):
                     self.exits.append(exits)
 
                 # Plot posterior
-                self.plot_model_state('after')
+                if self.vis:
+                    self.plot_model_state('after')
 
             # else:
                 # self.update_state_mean()
@@ -249,7 +251,7 @@ class EnsembleKalmanFilter(Filter):
 
     def baseline_step(self):
         # Check if any of the models are active
-        self.__update_status()
+        self.update_status()
         # Only predict-update if there is at least one active model
         if self.active:
             self.predict()

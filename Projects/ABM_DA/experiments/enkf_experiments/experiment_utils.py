@@ -8,13 +8,14 @@ A collection of classes and functions for running the enkf.
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from os import listdir
+from os import listdir, walk
 import pandas as pd
 from pathlib import Path
+import pickle
 # import queue
 import seaborn as sns
-# import threading
 import sys
+# import threading
 from time import sleep
 
 sys.path.append('../../stationsim')
@@ -138,24 +139,8 @@ class Modeller():
             The number of times we want to run the ABM-DA.
         """
         model_params = {'pop_total': p,
-                        'station': 'Grand_Central',
+                        # 'station': 'Grand_Central',
                         'do_print': False}
-        # model_params = {'width': 200,
-        #                 'height': 100,
-        #                 'pop_total': p,
-        #                 'gates_in': 3,
-        #                 'gates_space': 2,
-        #                 'gates_speed': 4,
-        #                 'gates_out': 2,
-        #                 'speed_min': .1,
-        #                 'speed_mean': 1,
-        #                 'speed_std': 1,
-        #                 'speed_steps': 3,
-        #                 'separation': 4,
-        #                 'max_wiggle': 1,
-        #                 'step_limit': 500,
-        #                 'do_history': True,
-        #                 'do_print': False}
 
         OBS_NOISE_STD = s
         vec_length = 2 * model_params['pop_total']
@@ -177,7 +162,7 @@ class Modeller():
         for i in range(N):
             print('Running iteration {0}'.format(i+1))
             enkf = cls.run_enkf(model_params, filter_params)
-            errors.append(enkf.rmse)
+            errors.append(enkf.metrics)
             forecast_errors.append(enkf.forecast_error)
 
         if write_json:
@@ -194,6 +179,28 @@ class Modeller():
                 json.dump(forecast_errors, f, ensure_ascii=False, indent=2)
 
         return errors, forecast_errors
+
+    @staticmethod
+    def make_combos():
+        ap = [2, 5, 10, 20, 50]
+        es = [2, 5, 10, 20, 50]
+        pop = [2, 5, 10, 20, 50]
+        sigma = [0.5 * i for i in range(1, 6)]
+
+        combos = list()
+
+        for a in ap:
+            for e in es:
+                for p in pop:
+                    for s in sigma:
+                        t = (a, e, p, s)
+                        combos.append(t)
+        
+        return combos
+
+    @staticmethod
+    def split_combos(combos):
+        return combos[0::2], combos[1::2]
 
     @classmethod
     def run_repeat_combos(cls, resume=True):
@@ -252,6 +259,94 @@ class Modeller():
             if i % 200 == 123:
                 print('Taking a long break.\n\n\n')
                 sleep(300)
+            if i == 1000:
+                break
+            i += 1
+
+    @classmethod
+    def run_repeat_combos_1(cls, resume=True):
+        """
+        Repeatedly run model + enkf for a range of different parameter
+        combinations.
+
+        Run the model + enkf 10 times for each combination of parameter values.
+        If some combinations have already been run then the option to resume
+        can be used.
+        Write outputs to json every 5 combinations.
+
+        Parameters
+        ----------
+        resume : boolean
+            Boolean to choose whether to resume from previous point in the list
+            of combinations.
+        """
+        if resume:
+            with open('results/combos_1.json') as json_file:
+                combos = json.load(json_file)
+        else:
+            combos = cls.make_combos()
+            # even indices
+            combos = cls.split_combos(combos)[0]
+
+        i = 0
+        combos.reverse()
+        while combos:
+            c = combos.pop()
+            print('running for {0}'.format(str(c)))
+            cls.run_repeat(*c, N=10, write_json=True)
+            if i % 5 == 0:
+                with open('results/combos_1.json', 'w', encoding='utf-8') as f:
+                    json.dump(combos, f, ensure_ascii=False, indent=4)
+            if i % 40 == 25:
+                print('Taking a short break.\n\n\n')
+                sleep(30)
+            if i % 200 == 123:
+                print('Taking a long break.\n\n\n')
+                sleep(60)
+            if i == 1000:
+                break
+            i += 1
+
+    @classmethod
+    def run_repeat_combos_2(cls, resume=True):
+        """
+        Repeatedly run model + enkf for a range of different parameter
+        combinations.
+
+        Run the model + enkf 10 times for each combination of parameter values.
+        If some combinations have already been run then the option to resume
+        can be used.
+        Write outputs to json every 5 combinations.
+
+        Parameters
+        ----------
+        resume : boolean
+            Boolean to choose whether to resume from previous point in the list
+            of combinations.
+        """
+        if resume:
+            with open('results/combos_2.json') as json_file:
+                combos = json.load(json_file)
+        else:
+            combos = cls.make_combos()
+            # odd indices
+            combos = cls.split_combos(combos)[1]
+
+        i = 0
+        combos.reverse()
+        while combos:
+            c = combos.pop()
+            print('running for {0}'.format(str(c)))
+            cls.run_repeat(*c, N=10, write_json=True)
+            if i % 5 == 0:
+                with open('results/combos_2.json', 'w', encoding='utf-8') as f:
+                    json.dump(combos, f, ensure_ascii=False, indent=4)
+            if i % 40 == 25:
+                print('Taking a short break.\n\n\n')
+                sleep(30)
+            if i % 200 == 123:
+                print('Taking a long break.\n\n\n')
+                sleep(60)
             if i == 1000:
                 break
             i += 1
@@ -391,62 +486,112 @@ class Modeller():
         else:
             raise ValueError(f'Unexpected filter mode: {mode}')
 
-    @classmethod
-    def run_experiment_1(cls):
-        # cls.run_experiment_1_1()
-        cls.run_experiment_1_2()
+    # @classmethod
+    # def run_experiment_1(cls):
+    #     # cls.run_experiment_1_1()
+    #     cls.run_experiment_1_2()
 
     @classmethod
-    def run_experiment_1_1(cls):
+    def run_model_collisions(cls):
         # Run model alone for multiple population sizes
         # Show that the number of collisions increases with the population size
         # Number of collisions should be scaled by the number of timesteps
-        pop_sizes = range(2, 51, 2)
-        N_repeats = 25
+        pop_sizes = range(5, 101, 5)
+        N_repeats = 20
         model_results = list()
         for pop_size in pop_sizes:
             print(f'Running for {pop_size} agents')
             for _ in range(N_repeats):
                 collisions = cls.__run_model(pop_size)
-                if collisions is not None:
-                    model_results.append(collisions)
+                model_results.append(collisions)
 
         model_results = pd.DataFrame(model_results)
         model_results.to_csv('./results/data/model_collisions.csv')
         plt.figure()
-        sns.relplot(x='population_size', y='collisions',
-                    kind='line', data=model_results)
+        sns.lineplot(x='population_size', y='collisions',
+                     data=model_results)
         plt.savefig('./results/figures/model_collisions.pdf')
 
-    @staticmethod
-    def run_experiment_1_2():
-        # Run the EnKF+model for multiple population sizes (multiple times)
-        pop_sizes = [2, 5, 10, 20, 50, 100]
-        N = 50
-        its = 3600
-        assimilation_period = 25
-        ensemble_size = 10
-        mode = EnsembleKalmanFilterType.STATE
+    # @staticmethod
+    # def run_experiment_1_2():
+    #     # Run the EnKF+model for multiple population sizes (multiple times)
+    #     pop_sizes = [2, 5, 10, 20, 50, 100]
+    #     N = 50
+    #     its = 3600
+    #     assimilation_period = 25
+    #     ensemble_size = 10
+    #     mode = EnsembleKalmanFilterType.STATE
 
-        # Plot facet grid by population size
-        # Individual plots are sns.relplot, x=time, y=error
-        # Two plots per subfig: baseline and filter
-        # Run the EnKF+model for multiple population sizes (multiple times)
-        pop_sizes = [2, 5, 10, 20, 50, 100]
-        N = 50
-        its = 3600
-        assimilation_period = 25
-        ensemble_size = 10
-        mode = EnsembleKalmanFilterType.STATE
+    #     # Plot facet grid by population size
+    #     # Individual plots are sns.relplot, x=time, y=error
+    #     # Two plots per subfig: baseline and filter
+    #     # Run the EnKF+model for multiple population sizes (multiple times)
+    #     pop_sizes = [2, 5, 10, 20, 50, 100]
+    #     N = 50
+    #     its = 3600
+    #     assimilation_period = 25
+    #     ensemble_size = 10
+    #     mode = EnsembleKalmanFilterType.STATE
 
-        # Plot facet grid by population size
-        # Individual plots are sns.relplot, x=time, y=error
-        # Two plots per subfig: baseline and filter
+    #     # Plot facet grid by population size
+    #     # Individual plots are sns.relplot, x=time, y=error
+    #     # Two plots per subfig: baseline and filter
+
+    @classmethod
+    def run_experiment_1(cls, ensemble_size=20, pop_size=20,
+                         assimilation_period=20, obs_noise_std=1.0,
+                         mode=EnsembleKalmanFilterType.STATE):
+        # Run repeat with benchmarking for one set of parameters
+        # Set up params
+        its = 3600
+
+        model_params = {'pop_total': pop_size,
+                        'do_print': False}
+
+        # Set up filter parameters
+        observation_operator = cls.__make_observation_operator(pop_size, mode)
+        state_vec_length = cls.__make_state_vector_length(pop_size, mode)
+        data_mode = EnsembleKalmanFilterType.STATE
+        data_vec_length = cls.__make_state_vector_length(pop_size, data_mode)
+
+        filter_params = {'max_iterations': its,
+                         'assimilation_period': assimilation_period,
+                         'ensemble_size': ensemble_size,
+                         'population_size': pop_size,
+                         'vanilla_ensemble_size': ensemble_size,
+                         'state_vector_length': state_vec_length,
+                         'data_vector_length': data_vec_length,
+                         'mode': mode,
+                         'H': observation_operator,
+                         'R_vector': obs_noise_std * np.ones(data_vec_length),
+                         'keep_results': True,
+                         'run_vanilla': True,
+                         'vis': False}
+
+        model_path = f'./results/models/toy_model_exp_1/p{pop_size}/'
+
+        for i in range(10):
+            enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
+                                        filtering=True, benchmarking=True)
+
+            while enkf.active:
+                enkf.step()
+
+            with open(model_path + f'model_{i}.pkl', 'wb') as f:
+                pickle.dump(enkf, f)
+
+    @classmethod
+    def run_experiment_2(cls):
+        pop_sizes = [2, 5, 10, 20, 50]
+        ensemble_sizes = [2, 5, 10, 20, 50]
+        assimilation_periods = [2, 5, 10, 20, 50]
+        obs_noise_stds = [0.5, 1.0, 1.5, 2.0, 2.5]
 
     @staticmethod
     def __run_model(N):
         model_params = {'pop_total': N,
-                        'station': 'Grand_Central',
+                        'step_limit': 5000,
+                        'do_history': True,
                         'do_print': False}
         m = Model(**model_params)
 
@@ -454,16 +599,12 @@ class Modeller():
         for _ in range(m.step_limit):
             m.step()
 
-        try:
-            c = len(m.history_wiggle_locs)
-            t = m.max_time
-            d = {'collisions': c,
-                 'time': t,
-                 'population_size': N}
-            return d
-        except:
-            print('failure')
-            return None
+        c = sum([agent.history_collisions for agent in m.agents])
+        # t = m.max_time
+        d = {'collisions': c,
+             # 'time': t,
+             'population_size': N}
+        return d
 
     @classmethod
     def run_enkf_benchmark(cls, ensemble_size=20, pop_size=20,
@@ -482,6 +623,9 @@ class Modeller():
 
         while enkf.active:
             enkf.baseline_step()
+
+        with open('./results/models/baseline.pkl', 'wb') as f:
+            pickle.dump(enkf, f)
 
         Visualiser.plot_forecast_error_timeseries(enkf, model_params,
                                                   filter_params, do_save=True,
@@ -524,50 +668,60 @@ class Processor():
                 output = json.load(f)
         else:
             # Set up link to directory
-            results_path = './results/repeats/'
-            results_list = listdir(results_path)
+            results_dir = './results/repeats/'
             output = list()
 
-            for r in results_list:
-                # Derive parameters from filename
-                components = r.split('__')
+            # subdirs = [x[0] for x in walk(results_dir)]
 
-                ap = int(components[0].split('_')[-1])
-                es = int(components[1])
-                pop_size = int(components[2])
-                pre_sigma = components[3].split('.')[0]
+            for subdir in listdir(results_dir):
+                # Derive parameters from filename
+                components = subdir.split('__')
+
+                ap = int(components[0][1:])
+                es = int(components[1][1:])
+                pop_size = int(components[2][1:])
+                pre_sigma = components[3][1:]
                 sigma = float(pre_sigma.replace('_', '.'))
 
                 # Read in set of results:
-                p = './results/repeats/{0}'.format(r)
-                with open(p) as f:
+                results_path = f'{results_dir}{subdir}/errors.json'
+                # p = './results/repeats/{0}'.format(r)
+                with open(results_path) as f:
                     d = json.load(f)
 
+                for result in d:
+                    for r in result:
+                        r['assimilation_period'] = ap
+                        r['ensemble_size'] = es
+                        r['population_size'] = pop_size
+                        r['std'] = sigma
+                        output.append(r)
+
                 # Reduce to means for forecast, analysis and obs
-                forecasts, analyses, observations = cls.process_repeat_results(d)
+                # forecasts, analyses, observations = cls.process_repeat_results(d)
 
-                # Take mean over time
-                forecast = forecasts['mean'].mean()
-                analysis = analyses['mean'].mean()
-                observation = observations['mean'].mean()
+                # # Take mean over time
+                # forecast = forecasts['mean'].mean()
+                # analysis = analyses['mean'].mean()
+                # observation = observations['mean'].mean()
 
-                # Add to output list
-                row = {'assimilation_period': ap,
-                       'ensemble_size': es,
-                       'population_size': pop_size,
-                       'std': sigma,
-                       'forecast': forecast,
-                       'analysis': analysis,
-                       'observation': observation}
+                # # Add to output list
+                # row = {'assimilation_period': ap,
+                #        'ensemble_size': es,
+                #        'population_size': pop_size,
+                #        'std': sigma,
+                #        'forecast': forecast,
+                #        'analysis': analysis,
+                #        'observation': observation}
 
-                output.append(row)
+                # output.append(row)
 
             if write_time:
                 with open('results/map_data.json', 'w', encoding='utf-8') as f:
                     json.dump(output, f, ensure_ascii=False, indent=4)
+                data = pd.DataFrame(output)
+                data.to_csv('results/map_data.csv', index=False)
 
-        data = pd.DataFrame(output)
-        Visualiser.make_all_heatmaps(data)
 
     @staticmethod
     def extract_array(df, var1, var2):
@@ -712,6 +866,21 @@ class Processor():
         d['time'] = times
         return d.set_index('time')
 
+    @classmethod
+    def process_experiment_1(cls):
+        pop_size = 100
+        model_dir = f'./results/models/toy_model_exp_1/p{pop_size}/'
+        model_paths = listdir(model_dir)
+        all_metrics = list()
+
+        for model_path in model_paths:
+            with open(model_dir + model_path, 'rb') as f:
+                model = pickle.load(f)
+            all_metrics.extend(model.metrics)
+
+        output_data_dir = f'./results/data/toy_model_exp_1/p{pop_size}/'
+        all_metrics = pd.DataFrame(all_metrics)
+        all_metrics.to_csv(output_data_dir + 'metrics.csv', index=False)
 
 class Visualiser():
     def __init__(self):
@@ -1122,7 +1291,7 @@ class Visualiser():
         """
         results = pd.DataFrame(enkf.forecast_error)
         plt.figure(figsize=(8, 8))
-        plt.plot(results['time'], results['forecast'])
+        sns.lineplot(data=results, x='time', y='forecast')
         # plt.scatter(results['time'], results['forecast'], s=0.75)
         plt.xlabel('Timestep')
         plt.ylabel('Average error per agent')
@@ -1190,3 +1359,25 @@ class Visualiser():
             plt.plot(agent_exits[i], label=str(i))
         plt.legend()
         plt.savefig('./results/figures/exits.pdf')
+
+    @classmethod
+    def quick_plot(cls):
+        # Set up filter parameters
+        ensemble_size = 100
+        mode = EnsembleKalmanFilterType.STATE
+        state_vec_length = 200
+        pop_size = 100
+
+        # Initialise filter with StationSim and params
+        filter_params = {'vanilla_ensemble_size': ensemble_size,
+                         'state_vector_length': state_vec_length,
+                         'mode': mode}
+        model_params = {'pop_total': pop_size,
+                        'do_print': True}
+
+        with open('./results/models/baseline.pkl', 'rb') as f:
+            enkf = pickle.load(f)
+
+        cls.plot_forecast_error_timeseries(enkf, model_params,
+                                                 filter_params, do_save=True,
+                                                 plot_period=False)

@@ -406,11 +406,27 @@ class Model:
         '''
         self.unique_id = unique_id
         self.status = 1
+
+        # Set station based on kwargs if provided
+        self.station = kwargs['station'] if 'station' in kwargs else None
+
         # Default Parameters (usually overridden by the caller)
-        params = {
+        # Defaults for all modes
+        param_defaults_all = {
             'pop_total': 100,
+            'birth_rate': 1.0,
+            'separation': 5,  # just used in animation
+            'step_limit': 10000,
+            'do_history': True,
+            'do_print': True,
+            'random_seed': int.from_bytes(os.urandom(4), byteorder='little'),
+            'tolerance': 0.1,  # new parameter
+            'station': None
+        }
+
+        # Defaults for old mode
+        param_defaults_old = {
             'agent_size': 1.0,  # new parameter
-            'birth_rate': 1.0,  # new parameter
 
             'width': 400,
             'height': 200,
@@ -421,21 +437,30 @@ class Model:
             'speed_min': .2,
             'speed_mean': 1,
             'speed_std': 1,
-            'speed_steps': 3,
-
-            'separation': 5,  # just used in animation
-
-            'step_limit': 10000,
-
-            'do_history': True,
-            'do_print': True,
-
-            'random_seed': int.from_bytes(os.urandom(4), byteorder='little'),
-
-            'tolerance': 0.1,  # new parameter
-            'station': None  # None or Grand_Central  # new parameter
-
+            'speed_steps': 3
         }
+
+        # Defaults for GCS mode
+        param_defaults_gcs = {
+            'agent_size': 7.0,  # new parameter
+
+            'width': 740,
+            'height': 700,
+            'gates_in': 11,
+            'gates_out': 11,
+            'gates_space': 28.0,
+
+            'speed_min': 0.2,  # pixel / frame
+            'speed_mean': 0.839236,  # pixel / frame
+            'speed_std': 0.349087,  # pixel / frame
+            'speed_steps': 3
+        }
+
+        # Make a combined dictionary of default params
+        if self.station == 'Grand_Central':
+            params = {**param_defaults_all, **param_defaults_gcs}
+        else:
+            params = {**param_defaults_all, **param_defaults_old}
 
         if len(kwargs) == 0:
             warnings.warn(
@@ -443,20 +468,27 @@ class Model:
                 "default parameters: {}".format(params),
                 RuntimeWarning
             )
+
+        # Combine kwargs and defaults
         self.params, self.params_changed = Model._init_kwargs(params, kwargs)
+
+        # Allocate attributes
         [setattr(self, key, value) for key, value in self.params.items()]
+
         # Set the random seed
         np.random.seed(self.random_seed)
+
+        # Set speed step based on model attributes
         self.speed_step = (self.speed_mean - self.speed_min) / self.speed_steps
+
+        # Initialise remaining station attributes
+        self.set_station()
 
         # Variables
         self.step_id = 0
         self.pop_active = 0
         self.pop_finished = 0
         self.total_time = 0.0
-
-        # Initialise station
-        self.set_station()
 
         # Initialise agents
         self.agents = [Agent(self, unique_id) for unique_id in
@@ -487,10 +519,11 @@ class Model:
         than automatically generating a station from parameters like
         number of gates, gate size, etc.
         '''
+        # Station setup that happens for all station configurations
+        self.boundaries = np.array([[0, 0], [self.width, self.height]])
+
         if(self.station == 'Grand_Central'):
-            self.width = 740  # 53 m
-            self.height = 700  # 50 m
-            self.boundaries = np.array([[0, 0], [self.width, self.height]])
+            # Gates
             self.gates_locations =\
                 np.array([[0, 275],  # gate 0
                           [125, 700],   # gate 1
@@ -523,18 +556,14 @@ class Model:
             self.clock.size = 56.0  # 4 m
             self.clock.location = [370, 275]  # 26.4 m, 20 m
             self.clock.speed = 0.0
-            self.agent_size = 7.0  # 0.5 m
-            self.speed_mean = 0.839236  # pixel / frame
-            self.speed_std = 0.349087  # pixel / frame
-            self.speed_min = 0.2  # pixel / frame
-            self.gates_space = 28.0  # 2 m
 
         else:
+            # Gates
             self.gates_locations = np.concatenate([
                 Model._gates_init(0, self.height, self.gates_in),
                 Model._gates_init(self.width, self.height, self.gates_out)])
             self.gates_width = [20 for _ in range(len(self.gates_locations))]
-            self.boundaries = np.array([[0, 0], [self.width, self.height]])
+
             # create a clock outside the station.
             self.clock = Agent(self, self.pop_total)
             self.clock.speed = 0.0

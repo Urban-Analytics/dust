@@ -13,3 +13,9 @@ inputs/frames:
 
 all_frames: inputs/frames inputs/frames.tar.gz
 	cd inputs/ && tar -xzf frames.tar.gz -C frames/
+
+zip_outputs:
+	tar -czf all_outputs.tar.gz outputs/
+
+unzip_outputs:
+	tar -xzf all_outputs.tar.gz outputs/

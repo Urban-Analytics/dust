@@ -8,7 +8,7 @@ A collection of classes and functions for running the enkf.
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from os import listdir, walk
+from os import listdir
 import pandas as pd
 from pathlib import Path
 import pickle
@@ -195,7 +195,7 @@ class Modeller():
                     for s in sigma:
                         t = (a, e, p, s)
                         combos.append(t)
-        
+
         return combos
 
     @staticmethod
@@ -617,6 +617,7 @@ class Modeller():
                          'state_vector_length': state_vec_length,
                          'mode': mode}
         model_params = {'pop_total': pop_size,
+                        'station': 'Grand_Central',
                         'do_print': True}
         enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                     filtering=False, benchmarking=True)
@@ -721,7 +722,6 @@ class Processor():
                     json.dump(output, f, ensure_ascii=False, indent=4)
                 data = pd.DataFrame(output)
                 data.to_csv('results/map_data.csv', index=False)
-
 
     @staticmethod
     def extract_array(df, var1, var2):
@@ -881,6 +881,7 @@ class Processor():
         output_data_dir = f'./results/data/toy_model_exp_1/p{pop_size}/'
         all_metrics = pd.DataFrame(all_metrics)
         all_metrics.to_csv(output_data_dir + 'metrics.csv', index=False)
+
 
 class Visualiser():
     def __init__(self):
@@ -1379,5 +1380,5 @@ class Visualiser():
             enkf = pickle.load(f)
 
         cls.plot_forecast_error_timeseries(enkf, model_params,
-                                                 filter_params, do_save=True,
-                                                 plot_period=False)
+                                           filter_params, do_save=True,
+                                           plot_period=False)

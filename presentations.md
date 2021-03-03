@@ -6,6 +6,10 @@ tagline: Presentations about, or relating to, the surf project
 
 ### Presentations about, or relating to, the dust project (most recent first)
 
+**2021**
+  -  [Ambient populations: Developing robust estimates]({{site.baseurl}}/p/2021-03-03-Ambient_Pop_Bristol.pdf). Presentation by Annabel Whipp and Nick Malleson as part of the [Engineering Mathematics Seminar Series](https://seis.bristol.ac.uk/~nb14397/seminars.html) at the [Department of Engineering Mathematics, University of Bristol](https://www.bristol.ac.uk/engineering/departments/engineering-mathematics/), 3rd March 2021. [[PDF]({{site.baseurl}}/p/2021-03-03-Ambient_Pop_Bristol.pdf)]
+
+
 **2020**
 
   - [Towards Real-time Crowd Simulation Under Uncertainty using an Agent-Based Model and an Unscented Kalman Filter]({{site.baseurl}}/p/2020-10-08-Clay_PAAAMS_UKF.pdf). Presentation by Robert Clay to the [19th International Conference on Practical Applications of Agents and Multi-Agent Systems (PAAMS)](https://www.paams.net/), 6-8 October, 2020. Paper available in _The PAAMS Collection (Lecture Notes in Computer Science)_ 12092: 68-79. [DOI: 10.1007/978-3-030-49778-1_6](https://doi.org/10.1007/978-3-030-49778-1_6) [[PDF]({{site.baseurl}}/papers/2020-PAAMS-UKF.pdf)]

@@ -17,6 +17,7 @@ import seaborn as sns
 import sys
 # import threading
 from time import sleep
+from tqdm import tqdm
 
 sys.path.append('../../stationsim')
 from stationsim_gcs_model import Model
@@ -139,14 +140,14 @@ class Modeller():
             The number of times we want to run the ABM-DA.
         """
         model_params = {'pop_total': p,
-                        # 'station': 'Grand_Central',
+                        'station': 'Grand_Central',
                         'do_print': False}
 
         OBS_NOISE_STD = s
         vec_length = 2 * model_params['pop_total']
         observation_operator = cls.__make_observation_operator(p, mode)
 
-        filter_params = {'max_iterations': 3600,
+        filter_params = {'max_iterations': 10000,
                          'assimilation_period': a,
                          'ensemble_size': e,
                          'population_size': model_params['pop_total'],
@@ -501,7 +502,7 @@ class Modeller():
         model_results = list()
         for pop_size in pop_sizes:
             print(f'Running for {pop_size} agents')
-            for _ in range(N_repeats):
+            for _ in tqdm(range(N_repeats)):
                 collisions = cls.__run_model(pop_size)
                 model_results.append(collisions)
 
@@ -543,9 +544,10 @@ class Modeller():
                          mode=EnsembleKalmanFilterType.STATE):
         # Run repeat with benchmarking for one set of parameters
         # Set up params
-        its = 3600
+        its = 20000
 
         model_params = {'pop_total': pop_size,
+                        'station': 'Grand_Central',
                         'do_print': False}
 
         # Set up filter parameters
@@ -568,9 +570,9 @@ class Modeller():
                          'run_vanilla': True,
                          'vis': False}
 
-        model_path = f'./results/models/toy_model_exp_1/p{pop_size}/'
+        model_path = f'./results/models/gcs_model_exp_1/p{pop_size}/'
 
-        for i in range(10):
+        for i in tqdm(range(10)):
             enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                         filtering=True, benchmarking=True)
 
@@ -591,6 +593,7 @@ class Modeller():
     def __run_model(N):
         model_params = {'pop_total': N,
                         'step_limit': 5000,
+                        'station': 'Grand_Central',
                         'do_history': True,
                         'do_print': False}
         m = Model(**model_params)
@@ -618,7 +621,7 @@ class Modeller():
                          'mode': mode}
         model_params = {'pop_total': pop_size,
                         'station': 'Grand_Central',
-                        'do_print': True}
+                        'do_print': False}
         enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                     filtering=False, benchmarking=True)
 
@@ -868,8 +871,8 @@ class Processor():
 
     @classmethod
     def process_experiment_1(cls):
-        pop_size = 100
-        model_dir = f'./results/models/toy_model_exp_1/p{pop_size}/'
+        pop_size = 20
+        model_dir = f'./results/models/gcs_model_exp_1/p{pop_size}/'
         model_paths = listdir(model_dir)
         all_metrics = list()
 
@@ -878,7 +881,7 @@ class Processor():
                 model = pickle.load(f)
             all_metrics.extend(model.metrics)
 
-        output_data_dir = f'./results/data/toy_model_exp_1/p{pop_size}/'
+        output_data_dir = f'./results/data/gcs_model_exp_1/p{pop_size}/'
         all_metrics = pd.DataFrame(all_metrics)
         all_metrics.to_csv(output_data_dir + 'metrics.csv', index=False)
 

@@ -109,7 +109,6 @@ class EnsembleKalmanFilter(Filter):
         #                        range(self.vanilla_ensemble_size)]
         self.vanilla_state_mean = None
         s = (self.state_vector_length, self.vanilla_ensemble_size)
-        print(s)
         self.vanilla_state_ensemble = np.zeros(shape=s)
         self.vanilla_metrics = list()
         self.vanilla_results = list()
@@ -339,13 +338,13 @@ class EnsembleKalmanFilter(Filter):
         """
         Update self.state_ensemble based on the states of the models.
         """
+        st = self.sensor_type
         if self.filtering:
             for i in range(self.ensemble_size):
-                state_vector = self.models[i].get_state(sensor=self.sensor_type)
+                state_vector = self.models[i].get_state(sensor=st)
                 self.state_ensemble[:, i] = state_vector
         if self.run_vanilla:
             for i in range(self.vanilla_ensemble_size):
-                st = self.sensor_type
                 state_vector = self.vanilla_models[i].get_state(st)
                 self.vanilla_state_ensemble[:, i] = state_vector
 

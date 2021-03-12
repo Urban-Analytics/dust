@@ -414,7 +414,6 @@ class Model:
         # Defaults for all modes
         param_defaults_all = {
             'pop_total': 100,
-            'birth_rate': 1.0,
             'separation': 5,  # just used in animation
             'step_limit': 10000,
             'do_history': True,
@@ -437,7 +436,8 @@ class Model:
             'speed_min': .2,
             'speed_mean': 1,
             'speed_std': 1,
-            'speed_steps': 3
+            'speed_steps': 3,
+            'birth_rate': 1.0
         }
 
         # Defaults for GCS mode
@@ -450,10 +450,11 @@ class Model:
             'gates_out': 11,
             'gates_space': 28.0,
 
-            'speed_min': 0.2,  # pixel / frame
-            'speed_mean': 0.839236,  # pixel / frame
-            'speed_std': 0.349087,  # pixel / frame
-            'speed_steps': 3
+            'speed_min': 0.174,  # pixel / frame
+            'speed_mean': 0.897,  # pixel / frame
+            'speed_std': 0.372,  # pixel / frame
+            'speed_steps': 3,
+            'birth_rate': 1.6
         }
 
         # Make a combined dictionary of default params
@@ -615,7 +616,6 @@ class Model:
                 self.step_id < self.step_limit and self.status == 1:
             if self.do_print and self.step_id % 100 == 0:
                 print(f'\tIteration: {self.step_id}/{self.step_limit}')
-
             [agent.activate() for agent in self.agents]
 
             t = 1.0

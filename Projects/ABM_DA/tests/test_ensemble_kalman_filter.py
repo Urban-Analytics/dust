@@ -24,6 +24,10 @@ n_active_agents_base_data = get_n_active_agents_base_data()
 
 n_active_agents_mean_data = get_n_active_agents_mean_data()
 
+n_active_agents_max_data = get_n_active_agents_max_data()
+
+n_active_agents_min_data = get_n_active_agents_min_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -68,11 +72,31 @@ def test_get_n_active_agents_base(n_active, expected):
     assert enkf.get_n_active_agents() == expected
 
 
-@pytest.mark.parametrize('ensemble_active, expected', n_active_agents_mean_data)
+@pytest.mark.parametrize('ensemble_active, expected',
+                         n_active_agents_mean_data)
 def test_get_n_active_agents_mean_en(ensemble_active, expected):
     enkf = set_up_enkf()
     enkf.error_normalisation = ActiveAgentNormaliser.MEAN_EN
-    n_active_ensemble = [2, 3, 4, 3, 2]
     for i, model in enumerate(enkf.models):
-        model.pop_active = n_active_ensemble[i]
-    assert enkf.get_n_active_agents() == 3
+        model.pop_active = ensemble_active[i]
+    assert enkf.get_n_active_agents() == expected
+
+
+@pytest.mark.parametrize('ensemble_active, expected',
+                         n_active_agents_max_data)
+def test_get_n_active_agents_max_en(ensemble_active, expected):
+    enkf = set_up_enkf()
+    enkf.error_normalisation = ActiveAgentNormaliser.MAX_EN
+    for i, model in enumerate(enkf.models):
+        model.pop_active = ensemble_active[i]
+    assert enkf.get_n_active_agents() == expected
+
+
+@pytest.mark.parametrize('ensemble_active, expected',
+                         n_active_agents_min_data)
+def test_get_n_active_agents_min_en(ensemble_active, expected):
+    enkf = set_up_enkf()
+    enkf.error_normalisation = ActiveAgentNormaliser.MIN_EN
+    for i, model in enumerate(enkf.models):
+        model.pop_active = ensemble_active[i]
+    assert enkf.get_n_active_agents() == expected

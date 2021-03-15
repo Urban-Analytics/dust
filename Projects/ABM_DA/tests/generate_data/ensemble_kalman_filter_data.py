@@ -124,3 +124,17 @@ def get_n_active_agents_mean_data():
          ([1, 1, 1, 1, 1], 1),
          ([4, 3, 2, 1, 0], 2)]
     return d
+
+
+def get_n_active_agents_max_data():
+    d = [([2, 3, 4, 3, 2], 4),
+         ([1, 1, 1, 1, 1], 1),
+         ([4, 3, 2, 1, 0], 4)]
+    return d
+
+
+def get_n_active_agents_min_data():
+    d = [([2, 3, 4, 3, 2], 2),
+         ([1, 1, 1, 1, 1], 1),
+         ([4, 3, 2, 1, 0], 0)]
+    return d

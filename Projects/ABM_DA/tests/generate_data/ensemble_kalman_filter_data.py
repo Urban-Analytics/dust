@@ -138,3 +138,27 @@ def get_n_active_agents_min_data():
          ([1, 1, 1, 1, 1], 1),
          ([4, 3, 2, 1, 0], 0)]
     return d
+
+
+def get_population_mean_base_data():
+    results = ([1, 1, 2, 3, 2],
+               [4, 3, 2, 1, 1],
+               [3, 3, 3, 2, 3])
+
+    truths = ([1, 2, 3, 4, 5],
+              [4, 7, 2, 3, 4],
+              [2, 3, 3, 3, 3])
+
+    active_pops = (3, 2, 2)
+
+    expected = (2, 4, 1)
+
+    d = list()
+    for i in range(len(results)):
+        x = (results[i],
+             truths[i],
+             active_pops[i],
+             expected[i])
+        d.append(x)
+
+    return d

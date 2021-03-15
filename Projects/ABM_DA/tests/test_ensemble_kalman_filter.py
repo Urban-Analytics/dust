@@ -1,5 +1,6 @@
 # Imports
 from generate_data.ensemble_kalman_filter_data import *
+import numpy as np
 import pytest
 import sys
 sys.path.append('../stationsim/')
@@ -27,6 +28,8 @@ n_active_agents_mean_data = get_n_active_agents_mean_data()
 n_active_agents_max_data = get_n_active_agents_max_data()
 
 n_active_agents_min_data = get_n_active_agents_min_data()
+
+population_mean_base_data = get_population_mean_base_data()
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -100,3 +103,14 @@ def test_get_n_active_agents_min_en(ensemble_active, expected):
     for i, model in enumerate(enkf.models):
         model.pop_active = ensemble_active[i]
     assert enkf.get_n_active_agents() == expected
+
+
+@pytest.mark.parametrize('results, truth, n_active, expected',
+                         population_mean_base_data)
+def test_get_population_mean_base(results, truth, n_active, expected):
+    enkf = set_up_enkf()
+    enkf.base_model.pop_active = 3
+    results = np.array([1, 1, 2, 1, 3])
+    truth = np.array([1, 5, 2, 2, 2])
+
+    assert enkf.get_population_mean(results, truth) == 2

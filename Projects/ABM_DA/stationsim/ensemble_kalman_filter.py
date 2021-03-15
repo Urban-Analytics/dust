@@ -24,6 +24,14 @@ class EnsembleKalmanFilterType(Enum):
     DUAL_EXIT = auto()
 
 
+class ActiveAgentNormaliser(Enum):
+    BASE = auto()
+    MEAN_EN = auto()
+    MODE_EN = auto()
+    MAX_EN = auto()
+    MIN_EN = auto()
+
+
 class EnsembleKalmanFilter(Filter):
     """
     A class to represent a general EnKF.
@@ -152,6 +160,7 @@ class EnsembleKalmanFilter(Filter):
         self.vis = False
         self.run_vanilla = False
         self.mode = EnsembleKalmanFilterType.STATE
+        self.error_normalisation = ActiveAgentNormaliser.BASE
         self.active = True
         self.sensor_types = {EnsembleKalmanFilterType.STATE: 'location',
                              EnsembleKalmanFilterType.DUAL_EXIT: 'loc_exit'}

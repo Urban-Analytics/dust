@@ -571,27 +571,16 @@
                 </section>
                 
                 <section id="pf-results-pf-model-discrepancy">
-                    <h2>Difficulties (III)</h2>
-                    <h3>Model Discrepancy</h3>
-                    <p>Some behaviours are more predictable than others</p>
-                    <figure>
-                        <img src="../figures/paper_figures/2021-ParticleFilterFigs/trajectories.png"
+                    <figure class="right">
+                        <img src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trais_model_versus_real.png"
                              alt="Shows that the UKF works best when model and observation error are similar" />
                         <figcaption>Patricia Ternes, Jonathan A. Ward, Alison Heppenstall, Vijay Kumar, Le-MinhKieu, and Nick Malleson. Using data assimilation to reduce uncertainty in anagent-based pedestrian simulation in real time. <i>In review</i></figcaption>
                     </figure>
-                </section>
-                
-                <section id="pf-results-pf-model-discrepancy2">
-                    <figure class="right">
-                        <img src="../figures/paper_figures/2021-ParticleFilterFigs/trajectories.png"
-                             alt="Shows that the UKF works best when model and observation error are similar" />
-                        <!--<figcaption>Patricia Ternes, Jonathan A. Ward, Alison Heppenstall, Vijay Kumar, Le-MinhKieu, and Nick Malleson. Using data assimilation to reduce uncertainty in anagent-based pedestrian simulation in real time. <i>In review</i></figcaption>-->
-                    </figure>
                     <h2>Difficulties (III)</h2>
                     <h3>Model Discrepancy</h3>
+                    <p>Some behaviours are more predictable than others</p>
                     <p>No obvious 'solution' to this</p>
                     <p>But shows how important data assimilation could be</p>
-                    
                 </section>
                 
                 <section id="other_methods">
@@ -625,6 +614,9 @@
                     <p>Tracking People</p>
                     <p class="l2">Advantage with these methods is we <i>don't need to track people</i></p>
                     <p class="l2">Models work with counts of flows</p>
+                    <p class="l2">Although may need work on mapping from the data to the model domain
+                        (e.g. <a href="https://doi.org/10.1109/WSC40007.2019.9004861">Lueck at al. (2019)</a>)
+                    </p>
                 
                 </section>
                 
@@ -633,10 +625,18 @@
                 *******************  TOWARDS REAL TIME SIMULATION  **************
                 ************************************************************ -->   
                 
-                <section id="towards-city-simulation">
-                    <h2>Summary - Towards real-time urban simulation</h2>
-                    <p>XXXX HERE: where do we want to get to (ref Samarth Live Simulations, RAMP, etc) and what 
-                    do we need to get there </p>
+                <section id="towards-city-simulation", data-background-video="../videos/skylines_mov-long.mp4">
+                    <div class="whitebackground2 fragment">
+                        <h2>Summary - Towards Live* Simulations</h2>
+                        <p>Potential for large-scale, agent-based models to transform policy making</p>
+                        <p class="l2">Pollution, economy, disease spread, ... </p>
+                        <p>But need to better understand the uncertainty in our models</p>
+                        <p>What do we need?</p>
+                        <p class="l2">Efficient data assimilation methods for ABMs</p>
+                        <p class="l2">High-resolution data (the identifiability problem)</p>
+                        <p class="l2">Better models <strong>?</strong></p>
+                        <p class="small">*Swarup, S., and H. S. Mortveit (2020) Live Simulations. In <i>Proceedings of the 19th International Conference on Autonomous Agents and MultiAgent Systems</i>, 1721–25.</p>
+                    </div>
                 </section>
                                     
 
@@ -683,6 +683,7 @@
                              data-src="../figures/make_more_digital_twins.jpg" alt="Nature article: Make more digital twins" />
                         
                         <h3>Conclusions</h3>
+                        <p>XXXX</p>
                         <p>Feeding data into agent-based models is hard!</p>
                         <p class="l2">Computational and <i>methodological</i> challenges</p>
                         <p>Particle filters work on simple models, but naive filter breaks down</p>
@@ -698,32 +699,39 @@
 
 
 
-                <section class="title"  id="thanks" data-background-image="../figures/virtual_city.jpeg">
+                <section class="title"  id="thanks" data-background-image="../figures/shutterstock_788457058-small.jpg">
                     <div class="whitebackground2">
 
-                        <h5>Alan Turing Institute: AI UK Smart Cities</h5>
+                        <h5><a href="https://www.socsimfest21.eu/">
+                            <img src="../figures/socsimfest/socsimfest_logo.png" 
+                                 style="width:30%;"
+                                 alt="SocSimFest 2021 webpage banner"/></a></h5>
 
-                        <h1 style="font-size: 45px;">Simulating the City with <strike>AI</strike><br/>
-													Agent-Based Modelling</h1>
+                        <h1 style="font-size: 40px;">Quantifying the uncertainty in agent-based models</h1>
+                        <h2 style="font-size: 35px;">(aka what the &#9824;&euro;&#8523;&#x40; is going on in my model and why?)</h2>
                         <hr/>
-                        <h2 style="font-size: 35px;"><a href="https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall">Alison Heppenstall</a> and
+                        <h2 style="font-size: 30px;"><a href="https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall">Alison Heppenstall</a> and
                             <a href="http://nickmalleson.co.uk/">Nick Malleson</a></h2>
                         <h4>University of Leeds and The Alan Turing Institute, UK</h4>
-                        <h4><a href="mailto:n.s.malleson@leeds.ac.uk">n.s.malleson@leeds.ac.uk</a></h4>
+                        <h4><a href="mailto:Alison Heppenstall <A.J.Heppenstall@leeds.ac.uk>">A.J.Heppenstall@leeds.ac.uk</a></h4>
                           <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
                         <hr/>
                         <p style="text-align:center;font-size:25px">Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
 
                         <a href="https://europa.eu/european-union/index_en">
-                            <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;" src="../figures/LOGO_EU.jpg"/>
+                            <img style="float:left; padding:20px 10px 10px 10px; width:100px; height:auto;" src="../figures/LOGO_EU.jpg"/>
                         </a>
 
                         <a href="http://www.leeds.ac.uk/">
-                            <img style="float:center;padding:10px;width:150px; height:auto;" src="../figures/uol_logo.gif"/>
+                            <img style="float:center; padding:10px 10px 10px 10px; width:250px; height:auto;" src="../figures/uol_logo.gif"/>
+                        </a>
+                        
+                        <a href="http://www.esrc.ac.uk/">
+                            <img style="float:center; padding:0px 10px 10px 10px;width:90px; height:auto;" src="../figures/LOGO_ESRC.jpg"/>
                         </a>
 
                         <a href="http://www.turing.ac.uk/">
-                            <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_TURING.png"/>
+                            <img style="float:right; padding:20px 10px 10px 10px; width:150px; height:auto;" src="../figures/LOGO_TURING.png"/>
                         </a>
                     </div>
 

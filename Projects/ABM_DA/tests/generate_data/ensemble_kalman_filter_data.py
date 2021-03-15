@@ -117,3 +117,10 @@ def get_random_destination_data():
 def get_n_active_agents_base_data():
     d = [(i, i) for i in range(1, 5)]
     return d
+
+
+def get_n_active_agents_mean_data():
+    d = [([2, 3, 4, 3, 2], 3),
+         ([1, 1, 1, 1, 1], 1),
+         ([4, 3, 2, 1, 0], 2)]
+    return d

@@ -92,6 +92,69 @@
                     <p class="l2">YY</p>
                 </section>
                 
+                <!-- ************************************************************
+                ************************* ABM ***********************************
+                ************************************************************ -->
+                
+                <section>
+                    <h2>NEXT SECTIONS (INTRO TO ABM) MAY BE REOMVED</h2>
+                </section>
+                
+                <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
+                         data-background-video-loop="loop">
+                    <div class="whitebackground2 fragment">
+                        <img class="right" style="width:40%" data-src="../figures/sims.png"
+                         alt="Diagram of the sims" />
+                        <h2>Agent-Based Modelling</h2>
+                        <p>Systems are driven by individuals</p>
+                        <p class="l2">(cars, people, ants, trees, whatever)</p>
+                        <p>Individual-level modelling</p>
+                        <!--<p class="l2">An alternative approach to modelling</p>-->
+                        <p class="l2">Rather than controlling from the top, try to represent the individuals</p>
+                        <!--<p class="l2">Account for system behaviour directly</p>-->
+                        <p>Autonomous, interacting agents</p>
+                        <p>Represent individuals or groups</p>
+                        <p>Situated in a virtual environment</p>
+                    </div>
+                    
+                </section>
+                
+                
+                <section id="abm-advantages">    
+                    <h2>Agent-Based Modelling - Appeal</h2>
+                    <img class="right" data-src="../figures/virtual_city.jpeg"/>
+                    <p>Modelling complexity, non-linearity, emergence</p>
+                    <p>Natural description of a system</p>
+                    <p>Bridge between verbal theories and mathematical models</p>
+                    <p>Produces a history of the evolution of the system</p>
+                </section>
+                
+                <section id="abm-advantages-history">
+                    <figure>
+                    <img style="width:60%;" data-src="../figures/burglar_behaviour-geotime.jpg" />
+                        <figcaption>
+                            Malleson, N., A. Heppenstall, L. See, A. Evans (2013) Using an agent-based crime simulation to predict the effects of urban regeneration on individual household burglary risk. <i>Environment and Planning B: Planning and Design</i> 40 405-426.
+                        </figcaption>
+                    </figure>
+                </section>
+                                
+                <section id="abm-Disadvantages">
+                    <h2>Agent-Based Modelling - Difficulties</h2>
+                    <figure class="right" >
+                        <img data-src="../figures/jacobs_choice.png" />
+                        <figcaption>Will I play with the truck, or the duck?<br/><br/>
+                            (<i>actually he played with his trains...</i>)</figcaption>
+                    </figure>
+                    
+                    <p>Tendency towards minimal behavioural complexity</p>
+                    <p>Stochasticity</p>
+                    <p>Computationally expensive (not amenable to optimisation)</p>
+                    <p class="l2">Complicated agent decisions, lots of decisions, multiple model runs</p>
+                    <p>Modelling "soft" human factors</p>
+                    <p class="l2">Need detailed, high-resolution, individual-level data</p>
+                    <p>Individual-level data</p>
+                </section>
+                
                 
                 
                 <!-- ************************************************************
@@ -232,20 +295,20 @@
                          data-background-video-loop="loop"
                          id="Context-UrbanFlows">
                     <div class="whitebackground2 fragment">
-                        <h3>Quantifying Real-Time Urban Dynamics</h3>
+                        <!--<h3>Quantifying Real-Time Urban Dynamics</h3>-->
+                        <h2>Reducing Uncertainty in Real Time</h2>
+                        <h3>Example: Urban Mobility</h3>
                         
                         <p><i>People</i> are the drivers of processes in cities</p>
 
                         <p>We need to understand mobility patterns:</p> 
 
-                        <p class="l2">Crime – how many possible victims?</p>
-                        <p class="l2">Pollution – who is being exposed? Where are the hotspots?</p>
-                        <p class="l2">Economy – can we attract more people to our city centres?</p>
+                        <!--<p class="l2">Crime – how many possible victims?</p>-->
+                        <p class="l3">Pollution – who is being exposed? Where are the hotspots?</p>
+                        <p class="l3">Economy – can we attract more people to our city centres?</p>
                         <!--<p class="l2">Health - can we encourage more active travel?</p>-->
-                        <p class="l2">Disease - which times / places have large numbers of interactions</p>
-                        
-                        <p>Traditional data may quickly become out of date ... </p>
-
+                        <p class="l3">Disease - which times / places have large numbers of interactions</p>
+                        <p>But what about uncertainty?</p>
                     </div>
                 </section>
                 
@@ -289,6 +352,7 @@
                 ************** CONTEXT: NEW DATA & METHODS **********************
                 ************************************************************ -->
                 
+                <!--
                 <section id="Data">
                     
                     <figure class="right" style="width:40%;">
@@ -312,6 +376,7 @@
                     <h3>How to combine??</h3>
                 
                 </section>
+                -->
                 
                 
                 <!-- ************************************************************
@@ -329,7 +394,8 @@
                         <p class="l2">Inputs (measurement noise)</p>
                         <p class="l2">Parameter values</p>
                         <p class="l2">Model structure</p>
-                        <p> ... and that's assuming that the system hasn't changed fundamentally</p>
+                        <p class="l2">Natural stochasticity</p>
+                        <p class="fragment"> ... and that's assuming that the system hasn't changed fundamentally</p>
                     </div>
                 </section>
                 
@@ -338,14 +404,14 @@
                 <section id="dda" data-background-image="../figures/weather2.jpg" >
                     <div class="whitebackground fragment">
                         <h2>Possible Solution: Data Assimilation</h2>
-                        <p>Used in meteorology and hydrology to bring models closer to reality.</p>
+                        <p>Used in meteorology and hydrology to update running models with new data.</p>
                         <p>Try to improve estimates of the true system state by combining:</p>
                         <p class="l2">Noisy, real-world observations</p>
                         <p class="l2">Model estimates of the system state</p>
-                        <p>Other advantages</p>
+                        <!--<p>Other advantages</p>
                         <p class="l2">Move information from data-rich to data-poor areas</p>
                         <p class="l2">Quantify the uncertainties in the model </p>
-                        <p class="l3">I.e. model structure v.s. parameter / variable values</p>
+                        <p class="l3">I.e. model structure v.s. parameter / variable values</p>-->
                     </div>
                 </section>
                 
@@ -358,103 +424,30 @@
                 
                                 
                 
-                <!-- ************************************************************
-                ************************* ABM ***********************************
-                ************************************************************ -->
-                
-                <section>
-                    <h2>NEXT SECTIONS (INTRO TO ABM) MAY BE REOMVED</h2>
-                </section>
-                
-                <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
-                         data-background-video-loop="loop">
-                    <div class="whitebackground2 fragment">
-                        <img class="right" style="width:40%" data-src="../figures/sims.png"
-                         alt="Diagram of the sims" />
-                        <h2>Agent-Based Modelling</h2>
-                        <p>Systems are driven by individuals</p>
-                        <p class="l2">(cars, people, ants, trees, whatever)</p>
-                        <p>Individual-level modelling</p>
-                        <!--<p class="l2">An alternative approach to modelling</p>-->
-                        <p class="l2">Rather than controlling from the top, try to represent the individuals</p>
-                        <!--<p class="l2">Account for system behaviour directly</p>-->
-                        <p>Autonomous, interacting agents</p>
-                        <p>Represent individuals or groups</p>
-                        <p>Situated in a virtual environment</p>
-                    </div>
-                    
-                </section>
-                
-                
-                <section id="abm-advantages">    
-                    <h2>Agent-Based Modelling - Appeal</h2>
-                    <img class="right" data-src="../figures/virtual_city.jpeg"/>
-                    <p>Modelling complexity, non-linearity, emergence</p>
-                    <p>Natural description of a system</p>
-                    <p>Bridge between verbal theories and mathematical models</p>
-                    <p>Produces a history of the evolution of the system</p>
-                </section>
-                
-                <section id="abm-advantages-history">
-                    <figure>
-                    <img style="width:60%;" data-src="../figures/burglar_behaviour-geotime.jpg" />
-                        <figcaption>
-                            Malleson, N., A. Heppenstall, L. See, A. Evans (2013) Using an agent-based crime simulation to predict the effects of urban regeneration on individual household burglary risk. <i>Environment and Planning B: Planning and Design</i> 40 405-426.
-                        </figcaption>
-                    </figure>
-                </section>
-                                
-                <section id="abm-Disadvantages">
-                    <h2>Agent-Based Modelling - Difficulties</h2>
-                    <figure class="right" >
-                        <img data-src="../figures/jacobs_choice.png" />
-                        <figcaption>Will I play with the truck, or the duck?<br/><br/>
-                            (<i>actually he played with his trains...</i>)</figcaption>
-                    </figure>
-                    
-                    <p>Tendency towards minimal behavioural complexity</p>
-                    <p>Stochasticity</p>
-                    <p>Computationally expensive (not amenable to optimisation)</p>
-                    <p class="l2">Complicated agent decisions, lots of decisions, multiple model runs</p>
-                    <p>Modelling "soft" human factors</p>
-                    <p class="l2">Need detailed, high-resolution, individual-level data</p>
-                    <p>Individual-level data</p>
-                </section>
+
 
                 
 
                 <!-- ************************************************************
                 ******************** REAL TIME CROWD MODELLING*******************
                 ************************************************************ -->
+
                 
                 <section id="real-time-crowd-modelling" 
->
-
-                    <h2>Real Time <strike>City</strike> Crowd Modelling</h2>
-                    <img class="right" data-src="../figures/train_station_pedestrian.jpg"
-                                 alt="Image of escalators in a train station" />
-                    <p>Simulating a city in real-time is too hard!! (for now)</p>
-                    <p>For now lets start a crowd</p>
-                    <p class="l2">What methods can we use to incorporate data?</p>
-                    <p class="l2">How much data do we need?</p>
-                    <p class="l3">Track every individual?</p>
-                    <p class="l3">Track some individuals?</p>
-                    <p class="l3">Just aggregate counts (e.g. number of people passing a footfall camera)</p>
-                </section>
-                
-                <section id="gcs" 
                          data-background-video="../videos/grandcentral-short.mp4"
                          data-background-video-muted
                          data-background-video-loop="loop">
                     
                     <div class="whitebackground2 fragment">
-                        <h2>Grand Central Terminal (New York)</h2>
-                    
-                        <p>Pedestrian traces</p>
-                        <p class="l2">B. Zhou, X. Wang and X. Tang. (2012) Understanding Collective Crowd Behaviors: Learning a Mixture Model of Dynamic Pedestrian-Agents. In <i>Proceedings of IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</i> 2012</p>
-                        <p class="l2"><a href="http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html"> http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html</a></p>
-                        
-                        
+                        <h2>Example: Real Time Crowd Modelling</h2>
+                        <p>Simulating a city in real-time is too hard!! (for now). Lets start with a crowd</p>
+                        <p>Can we reduce the uncertainty in anagent-based crowd simulation in real time?</p>
+                        <div class="fragment">
+                            <p>Pedestrian trace data (Grand Central Terminal, New York City)</p>
+                            <p class="l2">B. Zhou, X. Wang and X. Tang. (2012) Understanding Collective Crowd Behaviors: Learning a Mixture Model of Dynamic Pedestrian-Agents. In <i>Proceedings of IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</i> 2012</p>
+                            <p class="l2"><a href="http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html"> http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html</a></p>
+                        </div>
+                        <!--
                         <img class="left", style="width:50%" 
                              data-src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/grand_central_floorplan.png" 
                                  alt="Grand Central Terminal floor plan with entrances around the sides and an obstruction in the centre." />
@@ -462,7 +455,7 @@
                         <img class="right" style="width:30%"
                                  src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trajectories-structure.png" 
                                  alt="Pedestrian trajectories estimated from the video" />
-                    
+                        -->
                         
                     </div>
                 
@@ -481,7 +474,7 @@
 
                 </section>
 
-
+                <!--
                 <section id="pf-stationsim2-a" data-transition="fade">
                     <h2>Crowd Simulation with a Particle Filter</h2>
                     <img data-src="../figures/pf_animation-static.png"
@@ -493,6 +486,7 @@
                     <img data-src="../figures/pf_animation.gif"
                          alt="Animation of a crowding model with data assimilation" />
                 </section>
+                -->
                 
                 <!-- Individual pictures of results -->
                 <section id="pf-results-10_agents_10_particles">
@@ -547,60 +541,57 @@
                     </figure>
                 </section>
                 
+                <section id="pf-results-wiggle-count2">
+                    <h2>Solutions (I)</h2>
+                    <h3>Exponential increase in complexity</h3>
+                    <img class="right" style="width:40%;" src="../figures/Network%20server%20room_87108880.jpg" alt="A big server" />
+                    <p>More particles!</p>
+                    <p class="l2">Will need high performance computing, but we have lots of that</p>
+                    <p class="l2">Better PF algorithms (we used the most basic)</p>
+                    <p>Alternative data assimilation methods</p>
+                    <p class="l2">More advanced particle filtering is available</p>
+                    <p class="l2">Unscented / Ensemble Kalman Filters</p>
+                </section>
+                
+                <section id="ukf-example">
+                    <h2>Solutions (I)</h2>
+                    <h2>Unscented Kalman Filter</h2>
+                    <figure>
+                        <img src="../figures/paper_figures/2019-UKF/30_base_config_test.png"
+                             alt="Shows that the UKF works best when model and observation error are similar" />
+                        <figcaption>Clay, Robert, Le-Minh Kieu, Jonathan A. Ward, Alison Heppenstall, and Nick Malleson (2020) Towards Real-Time Crowd Simulation Under Uncertainty Using an Agent-Based Model and an Unscented Kalman Filter’. In <i>Advances in Practical Applications of Agents, Multi-Agent Systems, and Trustworthiness. The PAAMS Collection</i> 12092:68–79. <i>Lecture Notes in Computer Science</i>. DOI:<a href="https://doi.org/10.1007/978-3-030-49778-1_6">10.1007/978-3-030-49778-1_6</a>.</figcaption>
+                    </figure>
+                
+                </section>
+                
+                <section id="categorical-parameters">
+                    <h2>Difficulties (II)</h2>
+                    <h3>Categorical Parameters</h3>
+                    <p>XXXX Probably not enough time to discuss this. Too technical?</p>
+                </section>
+                
                 <section id="pf-results-pf-model-discrepancy">
-                    <h2>Difficulties (II)</h2>
+                    <h2>Difficulties (III)</h2>
                     <h3>Model Discrepancy</h3>
-                    <p>XXXX Show chaotic behaviour of some pedestrians</p>
-                </section>
-                
-                                
-                <section id="pf_results-gcs-worse-1">
-                    
-                    <h2>Preliminary Particle Filter Results</h2>
-                    <h3>Grand Central Station: Filtering makes it worse! </h3>
-                    <p>No data assimilation. Entrance gate is known; speed and exit gate are unknown</p>
+                    <p>Some behaviours are more predictable than others</p>
                     <figure>
-                        <img src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/exp2_distance.png" />
-                        <figcaption>Distance between agent and real trajectory. (a) Model time; (b) Pedestrian time.
-                            <br/><br/>Ternes, P., J. Ward, A. Heppenstall, V. Kumar, Le-Minh Kieu, N. Malleson (2020) 
-                                Using data assimilation to reduce uncertainty in an agent-based pedestrian simulations in real time.
-                            <i>Under review</i>.</figcaption>
+                        <img src="../figures/paper_figures/2021-ParticleFilterFigs/trajectories.png"
+                             alt="Shows that the UKF works best when model and observation error are similar" />
+                        <figcaption>Patricia Ternes, Jonathan A. Ward, Alison Heppenstall, Vijay Kumar, Le-MinhKieu, and Nick Malleson. Using data assimilation to reduce uncertainty in anagent-based pedestrian simulation in real time. <i>In review</i></figcaption>
                     </figure>
-                    
                 </section>
                 
-                <section id="pf_results-gcs-worse-1">
-                    
-                    <h2>Preliminary Particle Filter Results</h2>
-                    <h3>Grand Central Station: Filtering makes it worse! </h3>
-                    <p>With data assimilation - error increases!</p>
-                    <figure>
-                        <img src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/exp4_distance.png" />
-                        <figcaption>Distance between agent and real trajectory. (a) Model time; (b) Pedestrian time.
-                            <br/><br/>Ternes, P., J. Ward, A. Heppenstall, V. Kumar, Le-Minh Kieu, N. Malleson (2020) 
-                                Using data assimilation to reduce uncertainty in an agent-based pedestrian simulations in real time.
-                            <i>Under review</i>.</figcaption>
+                <section id="pf-results-pf-model-discrepancy2">
+                    <figure class="right">
+                        <img src="../figures/paper_figures/2021-ParticleFilterFigs/trajectories.png"
+                             alt="Shows that the UKF works best when model and observation error are similar" />
+                        <!--<figcaption>Patricia Ternes, Jonathan A. Ward, Alison Heppenstall, Vijay Kumar, Le-MinhKieu, and Nick Malleson. Using data assimilation to reduce uncertainty in anagent-based pedestrian simulation in real time. <i>In review</i></figcaption>-->
                     </figure>
+                    <h2>Difficulties (III)</h2>
+                    <h3>Model Discrepancy</h3>
+                    <p>No obvious 'solution' to this</p>
+                    <p>But shows how important data assimilation could be</p>
                     
-                </section>
-                
-                
-                
-                
-
-                
-                <section id="pf-results-nonlinear_trajectories">
-                    <h2>Difficulties (II)</h2>
-                    <h3>Nonlinear trajectories</h3>
-                    <figure >
-                        <img style="width:50%;" accesskey=""src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trais_model_versus_real.png"
-                         alt="Shows that some pedestrian trajectories are linear, others very curved" />
-                        <figcaption>
-                            Ternes, P., J. Ward, A. Heppenstall, V. Kumar, Le-Minh Kieu, N. Malleson (2020) 
-                                Using data assimilation to reduce uncertainty in an agent-based pedestrian simulations in real time.
-                            <i>Under review</i>.
-                        </figcaption>
-                        </figure>
                 </section>
                 
                 <section id="other_methods">
@@ -622,13 +613,10 @@
                 
                 
                 <!-- ************************************************************
-                ***************************  ETHICS  ************************
-                ************************************************************ -->   
+                ***************************  ETHICS  ****************************
+                ************************************************************* -->   
                 
-                
-
-                
-                
+                                
                 <section id="big_brother" >
                     <h2>Ethical Implications</h2>
                     <p>Data Bias</p>
@@ -641,6 +629,17 @@
                 </section>
                 
                 
+                <!-- ************************************************************
+                *******************  TOWARDS REAL TIME SIMULATION  **************
+                ************************************************************ -->   
+                
+                <section id="towards-city-simulation">
+                    <h2>Summary - Towards real-time urban simulation</h2>
+                    <p>XXXX HERE: where do we want to get to (ref Samarth Live Simulations, RAMP, etc) and what 
+                    do we need to get there </p>
+                </section>
+                                    
+
                 
                 
                 <!-- ************************************************************

@@ -88,7 +88,6 @@ class EnsembleKalmanFilter(Filter):
         self.metrics = list()
         self.forecast_error = list()
 
-
         self.update_state_ensemble()
         self.update_state_means()
 
@@ -169,8 +168,8 @@ class EnsembleKalmanFilter(Filter):
                 for agent in model.agents:
                     # Randomise the destination of each agent in each model
                     gate_out = self.make_random_destination(model.gates_in,
-                                                              model.gates_out,
-                                                              agent.gate_in)
+                                                            model.gates_out,
+                                                            agent.gate_in)
                     agent.gate_out = gate_out
                     agent.loc_desire = agent.set_agent_location(agent.gate_out)
         elif self.mode != EnsembleKalmanFilterType.STATE:
@@ -365,7 +364,7 @@ class EnsembleKalmanFilter(Filter):
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
             destinations = state_mean[2*self.population_size:]
             destinations = self.round_destinations(destinations,
-                                                     self.n_exits)
+                                                   self.n_exits)
             state_mean[2*self.population_size:] = destinations
 
         return state_mean
@@ -401,7 +400,7 @@ class EnsembleKalmanFilter(Filter):
                 # Update destinations
                 destinations = state_vector[2*self.population_size:]
                 destinations = self.round_destinations(destinations,
-                                                         self.n_exits)
+                                                       self.n_exits)
                 self.models[i].set_state(destinations, sensor='exit')
 
     def make_ensemble_covariance(self):

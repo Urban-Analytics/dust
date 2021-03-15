@@ -1,6 +1,5 @@
 # Imports
 from generate_data.ensemble_kalman_filter_data import *
-import numpy as np
 import pytest
 import sys
 sys.path.append('../stationsim/')
@@ -19,8 +18,9 @@ separate_coords_data = get_separate_coords_data()
 
 separate_coords_error_data = get_separate_coords_error_data()
 
-make_random_destination_data = get_random_destination_data()
+random_destination_data = get_random_destination_data()
 
+n_active_agents_base_data = get_n_active_agents_base_data()
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -51,9 +51,16 @@ def test_separate_coords_error(arr, expected):
 
 
 @pytest.mark.parametrize('gates_in, gates_out, gate_in',
-                         make_random_destination_data)
+                         random_destination_data)
 def test_make_random_destination(gates_in, gates_out, gate_in):
     enkf = set_up_enkf()
     gate_out = enkf.make_random_destination(gates_in, gates_out, gate_in)
     assert gate_out != gate_in
     assert 0 <= gate_out < enkf.n_exits
+
+
+@pytest.mark.parametrize('n_active, expected', n_active_agents_base_data)
+def test_get_n_active_agents_base(n_active, expected):
+    enkf = set_up_enkf()
+    enkf.base_model.pop_active = n_active
+    assert enkf.get_n_active_agents() == expected

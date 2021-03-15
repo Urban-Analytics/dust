@@ -114,3 +114,6 @@ def get_random_destination_data():
     return [(10, 10, 0)]
 
 
+def get_n_active_agents_base_data():
+    d = [(i, i) for i in range(1, 5)]
+    return d

@@ -555,6 +555,23 @@ class EnsembleKalmanFilter(Filter):
         agent_distances = np.sqrt(np.square(x_error) + np.square(y_error))
         return np.mean(agent_distances)
 
+    def get_n_active_agents(self):
+        if self.error_normalisation == ActiveAgentNormaliser.BASE:
+            n = self.base_model.pop_active
+        else:
+            n_active_ensemble = [model.pop_active for model in self.models]
+            if self.error_normalisation == ActiveAgentNormaliser.MEAN_EN:
+                n = round(np.mean(n_active_ensemble))
+            elif self.error_normalisation == ActiveAgentNormaliser.MIN_EN:
+                n = min(n_active_ensemble)
+            elif self.error_normalisation == ActiveAgentNormaliser.MAX_EN:
+                n = max(n_active_ensemble)
+            elif self.error_normalisation == ActiveAgentNormaliser.MODE_EN:
+                n = statistics.mode(n_active_ensemble)
+            else:
+                raise ValueError('Unrecognised ActiveAgentNormaliser type')
+        return n
+
     def separate_coords_exits(self, state_vector):
         x = state_vector[:self.population_size]
         y = state_vector[self.population_size: 2 * self.population_size]

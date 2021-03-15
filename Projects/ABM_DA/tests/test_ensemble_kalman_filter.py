@@ -109,8 +109,20 @@ def test_get_n_active_agents_min_en(ensemble_active, expected):
                          population_mean_base_data)
 def test_get_population_mean_base(results, truth, n_active, expected):
     enkf = set_up_enkf()
-    enkf.base_model.pop_active = 3
-    results = np.array([1, 1, 2, 1, 3])
-    truth = np.array([1, 5, 2, 2, 2])
+    enkf.base_model.pop_active = n_active
+    results = np.array(results)
+    truth = np.array(truth)
 
-    assert enkf.get_population_mean(results, truth) == 2
+    assert enkf.get_population_mean(results, truth) == expected
+
+
+def test_get_population_mean_mean_en():
+    pass
+
+
+def test_get_population_mean_min_en():
+    pass
+
+
+def test_get_population_mean_max_en():
+    pass

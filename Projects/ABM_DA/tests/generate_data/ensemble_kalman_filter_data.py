@@ -151,7 +151,7 @@ def get_population_mean_base_data():
 
     active_pops = (3, 2, 2)
 
-    expected = (2, 4, 1)
+    expected = (2, 4.5, 1)
 
     d = list()
     for i in range(len(results)):

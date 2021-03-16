@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
 import statistics
+from typing import Tuple
 import warnings as warns
 
 
@@ -110,7 +111,7 @@ class EnsembleKalmanFilter(Filter):
         # self.original_state = self.state_mean
         # self.exits = [self.state_mean[2*self.population_size:]]
 
-    def __set_up_baseline(self):
+    def __set_up_baseline(self) -> None:
         # Ensemble of vanilla models is always 10 (control variable)
         self.vanilla_models = self.__set_up_models(self.vanilla_ensemble_size)
         # self.vanilla_models = [dcopy(self.base_model) for _ in
@@ -121,21 +122,21 @@ class EnsembleKalmanFilter(Filter):
         self.vanilla_metrics = list()
         self.vanilla_results = list()
 
-    def __set_up_ensembles(self):
+    def __set_up_ensembles(self) -> None:
         self.state_ensemble = np.zeros(shape=(self.state_vector_length,
                                               self.ensemble_size))
         self.state_mean = None
         self.data_ensemble = np.zeros(shape=(self.data_vector_length,
                                              self.ensemble_size))
 
-    def __print_start_summary(self):
+    def __print_start_summary(self) -> None:
         print('Running Ensemble Kalman Filter...')
         print('max_iterations:\t{0}'.format(self.max_iterations))
         print('ensemble_size:\t{0}'.format(self.ensemble_size))
         print('assimilation_period:\t{0}'.format(self.assimilation_period))
         print('filter_type:\t{0}'.format(self.mode))
 
-    def __assign_filter_params(self, filter_params):
+    def __assign_filter_params(self, filter_params: dict) -> None:
         for k, v in filter_params.items():
             if not hasattr(self, k):
                 w = 'EnKF received unexpected {0} attribute.'.format(k)
@@ -146,7 +147,7 @@ class EnsembleKalmanFilter(Filter):
         self.sensor_type = self.sensor_types[self.mode]
         self.error_func = self.error_funcs[self.mode]
 
-    def __assign_filter_defaults(self):
+    def __assign_filter_defaults(self) -> None:
         self.max_iterations = None
         self.ensemble_size = None
         self.assimilation_period = None
@@ -186,14 +187,15 @@ class EnsembleKalmanFilter(Filter):
             raise ValueError('Filter type not recognised.')
         return models
 
-    def make_random_destination(self, gates_in, gates_out, gate_in):
+    def make_random_destination(self, gates_in: int,
+                                gates_out: int, gate_in: int) -> int:
         # Ensure that their destination is not the same as their origin
         gate_out = np.random.randint(gates_out) + gates_in
         while (gate_out == gate_in or gate_out >= self.n_exits):
             gate_out = np.random.randint(gates_out)
         return gate_out
 
-    def step(self):
+    def step(self) -> None:
         """
         Step the filter forward by one time-step.
 
@@ -257,7 +259,7 @@ class EnsembleKalmanFilter(Filter):
         # print('time: {0}, models: {1}'.format(self.time, [m.pop_active for
         #                                                   m in self.models]))
 
-    def baseline_step(self):
+    def baseline_step(self) -> None:
         # Check if any of the models are active
         self.update_status()
         # Only predict-update if there is at least one active model
@@ -278,7 +280,7 @@ class EnsembleKalmanFilter(Filter):
 
             self.vanilla_results.append(self.vanilla_state_mean)
 
-    def predict(self):
+    def predict(self) -> None:
         """
         Step the model forward by one time-step to produce a prediction.
 
@@ -295,7 +297,7 @@ class EnsembleKalmanFilter(Filter):
             for i in range(self.vanilla_ensemble_size):
                 self.vanilla_models[i].step()
 
-    def update(self, data):
+    def update(self, data) -> None:
         """
         Update filter with data provided.
 
@@ -343,7 +345,7 @@ class EnsembleKalmanFilter(Filter):
         data = obs_truth + noise
         return data, obs_truth
 
-    def update_state_ensemble(self):
+    def update_state_ensemble(self) -> None:
         """
         Update self.state_ensemble based on the states of the models.
         """
@@ -357,14 +359,14 @@ class EnsembleKalmanFilter(Filter):
                 state_vector = self.vanilla_models[i].get_state(st)
                 self.vanilla_state_ensemble[:, i] = state_vector
 
-    def update_state_means(self):
+    def update_state_means(self) -> None:
         if self.filtering:
             self.state_mean = self.update_state_mean(self.state_ensemble)
         if self.run_vanilla:
             state_ensemble = self.vanilla_state_ensemble
             self.vanilla_state_mean = self.update_state_mean(state_ensemble)
 
-    def update_state_mean(self, state_ensemble):
+    def update_state_mean(self, state_ensemble: np.array) -> np.array:
         """
         Update self.state_mean based on the current state ensemble.
         """
@@ -379,7 +381,7 @@ class EnsembleKalmanFilter(Filter):
 
         return state_mean
 
-    def update_data_ensemble(self, data):
+    def update_data_ensemble(self, data) -> None:
         """
         Create perturbed data vector.
         I.e. a replicate of the data vector plus normal random n-d vector.
@@ -392,7 +394,7 @@ class EnsembleKalmanFilter(Filter):
 
         self.data_ensemble = x
 
-    def update_models(self):
+    def update_models(self) -> None:
         """
         Update individual model states based on state ensemble.
         """
@@ -413,7 +415,7 @@ class EnsembleKalmanFilter(Filter):
                                                        self.n_exits)
                 self.models[i].set_state(destinations, sensor='exit')
 
-    def make_ensemble_covariance(self):
+    def make_ensemble_covariance(self) -> np.array:
         """
         Create ensemble covariance matrix.
         """
@@ -422,7 +424,7 @@ class EnsembleKalmanFilter(Filter):
         A = self.state_ensemble - 1/self.ensemble_size * a @ b
         return 1/(self.ensemble_size - 1) * A @ A.T
 
-    def make_gain_matrix(self):
+    def make_gain_matrix(self) -> np.array:
         """
         Create kalman gain matrix.
         """
@@ -466,7 +468,7 @@ class EnsembleKalmanFilter(Filter):
         return arr[::2], arr[1::2]
 
     @staticmethod
-    def pair_coords(arr1, arr2):
+    def pair_coords(arr1, arr2) -> list:
         if len(arr1) != len(arr2):
             raise ValueError('Both arrays should be the same length.')
         results = list()
@@ -524,7 +526,7 @@ class EnsembleKalmanFilter(Filter):
             plt.savefig('./results/rmse_comparison.eps')
             plt.show()
 
-    def save_results(self, data):
+    def save_results(self, data) -> None:
         """
         Utility method to save the results of a filter run.
         """
@@ -539,7 +541,7 @@ class EnsembleKalmanFilter(Filter):
         data.to_csv(data_path, index=False)
 
     @classmethod
-    def make_errors(cls, truth, result):
+    def make_errors(cls, truth, result) -> Tuple[float, float, float]:
         """
         Method to calculate x-errors and y-errors
         """
@@ -551,11 +553,12 @@ class EnsembleKalmanFilter(Filter):
         return d, x, y
 
     @staticmethod
-    def make_distance_error(x_error, y_error):
+    def make_distance_error(x_error: np.array,
+                            y_error: np.array) -> float:
         agent_distances = np.sqrt(np.square(x_error) + np.square(y_error))
         return np.mean(agent_distances)
 
-    def get_n_active_agents(self):
+    def get_n_active_agents(self) -> int:
         if self.error_normalisation == ActiveAgentNormaliser.BASE:
             n = self.base_model.pop_active
         else:
@@ -572,13 +575,18 @@ class EnsembleKalmanFilter(Filter):
                 raise ValueError('Unrecognised ActiveAgentNormaliser type')
         return n
 
-    def separate_coords_exits(self, state_vector):
+    def separate_coords_exits(self,
+                              state_vector: np.array) -> Tuple[np.array,
+                                                               np.array,
+                                                               np.array]:
         x = state_vector[:self.population_size]
         y = state_vector[self.population_size: 2 * self.population_size]
         e = state_vector[2 * self.population_size:]
         return x, y, e
 
-    def make_dual_errors(self, truth, result):
+    def make_dual_errors(self, truth: np.array,
+                         result: np.array) -> Tuple[float, float,
+                                                    float, float]:
         x_result, y_result, exit_result = self.separate_coords_exits(result)
         x_truth, y_truth, exit_truth = self.separate_coords_exits(truth)
 
@@ -587,14 +595,17 @@ class EnsembleKalmanFilter(Filter):
 
         return d, x, y, exit_accuracy
 
-    def make_analysis_errors(self, truth, result):
+    def make_analysis_errors(self, truth: np.array, result: np.array):
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
             return self.make_dual_errors(truth, result)
         elif self.mode == EnsembleKalmanFilterType.STATE:
             return self.make_errors(truth, result)
 
     @classmethod
-    def calculate_rmse(cls, x_truth, y_truth, x_result, y_result):
+    def calculate_rmse(cls, x_truth: np.array,
+                       y_truth: np.array,
+                       x_result: np.array,
+                       y_result: np.array) -> Tuple[float, float, float]:
         """
         Method to calculate the rmse over all agents for a given data set at a
         single time-step.
@@ -605,13 +616,14 @@ class EnsembleKalmanFilter(Filter):
 
         return distance_error, x_error, y_error
 
-    def get_population_mean(self, results, truth):
+    def get_population_mean(self, results: np.array,
+                            truth: np.array) -> float:
         diff = np.abs(results - truth)
         n = self.get_n_active_agents()
         pm = 0 if n == 0 else sum(diff) / n
         return pm
 
-    def update_status(self):
+    def update_status(self) -> None:
         """
         update_status
 
@@ -637,11 +649,11 @@ class EnsembleKalmanFilter(Filter):
         return vfunc(destinations, n_destinations)
 
     @staticmethod
-    def round_destination(destination, n_destinations):
+    def round_destination(destination: float, n_destinations: int) -> int:
         dest = int(round(destination))
         return dest % n_destinations
 
-    def plot_model_state(self, when):
+    def plot_model_state(self, when: str) -> None:
         plt.figure()
         # Plot exits
         gl = self.base_model.gates_locations

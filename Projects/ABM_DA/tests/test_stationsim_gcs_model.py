@@ -344,9 +344,9 @@ def test_model_speed_defaults():
     model = set_up_model(population_size=1)
 
     # Model speed params
-    assert model.speed_min == 0.2
-    assert model.speed_mean == 0.839236
-    assert model.speed_std == 0.349087
+    assert model.speed_min == 0.174
+    assert model.speed_mean == 0.897
+    assert model.speed_std == 0.372
     assert model.speed_steps == 3
 
 

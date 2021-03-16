@@ -33,6 +33,8 @@ population_mean_base_data = get_population_mean_base_data()
 
 population_mean_mean_data = get_population_mean_mean_data()
 
+population_mean_min_data = get_population_mean_min_data()
+
 population_mean_max_data = get_population_mean_max_data()
 
 # Tests
@@ -139,8 +141,23 @@ def test_get_population_mean_mean_en(results, truth,
     assert enkf.get_population_mean(results, truth) == expected
 
 
-def test_get_population_mean_min_en():
-    pass
+@pytest.mark.parametrize('results, truth, ensemble_active, expected',
+                         population_mean_min_data)
+def test_get_population_mean_min_en(results, truth,
+                                    ensemble_active, expected):
+    # Set up enkf
+    enkf = set_up_enkf()
+    enkf.error_normalisation = ActiveAgentNormaliser.MIN_EN
+
+    # Define number of active agents for each ensemble member
+    for i, model in enumerate(enkf.models):
+        model.pop_active = ensemble_active[i]
+
+    # Define results and truth values
+    results = np.array(results)
+    truth = np.array(truth)
+
+    assert enkf.get_population_mean(results, truth) == expected
 
 
 @pytest.mark.parametrize('results, truth, ensemble_active, expected',

@@ -162,3 +162,30 @@ def get_population_mean_base_data():
         d.append(x)
 
     return d
+
+
+def get_population_mean_mean_data():
+    results = ([2, 5, 3, 6, 4],
+               [3, 6, 9, 12, 15],
+               [0, 0, 0, 0, 0])
+
+    truths = ([2, 2, 2, 2, 2],
+              [3, 6, 6, 9, 15],
+              [1, 1, 1, 1, 1])
+
+    ensemble_actives = ([4, 4, 4, 4, 4],
+                        [1, 2, 3, 2, 3],
+                        [0, 0, 1, 0, 0])
+
+    expected = (2.5, 3, 0)
+
+    d = list()
+
+    for i in range(len(results)):
+        x = (results[i],
+             truths[i],
+             ensemble_actives[i],
+             expected[i])
+        d.append(x)
+
+    return d

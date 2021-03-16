@@ -605,6 +605,12 @@ class EnsembleKalmanFilter(Filter):
 
         return distance_error, x_error, y_error
 
+    def get_population_mean(self, results, truth):
+        diff = np.abs(results - truth)
+        n = self.get_n_active_agents()
+        pm = 0 if n == 0 else sum(diff) / n
+        return pm
+
     def update_status(self):
         """
         update_status

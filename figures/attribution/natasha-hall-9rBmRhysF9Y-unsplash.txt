@@ -1,0 +1,6 @@
+                    <figure>
+                        <img style="width:80%;" data-src="../figures/socsimfest/natasha-hall-9rBmRhysF9Y-unsplash.jpg" 
+                             alt="Happy home schooling"/>
+                        <figcaption>Photo by <a href="https://unsplash.com/@ideanaire?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Natasha Hall</a> on <a href="/s/photos/home-schooling?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+  </figcaption>
+                    </figure>

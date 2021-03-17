@@ -628,7 +628,8 @@ class EnsembleKalmanFilter(Filter):
         pm = 0 if n == 0 else sum(diff) / n
         return pm
 
-    def get_mean(self, results: np.array, truth: np.array) -> float:
+    @staticmethod
+    def get_mean(results: np.array, truth: np.array) -> float:
         diff = np.abs(results - truth)
         return np.mean(diff)
 

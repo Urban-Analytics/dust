@@ -94,6 +94,11 @@ class EnsembleKalmanFilter(Filter):
             self.vanilla_ensemble_size = filter_params['vanilla_ensemble_size']
             self.__set_up_baseline()
 
+        if self.error_normalisation is None:
+            self.mean_func = self.get_mean
+        else:
+            self.mean_func = self.get_population_mean
+
         # Errors stats at update steps
         self.metrics = list()
         self.forecast_error = list()
@@ -161,7 +166,7 @@ class EnsembleKalmanFilter(Filter):
         self.vis = False
         self.run_vanilla = False
         self.mode = EnsembleKalmanFilterType.STATE
-        self.error_normalisation = ActiveAgentNormaliser.BASE
+        self.error_normalisation = None
         self.active = True
         self.sensor_types = {EnsembleKalmanFilterType.STATE: 'location',
                              EnsembleKalmanFilterType.DUAL_EXIT: 'loc_exit'}
@@ -622,6 +627,10 @@ class EnsembleKalmanFilter(Filter):
         n = self.get_n_active_agents()
         pm = 0 if n == 0 else sum(diff) / n
         return pm
+
+    def get_mean(self, results: np.array, truth: np.array) -> float:
+        diff = np.abs(results - truth)
+        return np.mean(diff)
 
     def update_status(self) -> None:
         """

@@ -7,7 +7,6 @@ sys.path.append('../stationsim/')
 
 from ensemble_kalman_filter import EnsembleKalmanFilter, ActiveAgentNormaliser
 
-
 # Test data
 round_destination_data = get_round_destination_data()
 

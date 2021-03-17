@@ -1,4 +1,4 @@
 #!/bin/sh
 
 # Author: Keiran Suchak
-pytest .
+pytest --cov .

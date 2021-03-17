@@ -88,6 +88,21 @@ def test_pair_coords(arr1, arr2, expected):
 
 @pytest.mark.parametrize('arr1, arr2, expected', pair_coords_error_data)
 def test_pair_coords_error(arr1, arr2, expected):
+    """
+    Test that EnsembleKalmanFilter.pair_coords() throws an appropriate error
+
+    Test that, when provided with arrays of incompatible length, pair_coords()
+    throws an appropriate error.
+
+    Parameters
+    ----------
+    arr1 : list-like
+        First list of elements
+    arr2 : list-like
+        Second list of elements
+    expected : Exception
+        Expected ValueError exception
+    """
     with expected:
         assert EnsembleKalmanFilter.pair_coords(arr1, arr2)
 

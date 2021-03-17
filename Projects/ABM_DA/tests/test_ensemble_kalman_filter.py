@@ -109,6 +109,26 @@ def test_pair_coords_error(arr1, arr2, expected):
 
 @pytest.mark.parametrize('arr, expected1, expected2', separate_coords_data)
 def test_separate_coords(arr, expected1, expected2):
+    """
+    Test that EnsembleKalmanFilter.separate_coords() splits coordinate array
+    into two arrays
+
+    Test that separate_coords() splits an array like
+        [x0, y0, x1, y1, ..., xN, yN]
+
+    into two arrays like
+        [x0, x1, ..., xN]
+        [y0, y1, ..., yN]
+
+    Parameters
+    ----------
+    arr : list-like
+        Input array of alternating x-y's
+    expected1 : list-like
+        Array of x-coordinates
+    expected2 : list-like
+        Array of y-coordinates
+    """
     assert EnsembleKalmanFilter.separate_coords(arr) == (expected1, expected2)
 
 

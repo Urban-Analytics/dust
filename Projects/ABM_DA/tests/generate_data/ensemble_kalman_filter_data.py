@@ -6,6 +6,7 @@ sys.path.append('../stationsim/')
 
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
+from ensemble_kalman_filter import ActiveAgentNormaliser
 from stationsim_gcs_model import Model
 
 
@@ -60,6 +61,7 @@ def set_up_enkf():
                      'state_vector_length': state_vec_length,
                      'data_vector_length': data_vec_length,
                      'mode': mode,
+                     'error_normalisation': None,
                      'H': observation_operator,
                      'R_vector': OBS_NOISE_STD * np.ones(data_vec_length),
                      'keep_results': True,
@@ -239,6 +241,28 @@ def get_population_mean_min_data():
         x = (results[i],
              truths[i],
              ensemble_actives[i],
+             expected[i])
+        d.append(x)
+
+    return d
+
+
+def get_mean_data():
+    results = ([2, 5, 3, 6, 4],
+               [3, 6, 9, 12, 15],
+               [0, 0, 0, 0, 0])
+
+    truths = ([2, 2, 2, 2, 2],
+              [3, 6, 6, 9, 15],
+              [1, 1, 1, 1, 1])
+
+    expected = (2, 1.2, 1)
+
+    d = list()
+
+    for i in range(len(results)):
+        x = (results[i],
+             truths[i],
              expected[i])
         d.append(x)
 

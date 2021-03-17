@@ -36,6 +36,8 @@ population_mean_min_data = get_population_mean_min_data()
 
 population_mean_max_data = get_population_mean_max_data()
 
+mean_data = get_mean_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -73,9 +75,16 @@ def test_make_random_destination(gates_in, gates_out, gate_in):
     assert 0 <= gate_out < enkf.n_exits
 
 
+def test_error_normalisation_default_init():
+    # Set up enkf
+    enkf = set_up_enkf()
+    assert enkf.error_normalisation is None
+
+
 @pytest.mark.parametrize('n_active, expected', n_active_agents_base_data)
 def test_get_n_active_agents_base(n_active, expected):
     enkf = set_up_enkf()
+    enkf.error_normalisation = ActiveAgentNormaliser.BASE
     enkf.base_model.pop_active = n_active
     assert enkf.get_n_active_agents() == expected
 
@@ -114,6 +123,7 @@ def test_get_n_active_agents_min_en(ensemble_active, expected):
                          population_mean_base_data)
 def test_get_population_mean_base(results, truth, n_active, expected):
     enkf = set_up_enkf()
+    enkf.error_normalisation = ActiveAgentNormaliser.BASE
     enkf.base_model.pop_active = n_active
     results = np.array(results)
     truth = np.array(truth)
@@ -176,3 +186,13 @@ def test_get_population_mean_max_en(results, truth,
     truth = np.array(truth)
 
     assert enkf.get_population_mean(results, truth) == expected
+
+
+@pytest.mark.parametrize('results, truth, expected', mean_data)
+def test_get_mean(results, truth, expected):
+    enkf = set_up_enkf()
+
+    results = np.array(results)
+    truth = np.array(truth)
+
+    assert enkf.get_mean(results, truth) == expected

@@ -134,6 +134,20 @@ def test_separate_coords(arr, expected1, expected2):
 
 @pytest.mark.parametrize('arr, expected', separate_coords_error_data)
 def test_separate_coords_error(arr, expected):
+    """
+    Test that EnsembleKalmanFilter.separate_coords() throws an appropriate
+    error
+
+    Test that, when provided with an array of odd length, separate_coords()
+    throws an appropriate error
+
+    Parameters
+    ----------
+    arr : list-like
+        Input list
+    expected : Exception
+        Expected ValueError exception
+    """
     with expected:
         assert EnsembleKalmanFilter.separate_coords(arr)
 

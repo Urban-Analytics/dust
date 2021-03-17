@@ -35,7 +35,7 @@ def make_state_vector_length(population_size, mode):
         raise ValueError(f'Unexpected filter mode: {mode}')
 
 
-def set_up_enkf():
+def set_up_enkf(error_normalisation=None):
     np.random.seed(666)
     pop_size = 5
     mode = EnsembleKalmanFilterType.STATE
@@ -61,7 +61,7 @@ def set_up_enkf():
                      'state_vector_length': state_vec_length,
                      'data_vector_length': data_vec_length,
                      'mode': mode,
-                     'error_normalisation': None,
+                     'error_normalisation': error_normalisation,
                      'H': observation_operator,
                      'R_vector': OBS_NOISE_STD * np.ones(data_vec_length),
                      'keep_results': True,
@@ -264,6 +264,31 @@ def get_mean_data():
         x = (results[i],
              truths[i],
              expected[i])
+        d.append(x)
+
+    return d
+
+
+def get_error_normalisation_type_data():
+    error_normalisations = (None,
+                            ActiveAgentNormaliser.BASE,
+                            ActiveAgentNormaliser.MEAN_EN)
+
+    results = [2, 5, 3, 6, 4]
+
+    truths = [2, 2, 2, 2, 2]
+
+    active_pop = 4
+
+    ensemble_active = [1, 2, 2, 2, 3]
+
+    expected = (2, 2.5, 5)
+
+    d = list()
+
+    for i in range(len(error_normalisations)):
+        x = (error_normalisations[i], results, truths,
+             active_pop, ensemble_active, expected[i])
         d.append(x)
 
     return d

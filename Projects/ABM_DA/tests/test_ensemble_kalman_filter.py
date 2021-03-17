@@ -38,6 +38,8 @@ population_mean_max_data = get_population_mean_max_data()
 
 mean_data = get_mean_data()
 
+error_normalisation_type_data = get_error_normalisation_type_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -196,3 +198,22 @@ def test_get_mean(results, truth, expected):
     truth = np.array(truth)
 
     assert enkf.get_mean(results, truth) == expected
+
+
+x = 'error_normalisation, results, truth, active_pop, ensemble_active, expected'
+
+
+@pytest.mark.parametrize(x, error_normalisation_type_data)
+def test_error_normalisation_type(error_normalisation, results, truth,
+                                  active_pop, ensemble_active, expected):
+    enkf = set_up_enkf(error_normalisation)
+
+    results = np.array(results)
+    truth = np.array(truth)
+
+    for i, model in enumerate(enkf.models):
+        model.pop_active = ensemble_active[i]
+
+    enkf.base_model.pop_active = active_pop
+
+    assert enkf.mean_func(results, truth) == expected

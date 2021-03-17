@@ -43,6 +43,21 @@ error_normalisation_type_data = get_error_normalisation_type_data()
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
+    """
+    Test EnsembleKalmanFilter.round_destination()
+
+    Test that the round_destination method rounds the destination exit number
+    to the nearest integer value modulo the number of gates.
+
+    Parameters
+    ----------
+    dest : float
+        Floating point value of the estimated destination number
+    n_dest : int
+        The integer number of possible destination gates
+    expected : int
+        Expected result of round_destination
+    """
     assert EnsembleKalmanFilter.round_destination(dest, n_dest) == expected
 
 

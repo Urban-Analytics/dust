@@ -63,6 +63,26 @@ def test_round_destination(dest, n_dest, expected):
 
 @pytest.mark.parametrize('arr1, arr2, expected', pair_coords_data)
 def test_pair_coords(arr1, arr2, expected):
+    """
+    Test EnsembleKalmanFilter.pair_coords()
+
+    Test that the pair_coords method returns an appropriate list when provided
+    with two list-like input arrays, i.e. given
+        arr1 = [x0, x1, ..., xN]
+        arr2 = [y0, y1, ..., yN]
+
+    the method returns a list of
+        [x0, y0, x1, y1, ..., xN, yN]
+
+    Parameters
+    ----------
+    arr1 : list-like
+        First list of elements
+    arr2 : list-like
+        Second list of elements
+    expected : list
+        Expected resulting list of pair_coords() as outlined above
+    """
     assert EnsembleKalmanFilter.pair_coords(arr1, arr2) == expected
 
 

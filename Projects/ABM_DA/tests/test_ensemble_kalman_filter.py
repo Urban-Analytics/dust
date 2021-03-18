@@ -205,22 +205,20 @@ def test_get_n_active_agents_min_en(ensemble_active, expected):
     assert enkf.get_n_active_agents() == expected
 
 
-@pytest.mark.parametrize('results, truth, n_active, expected',
+@pytest.mark.parametrize('diffs, n_active, expected',
                          population_mean_base_data)
-def test_get_population_mean_base(results, truth, n_active, expected):
+def test_get_population_mean_base(diffs, n_active, expected):
     enkf = set_up_enkf()
     enkf.error_normalisation = ActiveAgentNormaliser.BASE
     enkf.base_model.pop_active = n_active
-    results = np.array(results)
-    truth = np.array(truth)
+    diffs = np.array(diffs)
 
-    assert enkf.get_population_mean(results, truth) == expected
+    assert enkf.get_population_mean(diffs) == expected
 
 
-@pytest.mark.parametrize('results, truth, ensemble_active, expected',
+@pytest.mark.parametrize('diffs, ensemble_active, expected',
                          population_mean_mean_data)
-def test_get_population_mean_mean_en(results, truth,
-                                     ensemble_active, expected):
+def test_get_population_mean_mean_en(diffs, ensemble_active, expected):
     # Set up enkf
     enkf = set_up_enkf()
     enkf.error_normalisation = ActiveAgentNormaliser.MEAN_EN
@@ -230,16 +228,14 @@ def test_get_population_mean_mean_en(results, truth,
         model.pop_active = ensemble_active[i]
 
     # Define results and truth values
-    results = np.array(results)
-    truth = np.array(truth)
+    diffs = np.array(diffs)
 
-    assert enkf.get_population_mean(results, truth) == expected
+    assert enkf.get_population_mean(diffs) == expected
 
 
-@pytest.mark.parametrize('results, truth, ensemble_active, expected',
+@pytest.mark.parametrize('diffs, ensemble_active, expected',
                          population_mean_min_data)
-def test_get_population_mean_min_en(results, truth,
-                                    ensemble_active, expected):
+def test_get_population_mean_min_en(diffs, ensemble_active, expected):
     # Set up enkf
     enkf = set_up_enkf()
     enkf.error_normalisation = ActiveAgentNormaliser.MIN_EN
@@ -249,16 +245,14 @@ def test_get_population_mean_min_en(results, truth,
         model.pop_active = ensemble_active[i]
 
     # Define results and truth values
-    results = np.array(results)
-    truth = np.array(truth)
+    diffs = np.array(diffs)
 
-    assert enkf.get_population_mean(results, truth) == expected
+    assert enkf.get_population_mean(diffs) == expected
 
 
-@pytest.mark.parametrize('results, truth, ensemble_active, expected',
+@pytest.mark.parametrize('diffs, ensemble_active, expected',
                          population_mean_max_data)
-def test_get_population_mean_max_en(results, truth,
-                                    ensemble_active, expected):
+def test_get_population_mean_max_en(diffs, ensemble_active, expected):
     # Set up enkf
     enkf = set_up_enkf()
     enkf.error_normalisation = ActiveAgentNormaliser.MAX_EN
@@ -268,10 +262,9 @@ def test_get_population_mean_max_en(results, truth,
         model.pop_active = ensemble_active[i]
 
     # Define results and truth values
-    results = np.array(results)
-    truth = np.array(truth)
+    diffs = np.array(diffs)
 
-    assert enkf.get_population_mean(results, truth) == expected
+    assert enkf.get_population_mean(diffs) == expected
 
 
 @pytest.mark.parametrize('results, truth, expected', mean_data)
@@ -281,7 +274,7 @@ def test_get_mean(results, truth, expected):
     results = np.array(results)
     truth = np.array(truth)
 
-    assert enkf.get_mean(results, truth) == expected
+    assert enkf.get_mean_error(results, truth) == expected
 
 
 x = 'error_normalisation, results, truth, active_pop, ensemble_active, expected'
@@ -300,4 +293,4 @@ def test_error_normalisation_type(error_normalisation, results, truth,
 
     enkf.base_model.pop_active = active_pop
 
-    assert enkf.mean_func(results, truth) == expected
+    assert enkf.get_mean_error(results, truth) == expected

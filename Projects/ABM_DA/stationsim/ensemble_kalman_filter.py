@@ -95,7 +95,7 @@ class EnsembleKalmanFilter(Filter):
             self.__set_up_baseline()
 
         if self.error_normalisation is None:
-            self.mean_func = self.get_mean
+            self.mean_func = np.mean
         else:
             self.mean_func = self.get_population_mean
 
@@ -557,11 +557,10 @@ class EnsembleKalmanFilter(Filter):
 
         return d, x, y
 
-    @staticmethod
-    def make_distance_error(x_error: np.array,
+    def make_distance_error(self, x_error: np.array,
                             y_error: np.array) -> float:
         agent_distances = np.sqrt(np.square(x_error) + np.square(y_error))
-        return np.mean(agent_distances)
+        return self.mean_func(agent_distances)
 
     def get_n_active_agents(self) -> int:
         if self.error_normalisation == ActiveAgentNormaliser.BASE:
@@ -606,8 +605,7 @@ class EnsembleKalmanFilter(Filter):
         elif self.mode == EnsembleKalmanFilterType.STATE:
             return self.make_errors(truth, result)
 
-    @classmethod
-    def calculate_rmse(cls, x_truth: np.array,
+    def calculate_rmse(self, x_truth: np.array,
                        y_truth: np.array,
                        x_result: np.array,
                        y_result: np.array) -> Tuple[float, float, float]:
@@ -615,23 +613,21 @@ class EnsembleKalmanFilter(Filter):
         Method to calculate the rmse over all agents for a given data set at a
         single time-step.
         """
-        x_error = np.mean(np.abs(x_result - x_truth))
-        y_error = np.mean(np.abs(y_result - y_truth))
-        distance_error = cls.make_distance_error(x_error, y_error)
+        x_error = self.get_mean_error(x_result, x_truth)
+        y_error = self.get_mean_error(y_result, y_truth)
+        distance_error = self.make_distance_error(x_error, y_error)
 
         return distance_error, x_error, y_error
 
-    def get_population_mean(self, results: np.array,
-                            truth: np.array) -> float:
-        diff = np.abs(results - truth)
+    def get_population_mean(self, arr: np.array) -> float:
         n = self.get_n_active_agents()
-        pm = 0 if n == 0 else sum(diff) / n
+        pm = 0 if n == 0 else sum(arr) / n
         return pm
 
-    @staticmethod
-    def get_mean(results: np.array, truth: np.array) -> float:
+    def get_mean_error(self, results: np.array,
+                       truth: np.array) -> float:
         diff = np.abs(results - truth)
-        return np.mean(diff)
+        return self.mean_func(diff)
 
     def update_status(self) -> None:
         """

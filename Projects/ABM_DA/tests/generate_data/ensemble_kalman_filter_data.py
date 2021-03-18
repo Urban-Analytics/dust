@@ -143,22 +143,17 @@ def get_n_active_agents_min_data():
 
 
 def get_population_mean_base_data():
-    results = ([1, 1, 2, 3, 2],
-               [4, 3, 2, 1, 1],
-               [3, 3, 3, 2, 3])
-
-    truths = ([1, 2, 3, 4, 5],
-              [4, 7, 2, 3, 4],
-              [2, 3, 3, 3, 3])
+    diffs = ([0, 1, 1, 1, 3],
+             [0, 4, 0, 2, 3],
+             [1, 0, 0, 1, 0])
 
     active_pops = (3, 2, 2)
 
     expected = (2, 4.5, 1)
 
     d = list()
-    for i in range(len(results)):
-        x = (results[i],
-             truths[i],
+    for i in range(len(diffs)):
+        x = (diffs[i],
              active_pops[i],
              expected[i])
         d.append(x)
@@ -167,13 +162,9 @@ def get_population_mean_base_data():
 
 
 def get_population_mean_mean_data():
-    results = ([2, 5, 3, 6, 4],
-               [3, 6, 9, 12, 15],
-               [0, 0, 0, 0, 0])
-
-    truths = ([2, 2, 2, 2, 2],
-              [3, 6, 6, 9, 15],
-              [1, 1, 1, 1, 1])
+    diffs = ([0, 3, 1, 4, 2],
+             [0, 0, 3, 3, 0],
+             [1, 1, 1, 1, 1])
 
     ensemble_actives = ([4, 4, 4, 4, 4],
                         [1, 2, 3, 2, 3],
@@ -183,9 +174,8 @@ def get_population_mean_mean_data():
 
     d = list()
 
-    for i in range(len(results)):
-        x = (results[i],
-             truths[i],
+    for i in range(len(diffs)):
+        x = (diffs[i],
              ensemble_actives[i],
              expected[i])
         d.append(x)
@@ -194,13 +184,9 @@ def get_population_mean_mean_data():
 
 
 def get_population_mean_max_data():
-    results = ([2, 5, 3, 6, 4],
-               [3, 6, 9, 12, 15],
-               [0, 0, 0, 0, 0])
-
-    truths = ([2, 2, 2, 2, 2],
-              [3, 6, 6, 9, 15],
-              [1, 1, 1, 1, 1])
+    diffs = ([0, 3, 1, 4, 2],
+             [0, 0, 3, 3, 0],
+             [1, 1, 1, 1, 1])
 
     ensemble_actives = ([4, 4, 4, 4, 4],
                         [1, 2, 3, 2, 3],
@@ -210,9 +196,8 @@ def get_population_mean_max_data():
 
     d = list()
 
-    for i in range(len(results)):
-        x = (results[i],
-             truths[i],
+    for i in range(len(diffs)):
+        x = (diffs[i],
              ensemble_actives[i],
              expected[i])
         d.append(x)
@@ -221,13 +206,9 @@ def get_population_mean_max_data():
 
 
 def get_population_mean_min_data():
-    results = ([2, 5, 3, 6, 4],
-               [3, 6, 9, 12, 15],
-               [0, 0, 0, 0, 0])
-
-    truths = ([2, 2, 2, 2, 2],
-              [3, 6, 6, 9, 15],
-              [1, 1, 1, 1, 1])
+    diffs = ([0, 3, 1, 4, 2],
+             [0, 0, 3, 3, 0],
+             [1, 1, 1, 1, 1])
 
     ensemble_actives = ([4, 4, 4, 4, 4],
                         [1, 2, 3, 2, 3],
@@ -237,9 +218,8 @@ def get_population_mean_min_data():
 
     d = list()
 
-    for i in range(len(results)):
-        x = (results[i],
-             truths[i],
+    for i in range(len(diffs)):
+        x = (diffs[i],
              ensemble_actives[i],
              expected[i])
         d.append(x)

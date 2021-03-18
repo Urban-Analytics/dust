@@ -545,15 +545,14 @@ class EnsembleKalmanFilter(Filter):
         print('Writing filter results to {0}.'.format(data_path))
         data.to_csv(data_path, index=False)
 
-    @classmethod
-    def make_errors(cls, truth, result) -> Tuple[float, float, float]:
+    def make_errors(self, truth, result) -> Tuple[float, float, float]:
         """
         Method to calculate x-errors and y-errors
         """
-        x_result, y_result = cls.separate_coords(result)
-        x_truth, y_truth = cls.separate_coords(truth)
+        x_result, y_result = self.separate_coords(result)
+        x_truth, y_truth = self.separate_coords(truth)
 
-        d, x, y = cls.calculate_rmse(x_truth, y_truth, x_result, y_result)
+        d, x, y = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
 
         return d, x, y
 
@@ -621,7 +620,7 @@ class EnsembleKalmanFilter(Filter):
 
     def get_population_mean(self, arr: np.array) -> float:
         n = self.get_n_active_agents()
-        pm = 0 if n == 0 else sum(arr) / n
+        pm = 0 if n == 0 else np.sum(arr) / n
         return pm
 
     def get_mean_error(self, results: np.array,

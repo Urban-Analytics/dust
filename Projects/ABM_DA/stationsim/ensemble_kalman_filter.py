@@ -330,7 +330,7 @@ class EnsembleKalmanFilter(Filter):
     # --- Error calculation --- #
     def make_metrics(self, metrics, truth, obs_truth, data):
         # Calculating prior and likelihood errors
-        metrics['obs'] = self.make_errors(obs_truth, data)[0]
+        metrics['obs'] = self.make_obs_error(obs_truth, data)
 
         # Analysis error
         if self.mode == EnsembleKalmanFilterType.STATE:
@@ -380,6 +380,17 @@ class EnsembleKalmanFilter(Filter):
             return self.make_dual_errors(truth, result)
         elif self.mode == EnsembleKalmanFilterType.STATE:
             return self.make_errors(truth, result)
+
+    def make_obs_error(self, truth: np.array, result: np.array) -> float:
+        # Separate coords
+        x_result, y_result = self.separate_coords(result)
+        x_truth, y_truth = self.separate_coords(truth)
+
+        # Calculate diffs
+        x_diffs = np.abs(x_result - x_truth)
+        y_diffs = np.abs(y_result - y_truth)
+        agent_distances = np.sqrt(np.square(x_diffs) + np.square(y_diffs))
+        return np.mean(agent_distances)
 
     def calculate_rmse(self, x_truth: np.array,
                        y_truth: np.array,

@@ -342,3 +342,31 @@ def get_calculate_rmse_default_data():
         output.append(x)
 
     return output
+
+
+def get_make_obs_error_data():
+    truth = [1, 2, 6, 6, 12, 15]
+
+    results = [1, 1, 6, 6, 15, 19]
+
+    active_pop = (3, 4, 5)
+
+    ensemble_active = ([2, 3, 4, 5, 3],
+                       [1, 2, 1, 2, 2],
+                       [1, 1, 2, 1, 1])
+
+    normaliser = (None,
+                  ActiveAgentNormaliser.BASE,
+                  ActiveAgentNormaliser.MEAN_EN)
+
+    expected = (2, 2, 2)
+
+    output = list()
+
+    for i in range(len(expected)):
+        x = (truth, results,
+             active_pop[i], ensemble_active[i],
+             normaliser[i], expected[i])
+        output.append(x)
+
+    return output

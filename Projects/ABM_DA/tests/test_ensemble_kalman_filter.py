@@ -46,6 +46,8 @@ distance_error_base_data = get_distance_error_base_data()
 
 calculate_rmse_default_data = get_calculate_rmse_default_data()
 
+make_obs_error_data = get_make_obs_error_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -283,7 +285,8 @@ def test_get_mean(results, truth, expected):
     assert enkf.get_mean_error(results, truth) == expected
 
 
-x = 'error_normalisation, results, truth, active_pop, ensemble_active, expected'
+x = '''error_normalisation, results, truth, active_pop, ensemble_active,
+       expected'''
 
 
 @pytest.mark.parametrize(x, error_normalisation_type_data)
@@ -339,3 +342,30 @@ def test_calculate_rmse_default(x_truth, y_truth,
 
     results = enkf.calculate_rmse(x_truth, y_truth, x_result, y_result)
     assert results[0] == expected
+
+
+x = 'truth, result, active_pop, ensemble_active, normaliser, expected'
+
+@pytest.mark.parametrize(x, make_obs_error_data)
+def test_make_obs_error(truth, result,
+                        active_pop, ensemble_active,
+                        normaliser, expected):
+    """
+    Test that enkf.make_obs_error() correctly calculates observation errors,
+    ignoring changes to how many agents are active in the base model and the
+    ensemble-member models.
+    """
+    # Setup
+    enkf = set_up_enkf(normaliser)
+
+    # Set active agents
+    enkf.base_model.pop_active = active_pop
+    for i, model in enumerate(enkf.models):
+        model.pop_active = ensemble_active[i]
+
+    # Convert to arrays where necessary
+    truth = np.array(truth)
+    result = np.array(result)
+
+    # Assertion
+    assert enkf.make_obs_error(truth, result) == expected

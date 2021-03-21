@@ -293,3 +293,26 @@ def get_distance_error_default_data():
         output.append(x)
 
     return output
+
+
+def get_distance_error_base_data():
+    x_errors = ([0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1],
+                [1, 2, 3, 4, 5])
+
+    y_errors = ([1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 0],
+                [2, 4, 6, 8, 10])
+
+    n_active = (1, 2, 3)
+
+    expected = (5, 2.5, 5 * sqrt(5))
+
+    output = list()
+
+    for i in range(len(x_errors)):
+        x = (x_errors[i], y_errors[i],
+             n_active[i], expected[i])
+        output.append(x)
+
+    return output

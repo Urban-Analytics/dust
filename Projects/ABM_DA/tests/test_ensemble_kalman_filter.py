@@ -40,6 +40,8 @@ mean_data = get_mean_data()
 
 error_normalisation_type_data = get_error_normalisation_type_data()
 
+distance_error_default_data = get_distance_error_default_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -294,3 +296,15 @@ def test_error_normalisation_type(error_normalisation, results, truth,
     enkf.base_model.pop_active = active_pop
 
     assert enkf.get_mean_error(results, truth) == expected
+
+
+@pytest.mark.parametrize('x_error, y_error, expected',
+                         distance_error_default_data)
+def test_make_distance_error_default(x_error, y_error, expected):
+    enkf = set_up_enkf()
+
+    x_error = np.array(x_error)
+    y_error = np.array(y_error)
+
+    assert pytest.approx(expected) == enkf.make_distance_error(x_error,
+                                                               y_error)

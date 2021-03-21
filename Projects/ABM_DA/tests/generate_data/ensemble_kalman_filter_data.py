@@ -1,4 +1,5 @@
 # Imports
+from math import sqrt
 import numpy as np
 import pytest
 import sys
@@ -272,3 +273,23 @@ def get_error_normalisation_type_data():
         d.append(x)
 
     return d
+
+
+def get_distance_error_default_data():
+    x_errors = ([0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1],
+                [1, 2, 3, 4, 5])
+
+    y_errors = ([1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 0],
+                [2, 4, 6, 8, 10])
+
+    expected = (1, 1, 3 * sqrt(5))
+
+    output = list()
+
+    for i in range(len(x_errors)):
+        x = (x_errors[i], y_errors[i], expected[i])
+        output.append(x)
+
+    return output

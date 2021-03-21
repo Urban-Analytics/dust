@@ -116,6 +116,7 @@ class EnsembleKalmanFilter(Filter):
         # self.original_state = self.state_mean
         # self.exits = [self.state_mean[2*self.population_size:]]
 
+    # --- Set-up Methods --- #
     def __set_up_baseline(self) -> None:
         # Ensemble of vanilla models is always 10 (control variable)
         self.vanilla_models = self.__set_up_models(self.vanilla_ensemble_size)
@@ -170,8 +171,10 @@ class EnsembleKalmanFilter(Filter):
         self.active = True
         self.sensor_types = {EnsembleKalmanFilterType.STATE: 'location',
                              EnsembleKalmanFilterType.DUAL_EXIT: 'loc_exit'}
-        self.error_funcs = {EnsembleKalmanFilterType.STATE: self.make_errors,
-                            EnsembleKalmanFilterType.DUAL_EXIT: self.make_dual_errors}
+        self.error_funcs = {
+            EnsembleKalmanFilterType.STATE: self.make_errors,
+            EnsembleKalmanFilterType.DUAL_EXIT: self.make_dual_errors
+        }
 
     def __set_up_models(self, n=None):
         # Set up ensemble of models
@@ -200,6 +203,7 @@ class EnsembleKalmanFilter(Filter):
             gate_out = np.random.randint(gates_out)
         return gate_out
 
+    # --- Filter step --- #
     def step(self) -> None:
         """
         Step the filter forward by one time-step.
@@ -323,6 +327,7 @@ class EnsembleKalmanFilter(Filter):
         X = self.state_ensemble + gain_matrix @ diff
         self.state_ensemble = X
 
+    # --- Error calculation --- #
     def make_metrics(self, metrics, truth, obs_truth, data):
         # Calculating prior and likelihood errors
         metrics['obs'] = self.make_errors(obs_truth, data)[0]
@@ -343,13 +348,66 @@ class EnsembleKalmanFilter(Filter):
 
         return metrics
 
-    def make_data(self):
-        # Construct observations
-        obs_truth = self.base_model.get_state(sensor='location')
-        noise = np.random.normal(0, self.R_vector, obs_truth.shape)
-        data = obs_truth + noise
-        return data, obs_truth
+    def make_errors(self, truth, result) -> Tuple[float, float, float]:
+        """
+        Method to calculate x-errors and y-errors
+        """
+        x_result, y_result = self.separate_coords(result)
+        x_truth, y_truth = self.separate_coords(truth)
 
+        d, x, y = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
+
+        return d, x, y
+
+    def make_distance_error(self, x_error: np.array,
+                            y_error: np.array) -> float:
+        agent_distances = np.sqrt(np.square(x_error) + np.square(y_error))
+        return self.mean_func(agent_distances)
+
+    def make_dual_errors(self, truth: np.array,
+                         result: np.array) -> Tuple[float, float,
+                                                    float, float]:
+        x_result, y_result, exit_result = self.separate_coords_exits(result)
+        x_truth, y_truth, exit_truth = self.separate_coords_exits(truth)
+
+        d, x, y = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
+        exit_accuracy = accuracy_score(exit_truth, exit_result)
+
+        return d, x, y, exit_accuracy
+
+    def make_analysis_errors(self, truth: np.array, result: np.array):
+        if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            return self.make_dual_errors(truth, result)
+        elif self.mode == EnsembleKalmanFilterType.STATE:
+            return self.make_errors(truth, result)
+
+    def calculate_rmse(self, x_truth: np.array,
+                       y_truth: np.array,
+                       x_result: np.array,
+                       y_result: np.array) -> Tuple[float, float, float]:
+        """
+        Method to calculate the rmse over all agents for a given data set at a
+        single time-step.
+        """
+        x_diffs = np.abs(x_result - x_truth)
+        y_diffs = np.abs(y_result - y_truth)
+        x_error = self.mean_func(x_diffs)
+        y_error = self.mean_func(y_diffs)
+        distance_error = self.make_distance_error(x_diffs, y_diffs)
+
+        return distance_error, x_error, y_error
+
+    def get_population_mean(self, arr: np.array) -> float:
+        n = self.get_n_active_agents()
+        pm = 0 if n == 0 else np.sum(arr) / n
+        return pm
+
+    def get_mean_error(self, results: np.array,
+                       truth: np.array) -> float:
+        diff = np.abs(results - truth)
+        return self.mean_func(diff)
+
+    # --- Update methods --- #
     def update_state_ensemble(self) -> None:
         """
         Update self.state_ensemble based on the states of the models.
@@ -420,6 +478,34 @@ class EnsembleKalmanFilter(Filter):
                                                        self.n_exits)
                 self.models[i].set_state(destinations, sensor='exit')
 
+    def update_status(self) -> None:
+        """
+        update_status
+
+        Update the status of the filter to indicate whether it is active.
+        The filter should be active if and only if there is at least 1 active
+        model in the ensemble.
+        """
+        if self.filtering:
+            m_statuses = [m.status == 1 for m in self.models]
+        else:
+            m_statuses = [False]
+
+        if self.run_vanilla:
+            vanilla_m_statuses = [m.status == 1 for m in self.vanilla_models]
+        else:
+            vanilla_m_statuses = [False]
+
+        self.active = any(m_statuses) or any(vanilla_m_statuses)
+
+    # --- Filter step helper methods --- #
+    def make_data(self):
+        # Construct observations
+        obs_truth = self.base_model.get_state(sensor='location')
+        noise = np.random.normal(0, self.R_vector, obs_truth.shape)
+        data = obs_truth + noise
+        return data, obs_truth
+
     def make_ensemble_covariance(self) -> np.array:
         """
         Create ensemble covariance matrix.
@@ -482,6 +568,43 @@ class EnsembleKalmanFilter(Filter):
             results.append(arr2[i])
         return results
 
+    def get_n_active_agents(self) -> int:
+        if self.error_normalisation == ActiveAgentNormaliser.BASE:
+            n = self.base_model.pop_active
+        else:
+            n_active_ensemble = [model.pop_active for model in self.models]
+            if self.error_normalisation == ActiveAgentNormaliser.MEAN_EN:
+                n = round(np.mean(n_active_ensemble))
+            elif self.error_normalisation == ActiveAgentNormaliser.MIN_EN:
+                n = min(n_active_ensemble)
+            elif self.error_normalisation == ActiveAgentNormaliser.MAX_EN:
+                n = max(n_active_ensemble)
+            elif self.error_normalisation == ActiveAgentNormaliser.MODE_EN:
+                n = statistics.mode(n_active_ensemble)
+            else:
+                raise ValueError('Unrecognised ActiveAgentNormaliser type')
+        return n
+
+    def separate_coords_exits(self,
+                              state_vector: np.array) -> Tuple[np.array,
+                                                               np.array,
+                                                               np.array]:
+        x = state_vector[:self.population_size]
+        y = state_vector[self.population_size: 2 * self.population_size]
+        e = state_vector[2 * self.population_size:]
+        return x, y, e
+
+    @classmethod
+    def round_destinations(cls, destinations, n_destinations):
+        vfunc = np.vectorize(cls.round_destination)
+        return vfunc(destinations, n_destinations)
+
+    @staticmethod
+    def round_destination(destination: float, n_destinations: int) -> int:
+        dest = int(round(destination))
+        return dest % n_destinations
+
+    # --- Data processing --- #
     def process_results(self):
         """
         Method to process ensemble results, comparing against truth.
@@ -544,121 +667,6 @@ class EnsembleKalmanFilter(Filter):
         data_path = general_path.format(params_string)
         print('Writing filter results to {0}.'.format(data_path))
         data.to_csv(data_path, index=False)
-
-    def make_errors(self, truth, result) -> Tuple[float, float, float]:
-        """
-        Method to calculate x-errors and y-errors
-        """
-        x_result, y_result = self.separate_coords(result)
-        x_truth, y_truth = self.separate_coords(truth)
-
-        d, x, y = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
-
-        return d, x, y
-
-    def make_distance_error(self, x_error: np.array,
-                            y_error: np.array) -> float:
-        agent_distances = np.sqrt(np.square(x_error) + np.square(y_error))
-        return self.mean_func(agent_distances)
-
-    def get_n_active_agents(self) -> int:
-        if self.error_normalisation == ActiveAgentNormaliser.BASE:
-            n = self.base_model.pop_active
-        else:
-            n_active_ensemble = [model.pop_active for model in self.models]
-            if self.error_normalisation == ActiveAgentNormaliser.MEAN_EN:
-                n = round(np.mean(n_active_ensemble))
-            elif self.error_normalisation == ActiveAgentNormaliser.MIN_EN:
-                n = min(n_active_ensemble)
-            elif self.error_normalisation == ActiveAgentNormaliser.MAX_EN:
-                n = max(n_active_ensemble)
-            elif self.error_normalisation == ActiveAgentNormaliser.MODE_EN:
-                n = statistics.mode(n_active_ensemble)
-            else:
-                raise ValueError('Unrecognised ActiveAgentNormaliser type')
-        return n
-
-    def separate_coords_exits(self,
-                              state_vector: np.array) -> Tuple[np.array,
-                                                               np.array,
-                                                               np.array]:
-        x = state_vector[:self.population_size]
-        y = state_vector[self.population_size: 2 * self.population_size]
-        e = state_vector[2 * self.population_size:]
-        return x, y, e
-
-    def make_dual_errors(self, truth: np.array,
-                         result: np.array) -> Tuple[float, float,
-                                                    float, float]:
-        x_result, y_result, exit_result = self.separate_coords_exits(result)
-        x_truth, y_truth, exit_truth = self.separate_coords_exits(truth)
-
-        d, x, y = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
-        exit_accuracy = accuracy_score(exit_truth, exit_result)
-
-        return d, x, y, exit_accuracy
-
-    def make_analysis_errors(self, truth: np.array, result: np.array):
-        if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
-            return self.make_dual_errors(truth, result)
-        elif self.mode == EnsembleKalmanFilterType.STATE:
-            return self.make_errors(truth, result)
-
-    def calculate_rmse(self, x_truth: np.array,
-                       y_truth: np.array,
-                       x_result: np.array,
-                       y_result: np.array) -> Tuple[float, float, float]:
-        """
-        Method to calculate the rmse over all agents for a given data set at a
-        single time-step.
-        """
-        x_diffs = np.abs(x_result - x_truth)
-        y_diffs = np.abs(y_result - y_truth)
-        x_error = self.mean_func(x_diffs)
-        y_error = self.mean_func(y_diffs)
-        distance_error = self.make_distance_error(x_diffs, y_diffs)
-
-        return distance_error, x_error, y_error
-
-    def get_population_mean(self, arr: np.array) -> float:
-        n = self.get_n_active_agents()
-        pm = 0 if n == 0 else np.sum(arr) / n
-        return pm
-
-    def get_mean_error(self, results: np.array,
-                       truth: np.array) -> float:
-        diff = np.abs(results - truth)
-        return self.mean_func(diff)
-
-    def update_status(self) -> None:
-        """
-        update_status
-
-        Update the status of the filter to indicate whether it is active.
-        The filter should be active if and only if there is at least 1 active
-        model in the ensemble.
-        """
-        if self.filtering:
-            m_statuses = [m.status == 1 for m in self.models]
-        else:
-            m_statuses = [False]
-
-        if self.run_vanilla:
-            vanilla_m_statuses = [m.status == 1 for m in self.vanilla_models]
-        else:
-            vanilla_m_statuses = [False]
-
-        self.active = any(m_statuses) or any(vanilla_m_statuses)
-
-    @classmethod
-    def round_destinations(cls, destinations, n_destinations):
-        vfunc = np.vectorize(cls.round_destination)
-        return vfunc(destinations, n_destinations)
-
-    @staticmethod
-    def round_destination(destination: float, n_destinations: int) -> int:
-        dest = int(round(destination))
-        return dest % n_destinations
 
     def plot_model_state(self, when: str) -> None:
         plt.figure()

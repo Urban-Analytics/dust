@@ -612,9 +612,11 @@ class EnsembleKalmanFilter(Filter):
         Method to calculate the rmse over all agents for a given data set at a
         single time-step.
         """
-        x_error = self.get_mean_error(x_result, x_truth)
-        y_error = self.get_mean_error(y_result, y_truth)
-        distance_error = self.make_distance_error(x_error, y_error)
+        x_diffs = np.abs(x_result - x_truth)
+        y_diffs = np.abs(y_result - y_truth)
+        x_error = self.mean_func(x_diffs)
+        y_error = self.mean_func(y_diffs)
+        distance_error = self.make_distance_error(x_diffs, y_diffs)
 
         return distance_error, x_error, y_error
 

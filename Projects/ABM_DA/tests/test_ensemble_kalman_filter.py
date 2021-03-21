@@ -43,6 +43,9 @@ error_normalisation_type_data = get_error_normalisation_type_data()
 distance_error_default_data = get_distance_error_default_data()
 
 distance_error_base_data = get_distance_error_base_data()
+
+calculate_rmse_default_data = get_calculate_rmse_default_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -319,3 +322,20 @@ def test_make_distance_error_base(x_error, y_error, n_active, expected):
 
     assert pytest.approx(expected) == enkf.make_distance_error(x_error,
                                                                y_error)
+
+
+@pytest.mark.parametrize('x_truth, y_truth, x_result, y_result, expected',
+                         calculate_rmse_default_data)
+def test_calculate_rmse_default(x_truth, y_truth,
+                                x_result, y_result, expected):
+    # Setup
+    enkf = set_up_enkf()
+
+    # Convert all inputs to arrays
+    x_truth = np.array(x_truth)
+    x_result = np.array(x_result)
+    y_truth = np.array(y_truth)
+    y_result = np.array(y_result)
+
+    results = enkf.calculate_rmse(x_truth, y_truth, x_result, y_result)
+    assert results[0] == expected

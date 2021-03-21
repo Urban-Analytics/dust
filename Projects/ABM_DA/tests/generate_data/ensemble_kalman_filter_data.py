@@ -316,3 +316,29 @@ def get_distance_error_base_data():
         output.append(x)
 
     return output
+
+
+def get_calculate_rmse_default_data():
+    x_truths = ([22, 53, 45],
+                [123, 321, 222])
+
+    y_truths = ([18, 46, 80],
+                [11, 32, 23])
+
+    x_results = ([26, 50, 40],
+                 [120, 336, 210])
+
+    y_results = ([15, 50, 80],
+                 [15, 40, 18])
+
+    expected = (5, 35/3)
+
+    output = list()
+
+    for i in range(len(x_truths)):
+        x = (x_truths[i], y_truths[i],
+             x_results[i], y_results[i],
+             expected[i])
+        output.append(x)
+
+    return output

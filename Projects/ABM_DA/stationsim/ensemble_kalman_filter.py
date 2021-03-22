@@ -322,7 +322,10 @@ class EnsembleKalmanFilter(Filter):
             warns.warn(w, RuntimeWarning)
         X = np.zeros(shape=(self.state_vector_length, self.ensemble_size))
         self.update_data_ensemble(data)
-        gain_matrix = self.make_gain_matrix()
+        gain_matrix = self.make_gain_matrix(self.state_ensemble,
+                                            self.data_covariance,
+                                            self.H,
+                                            self.H_transpose)
         diff = self.data_ensemble - self.H @ self.state_ensemble
         X = self.state_ensemble + gain_matrix @ diff
         self.state_ensemble = X
@@ -526,7 +529,10 @@ class EnsembleKalmanFilter(Filter):
         A = self.state_ensemble - 1/self.ensemble_size * a @ b
         return 1/(self.ensemble_size - 1) * A @ A.T
 
-    def make_gain_matrix(self) -> np.array:
+    @staticmethod
+    def make_gain_matrix(state_ensemble: np.array,
+                         data_covariance: np.array,
+                         H, H_transpose) -> np.array:
         """
         Create kalman gain matrix.
         """
@@ -552,10 +558,10 @@ class EnsembleKalmanFilter(Filter):
         """
         More standard version
         """
-        C = np.cov(self.state_ensemble)
-        state_covariance = self.H @ C @ self.H_transpose
-        diff = state_covariance + self.data_covariance
-        return C @ self.H_transpose @ np.linalg.inv(diff)
+        C = np.cov(state_ensemble)
+        state_covariance = H @ C @ H_transpose
+        diff = state_covariance + data_covariance
+        return C @ H_transpose @ np.linalg.inv(diff)
 
     @staticmethod
     def separate_coords(arr):

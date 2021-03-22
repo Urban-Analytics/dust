@@ -48,6 +48,8 @@ calculate_rmse_default_data = get_calculate_rmse_default_data()
 
 make_obs_error_data = get_make_obs_error_data()
 
+make_gain_matrix_data = get_make_gain_matrix_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -369,3 +371,13 @@ def test_make_obs_error(truth, result,
 
     # Assertion
     assert enkf.make_obs_error(truth, result) == expected
+
+
+@pytest.mark.parametrize('state_ensemble, data_covariance, H, expected',
+                         make_gain_matrix_data)
+def test_make_gain_matrix(state_ensemble, data_covariance, H, expected):
+    enkf = set_up_enkf()
+    H_transpose = H.T
+    assert np.array_equal(expected, enkf.make_gain_matrix(state_ensemble,
+                                                          data_covariance,
+                                                          H, H_transpose))

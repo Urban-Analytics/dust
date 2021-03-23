@@ -1,5 +1,7 @@
 # Imports
 from generate_data.ensemble_kalman_filter_data import *
+from utils import *
+
 import numpy as np
 import pytest
 import sys

@@ -401,3 +401,33 @@ def get_make_gain_matrix_data():
              expected[i])
         output.append(o)
     return output
+
+
+def get_separate_coords_exits_data():
+    state_vectors = [np.array([10, 20, 3]),
+                     np.array([10, 12, 15,
+                               20, 35, 25,
+                               3, 4, 5]),
+                     np.array([10, 12, 15, 9, 5,
+                               20, 35, 25, 4, 13,
+                               3, 4, 5, 7, 2])]
+
+    pop_sizes = (1, 3, 5)
+
+    expected = [(np.array([10]), np.array([20]), np.array([3])),
+                (np.array([10, 12, 15]),
+                 np.array([20, 35, 25]),
+                 np.array([3, 4, 5])),
+                (np.array([10, 12, 15, 9, 5]),
+                 np.array([20, 35, 25, 4, 13]),
+                 np.array([3, 4, 5, 7, 2]))]
+
+    output = list()
+
+    for i in range(len(expected)):
+        x = (state_vectors[i],
+             pop_sizes[i],
+             expected[i])
+        output.append(x)
+
+    return output

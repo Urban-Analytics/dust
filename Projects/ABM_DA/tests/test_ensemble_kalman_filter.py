@@ -50,6 +50,8 @@ make_obs_error_data = get_make_obs_error_data()
 
 make_gain_matrix_data = get_make_gain_matrix_data()
 
+separate_coords_exits_data = get_separate_coords_exits_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -382,4 +384,16 @@ def test_make_gain_matrix(state_ensemble, data_covariance, H, expected):
                                    data_covariance,
                                    H, H_transpose)
     np.testing.assert_allclose(result, expected)
-    # assert np.array_equal(expected, result)
+
+
+@pytest.mark.parametrize('state_vector, pop_size, expected',
+                         separate_coords_exits_data)
+def test_separate_coords_exits(state_vector, pop_size, expected):
+    enkf = set_up_enkf()
+    enkf.population_size = pop_size
+    np.testing.assert_array_equal
+
+    result = enkf.separate_coords_exits(state_vector)
+
+    for i in range(len(result)):
+        np.testing.assert_array_equal(result[i], expected[i])

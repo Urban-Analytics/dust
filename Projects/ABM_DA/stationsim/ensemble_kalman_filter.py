@@ -520,14 +520,14 @@ class EnsembleKalmanFilter(Filter):
         data = obs_truth + noise
         return data, obs_truth
 
-    def make_ensemble_covariance(self) -> np.array:
-        """
-        Create ensemble covariance matrix.
-        """
-        a = self.state_ensemble @ np.ones(shape=(self.ensemble_size, 1))
-        b = np.ones(shape=(1, self.ensemble_size))
-        A = self.state_ensemble - 1/self.ensemble_size * a @ b
-        return 1/(self.ensemble_size - 1) * A @ A.T
+    # def make_ensemble_covariance(self) -> np.array:
+    #     """
+    #     Create ensemble covariance matrix.
+    #     """
+    #     a = self.state_ensemble @ np.ones(shape=(self.ensemble_size, 1))
+    #     b = np.ones(shape=(1, self.ensemble_size))
+    #     A = self.state_ensemble - 1/self.ensemble_size * a @ b
+    #     return 1/(self.ensemble_size - 1) * A @ A.T
 
     @staticmethod
     def make_gain_matrix(state_ensemble: np.array,

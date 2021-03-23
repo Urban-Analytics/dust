@@ -5,6 +5,7 @@ import pytest
 import sys
 sys.path.append('../stationsim/')
 
+from generate_data.data_utils import wrap_up
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
 from ensemble_kalman_filter import ActiveAgentNormaliser
@@ -152,14 +153,8 @@ def get_population_mean_base_data():
 
     expected = (2, 4.5, 1)
 
-    d = list()
-    for i in range(len(diffs)):
-        x = (diffs[i],
-             active_pops[i],
-             expected[i])
-        d.append(x)
-
-    return d
+    output = wrap_up([diffs, active_pops, expected])
+    return output
 
 
 def get_population_mean_mean_data():
@@ -173,15 +168,8 @@ def get_population_mean_mean_data():
 
     expected = (2.5, 3, 0)
 
-    d = list()
-
-    for i in range(len(diffs)):
-        x = (diffs[i],
-             ensemble_actives[i],
-             expected[i])
-        d.append(x)
-
-    return d
+    output = wrap_up([diffs, ensemble_actives, expected])
+    return output
 
 
 def get_population_mean_max_data():
@@ -195,15 +183,8 @@ def get_population_mean_max_data():
 
     expected = (2.5, 2, 5)
 
-    d = list()
-
-    for i in range(len(diffs)):
-        x = (diffs[i],
-             ensemble_actives[i],
-             expected[i])
-        d.append(x)
-
-    return d
+    output = wrap_up([diffs, ensemble_actives, expected])
+    return output
 
 
 def get_population_mean_min_data():
@@ -217,15 +198,8 @@ def get_population_mean_min_data():
 
     expected = (2.5, 6, 0)
 
-    d = list()
-
-    for i in range(len(diffs)):
-        x = (diffs[i],
-             ensemble_actives[i],
-             expected[i])
-        d.append(x)
-
-    return d
+    output = wrap_up([diffs, ensemble_actives, expected])
+    return output
 
 
 def get_mean_data():
@@ -239,15 +213,8 @@ def get_mean_data():
 
     expected = (2, 1.2, 1)
 
-    d = list()
-
-    for i in range(len(results)):
-        x = (results[i],
-             truths[i],
-             expected[i])
-        d.append(x)
-
-    return d
+    output = wrap_up([results, truths, expected])
+    return output
 
 
 def get_error_normalisation_type_data():
@@ -286,12 +253,7 @@ def get_distance_error_default_data():
 
     expected = (1, 1, 3 * sqrt(5))
 
-    output = list()
-
-    for i in range(len(x_errors)):
-        x = (x_errors[i], y_errors[i], expected[i])
-        output.append(x)
-
+    output = wrap_up([x_errors, y_errors, expected])
     return output
 
 
@@ -308,13 +270,7 @@ def get_distance_error_base_data():
 
     expected = (5, 2.5, 5 * sqrt(5))
 
-    output = list()
-
-    for i in range(len(x_errors)):
-        x = (x_errors[i], y_errors[i],
-             n_active[i], expected[i])
-        output.append(x)
-
+    output = wrap_up([x_errors, y_errors, n_active, expected])
     return output
 
 
@@ -333,14 +289,7 @@ def get_calculate_rmse_default_data():
 
     expected = (5, 35/3)
 
-    output = list()
-
-    for i in range(len(x_truths)):
-        x = (x_truths[i], y_truths[i],
-             x_results[i], y_results[i],
-             expected[i])
-        output.append(x)
-
+    output = wrap_up([x_truths, y_truths, x_results, y_results, expected])
     return output
 
 
@@ -392,14 +341,7 @@ def get_make_gain_matrix_data():
                      [0.0, 0.0, 0.0, 0.0]])
     expected = (ex_x, ex_y)
 
-    output = list()
-
-    for i in range(len(expected)):
-        o = (state_ensembles[i],
-             data_covariances[i],
-             Hs[i],
-             expected[i])
-        output.append(o)
+    output = wrap_up([state_ensembles, data_covariances, Hs, expected])
     return output
 
 
@@ -422,14 +364,7 @@ def get_separate_coords_exits_data():
                  np.array([20, 35, 25, 4, 13]),
                  np.array([3, 4, 5, 7, 2]))]
 
-    output = list()
-
-    for i in range(len(expected)):
-        x = (state_vectors[i],
-             pop_sizes[i],
-             expected[i])
-        output.append(x)
-
+    output = wrap_up([state_vectors, pop_sizes, expected])
     return output
 
 
@@ -449,12 +384,5 @@ def get_update_status_data():
                 False, False,
                 True, True)
 
-    output = list()
-
-    for i in range(len(expected)):
-        x = (m_statuses[i],
-             filter_status[i],
-             expected[i])
-        output.append(x)
-
+    output = wrap_up([m_statuses, filter_status, expected])
     return output

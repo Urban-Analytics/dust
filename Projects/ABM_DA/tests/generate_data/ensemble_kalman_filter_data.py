@@ -373,12 +373,31 @@ def get_make_obs_error_data():
 
 
 def get_make_gain_matrix_data():
-    state_ensemble = np.array([[5, 6, 4],
-                               [10, 11, 9]])
+    x = np.array([[5, 6, 4],
+                  [10, 11, 9]])
+    y = np.array([[11, 10, 10, 9, 10],
+                  [5, 6, 4, 4, 6],
+                  [21, 15, 18, 18, 18],
+                  [0, 0, 0, 0, 0]])
+    state_ensembles = (x, y)
 
-    data_covariance = np.identity(2)
+    data_covariances = (np.identity(2), np.identity(4))
 
-    H = np.identity(2)
+    Hs = (np.identity(2), np.identity(4))
 
-    expected = 1/3 * np.ones((2, 2))
-    return [(state_ensemble, data_covariance, H, expected)]
+    ex_x = 1/3 * np.ones((2, 2))
+    ex_y = np.array([[0.2494382, 0.13932584, 0.12134831, 0.0],
+                     [0.13932584, 0.44719101, -0.09438202, 0.0],
+                     [0.12134831, -0.09438202, 0.78876404, 0.0],
+                     [0.0, 0.0, 0.0, 0.0]])
+    expected = (ex_x, ex_y)
+
+    output = list()
+
+    for i in range(len(expected)):
+        o = (state_ensembles[i],
+             data_covariances[i],
+             Hs[i],
+             expected[i])
+        output.append(o)
+    return output

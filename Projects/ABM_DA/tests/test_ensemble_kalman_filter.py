@@ -378,6 +378,8 @@ def test_make_obs_error(truth, result,
 def test_make_gain_matrix(state_ensemble, data_covariance, H, expected):
     enkf = set_up_enkf()
     H_transpose = H.T
-    assert np.array_equal(expected, enkf.make_gain_matrix(state_ensemble,
-                                                          data_covariance,
-                                                          H, H_transpose))
+    result = enkf.make_gain_matrix(state_ensemble,
+                                   data_covariance,
+                                   H, H_transpose)
+    np.testing.assert_allclose(result, expected)
+    # assert np.array_equal(expected, result)

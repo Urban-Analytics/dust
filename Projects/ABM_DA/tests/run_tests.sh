@@ -1,4 +1,4 @@
 #!/bin/sh
 
 # Author: Keiran Suchak
-pytest --cov .
+pytest --cov-report=term-missing --cov=../

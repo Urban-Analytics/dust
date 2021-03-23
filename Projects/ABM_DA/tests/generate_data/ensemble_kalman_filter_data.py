@@ -431,3 +431,30 @@ def get_separate_coords_exits_data():
         output.append(x)
 
     return output
+
+
+def get_update_status_data():
+    m_statuses = [[1, 1, 1, 1, 1],
+                  [1, 1, 1, 1, 1],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [1, 0, 1, 0, 1],
+                  [1, 0, 1, 0, 1]]
+
+    filter_status = (True, False,
+                     True, False,
+                     True, False)
+
+    expected = (True, True,
+                False, False,
+                True, True)
+
+    output = list()
+
+    for i in range(len(expected)):
+        x = (m_statuses[i],
+             filter_status[i],
+             expected[i])
+        output.append(x)
+
+    return output

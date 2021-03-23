@@ -52,6 +52,8 @@ make_gain_matrix_data = get_make_gain_matrix_data()
 
 separate_coords_exits_data = get_separate_coords_exits_data()
 
+update_status_data = get_update_status_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -397,3 +399,18 @@ def test_separate_coords_exits(state_vector, pop_size, expected):
 
     for i in range(len(result)):
         np.testing.assert_array_equal(result[i], expected[i])
+
+
+@pytest.mark.parametrize('m_statuses, filter_status, expected',
+                         update_status_data)
+def test_update_status(m_statuses, filter_status, expected):
+    enkf = set_up_enkf()
+
+    enkf.active = filter_status
+
+    for i, s in enumerate(m_statuses):
+        enkf.models[i].status = s
+
+    enkf.update_status()
+
+    assert enkf.active == expected

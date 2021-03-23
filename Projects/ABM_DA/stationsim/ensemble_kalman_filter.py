@@ -559,9 +559,10 @@ class EnsembleKalmanFilter(Filter):
         More standard version
         """
         C = np.cov(state_ensemble)
-        state_covariance = H @ C @ H_transpose
-        diff = state_covariance + data_covariance
-        return C @ H_transpose @ np.linalg.inv(diff)
+        state_covariance = H @ (C @ H_transpose)
+        total = state_covariance + data_covariance
+        K = C @ (H_transpose @ np.linalg.inv(total))
+        return K
 
     @staticmethod
     def separate_coords(arr):

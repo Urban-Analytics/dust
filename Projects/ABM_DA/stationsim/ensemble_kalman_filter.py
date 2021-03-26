@@ -230,9 +230,12 @@ class EnsembleKalmanFilter(Filter):
                               'forecast': f}
             self.forecast_error.append(forecast_error)
 
+            data = None
+
             if self.time % self.assimilation_period == 0:
                 # Construct observations
-                data, obs_truth = self.make_data()
+                obs_truth = self.base_model.get_state(sensor='location')
+                data, obs_truth = self.make_data(obs_truth)
 
                 # Plot model state
                 if self.vis:
@@ -259,20 +262,23 @@ class EnsembleKalmanFilter(Filter):
                 # self.update_state_mean()
             self.time += 1
 
-            result = {'time': self.time,
-                      'state_mean': self.state_mean,
-                      'state_ensemble': self.state_ensemble}
+            if data is not None:
+                result = {'time': self.time,
+                          'state_mean': self.state_mean,
+                          'state_ensemble': self.state_ensemble}
+                result['observation'] = data
 
-            for i in range(self.ensemble_size):
-                result[f'state_{i}'] = self.state_ensemble[:, i]
+                for i in range(self.ensemble_size):
+                    result[f'state_{i}'] = self.state_ensemble[:, i]
 
+                if self.run_vanilla:
+                    result['base_state'] = self.vanilla_state_mean
+                self.results.append(result)
 
             if self.run_vanilla:
                 self.vanilla_results.append(self.vanilla_state_mean)
-                result['base_state'] = self.vanilla_state_mean
 
             # self.results.append(self.state_mean)
-            self.results.append(result)
 
         # print('time: {0}, base: {1}'.format(self.time,
             # self.base_model.pop_active))
@@ -524,9 +530,8 @@ class EnsembleKalmanFilter(Filter):
         self.active = any(m_statuses) or any(vanilla_m_statuses)
 
     # --- Filter step helper methods --- #
-    def make_data(self):
+    def make_data(self, obs_truth):
         # Construct observations
-        obs_truth = self.base_model.get_state(sensor='location')
         noise = np.random.normal(0, self.R_vector, obs_truth.shape)
         data = obs_truth + noise
         return data, obs_truth

@@ -258,10 +258,21 @@ class EnsembleKalmanFilter(Filter):
             # else:
                 # self.update_state_mean()
             self.time += 1
-            self.results.append(self.state_mean)
+
+            result = {'time': self.time,
+                      'state_mean': self.state_mean,
+                      'state_ensemble': self.state_ensemble}
+
+            for i in range(self.ensemble_size):
+                result[f'state_{i}'] = self.state_ensemble[:, i]
+
 
             if self.run_vanilla:
                 self.vanilla_results.append(self.vanilla_state_mean)
+                result['base_state'] = self.vanilla_state_mean
+
+            # self.results.append(self.state_mean)
+            self.results.append(result)
 
         # print('time: {0}, base: {1}'.format(self.time,
             # self.base_model.pop_active))
@@ -701,3 +712,20 @@ class EnsembleKalmanFilter(Filter):
 
         plt.savefig(f'./results/figures/{when}_{self.time}.pdf')
         plt.close()
+
+    def make_animation(self) -> None:
+        # Check that filter has finished running
+        if self.active:
+            raise ValueError('Please wait until filter has finished running')
+
+        """
+        Required data:
+            - mean state vector
+            - state vectors from ensemble member models
+            - base model state vector
+            - observation state vector
+
+        Need to make sure that these line up with each other, i.e we have the
+        same number of frames to plot for each of the state vectors
+        """
+        

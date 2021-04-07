@@ -83,7 +83,7 @@ dependencies:
   - notebook=6.0.3=py38_0
   - numpy=1.18.1=py38h4f9e942_0
   - numpy-base=1.18.1=py38hde5b4d6_1
-  - openssl=1.1.1j=h27cfd23_0
+  - openssl=1.1.1k=h27cfd23_0
   - packaging=20.4=py_0
   - pandas=1.0.3=py38h0573a6f_0
   - pandoc=2.2.3.2=0
@@ -94,6 +94,7 @@ dependencies:
   - pexpect=4.8.0=py38_0
   - pickleshare=0.7.5=py38_1000
   - pip=20.1.1=py38_1
+  - plotly=4.14.3=pyhd3eb1b0_0
   - pluggy=0.13.1=py38_0
   - prometheus_client=0.8.0=py_0
   - prompt-toolkit=3.0.5=py_0
@@ -120,6 +121,7 @@ dependencies:
   - qt=5.9.7=h5867ecd_1
   - readline=8.0=h7b6447c_0
   - requests=2.23.0=py38_0
+  - retrying=1.3.3=py_2
   - scikit-learn=0.23.1=py38h423224d_0
   - scipy=1.4.1=py38h0b6359f_0
   - seaborn=0.10.1=py_0
@@ -146,4 +148,4 @@ dependencies:
   - zeromq=4.3.1=he6710b0_3
   - zipp=3.1.0=py_0
   - zlib=1.2.11=h7b6447c_3
-prefix: /home/keiran/miniconda3/envs/dust
+prefix: /home/ksuchak/anaconda3/envs/dust

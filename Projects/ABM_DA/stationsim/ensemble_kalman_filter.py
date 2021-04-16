@@ -232,6 +232,9 @@ class EnsembleKalmanFilter(Filter):
 
             data = None
 
+            prior = self.state_mean.copy()
+            prior_ensemble = self.state_ensemble.copy()
+
             if self.time % self.assimilation_period == 0:
                 # Construct observations
                 obs_truth = self.base_model.get_state(sensor='location')
@@ -264,15 +267,17 @@ class EnsembleKalmanFilter(Filter):
 
             if data is not None:
                 result = {'time': self.time,
-                          'state_mean': self.state_mean,
-                          'state_ensemble': self.state_ensemble}
+                          'ground_truth': obs_truth,
+                          'prior': prior,
+                          'posterior': self.state_mean}
                 result['observation'] = data
 
                 for i in range(self.ensemble_size):
-                    result[f'state_{i}'] = self.state_ensemble[:, i]
+                    result[f'prior_{i}'] = prior_ensemble[:, i]
+                    result[f'posterior_{i}'] = self.state_ensemble[:, i]
 
                 if self.run_vanilla:
-                    result['base_state'] = self.vanilla_state_mean
+                    result['baseline'] = self.vanilla_state_mean
                 self.results.append(result)
 
             if self.run_vanilla:

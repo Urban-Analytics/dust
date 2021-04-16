@@ -56,6 +56,12 @@ separate_coords_exits_data = get_separate_coords_exits_data()
 
 update_status_data = get_update_status_data()
 
+# make_data_data = get_make_data_data()
+
+# make_noise_data = get_make_noise_data()
+
+update_state_mean_data = get_update_state_mean_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -416,3 +422,33 @@ def test_update_status(m_statuses, filter_status, expected):
     enkf.update_status()
 
     assert enkf.active == expected
+
+
+# @pytest.mark.parametrize('obs, R_vector', make_data_data)
+# def test_make_data(obs, R_vector):
+#     enkf = set_up_enkf()
+
+#     print(obs)
+#     data = enkf.make_data(obs, R_vector)
+#     C = np.cov(data)
+#     R = np.diag(R_vector)
+#     np.testing.assert_array_almost_equal(C, R)
+
+
+# @pytest.mark.parametrize('shape, R_vector', make_noise_data)
+# def test_make_noise(shape, R_vector):
+#     enkf = set_up_enkf()
+
+#     noise = enkf.make_noise(shape, R_vector)
+#     C = np.cov(noise)
+
+#     np.testing.assert_array_almost_equal(C, R_vector)
+
+
+@pytest.mark.parametrize('state_ensemble, expected', update_state_mean_data)
+def test_update_state_mean(state_ensemble, expected):
+    enkf = set_up_enkf()
+
+    result = enkf.update_state_mean(state_ensemble)
+
+    np.testing.assert_array_equal(result, expected)

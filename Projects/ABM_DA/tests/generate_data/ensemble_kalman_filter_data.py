@@ -324,3 +324,40 @@ def get_update_status_data():
 
     output = wrap_up([m_statuses, filter_status, expected])
     return output
+
+
+# def get_make_data_data():
+#     obs = (np.ones(50),
+#            np.zeros(20))
+
+#     R_vectors = (np.identity(50),
+#                  1.5 * np.identity(20))
+
+#     output = wrap_up([obs, R_vectors])
+#     return output
+
+
+# def get_make_noise_data():
+#     shapes = ()
+
+#     R_vectors = ()
+
+#     output = wrap_up([shapes, R_vectors])
+#     return output
+
+
+def get_update_state_mean_data():
+    state_ensembles = (np.array([[11, 10, 9, 9, 11],
+                                 [5, 5, 5, 4, 6],
+                                 [21, 15, 18, 18, 18],
+                                 [0, 0, 0, 0, 0]]),
+                       np.array([[1, 1, 1, 1, 1],
+                                 [2, 2, 2, 2, 2],
+                                 [1, 2, 3, 4, 5]]))
+
+    expected = (np.array([10, 5, 18, 0]),
+                np.array([1, 2, 3]))
+
+    outputs = wrap_up([state_ensembles, expected])
+
+    return outputs

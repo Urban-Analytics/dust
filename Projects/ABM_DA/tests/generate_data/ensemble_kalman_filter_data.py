@@ -307,12 +307,12 @@ def get_separate_coords_exits_data():
 
 
 def get_update_status_data():
-    m_statuses = [[1, 1, 1, 1, 1],
-                  [1, 1, 1, 1, 1],
-                  [0, 0, 0, 0, 0],
-                  [0, 0, 0, 0, 0],
-                  [1, 0, 1, 0, 1],
-                  [1, 0, 1, 0, 1]]
+    m_statuses = [(1, 1, 1, 1, 1),
+                  (1, 1, 1, 1, 1),
+                  (0, 0, 0, 0, 0),
+                  (0, 0, 0, 0, 0),
+                  (1, 0, 1, 0, 1),
+                  (1, 0, 1, 0, 1)]
 
     filter_status = (True, False,
                      True, False,

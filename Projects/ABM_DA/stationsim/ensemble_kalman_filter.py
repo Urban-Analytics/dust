@@ -235,7 +235,7 @@ class EnsembleKalmanFilter(Filter):
             if self.time % self.assimilation_period == 0:
                 # Construct observations
                 obs_truth = self.base_model.get_state(sensor='location')
-                data, obs_truth = self.make_data(obs_truth)
+                data = self.make_data(obs_truth, self.R_vector)
 
                 # Plot model state
                 if self.vis:
@@ -530,11 +530,16 @@ class EnsembleKalmanFilter(Filter):
         self.active = any(m_statuses) or any(vanilla_m_statuses)
 
     # --- Filter step helper methods --- #
-    def make_data(self, obs_truth):
+    @classmethod
+    def make_data(cls, obs_truth, R_vector):
         # Construct observations
-        noise = np.random.normal(0, self.R_vector, obs_truth.shape)
+        noise = cls.make_noise(obs_truth.shape, R_vector)
         data = obs_truth + noise
-        return data, obs_truth
+        return data
+
+    @staticmethod
+    def make_noise(shape, R_vector):
+        return np.random.normal(0, R_vector, shape)
 
     # def make_ensemble_covariance(self) -> np.array:
     #     """

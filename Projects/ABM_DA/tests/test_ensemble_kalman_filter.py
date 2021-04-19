@@ -56,11 +56,13 @@ separate_coords_exits_data = get_separate_coords_exits_data()
 
 update_status_data = get_update_status_data()
 
-# make_data_data = get_make_data_data()
+make_data_data = get_make_data_data()
 
 # make_noise_data = get_make_noise_data()
 
 update_state_mean_data = get_update_state_mean_data()
+
+np_cov_data = get_np_cov_data()
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -422,6 +424,13 @@ def test_update_status(m_statuses, filter_status, expected):
     enkf.update_status()
 
     assert enkf.active == expected
+
+
+@pytest.mark.parametrize('array, expected', np_cov_data)
+def test_np_cov(array, expected):
+    result = np.cov(array)
+    assert result.shape == expected.shape
+    np.testing.assert_array_almost_equal(result, expected)
 
 
 # @pytest.mark.parametrize('obs, R_vector', make_data_data)

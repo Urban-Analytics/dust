@@ -326,14 +326,13 @@ def get_update_status_data():
     return output
 
 
-def get_make_data_data():
-    obs = (np.ones(50),
-           np.zeros(20))
+def get_make_noise_data():
+    shapes = (10, 20)
 
-    R_vectors = (np.identity(50),
-                 1.5 * np.identity(20))
+    R_vectors = (np.ones(shapes[0]),
+                 np.full(shapes[1], 1.5))
 
-    output = wrap_up([obs, R_vectors])
+    output = wrap_up([shapes, R_vectors])
     return output
 
 

@@ -431,25 +431,28 @@ def test_np_cov(array, expected):
     np.testing.assert_array_almost_equal(result, expected)
 
 
-# @pytest.mark.parametrize('obs, R_vector', make_data_data)
-# def test_make_data(obs, R_vector):
-#     enkf = set_up_enkf()
+@pytest.mark.parametrize('shape, R_vector', make_noise_data)
+def test_make_noise(shape, R_vector):
+    enkf = set_up_enkf()
 
-#     print(obs)
-#     data = enkf.make_data(obs, R_vector)
-#     C = np.cov(data)
-#     R = np.diag(R_vector)
-#     np.testing.assert_array_almost_equal(C, R)
+    if isinstance(shape, int):
+        assert len(R_vector) == shape
+    elif isinstance(shape, tuple):
+        assert (len(R_vector) == shape[0]) or (len(R_vector) == shape[1])
 
+    all_samples = list()
 
-# @pytest.mark.parametrize('shape, R_vector', make_noise_data)
-# def test_make_noise(shape, R_vector):
-#     enkf = set_up_enkf()
+    for _ in range(1000):
+        noise = enkf.make_noise(shape, R_vector)
+        all_samples.append(noise)
 
-#     noise = enkf.make_noise(shape, R_vector)
-#     C = np.cov(noise)
+    all_samples = np.array(all_samples)
 
-#     np.testing.assert_array_almost_equal(C, R_vector)
+    for i in range(shape):
+        m = np.mean(all_samples[:, i])
+        s = np.std(all_samples[:, i])
+        assert m == pytest.approx(0, abs=0.1)
+        assert s == pytest.approx(R_vector[i], 0.2)
 
 
 @pytest.mark.parametrize('state_ensemble, expected', update_state_mean_data)

@@ -56,9 +56,7 @@ separate_coords_exits_data = get_separate_coords_exits_data()
 
 update_status_data = get_update_status_data()
 
-make_data_data = get_make_data_data()
-
-# make_noise_data = get_make_noise_data()
+make_noise_data = get_make_noise_data()
 
 update_state_mean_data = get_update_state_mean_data()
 

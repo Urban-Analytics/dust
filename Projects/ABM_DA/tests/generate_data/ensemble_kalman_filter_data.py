@@ -337,15 +337,6 @@ def get_make_data_data():
     return output
 
 
-# def get_make_noise_data():
-#     shapes = ()
-
-#     R_vectors = ()
-
-#     output = wrap_up([shapes, R_vectors])
-#     return output
-
-
 def get_update_state_mean_data():
     state_ensembles = (np.array([[11, 10, 9, 9, 11],
                                  [5, 5, 5, 4, 6],

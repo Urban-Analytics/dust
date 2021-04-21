@@ -271,6 +271,7 @@ class EnsembleKalmanFilter(Filter):
                           'prior': prior,
                           'posterior': self.state_mean.copy()}
                 result['observation'] = data
+                result['destination'] = self.make_base_destinations_vector()
 
                 for i in range(self.ensemble_size):
                     result[f'prior_{i}'] = prior_ensemble[:, i]
@@ -743,4 +744,10 @@ class EnsembleKalmanFilter(Filter):
         Need to make sure that these line up with each other, i.e we have the
         same number of frames to plot for each of the state vectors
         """
-        
+
+    def make_base_destinations_vector(self) -> np.ndarray:
+        destinations = list()
+        for agent in self.base_model.agents:
+            destinations.append(agent.loc_desire)
+
+        return np.ravel(destinations)

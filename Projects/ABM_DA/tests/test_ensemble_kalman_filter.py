@@ -62,6 +62,8 @@ update_state_mean_data = get_update_state_mean_data()
 
 np_cov_data = get_np_cov_data()
 
+destination_vector_data = get_destination_vector_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -461,4 +463,16 @@ def test_update_state_mean(state_ensemble, expected):
 
     result = enkf.update_state_mean(state_ensemble)
 
+    np.testing.assert_array_equal(result, expected)
+
+
+@pytest.mark.parametrize('agent_destinations, expected',
+                         destination_vector_data)
+def test_make_base_destination_vector(agent_destinations, expected):
+    enkf = set_up_enkf()
+
+    for i, agent in enumerate(enkf.base_model.agents):
+        agent.loc_desire = np.array(agent_destinations[i])
+
+    result = enkf.make_base_destinations_vector()
     np.testing.assert_array_equal(result, expected)

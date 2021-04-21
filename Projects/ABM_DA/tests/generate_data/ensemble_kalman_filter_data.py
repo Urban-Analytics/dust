@@ -360,3 +360,13 @@ def get_np_cov_data():
 
     outputs = wrap_up([arrays, expected])
     return outputs
+
+def get_destination_vector_data():
+    destinations = ([[0, 100], [100, 0], [50, 50], [300, 100], [125, 225]],
+                    [[325, 725], [125, 0], [5, 100], [300, 3], [17, 23]])
+
+    expected = (np.array([0, 100, 100, 0, 50, 50, 300, 100, 125, 225]),
+                np.array([325, 725, 125, 0, 5, 100, 300, 3, 17, 23]))
+
+    outputs = wrap_up([destinations, expected])
+    return outputs

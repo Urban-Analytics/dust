@@ -64,6 +64,8 @@ np_cov_data = get_np_cov_data()
 
 destination_vector_data = get_destination_vector_data()
 
+origin_vector_data = get_origin_vector_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -475,4 +477,16 @@ def test_make_base_destination_vector(agent_destinations, expected):
         agent.loc_desire = np.array(agent_destinations[i])
 
     result = enkf.make_base_destinations_vector()
+    np.testing.assert_array_equal(result, expected)
+
+
+@pytest.mark.parametrize('origins, statuses, expected', origin_vector_data)
+def test_make_base_origin_vector(origins, statuses, expected):
+    enkf = set_up_enkf()
+
+    for i, agent in enumerate(enkf.base_model.agents):
+        agent.status = statuses[i]
+        agent.loc_start = origins[i]
+
+    result = enkf.make_base_origins_vector()
     np.testing.assert_array_equal(result, expected)

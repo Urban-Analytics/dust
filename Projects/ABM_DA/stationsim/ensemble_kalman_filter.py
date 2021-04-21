@@ -272,6 +272,7 @@ class EnsembleKalmanFilter(Filter):
                           'posterior': self.state_mean.copy()}
                 result['observation'] = data
                 result['destination'] = self.make_base_destinations_vector()
+                result['origin'] = self.make_base_origins_vector()
 
                 for i in range(self.ensemble_size):
                     result[f'prior_{i}'] = prior_ensemble[:, i]
@@ -751,3 +752,13 @@ class EnsembleKalmanFilter(Filter):
             destinations.append(agent.loc_desire)
 
         return np.ravel(destinations)
+
+    def make_base_origins_vector(self) -> np.ndarray:
+        origins = list()
+        for agent in self.base_model.agents:
+            if agent.status == 0:
+                origins.append(np.array([0, 0]))
+            else:
+                origins.append(agent.loc_start)
+
+        return np.ravel(origins)

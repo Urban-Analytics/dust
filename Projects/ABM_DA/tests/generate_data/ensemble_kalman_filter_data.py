@@ -370,3 +370,20 @@ def get_destination_vector_data():
 
     outputs = wrap_up([destinations, expected])
     return outputs
+
+
+def get_origin_vector_data():
+    origins = ([[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+               [[0, 100], [100, 0], [300, 125], [125, 300], [0, 0]],
+               [[100, 125], [0, 0], [125, 225], [0, 0], [750, 125]])
+
+    statuses = ([0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1],
+                [1, 0, 1, 0, 1])
+
+    expected = (np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                np.array([0, 100, 100, 0, 300, 125, 125, 300, 0, 0]),
+                np.array([100, 125, 0, 0, 125, 225, 0, 0, 750, 125]))
+
+    outputs = wrap_up([origins, statuses, expected])
+    return outputs

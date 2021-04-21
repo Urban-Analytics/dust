@@ -269,12 +269,12 @@ class EnsembleKalmanFilter(Filter):
                 result = {'time': self.time,
                           'ground_truth': obs_truth,
                           'prior': prior,
-                          'posterior': self.state_mean}
+                          'posterior': self.state_mean.copy()}
                 result['observation'] = data
 
                 for i in range(self.ensemble_size):
                     result[f'prior_{i}'] = prior_ensemble[:, i]
-                    result[f'posterior_{i}'] = self.state_ensemble[:, i]
+                    result[f'posterior_{i}'] = self.state_ensemble[:, i].copy()
 
                 if self.run_vanilla:
                     result['baseline'] = self.vanilla_state_mean

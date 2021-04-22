@@ -12,7 +12,7 @@ dependencies:
   - blas=1.0=mkl
   - bleach=3.1.5=py_0
   - brotlipy=0.7.0=py38h7b6447c_1000
-  - ca-certificates=2021.1.19=h06a4308_1
+  - ca-certificates=2021.4.13=h06a4308_1
   - certifi=2020.12.5=py38h06a4308_0
   - cffi=1.14.0=py38he30daa8_1
   - chardet=3.0.4=py38_1003
@@ -65,6 +65,7 @@ dependencies:
   - libuuid=1.0.3=h1bed415_2
   - libxcb=1.13=h1bed415_1
   - libxml2=2.9.10=he19cac6_1
+  - littleutils=0.2.2=py_0
   - markupsafe=1.1.1=py38h7b6447c_0
   - matplotlib=3.1.3=py38_0
   - matplotlib-base=3.1.3=py38hef1b27d_0
@@ -75,6 +76,7 @@ dependencies:
   - mkl_fft=1.1.0=py38h23d657b_0
   - mkl_random=1.1.1=py38h0573a6f_0
   - more-itertools=8.7.0=pyhd3eb1b0_0
+  - mpmath=1.2.1=pyhd8ed1ab_0
   - msgpack-python=1.0.0=py38hfd86e86_1
   - nbconvert=5.6.1=py38_0
   - nbformat=5.0.7=py_0
@@ -84,8 +86,10 @@ dependencies:
   - numpy=1.18.1=py38h4f9e942_0
   - numpy-base=1.18.1=py38hde5b4d6_1
   - openssl=1.1.1k=h27cfd23_0
+  - outdated=0.2.0=py_0
   - packaging=20.4=py_0
   - pandas=1.0.3=py38h0573a6f_0
+  - pandas-flavor=0.2.0=py_0
   - pandoc=2.2.3.2=0
   - pandocfilters=1.4.2=py38_1
   - parso=0.7.0=py_0
@@ -93,6 +97,7 @@ dependencies:
   - pcre=8.43=he6710b0_0
   - pexpect=4.8.0=py38_0
   - pickleshare=0.7.5=py38_1000
+  - pingouin=0.3.11=pyhd8ed1ab_0
   - pip=20.1.1=py38_1
   - plotly=4.14.3=pyhd3eb1b0_0
   - pluggy=0.13.1=py38_0
@@ -124,13 +129,14 @@ dependencies:
   - retrying=1.3.3=py_2
   - scikit-learn=0.23.1=py38h423224d_0
   - scipy=1.4.1=py38h0b6359f_0
-  - seaborn=0.10.1=py_0
+  - seaborn=0.11.1=pyhd3eb1b0_0
   - send2trash=1.5.0=py38_0
   - setuptools=47.3.0=py38_0
   - sip=4.19.13=py38he6710b0_0
   - six=1.15.0=py_0
   - sqlite=3.32.2=h62c20be_0
   - statsmodels=0.12.1=py38h0b5ebd8_1
+  - tabulate=0.8.9=pyhd8ed1ab_0
   - terminado=0.8.3=py38_0
   - testpath=0.4.4=py_0
   - threadpoolctl=2.1.0=pyh5ca1d4c_0
@@ -144,8 +150,9 @@ dependencies:
   - webencodings=0.5.1=py38_1
   - wheel=0.34.2=py38_0
   - wrapt=1.11.2=py38h7b6447c_0
+  - xarray=0.17.0=pyhd8ed1ab_0
   - xz=5.2.5=h7b6447c_0
   - zeromq=4.3.1=he6710b0_3
   - zipp=3.1.0=py_0
   - zlib=1.2.11=h7b6447c_3
-prefix: /home/ksuchak/anaconda3/envs/dust
+prefix: /home/keiran/miniconda3/envs/dust

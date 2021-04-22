@@ -545,7 +545,10 @@ class EnsembleKalmanFilter(Filter):
         return data
 
     @staticmethod
-    def make_noise(shape, R_vector):
+    def make_noise(shape, R_vector, seed=None):
+        # Seed for test reproducibility
+        if seed is not None:
+            np.random.seed(seed)
         return np.random.normal(0, R_vector, shape)
 
     # def make_ensemble_covariance(self) -> np.array:

@@ -446,8 +446,9 @@ def test_make_noise(shape, R_vector):
 
     all_samples = list()
 
-    for _ in range(1000):
-        noise = enkf.make_noise(shape, R_vector)
+    for i in range(1000):
+        # Pass seed for test reproducibility
+        noise = enkf.make_noise(shape, R_vector, seed=i)
         all_samples.append(noise)
 
     all_samples = np.array(all_samples)

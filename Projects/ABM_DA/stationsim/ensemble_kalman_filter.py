@@ -371,7 +371,7 @@ class EnsembleKalmanFilter(Filter):
         # Vanilla error
         if self.run_vanilla:
             v = self.error_func(truth, self.vanilla_state_mean)[0]
-            metrics['vanilla'] = v
+            metrics['baseline'] = v
 
         return metrics
 

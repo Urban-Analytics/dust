@@ -386,14 +386,14 @@ class EnsembleKalmanFilter(Filter):
 
         return d, x, y
 
-    def make_distance_error(self, x_error: np.array,
-                            y_error: np.array) -> float:
+    def make_distance_error(self, x_error: np.ndarray,
+                            y_error: np.ndarray) -> float:
         agent_distances = np.sqrt(np.square(x_error) + np.square(y_error))
         return self.mean_func(agent_distances)
 
-    def make_dual_errors(self, truth: np.array,
-                         result: np.array) -> Tuple[float, float,
-                                                    float, float]:
+    def make_dual_errors(self, truth: np.ndarray,
+                         result: np.ndarray) -> Tuple[float, float,
+                                                      float, float]:
         x_result, y_result, exit_result = self.separate_coords_exits(result)
         x_truth, y_truth, exit_truth = self.separate_coords_exits(truth)
 
@@ -402,13 +402,13 @@ class EnsembleKalmanFilter(Filter):
 
         return d, x, y, exit_accuracy
 
-    def make_analysis_errors(self, truth: np.array, result: np.array):
+    def make_analysis_errors(self, truth: np.ndarray, result: np.ndarray):
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
             return self.make_dual_errors(truth, result)
         elif self.mode == EnsembleKalmanFilterType.STATE:
             return self.make_errors(truth, result)
 
-    def make_obs_error(self, truth: np.array, result: np.array) -> float:
+    def make_obs_error(self, truth: np.ndarray, result: np.ndarray) -> float:
         # Separate coords
         x_result, y_result = self.separate_coords(result)
         x_truth, y_truth = self.separate_coords(truth)
@@ -419,10 +419,10 @@ class EnsembleKalmanFilter(Filter):
         agent_distances = np.sqrt(np.square(x_diffs) + np.square(y_diffs))
         return np.mean(agent_distances)
 
-    def calculate_rmse(self, x_truth: np.array,
-                       y_truth: np.array,
-                       x_result: np.array,
-                       y_result: np.array) -> Tuple[float, float, float]:
+    def calculate_rmse(self, x_truth: np.ndarray,
+                       y_truth: np.ndarray,
+                       x_result: np.ndarray,
+                       y_result: np.ndarray) -> Tuple[float, float, float]:
         """
         Method to calculate the rmse over all agents for a given data set at a
         single time-step.
@@ -435,13 +435,13 @@ class EnsembleKalmanFilter(Filter):
 
         return distance_error, x_error, y_error
 
-    def get_population_mean(self, arr: np.array) -> float:
+    def get_population_mean(self, arr: np.ndarray) -> float:
         n = self.get_n_active_agents()
         pm = 0 if n == 0 else np.sum(arr) / n
         return pm
 
-    def get_mean_error(self, results: np.array,
-                       truth: np.array) -> float:
+    def get_mean_error(self, results: np.ndarray,
+                       truth: np.ndarray) -> float:
         diff = np.abs(results - truth)
         return self.mean_func(diff)
 
@@ -467,7 +467,7 @@ class EnsembleKalmanFilter(Filter):
             state_ensemble = self.vanilla_state_ensemble
             self.vanilla_state_mean = self.update_state_mean(state_ensemble)
 
-    def update_state_mean(self, state_ensemble: np.array) -> np.array:
+    def update_state_mean(self, state_ensemble: np.ndarray) -> np.ndarray:
         """
         Update self.state_mean based on the current state ensemble.
         """
@@ -561,9 +561,9 @@ class EnsembleKalmanFilter(Filter):
     #     return 1/(self.ensemble_size - 1) * A @ A.T
 
     @staticmethod
-    def make_gain_matrix(state_ensemble: np.array,
-                         data_covariance: np.array,
-                         H, H_transpose) -> np.array:
+    def make_gain_matrix(state_ensemble: np.ndarray,
+                         data_covariance: np.ndarray,
+                         H, H_transpose) -> np.ndarray:
         """
         Create kalman gain matrix.
         """
@@ -635,9 +635,9 @@ class EnsembleKalmanFilter(Filter):
         return n
 
     def separate_coords_exits(self,
-                              state_vector: np.array) -> Tuple[np.array,
-                                                               np.array,
-                                                               np.array]:
+                              state_vector: np.ndarray) -> Tuple[np.ndarray,
+                                                                 np.ndarray,
+                                                                 np.ndarray]:
         x = state_vector[:self.population_size]
         y = state_vector[self.population_size: 2 * self.population_size]
         e = state_vector[2 * self.population_size:]

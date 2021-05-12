@@ -451,6 +451,17 @@ class EnsembleKalmanFilter(Filter):
         diff = np.abs(results - truth)
         return self.mean_func(diff)
 
+    @staticmethod
+    def filter_vector(vector: np.ndarray, statuses: list) -> np.ndarray:
+        assert len(vector) == len(statuses)
+
+        output = list()
+
+        for i in range(len(vector)):
+            if statuses[i]:
+                output.append(vector[i])
+        return np.array(output)
+
     # --- Update methods --- #
     def update_state_ensemble(self) -> None:
         """

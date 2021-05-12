@@ -429,3 +429,18 @@ def get_agent_statuses_data():
 
     output = wrap_up([base_statuses, en_statuses, inclusion, expected])
     return output
+
+
+def get_filter_vector_data():
+    vector = [np.arange(5) for _ in range(3)]
+
+    statuses = [[False, False, False, False, False],
+                [True, True, True, True, True],
+                [True, False, True, False, False]]
+
+    expected = [np.array([]),
+                np.array([0, 1, 2, 3, 4]),
+                np.array([0, 2])]
+
+    output = wrap_up([vector, statuses, expected])
+    return output

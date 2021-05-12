@@ -70,6 +70,8 @@ origin_vector_data = get_origin_vector_data()
 
 agent_statuses_data = get_agent_statuses_data()
 
+filter_vector_data = get_filter_vector_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -522,3 +524,11 @@ def test_get_agent_statuses(base_statuses, en_statuses, inclusion, expected):
     result = enkf.get_agent_statuses()
 
     assert result == expected
+
+
+@pytest.mark.parametrize('vector, statuses, expected', filter_vector_data)
+def test_filter_vector(vector, statuses, expected):
+    enkf = set_up_enkf()
+
+    result = enkf.filter_vector(vector, statuses)
+    np.testing.assert_array_equal(result, expected)

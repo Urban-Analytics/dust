@@ -314,7 +314,7 @@ x = '''error_normalisation, results, truth, active_pop, ensemble_active,
 @pytest.mark.parametrize(x, error_normalisation_type_data)
 def test_error_normalisation_type(error_normalisation, results, truth,
                                   active_pop, ensemble_active, expected):
-    enkf = set_up_enkf(error_normalisation)
+    enkf = set_up_enkf(error_normalisation=error_normalisation)
 
     results = np.array(results)
     truth = np.array(truth)
@@ -342,7 +342,7 @@ def test_make_distance_error_default(x_error, y_error, expected):
 @pytest.mark.parametrize('x_error, y_error, n_active, expected',
                          distance_error_base_data)
 def test_make_distance_error_base(x_error, y_error, n_active, expected):
-    enkf = set_up_enkf(ActiveAgentNormaliser.BASE)
+    enkf = set_up_enkf(error_normalisation=ActiveAgentNormaliser.BASE)
     enkf.base_model.pop_active = n_active
 
     assert pytest.approx(expected) == enkf.make_distance_error(x_error,
@@ -378,7 +378,7 @@ def test_make_obs_error(truth, result,
     ensemble-member models.
     """
     # Setup
-    enkf = set_up_enkf(normaliser)
+    enkf = set_up_enkf(error_normalisation=normaliser)
 
     # Set active agents
     enkf.base_model.pop_active = active_pop

@@ -501,7 +501,7 @@ def test_make_base_origin_vector(origins, statuses, expected):
 
 @pytest.mark.parametrize('base_statuses, en_statuses, inclusion, expected',
                          agent_statuses_data)
-def test_get_agent_statuses(base_statuses, en_statuses, inclusion, expected):
+def test_agent_statuses_data(base_statuses, en_statuses, inclusion, expected):
     enkf = set_up_enkf(pop_size=3, ensemble_size=3, agent_inclusion=inclusion)
 
     # Check we have as many agents as we do statuses
@@ -511,6 +511,12 @@ def test_get_agent_statuses(base_statuses, en_statuses, inclusion, expected):
     # Check we have as many agents in each model as we do statuses
     for i in range(len(en_statuses)):
         assert len(en_statuses[i]) == len(enkf.models[i].agents)
+
+
+@pytest.mark.parametrize('base_statuses, en_statuses, inclusion, expected',
+                         agent_statuses_data)
+def test_get_agent_statuses(base_statuses, en_statuses, inclusion, expected):
+    enkf = set_up_enkf(pop_size=3, ensemble_size=3, agent_inclusion=inclusion)
 
     # Set statuses of agents in base model
     for i, status in enumerate(base_statuses):

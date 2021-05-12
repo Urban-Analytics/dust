@@ -35,14 +35,15 @@ def make_state_vector_length(population_size, mode):
         raise ValueError(f'Unexpected filter mode: {mode}')
 
 
-def set_up_enkf(error_normalisation=None):
+def set_up_enkf(ensemble_size=5, pop_size=5, error_normalisation=None,
+                agent_inclusion=None):
     np.random.seed(666)
-    pop_size = 5
+    pop_size = pop_size
     mode = EnsembleKalmanFilterType.STATE
     data_mode = EnsembleKalmanFilterType.STATE
     its = 10
     assimilation_period = 5
-    ensemble_size = 5
+    ensemble_size = ensemble_size
 
     model_params = {'pop_total': pop_size,
                     'station': 'Grand_Central',
@@ -62,6 +63,7 @@ def set_up_enkf(error_normalisation=None):
                      'data_vector_length': data_vec_length,
                      'mode': mode,
                      'error_normalisation': error_normalisation,
+                     'inclusion': agent_inclusion,
                      'H': observation_operator,
                      'R_vector': OBS_NOISE_STD * np.ones(data_vec_length),
                      'keep_results': True,

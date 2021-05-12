@@ -7,7 +7,9 @@ import pytest
 import sys
 sys.path.append('../stationsim/')
 
-from ensemble_kalman_filter import EnsembleKalmanFilter, ActiveAgentNormaliser
+from ensemble_kalman_filter import EnsembleKalmanFilter
+from ensemble_kalman_filter import ActiveAgentNormaliser
+from ensemble_kalman_filter import AgentIncluder
 
 # Test data
 round_destination_data = get_round_destination_data()
@@ -65,6 +67,8 @@ np_cov_data = get_np_cov_data()
 destination_vector_data = get_destination_vector_data()
 
 origin_vector_data = get_origin_vector_data()
+
+agent_statuses_data = get_agent_statuses_data()
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -491,3 +495,30 @@ def test_make_base_origin_vector(origins, statuses, expected):
 
     result = enkf.make_base_origins_vector()
     np.testing.assert_array_equal(result, expected)
+
+
+@pytest.mark.parametrize('base_statuses, en_statuses, inclusion, expected',
+                         agent_statuses_data)
+def test_get_agent_statuses(base_statuses, en_statuses, inclusion, expected):
+    enkf = set_up_enkf(pop_size=3, ensemble_size=3, agent_inclusion=inclusion)
+
+    # Check we have as many agents as we do statuses
+    assert len(enkf.base_model.agents) == len(base_statuses)
+    # Check we have as many ensemble members as we do status vectors
+    assert enkf.ensemble_size == len(en_statuses)
+    # Check we have as many agents in each model as we do statuses
+    for i in range(len(en_statuses)):
+        assert len(en_statuses[i]) == len(enkf.models[i].agents)
+
+    # Set statuses of agents in base model
+    for i, status in enumerate(base_statuses):
+        enkf.base_model.agents[i].status = status
+
+    # Set statuses of agents in ensemble member models
+    for i, statuses in enumerate(en_statuses):
+        for j, status in enumerate(statuses):
+            enkf.models[i].agents[j].status = status
+
+    result = enkf.get_agent_statuses()
+
+    assert result == expected

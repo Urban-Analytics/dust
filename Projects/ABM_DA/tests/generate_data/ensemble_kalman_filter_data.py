@@ -9,6 +9,7 @@ from generate_data.data_utils import wrap_up
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
 from ensemble_kalman_filter import ActiveAgentNormaliser
+from ensemble_kalman_filter import AgentIncluder
 from stationsim_gcs_model import Model
 
 
@@ -388,3 +389,43 @@ def get_origin_vector_data():
 
     outputs = wrap_up([origins, statuses, expected])
     return outputs
+
+
+def get_agent_statuses_data():
+    base_statuses = [[0, 1, 2],
+                     [0, 1, 2],
+                     [0, 1, 2],
+                     [0, 1, 2],
+                     [0, 1, 2]]
+
+    en_statuses = [[[0, 0, 0],
+                    [1, 1, 1],
+                    [2, 2, 2]],
+                   [[0, 0, 0],
+                    [1, 1, 1],
+                    [2, 2, 2]],
+                   # Uniform across ensemble
+                   [[0, 1, 2],
+                    [0, 1, 2],
+                    [0, 1, 2]],
+                   # Mixed, no majority
+                   [[0, 0, 0],
+                    [1, 1, 1],
+                    [2, 2, 2]],
+                   # Mixed, majority
+                   [[0, 1, 1],
+                    [1, 1, 2],
+                    [0, 2, 2]]]
+
+    inclusion = [None, AgentIncluder.BASE,
+                 AgentIncluder.MODE_EN, AgentIncluder.MODE_EN,
+                 AgentIncluder.MODE_EN]
+
+    expected = [[False, True, False],
+                [False, True, False],
+                [False, True, False],
+                [False, False, False],
+                [False, True, False]]
+
+    output = wrap_up([base_statuses, en_statuses, inclusion, expected])
+    return output

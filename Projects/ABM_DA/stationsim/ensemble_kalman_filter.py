@@ -33,6 +33,11 @@ class ActiveAgentNormaliser(Enum):
     MIN_EN = auto()
 
 
+class AgentIncluder(Enum):
+    BASE = auto()
+    MODE_EN = auto()
+
+
 class EnsembleKalmanFilter(Filter):
     """
     A class to represent a general EnKF.
@@ -168,6 +173,7 @@ class EnsembleKalmanFilter(Filter):
         self.run_vanilla = False
         self.mode = EnsembleKalmanFilterType.STATE
         self.error_normalisation = None
+        self.inclusion = None
         self.active = True
         self.sensor_types = {EnsembleKalmanFilterType.STATE: 'location',
                              EnsembleKalmanFilterType.DUAL_EXIT: 'loc_exit'}
@@ -652,6 +658,26 @@ class EnsembleKalmanFilter(Filter):
     def round_destination(destination: float, n_destinations: int) -> int:
         dest = int(round(destination))
         return dest % n_destinations
+
+    def get_agent_statuses(self) -> List[bool]:
+        if self.inclusion is None or self.inclusion == AgentIncluder.BASE:
+            # List of booleans indicating whether agents are active
+            statuses = [agent.status == 1 for agent in self.base_model.agents]
+
+        elif self.inclusion == AgentIncluder.MODE_EN:
+            en_statuses = [list() for _ in range(self.population_size)]
+
+            # Get list of statuses for each agent
+            for _, model in enumerate(self.models):
+                for j, agent in enumerate(model.agents):
+                    en_statuses[j].append(agent.status == 1)
+
+            statuses = [statistics.mode(l) for l in en_statuses]
+
+        else:
+            s = f'Inclusion type ({self.inclusion}) not recognised.'
+            raise ValueError(s)
+        return statuses
 
     # --- Data processing --- #
     def process_results(self):

@@ -72,6 +72,8 @@ agent_statuses_data = get_agent_statuses_data()
 
 filter_vector_data = get_filter_vector_data()
 
+state_vector_statuses_data = get_state_vector_statuses_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -538,3 +540,24 @@ def test_filter_vector(vector, statuses, expected):
 
     result = enkf.filter_vector(vector, statuses)
     np.testing.assert_array_equal(result, expected)
+
+
+x = 'base_statuses, en_statuses, inclusion, vector_mode, expected'
+
+@pytest.mark.parametrize(x, state_vector_statuses_data)
+def test_get_state_vector_statuses(base_statuses, en_statuses, inclusion,
+                                   vector_mode, expected):
+    enkf = set_up_enkf(pop_size=3, ensemble_size=3, agent_inclusion=inclusion)
+
+    # Set statuses of agents in base model
+    for i, status in enumerate(base_statuses):
+        enkf.base_model.agents[i].status = status
+
+    # Set statuses of agents in ensemble member models
+    for i, statuses in enumerate(en_statuses):
+        for j, status in enumerate(statuses):
+            enkf.models[i].agents[j].status = status
+
+    result = enkf.get_state_vector_statuses(vector_mode)
+
+    assert result == expected

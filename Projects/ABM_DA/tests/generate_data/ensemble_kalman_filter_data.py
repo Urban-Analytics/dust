@@ -444,3 +444,44 @@ def get_filter_vector_data():
 
     output = wrap_up([vector, statuses, expected])
     return output
+
+
+def get_state_vector_statuses_data():
+    base_statuses = [[0, 1, 2],
+                     [0, 1, 2],
+                     [0, 1, 2],
+                     [0, 1, 2]]
+
+    en_statuses = [[[0, 1, 2],
+                    [0, 1, 2],
+                    [0, 1, 2]],
+                   [[0, 1, 2],
+                    [0, 1, 2],
+                    [0, 1, 2]],
+                   [[1, 0, 2],
+                    [1, 0, 2],
+                    [1, 0, 2]],
+                   [[1, 0, 2],
+                    [1, 0, 2],
+                    [1, 0, 2]]]
+
+    inclusion = [AgentIncluder.BASE, AgentIncluder.BASE,
+                 AgentIncluder.MODE_EN, AgentIncluder.MODE_EN]
+
+    vector_mode = [EnsembleKalmanFilterType.STATE,
+                   EnsembleKalmanFilterType.DUAL_EXIT,
+                   EnsembleKalmanFilterType.STATE,
+                   EnsembleKalmanFilterType.DUAL_EXIT]
+
+    expected = [[False, False, True, True, False, False],
+                [False, False, False,
+                 True, True, True,
+                 False, False, False],
+                [True, True, False, False, False, False],
+                [True, True, True,
+                 False, False, False,
+                 False, False, False]]
+
+    output = wrap_up([base_statuses, en_statuses, inclusion,
+                      vector_mode, expected])
+    return output

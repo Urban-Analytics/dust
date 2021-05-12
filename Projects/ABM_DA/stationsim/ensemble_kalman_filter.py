@@ -690,6 +690,23 @@ class EnsembleKalmanFilter(Filter):
             raise ValueError(s)
         return statuses
 
+    def get_state_vector_statuses(self, vector_mode) -> List[bool]:
+        agent_statuses = self.get_agent_statuses()
+
+        if vector_mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            n = 3
+        else:
+            n = 2
+
+        # Repeat statuses each agent
+        # Twice for STATE, i.e. x-y coords
+        # Three times for DUAL_EXIT, i.e. x-y-exit
+        statuses = list()
+        for x in agent_statuses:
+            statuses.extend([x for _ in range(n)])
+
+        return statuses
+
     # --- Data processing --- #
     def process_results(self):
         """

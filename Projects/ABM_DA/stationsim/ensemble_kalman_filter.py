@@ -150,7 +150,7 @@ class EnsembleKalmanFilter(Filter):
     def __assign_filter_params(self, filter_params: dict) -> None:
         for k, v in filter_params.items():
             if not hasattr(self, k):
-                w = 'EnKF received unexpected {0} attribute.'.format(k)
+                w = f'EnKF received unexpected attribute ({k}).'
                 warns.warn(w, RuntimeWarning)
             setattr(self, k, v)
 
@@ -481,10 +481,10 @@ class EnsembleKalmanFilter(Filter):
 
         # Round exits if they are in the state vectors
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
-            destinations = state_mean[2*self.population_size:]
+            destinations = state_mean[2 * self.population_size:]
             destinations = self.round_destinations(destinations,
                                                    self.n_exits)
-            state_mean[2*self.population_size:] = destinations
+            state_mean[2 * self.population_size:] = destinations
 
         return state_mean
 
@@ -513,11 +513,11 @@ class EnsembleKalmanFilter(Filter):
                 self.models[i].set_state(state_vector, sensor='location')
             elif self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
                 # Update locations
-                locations = state_vector[:2*self.population_size]
+                locations = state_vector[:2 * self.population_size]
                 self.models[i].set_state(locations, sensor='location')
 
                 # Update destinations
-                destinations = state_vector[2*self.population_size:]
+                destinations = state_vector[2 * self.population_size:]
                 destinations = self.round_destinations(destinations,
                                                        self.n_exits)
                 self.models[i].set_state(destinations, sensor='exit')

@@ -891,10 +891,7 @@ class EnsembleKalmanFilter(Filter):
     def get_state_vector_statuses(self, vector_mode) -> List[bool]:
         agent_statuses = self.get_agent_statuses()
 
-        if vector_mode == EnsembleKalmanFilterType.DUAL_EXIT:
-            n = 3
-        else:
-            n = 2
+        n = 3 if vector_mode==EnsembleKalmanFilterType.DUAL_EXIT else 2
 
         # Repeat statuses each agent
         # Twice for STATE, i.e. x-y coords

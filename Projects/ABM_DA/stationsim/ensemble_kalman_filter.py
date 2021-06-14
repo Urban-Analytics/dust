@@ -633,6 +633,25 @@ class EnsembleKalmanFilter(Filter):
 
     @staticmethod
     def filter_vector(vector: np.ndarray, statuses: list) -> np.ndarray:
+        """
+        Filter a vector of quantities.
+
+        Filter a vector of quantities based on a list of statuses.
+        The output only contains elements from the original vector for which
+        the respective element in statuses is non-zero.
+
+        Parameters
+        ----------
+        vector : np.ndarray
+            Vector of quantities to be filtered.
+        statuses : list
+            List of statuses.
+
+        Returns
+        -------
+        np.ndarray:
+            Filtered vector of quantities.
+        """
         # Ensure same number of quantities as statuses
         assert len(vector) == len(statuses)
 

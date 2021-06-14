@@ -362,6 +362,30 @@ class EnsembleKalmanFilter(Filter):
 
     # --- Error calculation --- #
     def make_metrics(self, metrics, truth, obs_truth, data):
+        """
+        Calculate error metrics.
+
+        Given a dictionary containing the prior error, calculate the posterior
+        and observation error.
+        Additionally, if baseline models are being run, calculate error for them
+        too.
+        Uses self.make_obs_error() to calculate observation errors,
+        self.make_analysis_errors to calculate posterior error, and
+        self.error_func to calculate baseline error when necessary.
+
+        Parameters
+        ----------
+        metrics : dict
+            Dictionary or errors, already contains prior error.
+        truth : np.ndarray
+            Vector of true agent locations taken from the base model using the
+            sensor type used for model states.
+        obs_truth : np.ndarray
+            Vector of true agent locations taken from the base model using
+            'location' sensor.
+        data : np.ndarray
+            Vector of observations of agent locations.
+        """
         # Calculating prior and likelihood errors
         metrics['obs'] = self.make_obs_error(obs_truth, data)
 

@@ -434,6 +434,40 @@ class EnsembleKalmanFilter(Filter):
 
         return d, x, y
 
+    def make_dual_errors(self, truth: np.ndarray,
+                         result: np.ndarray) -> Tuple[float, float,
+                                                      float, float]:
+        """
+        Calculate errors for dual filter.
+
+        Given a vector of truth agent locations and exits and a vector of
+        estimated agent locations and exits, calculate the x-errors, y-errors
+        distance errors and exit accuracy.
+        Vectors are separated in to x-coords, y-coords and estimated exits.
+        x-y coords are passed to self.calculate_rmse() which returns distance
+        errors, x-errors and y-errors.
+        Exit accuracy is evaluated using sklearn's accuracy_score().
+
+        Parameters
+        ----------
+        truth : np.ndarray
+            Vector of true agent locations and exits.
+        result : np.ndarray
+            Vector of estimated agent locations and exits.
+
+        Returns
+        -------
+        Tuple[float, float, float, float]:
+            distance error, x-error, y-error, exit accuracy.
+        """
+        x_result, y_result, exit_result = self.separate_coords_exits(result)
+        x_truth, y_truth, exit_truth = self.separate_coords_exits(truth)
+
+        d, x, y = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
+        exit_accuracy = accuracy_score(exit_truth, exit_result)
+
+        return d, x, y, exit_accuracy
+
     def make_distance_error(self, x_error: np.ndarray,
                             y_error: np.ndarray) -> float:
         """
@@ -461,17 +495,6 @@ class EnsembleKalmanFilter(Filter):
         """
         agent_distances = np.sqrt(np.square(x_error) + np.square(y_error))
         return self.mean_func(agent_distances)
-
-    def make_dual_errors(self, truth: np.ndarray,
-                         result: np.ndarray) -> Tuple[float, float,
-                                                      float, float]:
-        x_result, y_result, exit_result = self.separate_coords_exits(result)
-        x_truth, y_truth, exit_truth = self.separate_coords_exits(truth)
-
-        d, x, y = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
-        exit_accuracy = accuracy_score(exit_truth, exit_result)
-
-        return d, x, y, exit_accuracy
 
     def make_analysis_errors(self, truth: np.ndarray, result: np.ndarray):
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:

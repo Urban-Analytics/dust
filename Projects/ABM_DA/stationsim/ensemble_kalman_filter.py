@@ -372,6 +372,7 @@ class EnsembleKalmanFilter(Filter):
         Uses self.make_obs_error() to calculate observation errors,
         self.make_analysis_errors to calculate posterior error, and
         self.error_func to calculate baseline error when necessary.
+        Posterior may include exit accuracy if running a DUAL_EXIT filter.
 
         Parameters
         ----------

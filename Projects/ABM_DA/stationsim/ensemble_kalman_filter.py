@@ -497,6 +497,23 @@ class EnsembleKalmanFilter(Filter):
         return self.mean_func(agent_distances)
 
     def make_analysis_errors(self, truth: np.ndarray, result: np.ndarray):
+        """
+        Calculate analysis/posterior error.
+
+        Given a vector of true agent states and a vector of estimated agent
+        states, calculate the posterior error.
+        This method acts as a wrapper for self.make_errors() and
+        self.make_dual_errors() choosing the appropriate method as appropriate
+        depending on whether filter is performing location state estimation or
+        location-gate estimation.
+
+        Parameters
+        ----------
+        truth : np.ndarray
+            Vector of true agent states.
+        result : np.ndarray
+            Vector of representing the posterior agent states.
+        """
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
             return self.make_dual_errors(truth, result)
         elif self.mode == EnsembleKalmanFilterType.STATE:

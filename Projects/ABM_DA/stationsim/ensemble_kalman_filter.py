@@ -605,6 +605,23 @@ class EnsembleKalmanFilter(Filter):
         return distance_error, x_error, y_error
 
     def get_population_mean(self, arr: np.ndarray) -> float:
+        """
+        Calculate population mean of vector.
+
+        Calculate mean of a vector, dividing the sum by the number of active
+        agents in the population instead of the length of the vector (i.e. the
+        population size).
+
+        Parameters
+        ----------
+        arr : np.ndarray
+            Vector of quantities to be averaged.
+
+        Returns
+        -------
+        float:
+            Population mean quantity.
+        """
         n = self.get_n_active_agents()
         pm = 0 if n == 0 else np.sum(arr) / n
         return pm

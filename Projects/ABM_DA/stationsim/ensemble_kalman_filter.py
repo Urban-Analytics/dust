@@ -408,7 +408,24 @@ class EnsembleKalmanFilter(Filter):
 
     def make_errors(self, truth, result) -> Tuple[float, float, float]:
         """
-        Method to calculate x-errors and y-errors
+        Calculate errors.
+
+        Given a vector of truth agent locations and a vector of estimated agent
+        locations, calculate the x-errors, y-errors and distance errors.
+        Vectors are separated in to x-coords and y-coords and then passed to
+        self.calculate_rmse() which returns the relevant errors.
+
+        Parameters
+        ----------
+        truth : np.ndarray
+            Vector of true agent locations.
+        result : np.ndarray
+            Vector of estimated agent locations.
+
+        Returns
+        -------
+        Tuple[float, float, float]:
+            distance error, x-error, y-error
         """
         x_result, y_result = self.separate_coords(result)
         x_truth, y_truth = self.separate_coords(truth)

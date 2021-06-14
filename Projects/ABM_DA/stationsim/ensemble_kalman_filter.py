@@ -563,6 +563,36 @@ class EnsembleKalmanFilter(Filter):
                        x_result: np.ndarray,
                        y_result: np.ndarray) -> Tuple[float, float, float]:
         """
+        Calculate RMSE, i.e. root mean squared error.
+
+        Given vectors of true x-coords, true y-coords, estimated x-coords and
+        estimated y-coords, calculate x-errors, y-errors and Euclidean distance
+        errors.
+        This involves:
+            - Calculating the differences between truth and estimate for x- and
+              y-coords,
+            - Calculating the average x- and y-errors using the appropriate mean
+              function allocated to self.mean_func(),
+            - Calculating the average distance error using
+              self.make_distance_error().
+
+        Parameters
+        ----------
+        x_truth : np.ndarray
+            Vector of true x-positions of agents.
+        y_truth : np.ndarray
+            Vector of true y-positions of agents.
+        x_result : np.ndarray
+            Vector of estimated x-positions of agents.
+        y_result : np.ndarray
+            Vector of estimated y-positions of agents.
+
+        Returns
+        -------
+        Tuple[float, float, float]:
+            Distance error, x-error, y-error.
+        """
+        """
         Method to calculate the rmse over all agents for a given data set at a
         single time-step.
         """

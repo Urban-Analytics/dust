@@ -633,13 +633,12 @@ class EnsembleKalmanFilter(Filter):
 
     @staticmethod
     def filter_vector(vector: np.ndarray, statuses: list) -> np.ndarray:
+        # Ensure same number of quantities as statuses
         assert len(vector) == len(statuses)
 
-        output = list()
+        # List comprehension to filter vector based on respective statuses
+        output = [vector[i] for i in range(len(vector)) if statuses[i]]
 
-        for i in range(len(vector)):
-            if statuses[i]:
-                output.append(vector[i])
         return np.array(output)
 
     # --- Update methods --- #

@@ -436,6 +436,29 @@ class EnsembleKalmanFilter(Filter):
 
     def make_distance_error(self, x_error: np.ndarray,
                             y_error: np.ndarray) -> float:
+        """
+        Calculate Euclidean distance errors.
+
+        Given an array of x-errors and y-errors, calculate the Euclidean
+        distance errors.
+        This involves calculating the distances based on
+            d_i = sqrt(x_i ** 2 + y_i ** 2)
+
+        The mean distance is calculated based on the vector of d_i using the
+        mean calculation function allocated to self.mean_func().
+
+        Parameters
+        ----------
+        x_error : np.ndarray
+            Vector of x-errors.
+        y_error : np.ndarray
+            Vector of y-errors.
+
+        Returns
+        -------
+        float:
+            Mean distance error.
+        """
         agent_distances = np.sqrt(np.square(x_error) + np.square(y_error))
         return self.mean_func(agent_distances)
 

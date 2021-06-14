@@ -525,6 +525,29 @@ class EnsembleKalmanFilter(Filter):
             raise ValueError(s)
 
     def make_obs_error(self, truth: np.ndarray, result: np.ndarray) -> float:
+        """
+        Calculate observation error.
+
+        Given a vector of true agent locations and a vector of observed agent
+        locations, calculate the observation error.
+        This involves:
+            - Separating states into x-coords and y-coords,
+            - Calculating the differences/errors between truth and result,
+            - Calculating the Euclidean distaces,
+            - Finding the mean distance.
+
+        Parameters
+        ----------
+        truth : np.ndarray
+            Vector of true agent states.
+        result : np.ndarray
+            Vector of observed agent states.
+
+        Returns
+        -------
+        float:
+            Average distance error.
+        """
         # Separate coords
         x_result, y_result = self.separate_coords(result)
         x_truth, y_truth = self.separate_coords(truth)

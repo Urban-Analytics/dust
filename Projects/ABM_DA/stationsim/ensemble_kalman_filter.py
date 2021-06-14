@@ -518,6 +518,11 @@ class EnsembleKalmanFilter(Filter):
             return self.make_dual_errors(truth, result)
         elif self.mode == EnsembleKalmanFilterType.STATE:
             return self.make_errors(truth, result)
+        else:
+            general_message = 'Please provide an appropriate filter type.'
+            spec_message = f'{self.mode} is not an acceptable filter type.'
+            s = f'{general_message} {spec_message}'
+            raise ValueError(s)
 
     def make_obs_error(self, truth: np.ndarray, result: np.ndarray) -> float:
         # Separate coords

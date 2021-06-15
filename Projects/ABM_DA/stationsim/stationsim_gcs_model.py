@@ -704,30 +704,37 @@ class Model:
                     if (abs(line[0] - time) < self.tolerance)])
 
     # State
-    def get_state(self, sensor=None):
+    def get_state(self, sensor=None, inactive_agents=True):
         '''
         Convert list of agents in model to state vector.
         '''
+        if inactive_agents:
+            agents = self.agents.copy()
+        else:
+            agents = [agent for agent in self.agents if agent.status == 1]
+
         if sensor is None:
             state = [(agent.status, *agent.location, agent.speed) for agent in
-                     self.agents]
+                     agents]
             state = np.append(self.step_id, np.ravel(state))
         elif sensor == 'location':
-            state = [agent.location for agent in self.agents]
+            state = [agent.location for agent in agents]
             state = np.ravel(state)
         elif sensor == 'location2D':
-            state = [agent.location for agent in self.agents]
+            state = [agent.location for agent in agents]
         elif sensor == 'loc_exit':
             locations = self.get_state('location2D')
             x, y = [l[0] for l in locations], [l[1] for l in locations]
-            exits = [agent.gate_out for agent in self.agents]
+            exits = [agent.gate_out for agent in agents]
             state = x + y + exits
         elif sensor == 'locationVel':
-            state0 = [agent.location for agent in self.agents]
+            state0 = [agent.location for agent in agents]
             state0 = np.ravel(state0)
-            state1 = [agent.speed for agent in self.agents]
+            state1 = [agent.speed for agent in agents]
             state1 = np.ravel(state1)
             state = [state0, state1]
+        else:
+            raise ValueError(f'Sensor type ({sensor}) not recognised.')
         return state
 
     def set_state(self, state, sensor=None):

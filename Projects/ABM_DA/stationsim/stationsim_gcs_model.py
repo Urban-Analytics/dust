@@ -765,7 +765,7 @@ class Model:
                 agent.location = state0[i, :]
                 agent.speed = state1[i, :]
         else:
-            raise ValueError('Sensor type not recognised.')
+            raise ValueError(f'Sensor type ({sensor}) not recognised.')
 
     # TODO: Deprecated, update PF
     def agents2state(self, do_ravel=True):

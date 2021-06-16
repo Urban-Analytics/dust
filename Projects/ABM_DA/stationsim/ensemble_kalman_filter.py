@@ -139,17 +139,6 @@ class EnsembleKalmanFilter(Filter):
         print('assimilation_period:\t{0}'.format(self.assimilation_period))
         print('filter_type:\t{0}'.format(self.mode))
 
-    def __assign_filter_params(self, filter_params: dict) -> None:
-        for k, v in filter_params.items():
-            if not hasattr(self, k):
-                w = f'EnKF received unexpected attribute ({k}).'
-                warns.warn(w, RuntimeWarning)
-            setattr(self, k, v)
-
-        self.n_exits = self.base_model.gates_out
-        self.sensor_type = self.sensor_types[self.mode]
-        self.error_func = self.error_funcs[self.mode]
-
     def __assign_filter_defaults(self) -> None:
         self.max_iterations = None
         self.ensemble_size = None
@@ -173,6 +162,17 @@ class EnsembleKalmanFilter(Filter):
             EnsembleKalmanFilterType.STATE: self.make_errors,
             EnsembleKalmanFilterType.DUAL_EXIT: self.make_dual_errors
         }
+
+    def __assign_filter_params(self, filter_params: dict) -> None:
+        for k, v in filter_params.items():
+            if not hasattr(self, k):
+                w = f'EnKF received unexpected attribute ({k}).'
+                warns.warn(w, RuntimeWarning)
+            setattr(self, k, v)
+
+        self.n_exits = self.base_model.gates_out
+        self.sensor_type = self.sensor_types[self.mode]
+        self.error_func = self.error_funcs[self.mode]
 
     def __set_up_models(self, n=None):
         # Set up ensemble of models
@@ -259,30 +259,19 @@ class EnsembleKalmanFilter(Filter):
                 if self.vis:
                     self.plot_model_state('after')
 
+                # Collect state information for vis
+                result = self.collect_results(obs_truth, prior, data,
+                                              prior_ensemble)
+                self.results.append(result)
+                print(self.time)
+
             # else:
                 # self.update_state_mean()
-            self.time += 1
-
-            if data is not None:
-                result = {'time': self.time,
-                          'ground_truth': obs_truth,
-                          'prior': prior,
-                          'posterior': self.state_mean.copy()}
-                result['observation'] = data
-                result['destination'] = self.make_base_destinations_vector()
-                result['origin'] = self.make_base_origins_vector()
-
-                for i in range(self.ensemble_size):
-                    result[f'prior_{i}'] = prior_ensemble[:, i]
-                    result[f'posterior_{i}'] = self.state_ensemble[:, i].copy()
-
-                if self.run_vanilla:
-                    result['baseline'] = self.vanilla_state_mean
-                self.results.append(result)
 
             if self.run_vanilla:
                 self.vanilla_results.append(self.vanilla_state_mean)
 
+            self.time += 1
             # self.results.append(self.state_mean)
 
         # print('time: {0}, base: {1}'.format(self.time,
@@ -869,10 +858,11 @@ class EnsembleKalmanFilter(Filter):
             en_statuses = [list() for _ in range(self.population_size)]
 
             # Get list of statuses for each agent
-            for _, model in enumerate(self.models):
+            for model in self.models:
                 for j, agent in enumerate(model.agents):
                     en_statuses[j].append(agent.status == 1)
 
+            # Assigned status is the modal status across the ensemble of models
             statuses = [statistics.mode(l) for l in en_statuses]
 
         else:
@@ -881,13 +871,15 @@ class EnsembleKalmanFilter(Filter):
         return statuses
 
     def get_state_vector_statuses(self, vector_mode) -> List[bool]:
-        agent_statuses = self.get_agent_statuses()
-
-        n = 3 if vector_mode==EnsembleKalmanFilterType.DUAL_EXIT else 2
-
         # Repeat statuses each agent
         # Twice for STATE, i.e. x-y coords
         # Three times for DUAL_EXIT, i.e. x-y-exit
+
+        agent_statuses = self.get_agent_statuses()
+
+        # Define whether to repeat statuses 2 or 3 times
+        n = 3 if vector_mode == EnsembleKalmanFilterType.DUAL_EXIT else 2
+
         statuses = list()
         for x in agent_statuses:
             statuses.extend([x for _ in range(n)])
@@ -1006,3 +998,21 @@ class EnsembleKalmanFilter(Filter):
                 origins.append(agent.loc_start)
 
         return np.ravel(origins)
+
+    def collect_results(self, obs_truth, prior, data, prior_ensemble):
+        result = {'time': self.time,
+                  'ground_truth': obs_truth,
+                  'prior': prior,
+                  'posterior': self.state_mean.copy()}
+        result['observation'] = data
+        result['destination'] = self.make_base_destinations_vector()
+        result['origin'] = self.make_base_origins_vector()
+
+        for i in range(self.ensemble_size):
+            result[f'prior_{i}'] = prior_ensemble[:, i]
+            result[f'posterior_{i}'] = self.state_ensemble[:, i].copy()
+
+        if self.run_vanilla:
+            result['baseline'] = self.vanilla_state_mean
+
+        return result

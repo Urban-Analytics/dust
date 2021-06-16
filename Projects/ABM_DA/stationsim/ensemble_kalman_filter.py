@@ -91,7 +91,7 @@ class EnsembleKalmanFilter(Filter):
             self.vanilla_ensemble_size = filter_params['vanilla_ensemble_size']
             self.__set_up_baseline()
 
-        if self.error_normalisation is None:
+        if self.inclusion is None:
             self.mean_func = np.mean
         else:
             self.mean_func = self.get_population_mean
@@ -220,10 +220,21 @@ class EnsembleKalmanFilter(Filter):
             self.update_state_ensemble()
             self.update_state_means()
 
+            # truth = self.base_model.get_state(sensor=self.sensor_type)
+            # state_mean = self.state_mean
+
+            # if self.inclusion is not None:
+            #     # Get statuses by which to filter state vector
+            #     statuses = self.get_state_vector_statuses(vector_mode=self.mode)
+
+            #     # Filter ground truth vector and state mean vector
+            #     truth = self.filter_vector(truth, statuses)
+            #     state_mean = self.filter_vector(self.state_mean, statuses)
+
+            # f = self.error_func(truth, state_mean)[0]
+
             truth = self.base_model.get_state(sensor=self.sensor_type)
-
-            f = self.error_func(truth, self.state_mean)[0]
-
+            f = self.get_forecast_error(truth)
             forecast_error = {'time': self.time,
                               'forecast': f}
             self.forecast_error.append(forecast_error)
@@ -252,7 +263,7 @@ class EnsembleKalmanFilter(Filter):
                 self.metrics.append(metrics)
 
                 if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
-                    exits = self.state_mean[2*self.population_size]
+                    exits = self.state_mean[2 * self.population_size]
                     self.exits.append(exits)
 
                 # Plot posterior
@@ -342,6 +353,20 @@ class EnsembleKalmanFilter(Filter):
         self.state_ensemble = X
 
     # --- Error calculation --- #
+    def get_forecast_error(self, truth):
+        state_mean = self.state_mean.copy()
+
+        if self.inclusion is not None:
+            # Get statuses by which to filter state vector
+            statuses = self.get_state_vector_statuses(vector_mode=self.mode)
+
+            # Filter ground truth vector and state mean vector
+            truth = self.filter_vector(truth, statuses)
+            state_mean = self.filter_vector(self.state_mean, statuses)
+
+        error = self.error_func(truth, state_mean)[0]
+        return error
+
     def make_metrics(self, metrics, truth, obs_truth, data):
         """
         Calculate error metrics.
@@ -368,21 +393,37 @@ class EnsembleKalmanFilter(Filter):
         data : np.ndarray
             Vector of observations of agent locations.
         """
+        state_mean = self.state_mean.copy()
+        if self.run_vanilla:
+            vanilla_state_mean = self.vanilla_state_mean.copy()
+        if self.inclusion is not None:
+            # Get statuses by which to filter state vector
+            statuses = self.get_state_vector_statuses(vector_mode=self.mode)
+
+            # Filter ground truth vector and state mean vector
+            truth = self.filter_vector(truth, statuses)
+            obs_truth = self.filter_vector(obs_truth, statuses)
+            data = self.filter_vector(data, statuses)
+            state_mean = self.filter_vector(state_mean, statuses)
+            if self.run_vanilla:
+                vanilla_state_mean = self.filter_vector(vanilla_state_mean,
+                                                        statuses)
+
         # Calculating prior and likelihood errors
         metrics['obs'] = self.make_obs_error(obs_truth, data)
 
         # Analysis error
         if self.mode == EnsembleKalmanFilterType.STATE:
-            d, _, _ = self.make_analysis_errors(truth, self.state_mean)
+            d, _, _ = self.make_analysis_errors(truth, state_mean)
         elif self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
             # USE ANALYSIS ERRORS
-            d, _, _, e = self.make_analysis_errors(truth, self.state_mean)
+            d, _, _, e = self.make_analysis_errors(truth, state_mean)
             metrics['exit_accuracy'] = e
         metrics['analysis'] = d
 
         # Vanilla error
         if self.run_vanilla:
-            v = self.error_func(truth, self.vanilla_state_mean)[0]
+            v = self.error_func(truth, vanilla_state_mean)[0]
             metrics['baseline'] = v
 
         return metrics
@@ -607,6 +648,23 @@ class EnsembleKalmanFilter(Filter):
         pm = 0 if n == 0 else np.sum(arr) / n
         return pm
 
+    @classmethod
+    def base_inclusion_error(cls, result: np.ndarray, truth: np.ndarray,
+                             base_statuses: list) -> float:
+        x_result, y_result = cls.separate_coords(result)
+        x_truth, y_truth = cls.separate_coords(truth)
+
+        x_result = cls.filter_vector(x_result, base_statuses)
+        y_result = cls.filter_vector(y_result, base_statuses)
+        x_truth = cls.filter_vector(x_truth, base_statuses)
+        y_truth = cls.filter_vector(y_truth, base_statuses)
+
+        x_diff = x_result - x_truth
+        y_diff = y_result - y_truth
+
+        agent_distances = np.sqrt(np.square(x_diff) + np.square(y_diff))
+        return np.mean(agent_distances)
+
     def get_mean_error(self, results: np.ndarray,
                        truth: np.ndarray) -> float:
         diff = np.abs(results - truth)
@@ -814,20 +872,14 @@ class EnsembleKalmanFilter(Filter):
         return results
 
     def get_n_active_agents(self) -> int:
-        if self.error_normalisation == ActiveAgentNormaliser.BASE:
+        if self.inclusion == AgentIncluder.BASE:
             n = self.base_model.pop_active
         else:
             n_active_ensemble = [model.pop_active for model in self.models]
-            if self.error_normalisation == ActiveAgentNormaliser.MEAN_EN:
-                n = round(np.mean(n_active_ensemble))
-            elif self.error_normalisation == ActiveAgentNormaliser.MIN_EN:
-                n = min(n_active_ensemble)
-            elif self.error_normalisation == ActiveAgentNormaliser.MAX_EN:
-                n = max(n_active_ensemble)
-            elif self.error_normalisation == ActiveAgentNormaliser.MODE_EN:
+            if self.inclusion == AgentIncluder.MODE_EN:
                 n = statistics.mode(n_active_ensemble)
             else:
-                raise ValueError('Unrecognised ActiveAgentNormaliser type')
+                raise ValueError('Unrecognised AgentIncluder type')
         return n
 
     def separate_coords_exits(self,

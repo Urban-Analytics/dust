@@ -8,7 +8,7 @@ import sys
 sys.path.append('../stationsim/')
 
 from ensemble_kalman_filter import EnsembleKalmanFilter
-from ensemble_kalman_filter import ActiveAgentNormaliser
+# from ensemble_kalman_filter import ActiveAgentNormaliser
 from ensemble_kalman_filter import AgentIncluder
 
 # Test data

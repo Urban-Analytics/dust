@@ -25,14 +25,6 @@ class EnsembleKalmanFilterType(Enum):
     DUAL_EXIT = auto()
 
 
-class ActiveAgentNormaliser(Enum):
-    BASE = auto()
-    MEAN_EN = auto()
-    MODE_EN = auto()
-    MAX_EN = auto()
-    MIN_EN = auto()
-
-
 class AgentIncluder(Enum):
     BASE = auto()
     MODE_EN = auto()

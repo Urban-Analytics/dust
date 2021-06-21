@@ -274,7 +274,6 @@ class EnsembleKalmanFilter(Filter):
                 result = self.collect_results(obs_truth, prior, data,
                                               prior_ensemble)
                 self.results.append(result)
-                print(self.time)
 
             # else:
                 # self.update_state_mean()

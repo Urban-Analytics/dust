@@ -6,7 +6,7 @@ sys.path.append('../stationsim/')
 
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
-from ensemble_kalman_filter import ActiveAgentNormaliser
+# from ensemble_kalman_filter import ActiveAgentNormaliser
 from stationsim_gcs_model import Model
 
 

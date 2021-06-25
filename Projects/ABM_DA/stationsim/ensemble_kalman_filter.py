@@ -937,6 +937,25 @@ class EnsembleKalmanFilter(Filter):
 
         return statuses
 
+    def set_base_statuses(self, base_statuses: List[int]) -> None:
+        assert len(base_statuses) == len(self.base_model.agents)
+
+        for i, agent in enumerate(self.base_model.agents):
+            agent.status = base_statuses[i]
+
+        return None
+
+    def set_ensemble_statuses(self, ensemble_statuses: List[List[int]]) -> None:
+        assert len(ensemble_statuses) == len(self.models)
+
+        for i, model in enumerate(self.models):
+            assert len(model.agents) == len(ensemble_statuses[i])
+
+            for j, agent in enumerate(model.agents):
+                agent.status = ensemble_statuses[i][j]
+
+        return None
+
     # --- Data processing --- #
     def process_results(self):
         """

@@ -42,7 +42,7 @@ population_mean_max_data = get_population_mean_max_data()
 
 mean_data = get_mean_data()
 
-error_normalisation_type_data = get_error_normalisation_type_data()
+# error_normalisation_type_data = get_error_normalisation_type_data()
 
 distance_error_default_data = get_distance_error_default_data()
 
@@ -50,7 +50,7 @@ distance_error_base_data = get_distance_error_base_data()
 
 calculate_rmse_default_data = get_calculate_rmse_default_data()
 
-make_obs_error_data = get_make_obs_error_data()
+# make_obs_error_data = get_make_obs_error_data()
 
 make_gain_matrix_data = get_make_gain_matrix_data()
 
@@ -201,104 +201,104 @@ def test_error_normalisation_default_init():
     assert enkf.error_normalisation is None
 
 
-@pytest.mark.parametrize('n_active, expected', n_active_agents_base_data)
-def test_get_n_active_agents_base(n_active, expected):
-    enkf = set_up_enkf()
-    enkf.error_normalisation = ActiveAgentNormaliser.BASE
-    enkf.base_model.pop_active = n_active
-    assert enkf.get_n_active_agents() == expected
+# @pytest.mark.parametrize('n_active, expected', n_active_agents_base_data)
+# def test_get_n_active_agents_base(n_active, expected):
+#     enkf = set_up_enkf()
+#     enkf.error_normalisation = ActiveAgentNormaliser.BASE
+#     enkf.base_model.pop_active = n_active
+#     assert enkf.get_n_active_agents() == expected
 
 
-@pytest.mark.parametrize('ensemble_active, expected',
-                         n_active_agents_mean_data)
-def test_get_n_active_agents_mean_en(ensemble_active, expected):
-    enkf = set_up_enkf()
-    enkf.error_normalisation = ActiveAgentNormaliser.MEAN_EN
-    for i, model in enumerate(enkf.models):
-        model.pop_active = ensemble_active[i]
-    assert enkf.get_n_active_agents() == expected
+# @pytest.mark.parametrize('ensemble_active, expected',
+#                          n_active_agents_mean_data)
+# def test_get_n_active_agents_mean_en(ensemble_active, expected):
+#     enkf = set_up_enkf()
+#     enkf.error_normalisation = ActiveAgentNormaliser.MEAN_EN
+#     for i, model in enumerate(enkf.models):
+#         model.pop_active = ensemble_active[i]
+#     assert enkf.get_n_active_agents() == expected
 
 
-@pytest.mark.parametrize('ensemble_active, expected',
-                         n_active_agents_max_data)
-def test_get_n_active_agents_max_en(ensemble_active, expected):
-    enkf = set_up_enkf()
-    enkf.error_normalisation = ActiveAgentNormaliser.MAX_EN
-    for i, model in enumerate(enkf.models):
-        model.pop_active = ensemble_active[i]
-    assert enkf.get_n_active_agents() == expected
+# @pytest.mark.parametrize('ensemble_active, expected',
+#                          n_active_agents_max_data)
+# def test_get_n_active_agents_max_en(ensemble_active, expected):
+#     enkf = set_up_enkf()
+#     enkf.error_normalisation = ActiveAgentNormaliser.MAX_EN
+#     for i, model in enumerate(enkf.models):
+#         model.pop_active = ensemble_active[i]
+#     assert enkf.get_n_active_agents() == expected
 
 
-@pytest.mark.parametrize('ensemble_active, expected',
-                         n_active_agents_min_data)
-def test_get_n_active_agents_min_en(ensemble_active, expected):
-    enkf = set_up_enkf()
-    enkf.error_normalisation = ActiveAgentNormaliser.MIN_EN
-    for i, model in enumerate(enkf.models):
-        model.pop_active = ensemble_active[i]
-    assert enkf.get_n_active_agents() == expected
+# @pytest.mark.parametrize('ensemble_active, expected',
+#                          n_active_agents_min_data)
+# def test_get_n_active_agents_min_en(ensemble_active, expected):
+#     enkf = set_up_enkf()
+#     enkf.error_normalisation = ActiveAgentNormaliser.MIN_EN
+#     for i, model in enumerate(enkf.models):
+#         model.pop_active = ensemble_active[i]
+#     assert enkf.get_n_active_agents() == expected
 
 
-@pytest.mark.parametrize('diffs, n_active, expected',
-                         population_mean_base_data)
-def test_get_population_mean_base(diffs, n_active, expected):
-    enkf = set_up_enkf()
-    enkf.error_normalisation = ActiveAgentNormaliser.BASE
-    enkf.base_model.pop_active = n_active
-    diffs = np.array(diffs)
+# @pytest.mark.parametrize('diffs, n_active, expected',
+#                          population_mean_base_data)
+# def test_get_population_mean_base(diffs, n_active, expected):
+#     enkf = set_up_enkf()
+#     enkf.error_normalisation = ActiveAgentNormaliser.BASE
+#     enkf.base_model.pop_active = n_active
+#     diffs = np.array(diffs)
 
-    assert enkf.get_population_mean(diffs) == expected
-
-
-@pytest.mark.parametrize('diffs, ensemble_active, expected',
-                         population_mean_mean_data)
-def test_get_population_mean_mean_en(diffs, ensemble_active, expected):
-    # Set up enkf
-    enkf = set_up_enkf()
-    enkf.error_normalisation = ActiveAgentNormaliser.MEAN_EN
-
-    # Define number of active agents for each ensemble member
-    for i, model in enumerate(enkf.models):
-        model.pop_active = ensemble_active[i]
-
-    # Define results and truth values
-    diffs = np.array(diffs)
-
-    assert enkf.get_population_mean(diffs) == expected
+#     assert enkf.get_population_mean(diffs) == expected
 
 
-@pytest.mark.parametrize('diffs, ensemble_active, expected',
-                         population_mean_min_data)
-def test_get_population_mean_min_en(diffs, ensemble_active, expected):
-    # Set up enkf
-    enkf = set_up_enkf()
-    enkf.error_normalisation = ActiveAgentNormaliser.MIN_EN
+# @pytest.mark.parametrize('diffs, ensemble_active, expected',
+#                          population_mean_mean_data)
+# def test_get_population_mean_mean_en(diffs, ensemble_active, expected):
+#     # Set up enkf
+#     enkf = set_up_enkf()
+#     enkf.error_normalisation = ActiveAgentNormaliser.MEAN_EN
 
-    # Define number of active agents for each ensemble member
-    for i, model in enumerate(enkf.models):
-        model.pop_active = ensemble_active[i]
+#     # Define number of active agents for each ensemble member
+#     for i, model in enumerate(enkf.models):
+#         model.pop_active = ensemble_active[i]
 
-    # Define results and truth values
-    diffs = np.array(diffs)
+#     # Define results and truth values
+#     diffs = np.array(diffs)
 
-    assert enkf.get_population_mean(diffs) == expected
+#     assert enkf.get_population_mean(diffs) == expected
 
 
-@pytest.mark.parametrize('diffs, ensemble_active, expected',
-                         population_mean_max_data)
-def test_get_population_mean_max_en(diffs, ensemble_active, expected):
-    # Set up enkf
-    enkf = set_up_enkf()
-    enkf.error_normalisation = ActiveAgentNormaliser.MAX_EN
+# @pytest.mark.parametrize('diffs, ensemble_active, expected',
+#                          population_mean_min_data)
+# def test_get_population_mean_min_en(diffs, ensemble_active, expected):
+#     # Set up enkf
+#     enkf = set_up_enkf()
+#     enkf.error_normalisation = ActiveAgentNormaliser.MIN_EN
 
-    # Define number of active agents for each ensemble member
-    for i, model in enumerate(enkf.models):
-        model.pop_active = ensemble_active[i]
+#     # Define number of active agents for each ensemble member
+#     for i, model in enumerate(enkf.models):
+#         model.pop_active = ensemble_active[i]
 
-    # Define results and truth values
-    diffs = np.array(diffs)
+#     # Define results and truth values
+#     diffs = np.array(diffs)
 
-    assert enkf.get_population_mean(diffs) == expected
+#     assert enkf.get_population_mean(diffs) == expected
+
+
+# @pytest.mark.parametrize('diffs, ensemble_active, expected',
+#                          population_mean_max_data)
+# def test_get_population_mean_max_en(diffs, ensemble_active, expected):
+#     # Set up enkf
+#     enkf = set_up_enkf()
+#     enkf.error_normalisation = ActiveAgentNormaliser.MAX_EN
+
+#     # Define number of active agents for each ensemble member
+#     for i, model in enumerate(enkf.models):
+#         model.pop_active = ensemble_active[i]
+
+#     # Define results and truth values
+#     diffs = np.array(diffs)
+
+#     assert enkf.get_population_mean(diffs) == expected
 
 
 @pytest.mark.parametrize('results, truth, expected', mean_data)
@@ -311,24 +311,24 @@ def test_get_mean(results, truth, expected):
     assert enkf.get_mean_error(results, truth) == expected
 
 
-x = '''error_normalisation, results, truth, active_pop, ensemble_active,
-       expected'''
+# x = '''error_normalisation, results, truth, active_pop, ensemble_active,
+#        expected'''
 
 
-@pytest.mark.parametrize(x, error_normalisation_type_data)
-def test_error_normalisation_type(error_normalisation, results, truth,
-                                  active_pop, ensemble_active, expected):
-    enkf = set_up_enkf(error_normalisation=error_normalisation)
+# @pytest.mark.parametrize(x, error_normalisation_type_data)
+# def test_error_normalisation_type(error_normalisation, results, truth,
+#                                   active_pop, ensemble_active, expected):
+#     enkf = set_up_enkf(error_normalisation=error_normalisation)
 
-    results = np.array(results)
-    truth = np.array(truth)
+#     results = np.array(results)
+#     truth = np.array(truth)
 
-    for i, model in enumerate(enkf.models):
-        model.pop_active = ensemble_active[i]
+#     for i, model in enumerate(enkf.models):
+#         model.pop_active = ensemble_active[i]
 
-    enkf.base_model.pop_active = active_pop
+#     enkf.base_model.pop_active = active_pop
 
-    assert enkf.get_mean_error(results, truth) == expected
+#     assert enkf.get_mean_error(results, truth) == expected
 
 
 @pytest.mark.parametrize('x_error, y_error, expected',
@@ -343,14 +343,14 @@ def test_make_distance_error_default(x_error, y_error, expected):
                                                                y_error)
 
 
-@pytest.mark.parametrize('x_error, y_error, n_active, expected',
-                         distance_error_base_data)
-def test_make_distance_error_base(x_error, y_error, n_active, expected):
-    enkf = set_up_enkf(error_normalisation=ActiveAgentNormaliser.BASE)
-    enkf.base_model.pop_active = n_active
+# @pytest.mark.parametrize('x_error, y_error, n_active, expected',
+#                          distance_error_base_data)
+# def test_make_distance_error_base(x_error, y_error, n_active, expected):
+#     enkf = set_up_enkf(error_normalisation=ActiveAgentNormaliser.BASE)
+#     enkf.base_model.pop_active = n_active
 
-    assert pytest.approx(expected) == enkf.make_distance_error(x_error,
-                                                               y_error)
+#     assert pytest.approx(expected) == enkf.make_distance_error(x_error,
+#                                                                y_error)
 
 
 @pytest.mark.parametrize('x_truth, y_truth, x_result, y_result, expected',
@@ -370,31 +370,31 @@ def test_calculate_rmse_default(x_truth, y_truth,
     assert results[0] == expected
 
 
-x = 'truth, result, active_pop, ensemble_active, normaliser, expected'
+# x = 'truth, result, active_pop, ensemble_active, normaliser, expected'
 
-@pytest.mark.parametrize(x, make_obs_error_data)
-def test_make_obs_error(truth, result,
-                        active_pop, ensemble_active,
-                        normaliser, expected):
-    """
-    Test that enkf.make_obs_error() correctly calculates observation errors,
-    ignoring changes to how many agents are active in the base model and the
-    ensemble-member models.
-    """
-    # Setup
-    enkf = set_up_enkf(error_normalisation=normaliser)
+# @pytest.mark.parametrize(x, make_obs_error_data)
+# def test_make_obs_error(truth, result,
+#                         active_pop, ensemble_active,
+#                         normaliser, expected):
+#     """
+#     Test that enkf.make_obs_error() correctly calculates observation errors,
+#     ignoring changes to how many agents are active in the base model and the
+#     ensemble-member models.
+#     """
+#     # Setup
+#     enkf = set_up_enkf(error_normalisation=normaliser)
 
-    # Set active agents
-    enkf.base_model.pop_active = active_pop
-    for i, model in enumerate(enkf.models):
-        model.pop_active = ensemble_active[i]
+#     # Set active agents
+#     enkf.base_model.pop_active = active_pop
+#     for i, model in enumerate(enkf.models):
+#         model.pop_active = ensemble_active[i]
 
-    # Convert to arrays where necessary
-    truth = np.array(truth)
-    result = np.array(result)
+#     # Convert to arrays where necessary
+#     truth = np.array(truth)
+#     result = np.array(result)
 
-    # Assertion
-    assert enkf.make_obs_error(truth, result) == expected
+#     # Assertion
+#     assert enkf.make_obs_error(truth, result) == expected
 
 
 @pytest.mark.parametrize('state_ensemble, data_covariance, H, expected',

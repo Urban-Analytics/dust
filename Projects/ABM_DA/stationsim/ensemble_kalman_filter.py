@@ -515,7 +515,7 @@ class EnsembleKalmanFilter(Filter):
             Mean distance error.
         """
         agent_distances = np.sqrt(np.square(x_error) + np.square(y_error))
-        return self.mean_func(agent_distances)
+        return np.mean(agent_distances)
 
     def make_analysis_errors(self, truth: np.ndarray, result: np.ndarray):
         """
@@ -619,8 +619,8 @@ class EnsembleKalmanFilter(Filter):
         """
         x_diffs = np.abs(x_result - x_truth)
         y_diffs = np.abs(y_result - y_truth)
-        x_error = self.mean_func(x_diffs)
-        y_error = self.mean_func(y_diffs)
+        x_error = np.mean(x_diffs)
+        y_error = np.mean(y_diffs)
         distance_error = self.make_distance_error(x_diffs, y_diffs)
 
         return distance_error, x_error, y_error

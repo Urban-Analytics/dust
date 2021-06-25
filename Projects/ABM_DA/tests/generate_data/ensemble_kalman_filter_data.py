@@ -8,7 +8,7 @@ sys.path.append('../stationsim/')
 from generate_data.data_utils import wrap_up
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
-from ensemble_kalman_filter import ActiveAgentNormaliser
+# from ensemble_kalman_filter import ActiveAgentNormaliser
 from ensemble_kalman_filter import AgentIncluder
 from stationsim_gcs_model import Model
 
@@ -156,29 +156,29 @@ def get_mean_data():
     return output
 
 
-def get_error_normalisation_type_data():
-    error_normalisations = (None,
-                            ActiveAgentNormaliser.BASE,
-                            ActiveAgentNormaliser.MEAN_EN)
+# def get_error_normalisation_type_data():
+#     error_normalisations = (None,
+#                             ActiveAgentNormaliser.BASE,
+#                             ActiveAgentNormaliser.MEAN_EN)
 
-    results = [2, 5, 3, 6, 4]
+#     results = [2, 5, 3, 6, 4]
 
-    truths = [2, 2, 2, 2, 2]
+#     truths = [2, 2, 2, 2, 2]
 
-    active_pop = 4
+#     active_pop = 4
 
-    ensemble_active = [1, 2, 2, 2, 3]
+#     ensemble_active = [1, 2, 2, 2, 3]
 
-    expected = (2, 2.5, 5)
+#     expected = (2, 2.5, 5)
 
-    d = list()
+#     d = list()
 
-    for i in range(len(error_normalisations)):
-        x = (error_normalisations[i], results, truths,
-             active_pop, ensemble_active, expected[i])
-        d.append(x)
+#     for i in range(len(error_normalisations)):
+#         x = (error_normalisations[i], results, truths,
+#              active_pop, ensemble_active, expected[i])
+#         d.append(x)
 
-    return d
+#     return d
 
 
 def get_distance_error_default_data():
@@ -232,32 +232,32 @@ def get_calculate_rmse_default_data():
     return output
 
 
-def get_make_obs_error_data():
-    truth = [1, 2, 6, 6, 12, 15]
+# def get_make_obs_error_data():
+#     truth = [1, 2, 6, 6, 12, 15]
 
-    results = [1, 1, 6, 6, 15, 19]
+#     results = [1, 1, 6, 6, 15, 19]
 
-    active_pop = (3, 4, 5)
+#     active_pop = (3, 4, 5)
 
-    ensemble_active = ([2, 3, 4, 5, 3],
-                       [1, 2, 1, 2, 2],
-                       [1, 1, 2, 1, 1])
+#     ensemble_active = ([2, 3, 4, 5, 3],
+#                        [1, 2, 1, 2, 2],
+#                        [1, 1, 2, 1, 1])
 
-    normaliser = (None,
-                  ActiveAgentNormaliser.BASE,
-                  ActiveAgentNormaliser.MEAN_EN)
+#     normaliser = (None,
+#                   ActiveAgentNormaliser.BASE,
+#                   ActiveAgentNormaliser.MEAN_EN)
 
-    expected = (2, 2, 2)
+#     expected = (2, 2, 2)
 
-    output = list()
+#     output = list()
 
-    for i in range(len(expected)):
-        x = (truth, results,
-             active_pop[i], ensemble_active[i],
-             normaliser[i], expected[i])
-        output.append(x)
+#     for i in range(len(expected)):
+#         x = (truth, results,
+#              active_pop[i], ensemble_active[i],
+#              normaliser[i], expected[i])
+#         output.append(x)
 
-    return output
+#     return output
 
 
 def get_make_gain_matrix_data():

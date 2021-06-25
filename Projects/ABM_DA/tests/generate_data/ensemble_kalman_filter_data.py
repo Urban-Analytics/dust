@@ -485,3 +485,41 @@ def get_state_vector_statuses_data():
     output = wrap_up([base_statuses, en_statuses, inclusion,
                       vector_mode, expected])
     return output
+
+
+def get_forecast_error_data():
+    # Case 1: None inclusion
+    # Case 2: Base inclusion, ensemble var 1
+    # Case 3: Base inclusion, ensemble var 2
+    # Case 4: Mode inclusion, base var 1
+    # Case 5: Mode inclusion, base var 2
+    inclusion = [None,
+                 AgentIncluder.BASE, AgentIncluder.BASE,
+                 AgentIncluder.MODE_EN, AgentIncluder.MODE_EN]
+
+    base_statuses = [[1, 1, 1],
+                     [1, 0, 1],
+                     [1, 0, 1],
+                     [1, 1, 1],
+                     [0, 0, 0]]
+
+    ensemble_statuses = [[[1, 1, 1], [1, 0, 1], [1, 0, 0]],
+                         [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+                         [[1, 1, 1], [1, 0, 1], [1, 0, 0]],
+                         [[1, 1, 1], [1, 0, 1], [1, 0, 1]],
+                         [[1, 1, 1], [1, 0, 1], [1, 0, 1]]]
+
+    t = np.array([1, 1, 5, 10, 22, 76])
+    truth = [t for _ in range(5)]
+
+    state_mean = [np.array([4, 5, 9, 7, 25, 80]),
+                  np.array([6, 13, 9, 7, 25, 80]),
+                  np.array([6, 13, 9, 7, 25, 80]),
+                  np.array([6, 13, 9, 7, 25, 80]),
+                  np.array([6, 13, 9, 7, 25, 80])]
+
+    expected = [5, 9, 9, 9, 9]
+
+    output = wrap_up([inclusion, base_statuses, ensemble_statuses,
+                      truth, state_mean, expected])
+    return output

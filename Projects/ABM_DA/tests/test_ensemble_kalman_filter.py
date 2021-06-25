@@ -74,6 +74,8 @@ filter_vector_data = get_filter_vector_data()
 
 state_vector_statuses_data = get_state_vector_statuses_data()
 
+forecast_error_data = get_forecast_error_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -559,5 +561,34 @@ def test_get_state_vector_statuses(base_statuses, en_statuses, inclusion,
             enkf.models[i].agents[j].status = status
 
     result = enkf.get_state_vector_statuses(vector_mode)
+
+    assert result == expected
+
+
+x = 'inclusion, base_statuses, ensemble_statuses, truth, state_mean, expected'
+@pytest.mark.parametrize(x, forecast_error_data)
+def test_get_forecast_error(inclusion, base_statuses, ensemble_statuses,
+                            truth, state_mean, expected):
+    # For now, we assume that we are only dealing with state estimation
+    # This means that we know that the following will be in place
+    # enkf.mode = EnsembleKalmanFilterType.STATE
+    # enkf.error_func = enkf.make_errors
+    enkf = set_up_enkf(pop_size=3, ensemble_size=3, agent_inclusion=inclusion)
+
+    # Provide initial values for enkf
+    # Filter state_mean
+    enkf.state_mean = state_mean
+
+    # Base model agent statuses
+    enkf.set_base_statuses(base_statuses)
+    # for i, agent in enumerate(enkf.base_model.agents):
+    #     agent.status = base_statuses[i]
+
+    # Ensemble models agent statuses
+    for i, model in enumerate(enkf.models):
+        for j, agent in enumerate(model.agents):
+            agent.status = ensemble_statuses[i][j]
+
+    result = enkf.get_forecast_error(truth)
 
     assert result == expected

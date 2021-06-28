@@ -612,14 +612,16 @@ class Modeller():
 
     @classmethod
     def run_enkf_benchmark(cls, ensemble_size=20, pop_size=20,
-                           mode=EnsembleKalmanFilterType.STATE):
+                           mode=EnsembleKalmanFilterType.STATE,
+                           inclusion=AgentIncluder.BASE):
         # Set up filter parameters
         state_vec_length = cls.__make_state_vector_length(pop_size, mode)
 
         # Initialise filter with StationSim and params
         filter_params = {'vanilla_ensemble_size': ensemble_size,
                          'state_vector_length': state_vec_length,
-                         'mode': mode}
+                         'mode': mode,
+                         'inclusion': inclusion}
         model_params = {'pop_total': pop_size,
                         'station': 'Grand_Central',
                         'do_print': False}

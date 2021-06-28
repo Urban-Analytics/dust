@@ -542,7 +542,8 @@ class Modeller():
     @classmethod
     def run_experiment_1(cls, ensemble_size=20, pop_size=20,
                          assimilation_period=20, obs_noise_std=1.0,
-                         mode=EnsembleKalmanFilterType.STATE):
+                         mode=EnsembleKalmanFilterType.STATE,
+                         inclusion=AgentIncluder.BASE):
         # Run repeat with benchmarking for one set of parameters
         # Set up params
         its = 20000
@@ -565,6 +566,7 @@ class Modeller():
                          'state_vector_length': state_vec_length,
                          'data_vector_length': data_vec_length,
                          'mode': mode,
+                         'inclusion': inclusion,
                          'H': observation_operator,
                          'R_vector': obs_noise_std * np.ones(data_vec_length),
                          'keep_results': True,

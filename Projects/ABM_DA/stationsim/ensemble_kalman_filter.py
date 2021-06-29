@@ -352,6 +352,19 @@ class EnsembleKalmanFilter(Filter):
         self.state_ensemble = X
 
     # --- Error calculation --- #
+    @classmethod
+    def get_x_y_diffs(cls, truth: np.ndarray,
+                      results: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        # Separate coords
+        x_result, y_result = cls.separate_coords(results)
+        x_truth, y_truth = cls.separate_coords(truth)
+
+        # Calculate diffs
+        x_diffs = np.abs(x_result - x_truth)
+        y_diffs = np.abs(y_result - y_truth)
+
+        return x_diffs, y_diffs
+
     def get_forecast_error(self, truth):
         state_mean = self.state_mean.copy()
 

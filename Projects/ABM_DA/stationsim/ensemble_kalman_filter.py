@@ -300,7 +300,7 @@ class EnsembleKalmanFilter(Filter):
 
             truth = self.base_model.get_state(sensor=self.sensor_type)
 
-            f = self.error_func(truth, self.vanilla_state_mean)[0]
+            f = self.error_func(truth, self.vanilla_state_mean)
 
             forecast_error = {'time': self.time,
                               'forecast': f}
@@ -376,7 +376,7 @@ class EnsembleKalmanFilter(Filter):
             truth = self.filter_vector(truth, statuses)
             state_mean = self.filter_vector(self.state_mean, statuses)
 
-        error = self.error_func(truth, state_mean)[0]
+        error = self.error_func(truth, state_mean)
         return error
 
     def make_metrics(self, metrics, truth, obs_truth, data):
@@ -422,25 +422,30 @@ class EnsembleKalmanFilter(Filter):
                                                         statuses)
 
         # Calculating prior and likelihood errors
-        metrics['obs'] = self.make_obs_error(obs_truth, data)
+        metrics['obs'] = self.make_errors(obs_truth, data)
 
         # Analysis error
         if self.mode == EnsembleKalmanFilterType.STATE:
-            d, _, _ = self.make_analysis_errors(truth, state_mean)
+            d = self.make_errors(truth, state_mean)
         elif self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
             # USE ANALYSIS ERRORS
-            d, _, _, e = self.make_analysis_errors(truth, state_mean)
+            d, e = self.make_dual_errors(truth, state_mean)
             metrics['exit_accuracy'] = e
+        else:
+            general_message = 'Please provide an appropriate filter type.'
+            spec_message = f'{self.mode} is not an acceptable filter type.'
+            s = f'{general_message} {spec_message}'
+            raise ValueError(s)
         metrics['analysis'] = d
 
         # Vanilla error
         if self.run_vanilla:
-            v = self.error_func(truth, vanilla_state_mean)[0]
+            v = self.error_func(truth, vanilla_state_mean)
             metrics['baseline'] = v
 
         return metrics
 
-    def make_errors(self, truth, result) -> Tuple[float, float, float]:
+    def make_errors(self, truth, result) -> float:
         """
         Calculate errors.
 
@@ -458,19 +463,16 @@ class EnsembleKalmanFilter(Filter):
 
         Returns
         -------
-        Tuple[float, float, float]:
-            distance error, x-error, y-error
+        float
+            distance error
         """
-        x_result, y_result = self.separate_coords(result)
-        x_truth, y_truth = self.separate_coords(truth)
+        x_diffs, y_diffs = self.get_x_y_diffs(truth, result)
+        d = self.make_distance_error(x_diffs, y_diffs)
 
-        d, x, y = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
-
-        return d, x, y
+        return d
 
     def make_dual_errors(self, truth: np.ndarray,
-                         result: np.ndarray) -> Tuple[float, float,
-                                                      float, float]:
+                         result: np.ndarray) -> Tuple[float, float]:
         """
         Calculate errors for dual filter.
 
@@ -497,10 +499,10 @@ class EnsembleKalmanFilter(Filter):
         x_result, y_result, exit_result = self.separate_coords_exits(result)
         x_truth, y_truth, exit_truth = self.separate_coords_exits(truth)
 
-        d, x, y = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
+        d, _, _ = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
         exit_accuracy = accuracy_score(exit_truth, exit_result)
 
-        return d, x, y, exit_accuracy
+        return d, exit_accuracy
 
     def make_distance_error(self, x_error: np.ndarray,
                             y_error: np.ndarray) -> float:
@@ -582,14 +584,7 @@ class EnsembleKalmanFilter(Filter):
         float:
             Average distance error.
         """
-        # Separate coords
-        x_result, y_result = self.separate_coords(result)
-        x_truth, y_truth = self.separate_coords(truth)
-
-        # Calculate diffs
-        x_diffs = np.abs(x_result - x_truth)
-        y_diffs = np.abs(y_result - y_truth)
-        agent_distances = np.sqrt(np.square(x_diffs) + np.square(y_diffs))
+        agent_distances = self.make_errors(truth, result)
         return np.mean(agent_distances)
 
     def calculate_rmse(self, x_truth: np.ndarray,

@@ -614,6 +614,7 @@ class Modeller():
 
     @classmethod
     def run_enkf_benchmark(cls, ensemble_size=20, pop_size=20,
+                           station='Grand_Central',
                            mode=EnsembleKalmanFilterType.STATE,
                            inclusion=AgentIncluder.BASE):
         # Set up filter parameters
@@ -625,7 +626,7 @@ class Modeller():
                          'mode': mode,
                          'inclusion': inclusion}
         model_params = {'pop_total': pop_size,
-                        'station': 'Grand_Central',
+                        'station': station,
                         'do_print': False}
         enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                     filtering=False, benchmarking=True)

@@ -494,7 +494,8 @@ class Modeller():
     #     cls.run_experiment_1_2()
 
     @classmethod
-    def run_model_collisions(cls):
+    def run_model_collisions(cls, output_dir='../results/data/baseline/'):
+
         # Run model alone for multiple population sizes
         # Show that the number of collisions increases with the population size
         # Number of collisions should be scaled by the number of timesteps
@@ -508,11 +509,11 @@ class Modeller():
                 model_results.append(collisions)
 
         model_results = pd.DataFrame(model_results)
-        model_results.to_csv('./results/data/model_collisions.csv')
-        plt.figure()
-        sns.lineplot(x='population_size', y='collisions',
-                     data=model_results)
-        plt.savefig('./results/figures/model_collisions.pdf')
+        model_results.to_csv(output_dir+'model_collisions.csv')
+#         plt.figure()
+#         sns.lineplot(x='population_size', y='collisions',
+#                      data=model_results)
+#         plt.savefig('../results/figures/baseline/model_collisions.pdf')
 
     # @staticmethod
     # def run_experiment_1_2():
@@ -543,13 +544,14 @@ class Modeller():
     def run_experiment_1(cls, ensemble_size=20, pop_size=20,
                          assimilation_period=20, obs_noise_std=1.0,
                          mode=EnsembleKalmanFilterType.STATE,
-                         inclusion=AgentIncluder.BASE):
+                         inclusion=AgentIncluder.BASE,
+                         model_path='../results/models/exp1/p100'):
         # Run repeat with benchmarking for one set of parameters
         # Set up params
         its = 20000
 
         model_params = {'pop_total': pop_size,
-                        'station': 'Grand_Central',
+                        'station': None,
                         'do_print': False}
 
         # Set up filter parameters
@@ -573,8 +575,6 @@ class Modeller():
                          'run_vanilla': True,
                          'vis': False}
 
-        model_path = f'./results/models/gcs_model_exp_1/p{pop_size}/'
-
         for i in tqdm(range(10)):
             enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                         filtering=True, benchmarking=True)
@@ -596,7 +596,7 @@ class Modeller():
     def __run_model(N):
         model_params = {'pop_total': N,
                         'step_limit': 5000,
-                        'station': 'Grand_Central',
+                        'station': None,
                         'do_history': True,
                         'do_print': False}
         m = Model(**model_params)
@@ -615,7 +615,8 @@ class Modeller():
     @classmethod
     def run_enkf_benchmark(cls, ensemble_size=20, pop_size=20,
                            mode=EnsembleKalmanFilterType.STATE,
-                           inclusion=AgentIncluder.BASE):
+                           inclusion=AgentIncluder.BASE,
+                           output_dir='../results/models/baseline/'):
         # Set up filter parameters
         state_vec_length = cls.__make_state_vector_length(pop_size, mode)
 
@@ -625,7 +626,7 @@ class Modeller():
                          'mode': mode,
                          'inclusion': inclusion}
         model_params = {'pop_total': pop_size,
-                        'station': 'Grand_Central',
+                        'station': None,
                         'do_print': False}
         enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                     filtering=False, benchmarking=True)
@@ -633,12 +634,12 @@ class Modeller():
         while enkf.active:
             enkf.baseline_step()
 
-        with open('./results/models/baseline.pkl', 'wb') as f:
+        with open(output_dir+'/baseline.pkl', 'wb') as f:
             pickle.dump(enkf, f)
 
-        Visualiser.plot_forecast_error_timeseries(enkf, model_params,
-                                                  filter_params, do_save=True,
-                                                  plot_period=False)
+#         Visualiser.plot_forecast_error_timeseries(enkf, model_params,
+#                                                   filter_params, do_save=True,
+#                                                   plot_period=False)
 
     @classmethod
     def run_test(cls):
@@ -918,9 +919,11 @@ class Processor():
         return d.set_index('time')
 
     @classmethod
-    def process_experiment_1(cls):
+    def process_experiment_1(cls,
+                             model_path='../results/models/exp1/p100/',
+                             data_path='../results/data/exp1/p100'):
         pop_size = 20
-        model_dir = f'./results/models/gcs_model_exp_1/p{pop_size}/'
+        model_dir = model_path
         model_paths = listdir(model_dir)
         all_metrics = list()
 
@@ -929,7 +932,7 @@ class Processor():
                 model = pickle.load(f)
             all_metrics.extend(model.metrics)
 
-        output_data_dir = f'./results/data/gcs_model_exp_1/p{pop_size}/'
+        output_data_dir = data_path
         all_metrics = pd.DataFrame(all_metrics)
         all_metrics.to_csv(output_data_dir + 'metrics.csv', index=False)
 

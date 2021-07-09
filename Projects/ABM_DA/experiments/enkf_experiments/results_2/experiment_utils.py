@@ -494,7 +494,7 @@ class Modeller():
     #     cls.run_experiment_1_2()
 
     @classmethod
-    def run_model_collisions(cls):
+    def run_model_collisions(cls, results_path='../results/data/baseline/'):
         # Run model alone for multiple population sizes
         # Show that the number of collisions increases with the population size
         # Number of collisions should be scaled by the number of timesteps
@@ -508,11 +508,11 @@ class Modeller():
                 model_results.append(collisions)
 
         model_results = pd.DataFrame(model_results)
-        model_results.to_csv('./results/data/model_collisions.csv')
-        plt.figure()
-        sns.lineplot(x='population_size', y='collisions',
-                     data=model_results)
-        plt.savefig('./results/figures/model_collisions.pdf')
+        model_results.to_csv(results_path+'model_collisions.csv')
+#         plt.figure()
+#         sns.lineplot(x='population_size', y='collisions',
+#                      data=model_results)
+#         plt.savefig('./results/figures/model_collisions.pdf')
 
     # @staticmethod
     # def run_experiment_1_2():
@@ -615,6 +615,7 @@ class Modeller():
     @classmethod
     def run_enkf_benchmark(cls, ensemble_size=20, pop_size=20,
                            station='Grand_Central',
+                           results_path='../results/models/baseline/',
                            mode=EnsembleKalmanFilterType.STATE,
                            inclusion=AgentIncluder.BASE):
         # Set up filter parameters
@@ -634,12 +635,12 @@ class Modeller():
         while enkf.active:
             enkf.baseline_step()
 
-        with open('./results/models/baseline.pkl', 'wb') as f:
+        with open(results_path+'baseline.pkl', 'wb') as f:
             pickle.dump(enkf, f)
 
-        Visualiser.plot_forecast_error_timeseries(enkf, model_params,
-                                                  filter_params, do_save=True,
-                                                  plot_period=False)
+#         Visualiser.plot_forecast_error_timeseries(enkf, model_params,
+#                                                   filter_params, do_save=True,
+#                                                   plot_period=False)
 
     @classmethod
     def run_test(cls):

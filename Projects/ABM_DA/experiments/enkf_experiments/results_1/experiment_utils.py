@@ -19,7 +19,7 @@ import sys
 from time import sleep
 from tqdm import tqdm
 
-sys.path.append('../../stationsim')
+sys.path.append('../../../stationsim')
 from stationsim_gcs_model import Model
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
@@ -169,7 +169,7 @@ class Modeller():
 
         if write_json:
             dir_name = f'a{a}__e{e}__p{p}__s{s}'.replace('.', '_')
-            full_dir = f'results/repeats/{dir_name}/'
+            full_dir = f'results/data/exp2/{dir_name}/'
             Path(full_dir).mkdir(parents=True, exist_ok=True)
             fname1 = f'{full_dir}/errors.json'
             fname2 = f'{full_dir}/forecast_errors.json'
@@ -222,7 +222,7 @@ class Modeller():
             of combinations.
         """
         if resume:
-            with open('results/combos.json') as json_file:
+            with open('results/data/exp2/combos.json') as json_file:
                 combos = json.load(json_file)
         else:
             # Current
@@ -253,7 +253,7 @@ class Modeller():
             print('running for {0}'.format(str(c)))
             cls.run_repeat(*c, N=10, write_json=True)
             if i % 5 == 0:
-                with open('results/combos.json', 'w', encoding='utf-8') as f:
+                with open('results/data/exp2/combos.json', 'w', encoding='utf-8') as f:
                     json.dump(combos, f, ensure_ascii=False, indent=4)
             if i % 40 == 25:
                 print('Taking a short break.\n\n\n')
@@ -283,7 +283,7 @@ class Modeller():
             of combinations.
         """
         if resume:
-            with open('results/combos_1.json') as json_file:
+            with open('results/data/exp2/combos_1.json') as json_file:
                 combos = json.load(json_file)
         else:
             combos = cls.make_combos()
@@ -297,7 +297,7 @@ class Modeller():
             print('running for {0}'.format(str(c)))
             cls.run_repeat(*c, N=10, write_json=True)
             if i % 5 == 0:
-                with open('results/combos_1.json', 'w', encoding='utf-8') as f:
+                with open('results/data/exp2/combos_1.json', 'w', encoding='utf-8') as f:
                     json.dump(combos, f, ensure_ascii=False, indent=4)
             if i % 40 == 25:
                 print('Taking a short break.\n\n\n')
@@ -327,7 +327,7 @@ class Modeller():
             of combinations.
         """
         if resume:
-            with open('results/combos_2.json') as json_file:
+            with open('results/data/exp2/combos_2.json') as json_file:
                 combos = json.load(json_file)
         else:
             combos = cls.make_combos()
@@ -341,7 +341,7 @@ class Modeller():
             print('running for {0}'.format(str(c)))
             cls.run_repeat(*c, N=10, write_json=True)
             if i % 5 == 0:
-                with open('results/combos_2.json', 'w', encoding='utf-8') as f:
+                with open('results/data/exp2/combos_2.json', 'w', encoding='utf-8') as f:
                     json.dump(combos, f, ensure_ascii=False, indent=4)
             if i % 40 == 25:
                 print('Taking a short break.\n\n\n')

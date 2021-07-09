@@ -23,6 +23,7 @@ sys.path.append('../../stationsim')
 from stationsim_gcs_model import Model
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
+from ensemble_kalman_filter import AgentIncluder
 
 
 # Classes
@@ -541,7 +542,8 @@ class Modeller():
     @classmethod
     def run_experiment_1(cls, ensemble_size=20, pop_size=20,
                          assimilation_period=20, obs_noise_std=1.0,
-                         mode=EnsembleKalmanFilterType.STATE):
+                         mode=EnsembleKalmanFilterType.STATE,
+                         inclusion=AgentIncluder.BASE):
         # Run repeat with benchmarking for one set of parameters
         # Set up params
         its = 20000
@@ -564,6 +566,7 @@ class Modeller():
                          'state_vector_length': state_vec_length,
                          'data_vector_length': data_vec_length,
                          'mode': mode,
+                         'inclusion': inclusion,
                          'H': observation_operator,
                          'R_vector': obs_noise_std * np.ones(data_vec_length),
                          'keep_results': True,
@@ -611,14 +614,16 @@ class Modeller():
 
     @classmethod
     def run_enkf_benchmark(cls, ensemble_size=20, pop_size=20,
-                           mode=EnsembleKalmanFilterType.STATE):
+                           mode=EnsembleKalmanFilterType.STATE,
+                           inclusion=AgentIncluder.BASE):
         # Set up filter parameters
         state_vec_length = cls.__make_state_vector_length(pop_size, mode)
 
         # Initialise filter with StationSim and params
         filter_params = {'vanilla_ensemble_size': ensemble_size,
                          'state_vector_length': state_vec_length,
-                         'mode': mode}
+                         'mode': mode,
+                         'inclusion': inclusion}
         model_params = {'pop_total': pop_size,
                         'station': 'Grand_Central',
                         'do_print': False}
@@ -634,6 +639,49 @@ class Modeller():
         Visualiser.plot_forecast_error_timeseries(enkf, model_params,
                                                   filter_params, do_save=True,
                                                   plot_period=False)
+
+    @classmethod
+    def run_test(cls):
+        pop_size = 10
+        ensemble_size = 10
+        assimilation_period = 100
+        mode = EnsembleKalmanFilterType.STATE
+        obs_noise_std = 1.0
+        inc = AgentIncluder.BASE
+        its = 5000
+
+        model_params = {'pop_total': pop_size,
+                        'station': 'Grand_Central',
+                        'do_print': False}
+
+        # Set up filter parameters
+        observation_operator = cls.__make_observation_operator(pop_size, mode)
+        state_vec_length = cls.__make_state_vector_length(pop_size, mode)
+        data_mode = EnsembleKalmanFilterType.STATE
+        data_vec_length = cls.__make_state_vector_length(pop_size, data_mode)
+
+        filter_params = {'max_iterations': its,
+                         'assimilation_period': assimilation_period,
+                         'ensemble_size': ensemble_size,
+                         'population_size': pop_size,
+                         'vanilla_ensemble_size': ensemble_size,
+                         'state_vector_length': state_vec_length,
+                         'data_vector_length': data_vec_length,
+                         'mode': mode,
+                         'inclusion': inc,
+                         'H': observation_operator,
+                         'R_vector': obs_noise_std * np.ones(data_vec_length),
+                         'keep_results': True,
+                         'run_vanilla': True,
+                         'vis': False}
+        enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
+                                    filtering=True, benchmarking=True)
+
+        while enkf.active:
+            enkf.step()
+
+        metrics = pd.DataFrame(enkf.metrics)
+        metrics.to_csv('./test_results.csv', index=False)
 
 
 class Processor():

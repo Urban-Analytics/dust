@@ -8,7 +8,8 @@ sys.path.append('../stationsim/')
 from generate_data.data_utils import wrap_up
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
-from ensemble_kalman_filter import ActiveAgentNormaliser
+# from ensemble_kalman_filter import ActiveAgentNormaliser
+from ensemble_kalman_filter import AgentIncluder
 from stationsim_gcs_model import Model
 
 
@@ -155,29 +156,29 @@ def get_mean_data():
     return output
 
 
-def get_error_normalisation_type_data():
-    error_normalisations = (None,
-                            ActiveAgentNormaliser.BASE,
-                            ActiveAgentNormaliser.MEAN_EN)
+# def get_error_normalisation_type_data():
+#     error_normalisations = (None,
+#                             ActiveAgentNormaliser.BASE,
+#                             ActiveAgentNormaliser.MEAN_EN)
 
-    results = [2, 5, 3, 6, 4]
+#     results = [2, 5, 3, 6, 4]
 
-    truths = [2, 2, 2, 2, 2]
+#     truths = [2, 2, 2, 2, 2]
 
-    active_pop = 4
+#     active_pop = 4
 
-    ensemble_active = [1, 2, 2, 2, 3]
+#     ensemble_active = [1, 2, 2, 2, 3]
 
-    expected = (2, 2.5, 5)
+#     expected = (2, 2.5, 5)
 
-    d = list()
+#     d = list()
 
-    for i in range(len(error_normalisations)):
-        x = (error_normalisations[i], results, truths,
-             active_pop, ensemble_active, expected[i])
-        d.append(x)
+#     for i in range(len(error_normalisations)):
+#         x = (error_normalisations[i], results, truths,
+#              active_pop, ensemble_active, expected[i])
+#         d.append(x)
 
-    return d
+#     return d
 
 
 def get_distance_error_default_data():
@@ -231,32 +232,32 @@ def get_calculate_rmse_default_data():
     return output
 
 
-def get_make_obs_error_data():
-    truth = [1, 2, 6, 6, 12, 15]
+# def get_make_obs_error_data():
+#     truth = [1, 2, 6, 6, 12, 15]
 
-    results = [1, 1, 6, 6, 15, 19]
+#     results = [1, 1, 6, 6, 15, 19]
 
-    active_pop = (3, 4, 5)
+#     active_pop = (3, 4, 5)
 
-    ensemble_active = ([2, 3, 4, 5, 3],
-                       [1, 2, 1, 2, 2],
-                       [1, 1, 2, 1, 1])
+#     ensemble_active = ([2, 3, 4, 5, 3],
+#                        [1, 2, 1, 2, 2],
+#                        [1, 1, 2, 1, 1])
 
-    normaliser = (None,
-                  ActiveAgentNormaliser.BASE,
-                  ActiveAgentNormaliser.MEAN_EN)
+#     normaliser = (None,
+#                   ActiveAgentNormaliser.BASE,
+#                   ActiveAgentNormaliser.MEAN_EN)
 
-    expected = (2, 2, 2)
+#     expected = (2, 2, 2)
 
-    output = list()
+#     output = list()
 
-    for i in range(len(expected)):
-        x = (truth, results,
-             active_pop[i], ensemble_active[i],
-             normaliser[i], expected[i])
-        output.append(x)
+#     for i in range(len(expected)):
+#         x = (truth, results,
+#              active_pop[i], ensemble_active[i],
+#              normaliser[i], expected[i])
+#         output.append(x)
 
-    return output
+#     return output
 
 
 def get_make_gain_matrix_data():
@@ -388,3 +389,137 @@ def get_origin_vector_data():
 
     outputs = wrap_up([origins, statuses, expected])
     return outputs
+
+
+def get_agent_statuses_data():
+    base_statuses = [[0, 1, 2],
+                     [0, 1, 2],
+                     [0, 1, 2],
+                     [0, 1, 2],
+                     [0, 1, 2]]
+
+    en_statuses = [[[0, 0, 0],
+                    [1, 1, 1],
+                    [2, 2, 2]],
+                   [[0, 0, 0],
+                    [1, 1, 1],
+                    [2, 2, 2]],
+                   # Uniform across ensemble
+                   [[0, 1, 2],
+                    [0, 1, 2],
+                    [0, 1, 2]],
+                   # Mixed, no majority
+                   [[0, 0, 0],
+                    [1, 1, 1],
+                    [2, 2, 2]],
+                   # Mixed, majority
+                   [[0, 1, 1],
+                    [1, 1, 2],
+                    [0, 2, 2]]]
+
+    inclusion = [None, AgentIncluder.BASE,
+                 AgentIncluder.MODE_EN, AgentIncluder.MODE_EN,
+                 AgentIncluder.MODE_EN]
+
+    expected = [[False, True, False],
+                [False, True, False],
+                [False, True, False],
+                [False, False, False],
+                [False, True, False]]
+
+    output = wrap_up([base_statuses, en_statuses, inclusion, expected])
+    return output
+
+
+def get_filter_vector_data():
+    vector = [np.arange(5) for _ in range(3)]
+
+    statuses = [[False, False, False, False, False],
+                [True, True, True, True, True],
+                [True, False, True, False, False]]
+
+    expected = [np.array([]),
+                np.array([0, 1, 2, 3, 4]),
+                np.array([0, 2])]
+
+    output = wrap_up([vector, statuses, expected])
+    return output
+
+
+def get_state_vector_statuses_data():
+    base_statuses = [[0, 1, 2],
+                     [0, 1, 2],
+                     [0, 1, 2],
+                     [0, 1, 2]]
+
+    en_statuses = [[[0, 1, 2],
+                    [0, 1, 2],
+                    [0, 1, 2]],
+                   [[0, 1, 2],
+                    [0, 1, 2],
+                    [0, 1, 2]],
+                   [[1, 0, 2],
+                    [1, 0, 2],
+                    [1, 0, 2]],
+                   [[1, 0, 2],
+                    [1, 0, 2],
+                    [1, 0, 2]]]
+
+    inclusion = [AgentIncluder.BASE, AgentIncluder.BASE,
+                 AgentIncluder.MODE_EN, AgentIncluder.MODE_EN]
+
+    vector_mode = [EnsembleKalmanFilterType.STATE,
+                   EnsembleKalmanFilterType.DUAL_EXIT,
+                   EnsembleKalmanFilterType.STATE,
+                   EnsembleKalmanFilterType.DUAL_EXIT]
+
+    expected = [[False, False, True, True, False, False],
+                [False, False, False,
+                 True, True, True,
+                 False, False, False],
+                [True, True, False, False, False, False],
+                [True, True, True,
+                 False, False, False,
+                 False, False, False]]
+
+    output = wrap_up([base_statuses, en_statuses, inclusion,
+                      vector_mode, expected])
+    return output
+
+
+def get_forecast_error_data():
+    # Case 1: None inclusion
+    # Case 2: Base inclusion, ensemble var 1
+    # Case 3: Base inclusion, ensemble var 2
+    # Case 4: Mode inclusion, base var 1
+    # Case 5: Mode inclusion, base var 2
+    inclusion = [None,
+                 AgentIncluder.BASE, AgentIncluder.BASE,
+                 AgentIncluder.MODE_EN, AgentIncluder.MODE_EN]
+
+    base_statuses = [[1, 1, 1],
+                     [1, 0, 1],
+                     [1, 0, 1],
+                     [1, 1, 1],
+                     [0, 0, 0]]
+
+    ensemble_statuses = [[[1, 1, 1], [1, 0, 1], [1, 0, 0]],
+                         [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+                         [[1, 1, 1], [1, 0, 1], [1, 0, 0]],
+                         [[1, 1, 1], [1, 0, 1], [1, 0, 1]],
+                         [[1, 1, 1], [1, 0, 1], [1, 0, 1]]]
+
+    t = np.array([1, 1, 5, 10, 22, 76])
+    truth = [t for _ in range(5)]
+
+    state_mean = [np.array([4, 5, 9, 7, 25, 80]),
+                  np.array([6, 13, 9, 7, 25, 80]),
+                  np.array([6, 13, 9, 7, 25, 80]),
+                  np.array([6, 13, 9, 7, 25, 80]),
+                  np.array([6, 13, 9, 7, 25, 80])]
+
+    expected = [5, 9, 9, 9, 9]
+
+    output = wrap_up([inclusion, base_statuses, ensemble_statuses,
+                      truth, state_mean, expected])
+    return output

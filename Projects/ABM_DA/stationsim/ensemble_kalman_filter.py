@@ -134,10 +134,12 @@ class EnsembleKalmanFilter(Filter):
 
     def __print_start_summary(self) -> None:
         print('Running Ensemble Kalman Filter...')
-        print('max_iterations:\t{0}'.format(self.max_iterations))
-        print('ensemble_size:\t{0}'.format(self.ensemble_size))
-        print('assimilation_period:\t{0}'.format(self.assimilation_period))
-        print('filter_type:\t{0}'.format(self.mode))
+        print(f'max_iterations:\t{self.max_iterations}')
+        print(f'ensemble_size:\t{self.ensemble_size}')
+        print(f'assimilation_period:\t{self.assimilation_period}')
+        print(f'pop_size:\t{self.population_size}')
+        print(f'filter_type:\t{self.mode}')
+        print(f'inclusion_type:\t{self.inclusion}')
 
     def __assign_filter_defaults(self) -> None:
         self.max_iterations = None

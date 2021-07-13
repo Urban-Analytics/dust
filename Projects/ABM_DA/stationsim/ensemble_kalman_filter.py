@@ -164,6 +164,7 @@ class EnsembleKalmanFilter(Filter):
             EnsembleKalmanFilterType.STATE: self.make_errors,
             EnsembleKalmanFilterType.DUAL_EXIT: self.make_dual_errors
         }
+        self.ensemble_errors = False
 
     def __assign_filter_params(self, filter_params: dict) -> None:
         for k, v in filter_params.items():
@@ -440,12 +441,30 @@ class EnsembleKalmanFilter(Filter):
             raise ValueError(s)
         metrics['analysis'] = d
 
+        if self.ensemble_errors:
+            ensemble_errors = self.get_ensemble_errors(truth)
+            metrics.update(ensemble_errors)
+
         # Vanilla error
         if self.run_vanilla:
             v = self.error_func(truth, vanilla_state_mean)
             metrics['baseline'] = v
 
         return metrics
+
+    def get_ensemble_errors(self, truth: np.ndarray) -> dict:
+        ensemble_errors = dict()
+        for i in range(self.ensemble_size):
+            model_error = self.get_ensemble_error(truth, i)
+            ensemble_errors[f'analysis_{i}'] = model_error
+        return ensemble_errors
+
+    def get_ensemble_error(self, truth: np.ndarray, model_idx) -> float:
+        state = self.state_ensemble[:, model_idx]
+        if self.inclusion is not None:
+            statuses = self.get_state_vector_statuses(vector_mode=self.mode)
+            state = self.filter_vector(state, statuses)
+        return self.make_errors(truth, state)
 
     def make_errors(self, truth, result) -> float:
         """

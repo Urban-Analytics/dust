@@ -9,6 +9,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from os import listdir
+import os
 import pandas as pd
 from pathlib import Path
 import pickle
@@ -542,6 +543,7 @@ class Modeller():
     @classmethod
     def run_experiment_1(cls, ensemble_size=20, pop_size=20,
                          assimilation_period=20, obs_noise_std=1.0,
+                         model_path='../results/models/exp1/',
                          mode=EnsembleKalmanFilterType.STATE,
                          inclusion=AgentIncluder.BASE):
         # Run repeat with benchmarking for one set of parameters
@@ -573,8 +575,11 @@ class Modeller():
                          'run_vanilla': True,
                          'vis': False}
 
-        model_path = f'./results/models/gcs_model_exp_1/p{pop_size}/'
-
+        mpath = f'{model_path}p{pop_size}/'
+        
+        if not os.path.isdir(mpath):
+            os.makedirs(mpath)
+        
         for i in tqdm(range(10)):
             enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                         filtering=True, benchmarking=True)
@@ -582,7 +587,7 @@ class Modeller():
             while enkf.active:
                 enkf.step()
 
-            with open(model_path + f'model_{i}.pkl', 'wb') as f:
+            with open(mpath + f'model_{i}.pkl', 'wb') as f:
                 pickle.dump(enkf, f)
 
     @classmethod
@@ -920,9 +925,10 @@ class Processor():
         return d.set_index('time')
 
     @classmethod
-    def process_experiment_1(cls):
-        pop_size = 20
-        model_dir = f'./results/models/gcs_model_exp_1/p{pop_size}/'
+    def process_experiment_1(cls, pop_size=20,
+                             mpath ='../results/models/exp1/',
+                             dpath='../results/data/exp1/'):
+        model_dir = mpath + f'p{pop_size}/'
         model_paths = listdir(model_dir)
         all_metrics = list()
 
@@ -931,7 +937,11 @@ class Processor():
                 model = pickle.load(f)
             all_metrics.extend(model.metrics)
 
-        output_data_dir = f'./results/data/gcs_model_exp_1/p{pop_size}/'
+        output_data_dir = f'{dpath}p{pop_size}/'
+
+        if not os.path.isdir(output_data_dir):
+            os.makedirs(output_data_dir)
+
         all_metrics = pd.DataFrame(all_metrics)
         all_metrics.to_csv(output_data_dir + 'metrics.csv', index=False)
 

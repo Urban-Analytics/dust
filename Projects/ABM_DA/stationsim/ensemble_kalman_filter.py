@@ -382,7 +382,8 @@ class EnsembleKalmanFilter(Filter):
         error = self.error_func(truth, state_mean)
         return error
 
-    def make_metrics(self, metrics, truth, obs_truth, data):
+    def make_metrics(self, metrics: np.ndarray, truth: np.ndarray,
+                     obs_truth: np.ndarray, data: np.ndarray) -> dict:
         """
         Calculate error metrics.
 

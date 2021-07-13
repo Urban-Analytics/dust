@@ -10,4 +10,4 @@ from experiment_utils import Modeller, Processor, Visualiser
 
 np.random.seed(42)
 
-Modeller.run_repeat_combos_2(resume=False)
+Modeller.run_repeat_combos_2(resume=True)

@@ -140,6 +140,7 @@ class EnsembleKalmanFilter(Filter):
         print(f'pop_size:\t{self.population_size}')
         print(f'filter_type:\t{self.mode}')
         print(f'inclusion_type:\t{self.inclusion}')
+        print(f'ensemble_errors:\t{self.ensemble_errors}')
 
     def __assign_filter_defaults(self) -> None:
         self.max_iterations = None
@@ -442,9 +443,12 @@ class EnsembleKalmanFilter(Filter):
             raise ValueError(s)
         metrics['analysis'] = d
 
+        o_len = len(metrics)
         if self.ensemble_errors:
             ensemble_errors = self.get_ensemble_errors(truth)
             metrics.update(ensemble_errors)
+            n_len = len(metrics)
+            assert n_len > o_len
 
         # Vanilla error
         if self.run_vanilla:

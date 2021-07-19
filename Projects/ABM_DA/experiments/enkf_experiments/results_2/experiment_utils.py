@@ -545,6 +545,55 @@ class Modeller():
                          assimilation_period=20, obs_noise_std=1.0,
                          model_path='../results/models/exp1/',
                          mode=EnsembleKalmanFilterType.STATE,
+                         inclusion=AgentIncluder.MODE_EN):
+
+        # Model parameters
+        model_params = {'pop_total': pop_size,
+                        'station': 'Grand_Central',
+                        'do_print': False}
+
+        # Filter parameters
+        its = 20000
+        observation_operator = cls.__make_observation_operator(pop_size, mode)
+        state_vec_length = cls.__make_state_vector_length(pop_size, mode)
+        data_mode = EnsembleKalmanFilterType.STATE
+        data_vec_length = cls.__make_state_vector_length(pop_size, data_mode)
+
+        filter_params = {'max_iterations': its,
+                         'assimilation_period': assimilation_period,
+                         'ensemble_size': ensemble_size,
+                         'population_size': pop_size,
+                         'vanilla_ensemble_size': ensemble_size,
+                         'state_vector_length': state_vec_length,
+                         'data_vector_length': data_vec_length,
+                         'mode': mode,
+                         'inclusion': inclusion,
+                         'ensemble_errors': True,
+                         'H': observation_operator,
+                         'R_vector': obs_noise_std * np.ones(data_vec_length),
+                         'keep_results': True,
+                         'run_vanilla': True,
+                         'vis': False}
+
+        mpath = f'{model_path}p{pop_size}/'
+
+        if not os.path.isdir(mpath):
+            os.makedirs(mpath)
+
+        enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
+                                    filtering=True, benchmarking=True)
+
+        while enkf.active:
+            enkf.step()
+
+        with open(mpath + f'model.pkl', 'wb') as f:
+            pickle.dump(enkf, f)
+
+    @classmethod
+    def run_experiment_2(cls, ensemble_size=20, pop_size=20,
+                         assimilation_period=20, obs_noise_std=1.0,
+                         model_path='../results/models/exp2/',
+                         mode=EnsembleKalmanFilterType.STATE,
                          inclusion=AgentIncluder.BASE):
         # Run repeat with benchmarking for one set of parameters
         # Set up params
@@ -926,8 +975,30 @@ class Processor():
 
     @classmethod
     def process_experiment_1(cls, pop_size=20,
-                             mpath ='../results/models/exp1/',
+                             mpath='../results/models/exp1/',
                              dpath='../results/data/exp1/'):
+
+        model_dir = mpath + f'p{pop_size}/'
+        model_paths = listdir(model_dir)
+
+        model_path = [p for p in model_paths if p.endswith('.pkl')][0]
+
+        with open(model_dir + model_path, 'rb') as f:
+            model = pickle.load(f)
+        results = model.metrics
+
+        output_data_dir = f'{dpath}p{pop_size}/'
+
+        if not os.path.isdir(output_data_dir):
+            os.makedirs(output_data_dir)
+
+        results = pd.DataFrame(results)
+        results.to_csv(output_data_dir + 'metrics.csv', index=False)
+
+    @classmethod
+    def process_experiment_2(cls, pop_size=20,
+                             mpath='../results/models/exp2/',
+                             dpath='../results/data/exp2/'):
         model_dir = mpath + f'p{pop_size}/'
         model_paths = listdir(model_dir)
         all_metrics = list()

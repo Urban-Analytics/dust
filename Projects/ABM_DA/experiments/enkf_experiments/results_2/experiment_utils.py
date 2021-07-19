@@ -625,10 +625,10 @@ class Modeller():
                          'vis': False}
 
         mpath = f'{model_path}p{pop_size}/'
-        
+
         if not os.path.isdir(mpath):
             os.makedirs(mpath)
-        
+
         for i in tqdm(range(10)):
             enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                         filtering=True, benchmarking=True)
@@ -639,12 +639,12 @@ class Modeller():
             with open(mpath + f'model_{i}.pkl', 'wb') as f:
                 pickle.dump(enkf, f)
 
-    @classmethod
-    def run_experiment_2(cls):
-        pop_sizes = [2, 5, 10, 20, 50]
-        ensemble_sizes = [2, 5, 10, 20, 50]
-        assimilation_periods = [2, 5, 10, 20, 50]
-        obs_noise_stds = [0.5, 1.0, 1.5, 2.0, 2.5]
+#     @classmethod
+#     def run_experiment_2(cls):
+#         pop_sizes = [2, 5, 10, 20, 50]
+#         ensemble_sizes = [2, 5, 10, 20, 50]
+#         assimilation_periods = [2, 5, 10, 20, 50]
+#         obs_noise_stds = [0.5, 1.0, 1.5, 2.0, 2.5]
 
     @staticmethod
     def __run_model(N):
@@ -1003,7 +1003,7 @@ class Processor():
         model_paths = listdir(model_dir)
         all_metrics = list()
 
-        for model_path in model_paths:
+        for model_path in tqdm(model_paths):
             with open(model_dir + model_path, 'rb') as f:
                 model = pickle.load(f)
             all_metrics.extend(model.metrics)

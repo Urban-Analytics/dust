@@ -443,12 +443,10 @@ class EnsembleKalmanFilter(Filter):
             raise ValueError(s)
         metrics['analysis'] = d
 
-        o_len = len(metrics)
         if self.ensemble_errors:
             ensemble_errors = self.get_ensemble_errors(truth)
             metrics.update(ensemble_errors)
             n_len = len(metrics)
-            assert n_len > o_len
 
         # Vanilla error
         if self.run_vanilla:

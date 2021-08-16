@@ -8,9 +8,14 @@ _The following publications report on the current progress of the DUST project o
 
 ## Peer Reviewed Articles
 
+Li An, Volker Grimm, Abigail Sullivan, B.L. Turner II, Nicolas Malleson, Alison Heppenstall, Christian Vincenot, Derek Robinson, Xinyue Ye, Jianguo Liu, Emilie Lindkvist, Wenwu Tang (2021) Challenges, tasks, and opportunities in modeling agent-based complex systems, _Ecological Modelling_ 457(1):109685. DOI: [10.1016/j.ecolmodel.2021.109685](https://doi.org/10.1016/j.ecolmodel.2021.109685)
+
+Clay, Robert, J. A. Ward, P. Ternes, Le-Minh Kieu, N. Malleson (2021) Real-time agent-based crowd simulation with the Reversible Jump Unscented Kalman Filter. _Simulation Modelling Practice and Theory_ 113 (102386) DOI: [10.1016/j.simpat.2021.102386](https://doi.org/10.1016/j.simpat.2021.102386)
+
+
 Cui, N., N. Malleson, V. Houlden, and A. Comber (2021) Using VGI and Social Media Data to Understand Urban Green Space: A Narrative Literature Review. _ISPRS International Journal of Geo-Information_ 10(7): 425. DOI: [10.3390/ijgi10070425](https://doi.org/10.3390/ijgi10070425) (open access)
 
-A. Whipp, N. Malleson, J. Ward, A. Heppenstall (2021) Estimates of the Ambient Population: Assessing the Utility of Conventional and Novel Data Sources. _International Journal of Geo-Information_ 10(3), 131 (early access). DOI: [10.3390/ijgi10030131](https://doi.org/10.3390/ijgi10030131)
+A. Whipp, N. Malleson, J. Ward, A. Heppenstall (2021) Estimates of the Ambient Population: Assessing the Utility of Conventional and Novel Data Sources. _International Journal of Geo-Information_ 10(3), 131. DOI: [10.3390/ijgi10030131](https://doi.org/10.3390/ijgi10030131) (open access)
 
 Malleson, N., K. Minors, Le-Minh Kieu , J. A. Ward , A. West and A. Heppenstall (2020) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. _Journal of Artificial Societies and Social Simulation (JASSS)_ 23 (3).  [http://jasss.soc.surrey.ac.uk/23/3/3.html](http://jasss.soc.surrey.ac.uk/23/3/3.html) DOI: [10.18564/jasss.4266](https://dx.doi.org/10.18564/jasss.4266) (open access)
 

@@ -590,7 +590,7 @@ class Modeller():
             pickle.dump(enkf, f)
 
     @classmethod
-    def run_experiment_2(cls, ensemble_size=20, pop_size=20,
+    def run_experiment_2(cls, N=10, ensemble_size=20, pop_size=20,
                          assimilation_period=20, obs_noise_std=1.0,
                          model_path='../results/models/exp2/',
                          mode=EnsembleKalmanFilterType.STATE,

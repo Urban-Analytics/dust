@@ -629,7 +629,7 @@ class Modeller():
         if not os.path.isdir(mpath):
             os.makedirs(mpath)
 
-        for i in tqdm(range(10)):
+        for i in tqdm(range(N)):
             enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                         filtering=True, benchmarking=True)
 

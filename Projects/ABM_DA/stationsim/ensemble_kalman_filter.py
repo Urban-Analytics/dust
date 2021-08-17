@@ -446,7 +446,6 @@ class EnsembleKalmanFilter(Filter):
         if self.ensemble_errors:
             ensemble_errors = self.get_ensemble_errors(truth)
             metrics.update(ensemble_errors)
-            n_len = len(metrics)
 
         # Vanilla error
         if self.run_vanilla:

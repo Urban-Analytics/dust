@@ -1003,10 +1003,17 @@ class Processor():
         model_paths = listdir(model_dir)
         all_metrics = list()
 
+        end_times = list()
+        i = 0
+
         for model_path in tqdm(model_paths):
             with open(model_dir + model_path, 'rb') as f:
                 model = pickle.load(f)
             all_metrics.extend(model.metrics)
+            end_time = model.time
+            d = {'model_number': i,
+                 'end_time': end_time}
+            end_times.append(d)
 
         output_data_dir = f'{dpath}p{pop_size}/'
 
@@ -1015,6 +1022,9 @@ class Processor():
 
         all_metrics = pd.DataFrame(all_metrics)
         all_metrics.to_csv(output_data_dir + 'metrics.csv', index=False)
+
+        end_times = pd.DataFrame(end_times)
+        end_times.to_csv(output_data_dir + 'end_times.csv', index=False)
 
 
 class Visualiser():

@@ -166,7 +166,7 @@
                         <p class="l2">Simple rules &#8594; complex outcomes</p>
                         <p class="l2">E.g. who plans the air-conditioning in termite mounds?</p>
                     <p>Hard to anticipate, and cannot be deduced from analysis of an <i>individual</i></p>
-                    <p>ABM uses simulation to (try to) understandhow macro-level patterns emerge from micro-level behaviours</p>
+                    <p>ABM uses simulation to (try to) understand how macro-level patterns emerge from micro-level behaviours</p>
 
                 
                 </section>
@@ -204,7 +204,7 @@
                 
                 <section id="ABM-Complexity" >
                     <img data-src="../figures/abm_complexity_chart.png" 
-                         alt="Diagram illustrating different ABM appications by behavioural and system/environment complexity" />
+                         alt="Diagram illustrating different ABM applications by behavioural and system/environment complexity" />
                 </section>
            
 
@@ -269,17 +269,70 @@
                 
                 
                 
-                <section>
-                    <h2>ABM Example: Simulating Individual Mobility</h2>
-                    <p>XXXX consider leaving this out and instead discuss the previous slide in detail.</p>
+                <section id="surf1" data-background-image="../figures/cityscapes/chicago_bw.jpg">
+                    <div class="whitebackground2">
+                        <h2>ABM Example:<br/>Simulating Urban Mobility</h2>
+                        <p>Motivation: better models of daily urban dynamics by combining 
+                        diverse data and simulation</p>
+                        <p>Simulating Urban Flows (<a href="http://surf.leeds.ac.uk/">surf</a>) and Data Assimilation for Agent-Based Modelling 
+                            (<a href="dust.leeds.ac.uk/">dust</a>) projects</p>
+                        <p class="l2">Crols, T., and N. Malleson (2019) Quantifying the Ambient Population Using Hourly Population Footfall Data and an Agent-Based Model of Daily Mobility. <em>GeoInformatica</em> DOI: <a href="https://doi.org/10.1007/s10707-019-00346-1">10.1007/s10707-019-00346-1</a>.</p>
+                        <p class="l2">Malleson, N., K. Minors, Le-Minh Kieu , J. A. Ward , A. West and A. Heppenstall (2020) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. <em>Journal of Artificial Societies and Social Simulation (JASSS)</em> 23 (3).  <a href="http://jasss.soc.surrey.ac.uk/23/3/3.html">http://jasss.soc.surrey.ac.uk/23/3/3.html</a> DOI: <a href="https://dx.doi.org/10.18564/jasss.4266">10.18564/jasss.4266</a></p>
+                    </div>
+                </section>
+                
+                  
+                <section id="surf-model-otley-environment" data-background-image="../figures/cityscapes/chicago_bw.jpg">
+                    <div class="whitebackground2">
+                    
+                        <h2>Simulating Urban Mobility</h2>
+                        <p>Wi-Fi footfall counters. Case study: Otley, West Yorkshire</p>
+
+                        <img class="left" data-src="../figures/surf-model/otley_environment1.png" 
+                             alt="The surf model environment in Otley" />
+
+                        <img class="right" data-src="../figures/surf-model/otley_environment2.png" 
+                             alt="The surf model environment in Otley (zoom in)" />
+                    </div>
+                
+                </section>
+                
+                <section id="surf-method" >
+                        <h2>Simulating Urban Mobility</h2>
+                        <img style="width:80%;" src="../figures/surf-model/surf_method.png" 
+                             alt="Diagram illustrating SURF method" />
+
+                </section>
+                
+                
+                <section id="surf-model-otley-results1">
+                    
+                    <h2>Simulating Urban Mobility: Results 1</h2>
+                    
+                    <img data-src="../figures/surf-model/surf_results1.png" 
+                         alt="Initial results from the surf model"/>
+                    
+                </section>
+                
+
+                <section id="surf-model-otley-results2">
+                    
+                    <h2>Simulating Urban Mobility: Results 2</h2>
+                    
+                    <img data-src="../figures/surf-model/surf_results2.png" 
+                         alt="Results after including commuter agents"/>
+                    
                 </section>
                 
                 
                 
-
                 
                 
-                
+                <section id="abm-dda-overview">
+                    <h2>Next steps: <i>real-time</i> calibration</h2>
+                    <img data-src="../figures/paper_figures/dda.jpg" alt="Diagram of dynamic data assimilation and an ABM" />
+                    <p>Data Assimilation for Agent-Based Modelling (<a href="dust.leeds.ac.uk/">dust.leeds.ac.uk</a>)</p>
+                </section>
                 
                 
                 
@@ -288,20 +341,92 @@
                 ****************** Microsimulation ******************************
                 ************************************************************ -->
                 
+                <section>
+                    <h2>Microsimulation v.s. ABM</h2>
+                    <h3>Confusing terminology!</h3>
+                    <p>(Spatial) Microsimulation (aka 'Synthetic Population Generation')</p>
+                    <p class="l2">"merging of census and social survey data to simulate a population of individuals within households" (<a href="https://link.springer.com/chapter/10.1007/978-3-319-89806-3_4">Ballas et al., 2018).</a></p>
+                    <p>Dynamic Microsimulation</p>
+                    <p class="l2">Microsimulation plus <i>time</i> (<a href="https://lirias.kuleuven.be/2000146?limo=0">O'Donoghue, 2018</a>).</p>
+                    <p class="l2">Simulate the behaviour of micro-units over time</p>                    
+                </section>
+                
+                <section>
+                    <h2>Microsimulation v.s. ABM</h2>
+                    <h3>So what is the difference?</h3>
+                    <p>Arguably comes down to <i>interactions</i></p>
+                    <p class="l2">If the individual units can interact, then it's an ABM</p>
+                    <p class="l2">If they can't interact, then it's a microsimulation</p>
+                    <p>Also, microsimulations tend to be empirical. ABMs can be abstract / hypothetical / thought experiments.</p>
+                    <p>But, on the whole, not particularly important what you call your model</p>
+                </section>
+
+                
+                
+                
+                
                 
                 
                 <!-- ************************************************************
                 ************* Microsim Example: SPENSER *************************
                 ************************************************************ -->                
                 
+                <section id="FEM1">
+                    <h2>Microsimulation Example 1:<br/>Future Elderly Model (FEM)</h2>
+                    <p>Background: understanding population ageing is key for planning health and welfare systems</p>
+                    <p>English Longitudinal Study of Ageing (ELSA)</p>
+                    <p>Markov microsimulation model</p>
+                    <p class="l2">Generates input populations and transition probabilities from ELSA</p>
+                    <p class="l2">Projects the population forward in time</p>
+                    <p class="l2">Estimates disease prevalence and economic outputs</p>
+                    <p>Scenario investigation through modification of transition probabilities</p>
+                    
+                    <p><a href="mailto:L.Archer@leeds.ac.uk">Luke Archer</a>, <a href="mailto:N.M.Lomax@leeds.ac.uk">Nik Lomax</a>, Bryan Tysinger (in press)</p>
+                </section>
                 
-                
-                
+                <section id="FEM2">
+                    <h2>Microsimulation Example 1:<br/>Future Elderly Model (FEM)</h2>
+                    <figure class="right" style="width:50%">
+                        <img data-src="../figures/attribution/smok_lunge_all.png" 
+                             alt="Graph showing reduced lung disease in non-smoking scenario"/>
+                        <figcaption>Luke Archer, Nik Lomax, Bryan Tysinger (in review). A Dynamic Microsimulation Model for Ageing and Health in England: The English Future Elderly Model</figcaption>
+                    </figure>
+                    
+                    <p>Prevalence of lung disease in a reduced smoking scenario</p>
+                    <p>Future work:</p>
+                    <p class="l2">assess the burden of chronic disease</p>
+                    <p class="l2">evaluate the impact of early life experiences on later-life health</p>
+                    <p class="l2">investigate the relationship between socio-economic factors and the quality and quantity of life</p>
+                    <p class="l2">quantify the potential impact for interventions targeting key risk factors</p>
+                </section>
+    
                 
                 <!-- ************************************************************
                 ************** Microsim Example: Taxes **************************
                 ************************************************************ -->
                 
+                <section id="MicrosimTax1">
+                    <h2>Microsimulation Example 2:<br/>Simulating Tax Policies</h2>
+                    <p>Old, Single and Poor: Using Microsimulation and Microdata to Analyse Poverty and 
+                        the Impact of Policy Change among Older Australians 
+                        (<a href="https://doi.org/10.1111/j.1759-3441.2009.00022.x">Tanton et al., 2009</a>)</p>
+                    <p>Creates a synthetic population using national census and smaller surveys</p>
+                    <p>Examines national, spatial impacts of pension age change on older, single individuals</p>
+                </section>
+                
+                <section id="MicrosimTax2">
+                    <h2>Microsimulation Example 2:<br/>Simulating Tax Policies</h2>
+
+                    <figure style="width:70%;">
+                        <img data-src="../figures/attribution/tanton_pension.png" 
+                             alt="Map of distribution of change in poverty rates" />
+                        <figcaption>Tanton, Robert, Vidyattama, Yogi, McNamara, Justine, Vu, Quoc Ngu and Harding, Ann, (2009), 
+                            <a href="https://doi.org/10.1111/j.1759-3441.2009.00022.x">Old, Single and Poor: Using Microsimulation 
+                                and Microdata to Analyse Poverty and the Impact of Policy Change among Older Australians*</a>, 
+                            <i>Economic Papers</i>, <b>28</b>, issue 2, p. 102-120.</figcaption>
+                    </figure>
+
+                </section>
                 
                 
                 
@@ -309,7 +434,18 @@
                 ********************* Conclusion ********************************
                 ************************************************************ -->                
                 
-                
+                <section id="conclusion" data-background-image="../figures/shutterstock_788457058-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Summary</h2>
+                        <p>Introduction to ABM</p>
+                        <p>ABM Example: Simulating daily mobility</p>
+                        <p>Introduction to Microsimulation</p>
+                        <p>Microsimulation examples</p>
+                        <p class="l2">Simulating implications for tax policies</p>
+                        <p class="l2">Future ageing</p>
+                        <p>Now: discussion &amp; questions</p>
+                    </div>
+                </section>
                 
                 
                 
@@ -334,11 +470,11 @@
                         <p style="text-align:center;font-size:25px">Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
 
                         <a href="http://www.leeds.ac.uk/">
-                            <img style="float:center;padding:10px;width:150px; height:auto;" src="../figures/uol_logo.gif"/>
+                            <img style="float:center;padding:10px;width:150px; height:auto;" data-src="../figures/uol_logo.gif"/>
                         </a>
                         
                         <a href="https://europa.eu/european-union/index_en">
-                            <img style="float:center;padding:10px 50px 10px 50px;width:70px; height:auto;" src="../figures/LOGO_EU.jpg"/>
+                            <img style="float:center;padding:10px 50px 10px 50px;width:70px; height:auto;" data-src="../figures/LOGO_EU.jpg"/>
                         </a>
 
                         <!--<a href="http://www.turing.ac.uk/">

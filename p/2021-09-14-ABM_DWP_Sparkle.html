@@ -1,0 +1,374 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="author" content="Nick Malleson">
+        <meta name="keywords" content="ABM, microsimulation, simulation">
+
+		<title>Simulating Society</title>
+
+		<link rel="stylesheet" href="reveal/css/reveal.css">
+		<link rel="stylesheet" href="reveal/css/theme/white.css">
+
+        <!-- Some extra bits added by Nick -->
+        <link rel="stylesheet" href="reveal/css/nick.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+
+		<!-- Pr,inting and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+
+                <!--
+                <section data-markdown id="index"
+                         data-background-image="http://surf.leeds.ac.uk/figures/cityscapes/chicago_bw.jpg">
+                -->
+
+                <section class="title"  id="index" data-background-image="../figures/virtual_city.jpeg">
+                    <div class="whitebackground2">
+
+                        <h5>DWP Sparkle Talk</h5>
+
+                        <h1 style="font-size: 55px;">Simulating Society with Agent-Based Modelling and Microsimulation</h1>
+                        <hr/>
+                        <h2 style="font-size: 35px;">
+                            <a href="http://nickmalleson.co.uk/">Nick Malleson</a></h2>
+                        <h4>University of Leeds, UK</h4>
+                        <h4><a href="mailto:n.s.malleson@leeds.ac.uk">n.s.malleson@leeds.ac.uk</a></h4>
+                          <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
+                        <hr/>
+                        <p style="text-align:center;font-size:25px">Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+
+                        <a href="http://www.leeds.ac.uk/">
+                            <img style="float:center;padding:10px;width:150px; height:auto;" src="../figures/uol_logo.gif"/>
+                        </a>
+                        
+                        <a href="https://europa.eu/european-union/index_en">
+                            <img style="float:center;padding:10px 50px 10px 50px;width:70px; height:auto;" src="../figures/LOGO_EU.jpg"/>
+                        </a>
+
+                        <!--<a href="http://www.turing.ac.uk/">
+                            <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_TURING.png"/>
+                        </a> -->
+                    </div>
+
+                </section>
+
+
+
+
+                <!-- ************************************************************
+                *********************** INTRO **********************************
+                ************************************************************ -->
+
+                
+                
+                <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                         data-background-video-loop="loop"
+                         id="Intro">
+                    <div class="whitebackground2 fragment">
+                    
+                        <h2>Overview</h2>
+
+                        <p>Introduction to ABM</p>
+                        <p>ABM Example: Simulating daily mobility</p>
+                        <p>Introduction to Microsimulation</p>
+                        <p>Microsimulation examples</p>
+                        <p class="l2">Simulating implications for tax policies</p>
+                        <p class="l2">Future ageing</p>
+                        
+                    </div>
+                    
+                    
+                    <!-- Agent based modelling (ABM) is a modelling technique which simulates the actions of individuals (agents) and has been proven to be a very powerful tool within the social sciences. Nick Malleson from Leeds University has been using agent based modelling to: simulate citizen daily mobility in a UK town; predict areas with high risk of crime; simulate bus routes and more. For this Sparkle Talk, Nick will explain to us how ABMs work and he will show us ABM and microsimulation in action!
+ 
+                    Reference: https://urban-analytics.github.io/dust/
+                    Paper: https://link.springer.com/article/10.1007%2Fs10707-019-00346-1 
+                    -->
+
+                
+                </section>
+                
+                
+                
+                
+                
+                
+                <!-- ************************************************************
+                *********************** Intro to ABM **********************************
+                ************************************************************ -->
+                
+                              <section id="IntroToABM" >
+                    <img class="right" data-src="../figures/regression.png"
+                         alt="Diagram of regression" />
+                    <h2>Introduction to ABM</h2>
+                    <h3>Aggregate v.s. Individual</h3>
+                    <p>'Traditional' modelling methods work at an aggregate level, from the <i>top-down</i></p>
+                    <p class="l2">E.g. Regression, spatial interaction modelling, location-allocation, etc.</p>
+                    <p>Aggregate models work very well in some situations</p>
+                    <p class="l2">Homogeneous individuals</p>
+                    <p class="l2">Interactions not important</p>
+                    <p class="l2">Very large systems (e.g. pressure-volume gas relationship)</p>
+                </section>
+                
+
+                <section id="IntroToABM2" >
+                    <img class="right" data-src="../figures/regression.png"
+                         alt="Diagram of regression" />
+                    <h2>Introduction to ABM</h2>
+                    <h3>Aggregate v.s. Individual</h3>
+                    <p>But they miss some important things:</p>
+                    <p class="l2">Low-level dynamics, i.e. “smoothing out” (Batty, 2005)</p>
+                    <p class="l2">Interactions and emergence</p>
+                    <p class="l2">Individual heterogeneity</p>
+                    <p>Unsuitable for modelling <i>complex systems</i></p>
+
+                </section>
+                
+                <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
+                         data-background-video-loop="loop">
+                    <div class="whitebackground2 fragment">
+                        <img class="right" style="width:40%" data-src="../figures/sims.png"
+                         alt="Diagram of the sims" />
+                        <h2>Introduction to ABM</h2>
+                        <p>Systems are driven by individuals</p>
+                        <p class="l2">(cars, people, ants, trees, whatever)</p>
+                        <p>Bottom-up modelling</p>
+                        <p class="l2">An alternative approach to modelling</p>
+                        <p class="l2">Rather than controlling from the top, try to represent the individuals</p>
+                        <p class="l2">Account for system behaviour directly</p>
+                        <p>Autonomous, interacting agents</p>
+                        <p>Represent individuals or groups</p>
+                        <p>Situated in a virtual environment</p>
+                    </div>
+                    
+                </section>
+                
+                <section id="Emergence">
+                    <figure class="right" style="width:40%;">
+                        <img data-src="../figures/attribution/termite_mound.jpg" />
+                        <figcaption>A termite mound.<br/>Attribution: <a href="http://www.flickr.com/people/93452909@N00">JBrew</a> (<a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">CC BY-SA 2.0</a>).</figcaption>
+                    </figure>
+                    <h2>Why ABM?</h2>
+                    <h3>Emergence</h3>                    
+                    <p>"The whole is greater than the sum of its parts." (Aristotle?)</p>
+                        <p class="l2">Simple rules &#8594; complex outcomes</p>
+                        <p class="l2">E.g. who plans the air-conditioning in termite mounds?</p>
+                    <p>Hard to anticipate, and cannot be deduced from analysis of an <i>individual</i></p>
+                    <p>ABM uses simulation to (try to) understandhow macro-level patterns emerge from micro-level behaviours</p>
+
+                
+                </section>
+
+                <section id="BetterTheory">
+                    <h2>Why ABM?</h2>                    
+                    <h3>Better Representations of Theory</h3>
+                    <p>Example: Crime theories emphasise importance of ... </p>
+                    <p class="l2">Individual behaviour (offenders, victims, guardians)</p>
+                    <p class="l2">Individual geographical awareness</p>
+                    <p class="l2">Environmental backcloth</p>
+                    <img data-src="../figures/crime_theories.png"/>
+                </section>                
+            
+                <section id="BetterSpace">
+                    <h2>Why ABM?</h2>                    
+                    
+                    <h3>Better Representations of Space</h3>
+                    <img class="right" data-src="../figures/mastermap_topography.png" alt="Example of GIS data" />
+                    <p>Micro-level environment is very important</p>
+                    <p>Can richly define the space that agents inhabit</p>
+                    
+                    <h3>More Natural Description of a System</h3>
+                    <p>Describe the entities <i>directly</i>, rather than using aggregate equations</p>
+                </section>
+                
+                <section id="History">
+                    <img class="right" style="width:50%" data-src="../figures/burglar_behaviour-geotime.jpg"/>
+                    <h2>Why ABM?</h2>                    
+                    <h3>History of the Model Evolution</h3>
+                    <p>Rather than returning a single result, the model <i>evolves</i></p>
+                    <p>The evolution itself can be interesting</p>
+                    <p>Analyse <i>why</i> certain events occurred</p>
+                </section>
+                
+                <section id="ABM-Complexity" >
+                    <img data-src="../figures/abm_complexity_chart.png" 
+                         alt="Diagram illustrating different ABM appications by behavioural and system/environment complexity" />
+                </section>
+           
+
+                <section id="AgentBehaviour" data-background-image="../figures/attribution/human_brain.png">
+
+                    <div class="whitebackground fragment">
+                        <h2>Modelling agent behaviours</h2>
+                        <p>Many behaviours are hard / impossible to model</p>
+                        <p class="l2">Choose those that are the most important. 
+                            <strong>Cannot include everything!</strong></p>
+                        <p>Some can be very simple - e.g. threshold-based rules (Kennedy, 2012)</p>
+                        <p class="l2"><code style="font-size:80%; text-align:left;">
+                            IF hunger IS ABOVE hunger_threshold THEN search_for_food<br/>
+                            OTHERWISE do_something_else
+                            </code></p>
+                        <p class="l2">These are the most common (Birks et al. 2012, 2013; 
+                            Dray et al. 2008; Groff 2007a,b; Hayslett-McCall, 2008)</p>
+                        <p>More advanced cognitive frameworks exist</p>
+                        <p class="l2">Beliefs, Desires, Intentions (Bratman et al., 1988)</p>
+                        <p class="l2">PECS (Schmidt, 2000). </p>
+                    </div>
+                </section>
+                
+                <section data-background-video="../videos/sim.mp4,../videos/sim.webm"
+                         data-background-video-loop="loop"
+                         id="abm-example-awareness_test"
+                          data-transition="fade">
+                     <div class="fragment" >
+                        <h2 style="background-color: white;">ABM Predictive Example</h2>
+                        <h3 style="background-color: white;">Awareness space test</h3>
+                     </div>
+                    <figure class="fragment">
+                        <img  style="width:70%" data-src="../figures/transport_results.png" />
+                    </figure>
+                </section>
+
+                
+                <section id="abm-Disadvantages">
+                    <h2>Agent-Based Modelling - Difficulties</h2>
+                    <figure class="right" >
+                        <img data-src="../figures/jacobs_choice.png" />
+                        <figcaption>Will I play with the truck, or the duck?<br/><br/>
+                            (<i>actually he played with his trains...</i>)</figcaption>
+                    </figure>
+                    
+                    <p>Tendency towards minimal behavioural complexity</p>
+                    <p>Stochasticity</p>
+                    <p>Computationally expensive (not amenable to optimisation)</p>
+                    <p class="l2">Complicated agent decisions, lots of decisions, multiple model runs</p>
+                    <p>Modelling "soft" human factors</p>
+                    <p class="l2">Need detailed, high-resolution, individual-level data</p>
+                    <p>Individual-level data</p>
+
+                </section>
+                
+                
+                
+                
+                <!-- ************************************************************
+                ********** ABM Example: simulating individual mobility **********
+                ************************************************************ -->
+                
+                
+                
+                <section>
+                    <h2>ABM Example: Simulating Individual Mobility</h2>
+                    <p>XXXX consider leaving this out and instead discuss the previous slide in detail.</p>
+                </section>
+                
+                
+                
+
+                
+                
+                
+                
+                
+                
+                
+                <!-- ************************************************************
+                ****************** Microsimulation ******************************
+                ************************************************************ -->
+                
+                
+                
+                <!-- ************************************************************
+                ************* Microsim Example: SPENSER *************************
+                ************************************************************ -->                
+                
+                
+                
+                
+                
+                <!-- ************************************************************
+                ************** Microsim Example: Taxes **************************
+                ************************************************************ -->
+                
+                
+                
+                
+                <!-- ************************************************************
+                ********************* Conclusion ********************************
+                ************************************************************ -->                
+                
+                
+                
+                
+                
+                
+
+
+
+
+                <section class="title"  id="thanks" data-background-image="../figures/virtual_city.jpeg">
+                    <div class="whitebackground2">
+
+                        <h5>DWP Sparkle Talk</h5>
+
+                        <h1 style="font-size: 55px;">Simulating Society with Agent-Based Modelling and Microsimulation</h1>
+                        <hr/>
+                        <h2 style="font-size: 35px;">
+                            <a href="http://nickmalleson.co.uk/">Nick Malleson</a></h2>
+                        <h4>University of Leeds, UK</h4>
+                        <h4><a href="mailto:n.s.malleson@leeds.ac.uk">n.s.malleson@leeds.ac.uk</a></h4>
+                          <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
+                        <hr/>
+                        <p style="text-align:center;font-size:25px">Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+
+                        <a href="http://www.leeds.ac.uk/">
+                            <img style="float:center;padding:10px;width:150px; height:auto;" src="../figures/uol_logo.gif"/>
+                        </a>
+                        
+                        <a href="https://europa.eu/european-union/index_en">
+                            <img style="float:center;padding:10px 50px 10px 50px;width:70px; height:auto;" src="../figures/LOGO_EU.jpg"/>
+                        </a>
+
+                        <!--<a href="http://www.turing.ac.uk/">
+                            <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_TURING.png"/>
+                        </a> -->
+                    </div>
+
+                </section>
+
+
+
+			</div>
+		</div>
+
+		<script src="reveal/lib/js/head.min.js"></script>
+		<script src="reveal/js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'reveal/plugin/markdown/marked.js' },
+					{ src: 'reveal/plugin/markdown/markdown.js' },
+					{ src: 'reveal/plugin/notes/notes.js', async: true },
+					{ src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>

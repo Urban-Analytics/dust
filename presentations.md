@@ -8,6 +8,8 @@ tagline: Presentations about, or relating to, the surf project
 
 **2021**
 
+  - [Simulating Society with Agent-Based Modelling and Microsimulation]({{site.baseurl}}/p/2021-09-14-ABM_DWP_Sparkle.html). DWP 'Sparkle Talk', 14th September, 2021.
+
   - [Quantifying the uncertainty in agent-based models]({{site.baseurl}}/p/2021-03-17-ESSA_SocSimFest.html).  Keynote presentation by [Alison Heppenstall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) and [Nick Malleson](https://www.nickmalleson.co.uk/) at the [ESSA Social Simulation Festival 2021](https://www.socsimfest21.eu/), 17th March 2021.
 
   -  [Ambient populations: Developing robust estimates]({{site.baseurl}}/p/2021-03-03-Ambient_Pop_Bristol.pdf). Presentation by Annabel Whipp and Nick Malleson as part of the [Engineering Mathematics Seminar Series](https://seis.bristol.ac.uk/~nb14397/seminars.html) at the [Department of Engineering Mathematics, University of Bristol](https://www.bristol.ac.uk/engineering/departments/engineering-mathematics/), 3rd March 2021. [[PDF]({{site.baseurl}}/p/2021-03-03-Ambient_Pop_Bristol.pdf)]

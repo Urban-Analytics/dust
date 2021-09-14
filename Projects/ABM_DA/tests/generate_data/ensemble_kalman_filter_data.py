@@ -11,6 +11,7 @@ from ensemble_kalman_filter import EnsembleKalmanFilterType
 # from ensemble_kalman_filter import ActiveAgentNormaliser
 from ensemble_kalman_filter import AgentIncluder
 from stationsim_gcs_model import Model
+from ensemble_kalman_filter import GateEstimator
 
 
 def get_round_destination_data():
@@ -522,4 +523,11 @@ def get_forecast_error_data():
 
     output = wrap_up([inclusion, base_statuses, ensemble_statuses,
                       truth, state_mean, expected])
+    return output
+
+
+def get_gate_estimator_allocation_data():
+    output = [(None, GateEstimator.NO_ESTIMATE),
+              (GateEstimator.ROUNDING, GateEstimator.ROUNDING),
+              (GateEstimator.ANGLE, GateEstimator.ANGLE)]
     return output

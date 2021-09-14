@@ -10,6 +10,7 @@ sys.path.append('../stationsim/')
 from ensemble_kalman_filter import EnsembleKalmanFilter
 # from ensemble_kalman_filter import ActiveAgentNormaliser
 from ensemble_kalman_filter import AgentIncluder
+from ensemble_kalman_filter import GateEstimator
 
 # Test data
 round_destination_data = get_round_destination_data()
@@ -75,6 +76,8 @@ filter_vector_data = get_filter_vector_data()
 state_vector_statuses_data = get_state_vector_statuses_data()
 
 forecast_error_data = get_forecast_error_data()
+
+gate_estimator_allocation_data = get_gate_estimator_allocation_data()
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -592,3 +595,10 @@ def test_get_forecast_error(inclusion, base_statuses, ensemble_statuses,
     result = enkf.get_forecast_error(truth)
 
     assert result == expected
+
+
+@pytest.mark.parametrize('estimator_type, expected',
+                         gate_estimator_allocation_data)
+def test_gate_estimator_allocation(estimator_type, expected):
+    enkf = set_up_enkf(gate_estimator=estimator_type)
+    assert enkf.gate_estimator == expected

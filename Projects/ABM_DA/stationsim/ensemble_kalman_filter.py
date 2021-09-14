@@ -165,7 +165,7 @@ class EnsembleKalmanFilter(Filter):
         self.error_normalisation = None
         self.inclusion = None
         self.active = True
-        self.gate_estimator = None
+        self.gate_estimator = GateEstimator.NO_ESTIMATE
         self.sensor_types = {EnsembleKalmanFilterType.STATE: 'location',
                              EnsembleKalmanFilterType.DUAL_EXIT: 'loc_exit'}
         self.error_funcs = {
@@ -179,7 +179,8 @@ class EnsembleKalmanFilter(Filter):
             if not hasattr(self, k):
                 w = f'EnKF received unexpected attribute ({k}).'
                 warns.warn(w, RuntimeWarning)
-            setattr(self, k, v)
+            if v is not None:
+                setattr(self, k, v)
 
         self.n_exits = self.base_model.gates_out
         self.sensor_type = self.sensor_types[self.mode]

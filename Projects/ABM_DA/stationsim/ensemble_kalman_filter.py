@@ -30,6 +30,11 @@ class AgentIncluder(Enum):
     MODE_EN = auto()
 
 
+class GateEstimator(Enum):
+    ROUNDING = auto()
+    ANGLE = auto()
+
+
 class EnsembleKalmanFilter(Filter):
     """
     A class to represent a general EnKF.
@@ -159,6 +164,7 @@ class EnsembleKalmanFilter(Filter):
         self.error_normalisation = None
         self.inclusion = None
         self.active = True
+        self.gate_estimator = None
         self.sensor_types = {EnsembleKalmanFilterType.STATE: 'location',
                              EnsembleKalmanFilterType.DUAL_EXIT: 'loc_exit'}
         self.error_funcs = {

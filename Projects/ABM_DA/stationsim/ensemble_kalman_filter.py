@@ -31,6 +31,7 @@ class AgentIncluder(Enum):
 
 
 class GateEstimator(Enum):
+    NO_ESTIMATE = auto()
     ROUNDING = auto()
     ANGLE = auto()
 

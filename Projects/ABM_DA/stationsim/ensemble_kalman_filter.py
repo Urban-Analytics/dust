@@ -103,6 +103,9 @@ class EnsembleKalmanFilter(Filter):
         else:
             self.mean_func = self.get_population_mean
 
+        if self.gate_estimator == GateEstimator.ANGLE:
+            self.__set_angle_estimation_defaults()
+
         # Errors stats at update steps
         self.metrics = list()
         self.forecast_error = list()

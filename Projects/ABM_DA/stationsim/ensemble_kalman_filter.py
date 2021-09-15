@@ -206,6 +206,22 @@ class EnsembleKalmanFilter(Filter):
             raise ValueError('Filter type not recognised.')
         return models
 
+    def __set_angle_estimation_defaults(self):
+        # TODO hand calculate corner angles to ensure that this is correct
+        self.corners = {'top_left': (0, self.base_model.height),
+                        'top_right': (self.base_model.width,
+                                      self.base_model.height),
+                        'bottom_left': (0, 0),
+                        'bottom_right': (self.base_model.width, 0)}
+
+        self.model_centre = (self.base_model.width / 2,
+                             self.base_model.height / 2)
+
+        self.corner_angles = dict()
+        for corner, location in self.corners.items():
+            angle = self.get_angle(self.model_centre, location)
+            self.corner_angles[corner] = angle
+
     def make_random_destination(self, gates_in: int,
                                 gates_out: int, gate_in: int) -> int:
         # Ensure that their destination is not the same as their origin

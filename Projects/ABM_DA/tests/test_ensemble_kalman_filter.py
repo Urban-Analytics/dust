@@ -79,6 +79,8 @@ forecast_error_data = get_forecast_error_data()
 
 gate_estimator_allocation_data = get_gate_estimator_allocation_data()
 
+get_angle_data = get_get_angle_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -602,3 +604,10 @@ def test_get_forecast_error(inclusion, base_statuses, ensemble_statuses,
 def test_gate_estimator_allocation(estimator_type, expected):
     enkf = set_up_enkf(gate_estimator=estimator_type)
     assert enkf.gate_estimator == expected
+
+
+@pytest.mark.parametrize('vector_tail, vector_head, expected',
+                         get_angle_data)
+def test_get_angle(vector_tail, vector_head, expected):
+    enkf = set_up_enkf()
+    assert enkf.get_angle(vector_tail, vector_head) == expected

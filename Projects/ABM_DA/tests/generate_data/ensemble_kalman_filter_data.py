@@ -1,5 +1,5 @@
 # Imports
-from math import sqrt
+from math import pi, sqrt
 import numpy as np
 import pytest
 import sys
@@ -530,4 +530,23 @@ def get_gate_estimator_allocation_data():
     output = [(None, GateEstimator.NO_ESTIMATE),
               (GateEstimator.ROUNDING, GateEstimator.ROUNDING),
               (GateEstimator.ANGLE, GateEstimator.ANGLE)]
+    return output
+
+
+def get_get_angle_data():
+    heads = [(1, 0),
+             (1, 1),
+             (0, 1),
+             (-1, 1),
+             (-1, 0),
+             (-1, -1),
+             (0, -1),
+             (1, -1)]
+
+    tails = [(0, 0) for _ in range(len(heads))]
+
+    expected = [0, pi/4, pi/2, 3*pi/4, pi,
+                -3*pi/4, -pi/2, -pi/4]
+
+    output = wrap_up([tails, heads, expected])
     return output

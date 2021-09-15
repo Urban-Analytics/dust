@@ -9,6 +9,7 @@ A class to represent a general Ensemble Kalman Filter for use with StationSim.
 from copy import deepcopy as dcopy
 from enum import Enum, auto
 from filter import Filter
+from math import atan2
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -212,6 +213,15 @@ class EnsembleKalmanFilter(Filter):
         while (gate_out == gate_in or gate_out >= self.n_exits):
             gate_out = np.random.randint(gates_out)
         return gate_out
+
+    @staticmethod
+    def get_angle(vector_tail: Tuple[float, float],
+                  vector_head: Tuple[float, float]) -> float:
+        x_diff = vector_head[0] - vector_tail[0]
+        y_diff = vector_head[1] - vector_tail[1]
+        print(x_diff, y_diff)
+        angle = atan2(y_diff, x_diff)
+        return angle
 
     # --- Filter step --- #
     def step(self) -> None:

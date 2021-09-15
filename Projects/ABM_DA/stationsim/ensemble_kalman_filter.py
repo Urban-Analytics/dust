@@ -212,6 +212,7 @@ class EnsembleKalmanFilter(Filter):
     def __set_angle_estimation_defaults(self):
         # TODO hand calculate corner angles to ensure that this is correct
         self.__set_corner_angles()
+        self.__set_gates_edge_angles()
 
     def __set_corner_angles(self):
         self.corners = {'top_left': (0, self.base_model.height),
@@ -227,6 +228,42 @@ class EnsembleKalmanFilter(Filter):
         for corner, location in self.corners.items():
             angle = self.get_angle(self.model_centre, location)
             self.corner_angles[corner] = angle
+
+    def __set_gates_edge_angles(self):
+        n_gates = len(self.base_model.gates_locations)
+
+        self.gate_angles = dict()
+
+        for gate_number in range(n_gates):
+            gate_loc = self.base_model.gates_locations[gate_number]
+            gate_width = self.base_model.gates_width[gate_number]
+            edge_1, edge_2 = self.__get_gate_edge_angles(self.model_centre,
+                                                         gate_loc,
+                                                         gate_width)
+            self.gate_angles[gate_number] = (edge_1, edge_2)
+
+    def __get_gate_edge_angles(self, centre_loc, gate_loc, gate_width):
+        wd = gate_width / 2
+
+        if(gate_loc[0] == 0):
+            edge_loc_1 = (0, gate_loc[1] + wd)
+            edge_loc_2 = (0, gate_loc[1] - wd)
+        elif(gate_loc[0] == self.base_model.width):
+            edge_loc_1 = (self.base_model.width, gate_loc[1] + wd)
+            edge_loc_2 = (self.base_model.width, gate_loc[1] - wd)
+        elif(gate_loc[1] == 0):
+            edge_loc_1 = (gate_loc[0] + wd, 0)
+            edge_loc_2 = (gate_loc[0] - wd, 0)
+        elif(gate_loc[1] == self.base_model.height):
+            edge_loc_1 = (gate_loc[0] + wd, self.base_model.height)
+            edge_loc_2 = (gate_loc[0] - wd, self.base_model.height)
+        else:
+            raise ValueError(f'Invalid gate location: {gate_loc}')
+
+        edge_angle_1 = self.get_angle(centre_loc, edge_loc_1)
+        edge_angle_2 = self.get_angle(centre_loc, edge_loc_2)
+
+        return edge_angle_1, edge_angle_2
 
     def make_random_destination(self, gates_in: int,
                                 gates_out: int, gate_in: int) -> int:

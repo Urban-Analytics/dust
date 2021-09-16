@@ -278,7 +278,6 @@ class EnsembleKalmanFilter(Filter):
                   vector_head: Tuple[float, float]) -> float:
         x_diff = vector_head[0] - vector_tail[0]
         y_diff = vector_head[1] - vector_tail[1]
-        print(x_diff, y_diff)
         angle = atan2(y_diff, x_diff)
         return angle
 

@@ -81,6 +81,8 @@ gate_estimator_allocation_data = get_gate_estimator_allocation_data()
 
 get_angle_data = get_get_angle_data()
 
+edge_angle_data = get_edge_angle_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -611,3 +613,17 @@ def test_gate_estimator_allocation(estimator_type, expected):
 def test_get_angle(vector_tail, vector_head, expected):
     enkf = set_up_enkf()
     assert enkf.get_angle(vector_tail, vector_head) == expected
+
+
+@pytest.mark.parametrize('expected', edge_angle_data)
+def test_edge_angle_setup(expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+    edge_angles = list()
+    for _, gate_angles in enkf.gate_angles.items():
+        edge_angles.extend(gate_angles)
+
+    unique_edge_angles = list(set(edge_angles))
+    unique_edge_angles.sort(reverse=True)
+
+    assert unique_edge_angles == expected

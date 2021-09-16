@@ -1,4 +1,5 @@
 # Imports
+from cmath import phase
 from math import pi, sqrt
 import numpy as np
 import pytest
@@ -550,3 +551,23 @@ def get_get_angle_data():
 
     output = wrap_up([tails, heads, expected])
     return output
+
+
+def get_edge_angle_data():
+    edge_locs = np.array([[0, 400],
+                          [0, 700], [250, 700], [455, 700], [700, 700],
+                          [740, 700], [740, 610], [740, 550], [740, 400],
+                          [740, 340], [740, 190], [740, 125], [740, 5],
+                          [740, 0], [555, 0], [370, 0], [185, 0], [0, 0],
+                          [0, 150]])
+
+    n_angles = len(edge_locs)
+
+    centre_locs = np.array([[370, 350] for _ in range(n_angles)])
+
+    vectors = edge_locs - centre_locs
+    angles = list()
+    for i in range(n_angles):
+        angles.append(phase(complex(vectors[i][0], vectors[i][1])))
+
+    return [angles]

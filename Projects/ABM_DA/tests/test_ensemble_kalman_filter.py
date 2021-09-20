@@ -627,3 +627,13 @@ def test_edge_angle_setup(expected):
     unique_edge_angles.sort(reverse=True)
 
     assert unique_edge_angles == expected
+
+
+@pytest.mark.parametrize('expected', edge_angle_data)
+def test_unique_edge_angles(expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+    unique_edge_angles = list(enkf.unique_gate_angles)
+    unique_edge_angles.sort(reverse=True)
+
+    assert unique_edge_angles == expected

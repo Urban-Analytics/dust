@@ -243,7 +243,7 @@ class EnsembleKalmanFilter(Filter):
             self.gate_angles[gate_number] = (edge_1, edge_2)
             gate_angles.extend([edge_1, edge_2])
 
-        self.unique_gate_angles = set(gate_angles)
+        self.unique_gate_angles = sorted(list(set(gate_angles)))
 
     def __get_gate_edge_angles(self, centre_loc, gate_loc, gate_width):
         wd = gate_width / 2

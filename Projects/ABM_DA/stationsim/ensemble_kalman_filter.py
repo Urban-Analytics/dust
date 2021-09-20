@@ -210,7 +210,6 @@ class EnsembleKalmanFilter(Filter):
         return models
 
     def __set_angle_estimation_defaults(self):
-        # TODO hand calculate corner angles to ensure that this is correct
         self.__set_corner_angles()
         self.__set_gates_edge_angles()
 

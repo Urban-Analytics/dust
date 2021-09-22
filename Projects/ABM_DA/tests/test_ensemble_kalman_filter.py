@@ -83,6 +83,10 @@ get_angle_data = get_get_angle_data()
 
 edge_angle_data = get_edge_angle_data()
 
+# angle_destination_in_data = get_angle_destination_in_data()
+
+# round_target_angle_data = get_round_target_angle_data()
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -637,3 +641,21 @@ def test_unique_edge_angles(expected):
     unique_edge_angles.sort(reverse=True)
 
     assert unique_edge_angles == expected
+
+
+# @pytest.mark.parametrize('angle, expected', angle_destination_in_data)
+# def test_angle_destination_in(angle, expected):
+#     enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+#     result = enkf.get_destination_angle(angle)
+#     assert result == expected
+
+
+# @pytest.mark.parametrize('angle, insertion_idx, expected',
+#                          round_target_angle_data)
+# def test_round_target_angle(angle, insertion_idx, expected):
+#     enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+#     result = enkf.round_target_angle(angle, insertion_idx)
+
+#     assert result == expected

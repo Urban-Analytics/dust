@@ -571,3 +571,18 @@ def get_edge_angle_data():
         angles.append(phase(complex(vectors[i][0], vectors[i][1])))
 
     return [angles]
+
+
+def get_angle_destination_in_data():
+    pass
+
+
+def get_round_target_angle_data():
+    angles = [pi/2, 0]
+
+    insertion_idx = [3, 9]
+
+    expected = []
+
+    output = wrap_up([angles, insertion_idx, expected])
+    return output

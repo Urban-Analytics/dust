@@ -1,0 +1,765 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="author" content="Alison Heppenstall">
+        <meta name="author" content="Nick Malleson">
+        <meta name="keywords" content="ABM, data assimilation, city simulation, uncertainty">
+
+		<title>Quantifying the uncertainty in agent-based models</title>
+
+		<link rel="stylesheet" href="reveal/css/reveal.css">
+		<link rel="stylesheet" href="reveal/css/theme/white.css">
+
+        <!-- Some extra bits added by Nick -->
+        <link rel="stylesheet" href="reveal/css/nick.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+
+		<!-- Pr,inting and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+
+                <!--
+                <section data-markdown id="index"
+                         data-background-image="http://surf.leeds.ac.uk/figures/cityscapes/chicago_bw.jpg">
+                -->
+
+                <section class="title"  id="index" data-background-image="../figures/shutterstock_615414464-small.jpg">
+                    <div class="whitebackground2">
+
+                        <!--<a href="https://turing.ac.uk//">
+                            <img src="../figures/LOGO_TURING.png"
+                                 style="width:30%; padding:0px"
+                                 alt="Alan Turing Institute Logo"/></a>-->
+
+                        <h1 style="font-size: 40px;"><br/>Quantifying the uncertainty in agent-based models</h1>
+                        <hr/>
+                        <h2 style="font-size: 30px;"><a href="https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall">Alison Heppenstall</a> and
+                            <a href="http://nickmalleson.co.uk/">Nick Malleson</a></h2>
+                        <h4 style="font-size:20px;">University of Leeds and The Alan Turing Institute, UK<br/>
+                        <a href="mailto:Alison Heppenstall <A.J.Heppenstall@leeds.ac.uk>">A.J.Heppenstall@leeds.ac.uk</a></h4>
+                          <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
+                        <hr/>
+                        <p style="text-align:center;font-size:25px">
+                            Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a><br/>
+
+                            <a href="https://europa.eu/european-union/index_en">
+                                <img style="float:left; padding:20px 10px 10px 10px; width:100px; height:auto;" src="../figures/LOGO_EU.jpg"/>
+                            </a>
+
+                            <a href="http://www.leeds.ac.uk/">
+                                <img style="float:center; padding:10px 10px 10px 10px; width:250px; height:auto;" src="../figures/uol_logo.gif"/>
+                            </a>
+
+                            <a href="http://www.esrc.ac.uk/">
+                                <img style="float:center; padding:0px 10px 10px 10px;width:90px; height:auto;" src="../figures/LOGO_ESRC.jpg"/>
+                            </a>
+
+                            <a href="http://www.turing.ac.uk/">
+                                <img style="float:right; padding:20px 10px 10px 10px; width:150px; height:auto;" src="../figures/LOGO_TURING.png"/>
+                            </a>
+                        </p>
+                    </div>
+
+                </section>
+                
+                <section id="abstract" data-background-image="../figures/shutterstock_615414464-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Abstract</h2>
+                        <p class="small">Agent-based modelling is maturing as a method for capturing and simulating individual behaviour and activity.  Whilst there are a dazzling array of applications appearing in the literature, there is less work that focusses on important methodological issues such as the handling of uncertainty in these models.  We discuss (and demonstrate) how approaches from the field of Uncertainty Quantification can be adapted for use in agent-based models so that models can become robust enough to be used in important policy decisions.</p>
+                    </div>
+                </section>
+
+
+
+                <section id="acks" data-background-image="../figures/shutterstock_615414464-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Acknowledgements</h2>
+                        <a href="https://europa.eu/european-union/index_en">
+                            <img style="float:right; padding:20px 10px 10px 10px; width:100px; height:auto;" data-src="../figures/LOGO_EU.jpg"/>
+                        </a>
+
+                        <p>Josie McCulloch, Patricia Ternes, Robert Clay,</p>
+                        <p>Jiaqi Ge, Jonathan Ward, Minh Kieu</p>
+                    
+
+                        <a href="https://erc.europa.eu/">
+                            <img style="float:right; padding:10px; width:100px; height:auto;" data-src="../figures/LOGO_ERC.jpg"/>
+                        </a>
+
+                        <a href="http://www.leeds.ac.uk/">
+                            <img style="float:left; padding:10px; width:300px; height:auto;" data-src="../figures/uol_logo.gif"/>
+                        </a>
+
+                        <a href="http://www.esrc.ac.uk/">
+                            <img style="float:center; padding:10px;width:90px; height:auto;" data-src="../figures/LOGO_ESRC.jpg"/>
+                        </a>
+
+                        <a href="http://www.turing.ac.uk/">
+                            <img style="float:right; padding:10px; width:150px; height:auto;" data-src="../figures/LOGO_TURING.png"/>
+                        </a>
+                        
+                    </div>
+                </section>
+
+                <section >
+                    <h2 class="whitebackground2">Greetings from Yorkshire</h2>
+                    <img data-src="../figures/yorkshire.jpg" alt="Pictures from Yorkshire"/>
+                </section>
+
+
+
+                <section>
+                    <h2>Talk overview</h2>
+                    <p>Why is ABM and calibration difficult?</p>
+                    <p>Why should we bother?</p>
+					<p>First steps into UQ </p>
+					<p>Adding a time dimension</p>
+					<p>Towards live simulations</p>
+
+                </section>
+
+                <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
+                         data-background-video-loop="loop">
+                    <div class="whitebackground2 fragment">
+                        <!--<img class="right" style="width:40%" data-src="../figures/sims.png"
+                         alt="Diagram of the sims" />-->
+                        <h2>Agent-Based Modelling</h2>
+                        <p>Systems are driven by individuals</p>
+                        <p class="l2">(cars, people, ants, trees, whatever)</p>
+                        <p>Individual-level modelling</p>
+                        <!--<p class="l2">An alternative approach to modelling</p>-->
+                        <p class="l2">Rather than controlling from the top, try to represent the individuals</p>
+                        <!--<p class="l2">Account for system behaviour directly</p>-->
+                        <p>Autonomous, interacting agents</p>
+                        <!--<p>Represent individuals or groups</p>-->
+                        <p>Situated in a virtual environment</p>
+                    </div>
+
+                </section>
+
+
+                <section id="spatial-abms">
+                    <figure>
+                        <img data-src="../figures/spatial_abms.png" />
+                        <figcaption>Crooks et al. (2019), Agent-based Modelling and Geographical Information Systems: A Practical Primer, Sage, London, UK. </figcaption>
+                    </figure>
+
+                </section>
+
+                <section>
+                    <img data-src="../figures/socsimfest/example_papers.jpg" alt="Example ABM papers" />
+                </section>
+
+
+                <section>
+
+                    <!--<a href="http://www.youtube.com/watch?v=RZfwuCjbBDk">
+                        <iframe class="right" src="http://www.youtube.com/embed/RZfwuCjbBDk"></iframe>
+                    </a>-->
+                    <h2>Calibration</h2>
+
+                    <p>Finding the optima not a problem, finding the global is…</p>
+                    <p>Model discrepancy – error between optimised error and an observation</p>
+                    <p>Uncertainties – between model and real system</p>
+                    <p>Computational cost: potentially lots of parameters = lots of runs</p>
+                    <p><b>And added delights with ABM...</b></p>
+                    <p class="l2">Nature of the system</p>
+                    <p class="l2">Variable dimensionality</p>
+                    <p class="l2">Distance metric based on pattern measurement</p>
+                    <p class="l2">Emulation of model structure with many different rules</p>
+                </section>
+
+                <section>
+                    <img data-src="../figures/socsimfest/covid_ambs.jpg" alt="Lots of ABMs used to fight covid spread" />
+                </section>
+
+                <section>
+                    <h2>ABM and Uncertainty</h2>
+                    <img class="right" src="../figures/socsimfest/abms_uncertainty.png" alt="Different types of uncertainty in a model"/>
+                    <p>Parameter uncertainty:</p>
+                    <p class="l2">Which parameters? Which values? Equifinality.</p>
+                    <p>Observation uncertainty</p>
+                    <p class="l2">Imprecise, noisy data, natural variability</p>
+                    <p>Model uncertainty / model discrepancy:</p>
+                    <p class="l2">Model is a simplification (relies on assumptions and imperfections)</p>
+                    <p>Ensemble variance:</p>
+                    <p class="l2">Stochastic variance</p>
+                    <!--<p><b>Parameter uncertainty:</b> which parameters? Which values? Equifinality.</p>
+										<p><b>Observation uncertainty:</b> imprecise, noisy data, natural variability</p>
+									  <p><b>Model uncertainty/model discrepancy:</b> Model is a simplification (relies on assumptions and imperfections)</p>
+										<p><b>Ensemble variance:</b> stochastic variance</p>-->
+                </section>
+
+
+                <section>
+                    <h2>Uncertainty Quantification</h2>
+                    <img data-src="../figures/ensemble_uncertainty.png" style="width:80%;"
+                         alt="Model runs with large and small uncertainty. Other areas have well developed approaches to this" />										<p>History Matching (HM)</p>
+										<p class="l2">HM is a procedure used to reduce the size of the parameter space (Craig et al. 1997)</p>
+										<p class="l2">HM discards areas found to be implausible, leaving a (usually) much smaller non-implausible region of inputs</p>
+                    <p>Approximate Bayesian Computation (ABC)</p>
+										<p class="l2">ABC estimates a posterior distribution that quantifies the probability of specific parameter values given the observed data</p>
+                </section>
+
+                <section>
+                    <h2>Combined ... </h2>
+                    <img src="../figures/socsimfest/hm_abc-steps.png" alt="Steps in using history matching and ABC" />
+                </section>
+
+                <section>
+                    <h2>Sugarscape</h2>
+                    <img class="right" style="width:30%;" data-src="../figures/sugarscape.png" alt="Model results from sugarscape" />
+                    <p>Here we are looking at two parameters:</p>
+                    <p class="l2">Maximum possible metabolism of an agent</p>
+										<p class="l2">Maximum possible vision of an agent</p>
+										<p>Outcome measure is <b>size of population</b> that the model can sustain (66).</p>
+										<p>Framework followed</p>
+                    <p class="l2">Define the parameter space to be explored</p>
+										<p class="l2">Quantify all uncertainties in the model and observation</p>
+										<p class="l2">Run HM on the parameter space</p>
+										<p class="l2">Run ABC, using the HM results as a prior</p>
+                </section>
+
+
+                <section>
+                    <h2>Sugarscape: HM</h2>
+                    <img src="../figures/socsimfest/sugarscape-hm.png" alt="history matcing results: plausible parameter combinations" />
+                    <p>Sugarscape - small parameter space.  Measure the implausiblity of each parameter pair (metabolism, vision)</p>
+                    <p>10 waves performed – use plausible space from wave 1 as input to wave 2 and so forth</p>
+                </section>
+
+                <section>
+                    <h2>Sugarscape: ABC</h2>
+                    <img data-src="../figures/socsimfest/sugarscape-abc.jpg" style="width:80%"
+                         alt="history matcing results: most likely parameter combinations" />
+                    <p>Results show that the parameters with the highest probability of matching the observation (i.e. sustaining a population of 66 agents) are where {metabolism, vision} are {4, 7}.</p>
+                </section>
+
+                
+
+
+                <!-- ************************************************************
+                ********************* ABC and RAMP ******************************
+                ************************************************************ -->
+
+                <section id='ramp'>
+
+                    <h2>Rapid Assistance in Modelling the Pandemic (RAMP):
+                    Urban Analytics</h2>
+
+                    <p>Microsimulation of disease spread</p>
+                    <p>Includes shopping, schooling, working</p>
+                    <p>Calibrated on hospital admissions data</p>
+
+                    <img class="left" data-src="../figures/ramp/ramp_gui_1.png"
+                         alt="Screenshot of the RAMP GUI" />
+
+                    <img class="right" data-src="../figures/ramp/ramp_gui_2.png"
+                         alt="Screenshot of the RAMP GUI" />
+
+                </section>
+
+                <section id='ramp-abc-parameter-posteriors'>
+
+                    <h2>RAMP: Urban Analytics</h2>
+                    <p>ABC Parameter posteriors</p>
+
+                    <img data-src="../figures/ramp/parameter_posteriors.png"
+                         style="width:70%;"
+                         alt="Posterior distributions of the model parameters" />
+
+                </section>
+
+                <section id='ramp-abc-model-uncertainty'>
+
+                    <h2>RAMP: Urban Analytics</h2>
+                    <p>ABC results uncertainty</p>
+
+                    <img data-src="../figures/ramp/model_posteriors.png"
+                         style="width:70%;"
+                         alt="Posterior distributions of the model parameters" />
+
+                </section>
+
+
+
+                <!-- ************************************************************
+                *****************************************************************
+                *****************************************************************
+                *****************************************************************
+                ********************* NICK'S SECTION ****************************
+                *****************************************************************
+                *****************************************************************
+                *****************************************************************
+                **************************************************************-->
+
+
+
+                <!-- ************************************************************
+                ***************** Real-Time Intro: traffalgar *******************
+                ************************************************************ -->
+
+<!--
+15.	Real time ABM intro
+16.	Difficulties (related to above, especially model discrepancy)
+-->
+
+
+                <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                         data-background-video-loop="loop"
+                         id="Context-UrbanFlows">
+                    <div class="whitebackground2 fragment">
+                        <!--<h3>Quantifying Real-Time Urban Dynamics</h3>-->
+                        <h2>Reducing Uncertainty in Real Time</h2>
+                        <h3>Example: Urban Mobility</h3>
+
+                        <p><i>People</i> are the drivers of processes in cities</p>
+
+                        <p>We need to understand mobility patterns:</p>
+
+                        <!--<p class="l2">Crime – how many possible victims?</p>-->
+                        <p class="l3">Pollution – who is being exposed? Where are the hotspots?</p>
+                        <p class="l3">Economy – can we attract more people to our city centres?</p>
+                        <!--<p class="l2">Health - can we encourage more active travel?</p>-->
+                        <p class="l3">Disease - which times / places have large numbers of interactions</p>
+                    </div>
+                </section>
+
+
+                <!--
+                <section data-background-video="../videos/trafalgar_timelapse2-1280x720.mp4"
+                         data-background-video-loop="loop"
+                         id="Context-UrbanFlows2">
+                    <div class="whitebackground2 fragment" style="width:50%float:center;" >
+                        <img data-src="../figures/google_mobility_lockdown_data.png"
+                             alt="Google Mobility Data: people spending much more time at home" />
+                    </div>
+                </section>
+                -->
+
+
+                <section  id="Context-UrbanFlows2b">
+
+                     <video data-autoplay controls loop width="45%" height="auto"
+                            alt="Trafalgar square before COVID: busy">
+                        <source data-src="../videos/trafalgar_timelapse-1280×720.mp4" type="video/mp4"/>
+                         Your browser does not support the video tag.
+                    </video>
+
+                     <video data-autoplay controls loop width="45%" height="auto" class="fragment"
+                            alt="Trafalgar square after COVID: quieter">
+                        <source data-src="../videos/trafalgar_timelapse2-1280x720.mp4" type="video/mp4"/>
+                         Your browser does not support the video tag.
+                    </video>
+
+
+                    <img class="fragment" style="width:60%; float:center" data-src="../figures/google_mobility_lockdown_data.png"
+                             alt="Google Mobility Data: people spending much more time at home" />
+
+
+                </section>
+
+
+
+                <!-- ************************************************************
+                ************** CONTEXT: NEW DATA & METHODS **********************
+                ************************************************************ -->
+
+                <!--
+                <section id="Data">
+
+                    <figure class="right" style="width:40%;">
+                        <img data-src="../figures/paper_figures/census_mobile-correlation-map.png" alt="Comparing census daytime populations to aggregate mobile phone estimates" />
+                        <figcaption>Evaluating aggregate mobile phone population accuracy</figcaption>
+                    </figure>
+
+                    <h2>New Data</h2>
+
+                    <p>Abundance of (new) digital data that tell us about human systems</p>
+
+                    <h3>Macro</h3>
+                    <p>Cross-sectional surveys (e.g. the Census), longitudinal surveys (e.g. Born in Bradford; Millennium Cohort Study),
+                        area-based (e.g. Indices of Multiple Deprivation), ...</p>
+
+                    <h3>Micro</h3>
+                    <p>Personal: Mobile phone apps, social media contributions, mobile phone use,
+                        credit/debit card payments, loyalty cards, ...</p>
+                    <p>Anonymous: pedestrian counters, traffic counters, pollution sensors, ... </p>
+
+                    <h3>How to combine??</h3>
+
+                </section>
+                -->
+
+
+                <!-- ************************************************************
+                ********************* DATA ASSIMILATION *************************
+                ************************************************************ -->
+
+                <section id="prob-divergence"
+                         data-background-video="../videos/starlings1-short.mp4"
+                         data-background-video-muted
+                         data-background-video-loop="loop">
+
+                    <div class="whitebackground fragment">
+                        <h2>Problem: Models will Diverge</h2>
+                        <p>Lots of uncertainties</p>
+                        <p class="l2">Inputs (measurement noise)</p>
+                        <p class="l2">Parameter values</p>
+                        <p class="l2">Model structure</p>
+                        <p class="l2">Natural stochasticity</p>
+                        <p class="fragment"> ... and that's assuming that the system hasn't changed fundamentally</p>
+                    </div>
+                </section>
+
+
+
+                <section id="dda" data-background-image="../figures/weather2.jpg" >
+                    <div class="whitebackground fragment">
+                        <h2>Possible Solution: Data Assimilation</h2>
+                        <p>Used in meteorology and hydrology to update running models with new data.</p>
+                        <p>Try to improve estimates of the true system state by combining:</p>
+                        <p class="l2">Noisy, real-world observations</p>
+                        <p class="l2">Model estimates of the system state</p>
+                        <!--<p>Other advantages</p>
+                        <p class="l2">Move information from data-rich to data-poor areas</p>
+                        <p class="l2">Quantify the uncertainties in the model </p>
+                        <p class="l3">I.e. model structure v.s. parameter / variable values</p>-->
+                    </div>
+                </section>
+
+
+                <section id="abm-dda-overview">
+                    <img data-src="../figures/paper_figures/dda.jpg" alt="Diagram of data assimilation and an ABM" />
+                </section>
+
+
+
+
+
+
+
+
+
+                <!-- ************************************************************
+                ******************** REAL TIME CROWD MODELLING*******************
+                ************************************************************ -->
+
+
+                <section id="real-time-crowd-modelling"
+                         data-background-video="../videos/grandcentral-short.mp4"
+                         data-background-video-muted
+                         data-background-video-loop="loop">
+
+                    <div class="whitebackground2 fragment">
+                        <h2>Example: Real Time Crowd Modelling</h2>
+                        <p>Simulating a city in real-time is too hard!! (for now). Let's start with a crowd</p>
+                        <p>Can we reduce the uncertainty in an agent-based crowd simulation in real time?</p>
+                        <div class="fragment">
+                            <p>Pedestrian trace data (Grand Central Terminal, New York City)</p>
+                            <p class="l2">B. Zhou, X. Wang and X. Tang. (2012) Understanding Collective Crowd Behaviors: Learning a Mixture Model of Dynamic Pedestrian-Agents. In <i>Proceedings of IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</i> 2012</p>
+                            <p class="l2"><a href="http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html"> http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html</a></p>
+                        </div>
+                        <!--
+                        <img class="left", style="width:50%"
+                             data-src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/grand_central_floorplan.png"
+                                 alt="Grand Central Terminal floor plan with entrances around the sides and an obstruction in the centre." />
+
+                        <img class="right" style="width:30%"
+                                 src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trajectories-structure.png"
+                                 alt="Pedestrian trajectories estimated from the video" />
+                        -->
+
+                    </div>
+
+                </section>
+
+
+                <!-- ************************************************************
+                *************************  PARTICLE FILTER **********************
+                ************************************************************ -->
+
+                <section id="pf-experiments">
+                    <h2>Data assimilation with a Particle Filter</h2>
+
+                    <img data-src="../figures/PF_flowchart3.png"
+                         alt="Flowchart of the experimental design. Lots of models ('particles') are run simultaneously." />
+
+                </section>
+
+                <!--
+                <section id="pf-stationsim2-a" data-transition="fade">
+                    <h2>Crowd Simulation with a Particle Filter</h2>
+                    <img data-src="../figures/pf_animation-static.png"
+                         alt="Animation of a crowding model with data assimilation" />
+                </section>
+
+                <section id="pf-stationsim2-b" data-transition="fade">
+                    <h2>Crowd Simulation with a Particle Filter</h2>
+                    <img data-src="../figures/pf_animation.gif"
+                         alt="Animation of a crowding model with data assimilation" />
+                </section>
+                -->
+
+                <!-- Individual pictures of results -->
+                <section id="pf-results-10_agents_10_particles">
+                    <h2>Particle Filter Results</h2>
+                    <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/ani-10agents-10particles-window100.png"
+                         style="width:80%;"
+                         alt="Predictions of the PF with 10 agents and 10 particles - most particles
+                              predict the locations of the agents well. " />
+                </section>
+
+
+                <section id="pf-results-40_agents_10_particles">
+                    <h2>Particle Filter Results</h2>
+                    <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/ani-40agents-10particles-window100.png"
+                         style="width:80%;"
+                         alt="Predictions of the PF with 40 agents and 10 particles - now the model is
+                              too complex for only 10 particles to reliably estimate its behaviour." />
+                </section>
+
+
+
+
+                <section id="pf-results-median_error">
+
+                    <h2>Preliminary Particle Filter Results</h2>
+                    <h3>Box Environment: More particles = lower error</h3>
+                    <figure>
+                        <img style="width:70%" data-src="../figures/paper_figures/2018-ParticleFilterFigs/median_abs_error.png"
+                         alt="median absolute error change with number of agents and particles: greater
+                              complexity caused by larger numbers of agents can be mitigated by increasing
+                              the numbers of particles." />
+                        </figure>
+                    <figcaption>
+                        Malleson, Nick, Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew West, and Alison Heppenstall. (2020) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. <i>Journal of Artificial Societies and Social Simulation</i> 23(3) DOI: <a href="https://doi.org/10.18564/jasss.4266">10.18564/jasss.4266</a>.
+                    </figcaption>
+                </section>
+
+                <section id="pf-results-wiggle-count">
+                    <h2>Difficulties (I)</h2>
+                    <h3>Exponential increase in complexity</h3>
+                    <figure>
+
+                        <img style="width:70%;"
+                             data-src="../figures/paper_figures/2018-ParticleFilterFigs/wiggle_count.png"
+                             alt="Number of collisions increases exponentially with number of agents" />
+                        <figcaption>
+                            N. Malleson, K. Minors, Le-Minh Kieu, J. A. Ward, A. West and Alison Heppenstall (2020).
+                            Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter.
+                            <i>Journal of Artificial Societies and Social Simulation (JASSS)</i>
+                            <a href="http://jasss.soc.surrey.ac.uk/23/3/3.html">23(3), 3</a>.
+                        </figcaption>
+                    </figure>
+                </section>
+
+                <section id="pf-results-wiggle-count2">
+                    <h2>Solutions (I)</h2>
+                    
+                    <img class="right" style="width:40%;" src="../figures/Network%20server%20room_87108880.jpg" alt="A big server" />
+                    <p>More particles!</p>
+                    <p class="l2">Will need high performance computing, but we have lots of that</p>
+                    <p class="l2">Better PF algorithms (we used the most basic)</p>
+                    <p>Alternative data assimilation methods</p>
+                    <p class="l2">More advanced particle filtering is available</p>
+                    <p class="l2">Unscented / Ensemble Kalman Filters</p>
+                </section>
+
+                <section id="ukf-example">
+                    <h2>Solutions (I)</h2>
+                    <p>Unscented Kalman Filter</p>
+                    <figure>
+                        <img src="../figures/paper_figures/2019-UKF/30_base_config_test.png" style="width:80%;"
+                             alt="Shows that the UKF works best when model and observation error are similar" />
+                        <figcaption>Clay, Robert, Le-Minh Kieu, Jonathan A. Ward, Alison Heppenstall, and Nick Malleson (2020) Towards Real-Time Crowd Simulation Under Uncertainty Using an Agent-Based Model and an Unscented Kalman Filter’. In <i>Advances in Practical Applications of Agents, Multi-Agent Systems, and Trustworthiness. The PAAMS Collection</i> 12092:68–79. <i>Lecture Notes in Computer Science</i>. DOI:<a href="https://doi.org/10.1007/978-3-030-49778-1_6">10.1007/978-3-030-49778-1_6</a>.</figcaption>
+                    </figure>
+
+                </section>
+
+                <section id="pf-results-pf-model-discrepancy">
+                    <figure class="right">
+                        <img src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trais_model_versus_real.png"
+                             alt="Shows that the UKF works best when model and observation error are similar" />
+                        <figcaption>Patricia Ternes, Jonathan A. Ward, Alison Heppenstall, Vijay Kumar, Le-MinhKieu, and Nick Malleson. Using data assimilation to reduce uncertainty in anagent-based pedestrian simulation in real time. <i>In review</i></figcaption>
+                    </figure>
+                    <h2>Difficulties (II)</h2>
+                    <h3>Model Discrepancy</h3>
+                    <p>Some behaviours are more predictable than others</p>
+                    <p>No obvious 'solution' to this</p>
+                    <p>But shows how important data assimilation could be</p>
+                </section>
+
+                <section id="other_methods">
+                    <h2>Other Methods (ongoing)</h2>
+
+                    <p>Ensemble Kalman Filter</p>
+                    <p class="l2">Ward, Jonathan A., Andrew J. Evans, and Nicolas S. Malleson. (2016) Dynamic Calibration of Agent-Based Models Using Data Assimilation. <i>Royal Society Open Science</i> 3(4). DOI: <a href="https://doi.org/10.1098/rsos.150703">10.1098/rsos.150703</a>.</p>
+
+                    <p>Unscented Kalman Filter</p>
+                    <p class="l2">Clay, Robert, Le-Minh Kieu, Jonathan A. Ward, Alison Heppenstall, and Nick Malleson (2020) Towards Real-Time Crowd Simulation Under Uncertainty Using an Agent-Based Model and an Unscented Kalman Filter’. In <i>Advances in Practical Applications of Agents, Multi-Agent Systems, and Trustworthiness. The PAAMS Collection</i> 12092:68–79. <i>Lecture Notes in Computer Science</i>. DOI:<a href="https://doi.org/10.1007/978-3-030-49778-1_6">10.1007/978-3-030-49778-1_6</a>.</p>
+
+
+                    <p>Quantum Field Theory - Creation and Annihilation Operators</p>
+                    <p class="l2">Tang, Daniel. (2019) Data Assimilation in Agent-Based Models Using Creation and Annihilation Operators. <i>ArXiv:1910.09442 [Cs]</i>. <a href="http://arxiv.org/abs/1910.09442">arxiv.org/abs/1910.09442</a>.</p>
+                </section>
+
+
+
+
+
+                <!-- ************************************************************
+                ***************************  ETHICS  ****************************
+                ************************************************************* -->
+
+
+                <section id="big_brother" >
+                    <h2>Ethical Implications</h2>
+                    <p>Data Bias</p>
+                    <p class="l2">Need to be very careful: biased data -> biased models</p>
+                    <p class="l2">The digital divide</p>
+                    <p>Tracking People</p>
+                    <p class="l2">Advantage with these methods is we <i>don't need to track people</i></p>
+                    <p class="l2">Models work with counts of flows</p>
+                    <p class="l2">Although may need work on mapping from the data to the model domain
+                        (e.g. <a href="https://doi.org/10.1109/WSC40007.2019.9004861">Lueck at al. (2019)</a>)
+                    </p>
+
+                </section>
+
+
+
+                <!-- ************************************************************
+                ************************ DUST & TURING **************************
+                ************************************************************ -->
+
+                <section id="related_projects" data-background-image="../figures/the-roaming-platypus-310824-unsplash-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Related Projects</h2>
+                        <a href="https://erc.europa.eu/">
+                            <img class="right" style="width:200px;" data-src="../figures/erc_logo.jpg" alt="ESRC Logo"/>
+                        </a>
+                        <h3>Data Assimilation for Agent-Based Models (DUST)</h3>
+                        <p><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></p>
+
+
+
+                        <h3>Uncertainty in agent-based models for smart city forecasts </h3>
+                        <p><a href="https://www.turing.ac.uk/research/research-projects/uncertainty-agent-based-models-smart-city-forecasts">turing.ac.uk</a></p>
+                        
+                        <a href="https://erc.europa.eu/">
+                            <img class="right" style="width:200px;" data-src="../figures/LOGO_TURING.png" alt="Turing logo"/>
+                        </a>
+                        
+                        <h3>Bringing the social city to the smart city</h3>
+                        <p><a href="https://environment.leeds.ac.uk/geography-research/dir-record/research-projects/1209/bringing-the-social-city-to-the-smart-city">environment.leeds.ac.uk</a></p>
+
+    
+                    </div>
+                </section>
+                
+                
+
+                <!-- ************************************************************
+                *******************  TOWARDS REAL TIME SIMULATION  **************
+                ************************************************************ -->
+
+                <section id="towards-city-simulation", data-background-video="../videos/skylines_mov-long.mp4">
+                    <div class="whitebackground2 fragment">
+                        <h2>Summary - Towards Live* Simulations</h2>
+                        <p>Potential for large-scale, agent-based models to transform policy making</p>
+                        <p class="l2">Pollution, economy, disease spread, ... </p>
+                        <p>But need to better understand the uncertainty in our models</p>
+                        <p>What do we need?</p>
+                        <p class="l2">Uncertainty quantification for ABMs</p>
+                        <p class="l2">Efficient data assimilation methods for ABMs</p>
+                        <p class="l2">High-resolution data (the identifiability problem)</p>
+                        <p class="l2">Better models <strong>?</strong></p>
+                        <p class="small">*Swarup, S., and H. S. Mortveit (2020) Live Simulations. In <i>Proceedings of the 19th International Conference on Autonomous Agents and MultiAgent Systems</i>, 1721–25.</p>
+                    </div>
+                </section>
+
+
+
+                <section class="title"  id="thanks" data-background-image="../figures/shutterstock_615414464-small.jpg">
+                    <div class="whitebackground2">
+
+                        <!--<a href="https://turing.ac.uk//">
+                            <img src="../figures/LOGO_TURING.png"
+                                 style="width:30%; padding:0px"
+                                 alt="Alan Turing Institute Logo"/></a>-->
+
+                        <h1 style="font-size: 40px;"><br/>Quantifying the uncertainty in agent-based models</h1>
+                        <hr/>
+                        <h2 style="font-size: 30px;"><a href="https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall">Alison Heppenstall</a> and
+                            <a href="http://nickmalleson.co.uk/">Nick Malleson</a></h2>
+                        <h4 style="font-size:20px;">University of Leeds and The Alan Turing Institute, UK<br/>
+                        <a href="mailto:Alison Heppenstall <A.J.Heppenstall@leeds.ac.uk>">A.J.Heppenstall@leeds.ac.uk</a></h4>
+                          <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
+                        <hr/>
+                        <p style="text-align:center;font-size:25px">
+                            Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a><br/>
+
+                            <a href="https://europa.eu/european-union/index_en">
+                                <img style="float:left; padding:20px 10px 10px 10px; width:100px; height:auto;" src="../figures/LOGO_EU.jpg"/>
+                            </a>
+
+                            <a href="http://www.leeds.ac.uk/">
+                                <img style="float:center; padding:10px 10px 10px 10px; width:250px; height:auto;" src="../figures/uol_logo.gif"/>
+                            </a>
+
+                            <a href="http://www.esrc.ac.uk/">
+                                <img style="float:center; padding:0px 10px 10px 10px;width:90px; height:auto;" src="../figures/LOGO_ESRC.jpg"/>
+                            </a>
+
+                            <a href="http://www.turing.ac.uk/">
+                                <img style="float:right; padding:20px 10px 10px 10px; width:150px; height:auto;" src="../figures/LOGO_TURING.png"/>
+                            </a>
+                        </p>
+                    </div>
+
+                </section>
+
+
+
+
+
+
+
+
+
+			</div>
+		</div>
+
+		<script src="reveal/lib/js/head.min.js"></script>
+		<script src="reveal/js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'reveal/plugin/markdown/marked.js' },
+					{ src: 'reveal/plugin/markdown/markdown.js' },
+					{ src: 'reveal/plugin/notes/notes.js', async: true },
+					{ src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>

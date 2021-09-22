@@ -37,6 +37,12 @@ class GateEstimator(Enum):
     ANGLE = auto()
 
 
+class ExitRandomisation(Enum):
+    NONE = auto()
+    BY_AGENT = auto()
+    ALL_RANDOM = auto()
+
+
 class EnsembleKalmanFilter(Filter):
     """
     A class to represent a general EnKF.
@@ -168,6 +174,7 @@ class EnsembleKalmanFilter(Filter):
         self.mode = EnsembleKalmanFilterType.STATE
         self.error_normalisation = None
         self.inclusion = None
+        self.exit_randomisation = ExitRandomisation.NONE
         self.active = True
         self.gate_estimator = GateEstimator.NO_ESTIMATE
         self.sensor_types = {EnsembleKalmanFilterType.STATE: 'location',

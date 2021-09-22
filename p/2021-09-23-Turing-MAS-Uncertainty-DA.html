@@ -80,7 +80,7 @@
                 <section id="abstract" data-background-image="../figures/shutterstock_615414464-small.jpg">
                     <div class="whitebackground2">
                         <h2>Abstract</h2>
-                        <p class="small">Agent-based modelling is maturing as a method for capturing and simulating individual behaviour and activity.  Whilst there are a dazzling array of applications appearing in the literature, there is less work that focusses on important methodological issues such as the handling of uncertainty in these models.  We discuss (and demonstrate) how approaches from the field of Uncertainty Quantification can be adapted for use in agent-based models so that models can become robust enough to be used in important policy decisions.</p>
+                        <p class="small">Agent-based modelling is maturing as a method for capturing and simulating individual behaviour and activity.  Whilst there are a dazzling array of applications appearing in the literature, there is less work that focuses on important methodological issues such as the handling of uncertainty in these models.  We discuss (and demonstrate) how approaches from the field of Uncertainty Quantification can be adapted for use in agent-based models so that models can become robust enough to be used in important policy decisions.</p>
                     </div>
                 </section>
 
@@ -228,33 +228,45 @@
                          data-src="../figures/paper_figures/2021-05-Uncertainty_JASSS/Diagram1.png" alt="Steps in using history matching and ABC" />
                 </section>
 
-                <section>
+                <section id="sugarscape">
                     <h2>Sugarscape</h2>
                     <img class="right" style="width:30%;" data-src="../figures/sugarscape.png" alt="Model results from sugarscape" />
                     <p>Here we are looking at two parameters:</p>
                     <p class="l2">Maximum possible metabolism of an agent</p>
-										<p class="l2">Maximum possible vision of an agent</p>
-										<p>Outcome measure is <b>size of population</b> that the model can sustain (66).</p>
-										<p>Framework followed</p>
+                    <p class="l2">Maximum possible vision of an agent</p>
+					<p>Outcome measure is <b>size of population</b> that the model can sustain (66).</p>
+					<p>Framework followed</p>
                     <p class="l2">Define the parameter space to be explored</p>
-										<p class="l2">Quantify all uncertainties in the model and observation</p>
-										<p class="l2">Run HM on the parameter space</p>
-										<p class="l2">Run ABC, using the HM results as a prior</p>
+					<p class="l2">Quantify all uncertainties in the model and observation</p>
+					<p class="l2">Run HM on the parameter space</p>
+					<p class="l2">Run ABC, using the HM results as a prior</p>
                 </section>
 
 
-                <section>
+                <section id="sugarscape-hm">
                     <h2>Sugarscape: HM</h2>
-                    <img data-src="../figures/socsimfest/sugarscape-hm.png" alt="history matcing results: plausible parameter combinations" />
-                    <p>Sugarscape - small parameter space.  Measure the implausiblity of each parameter pair (metabolism, vision)</p>
+                    <img data-src="../figures/paper_figures/2021-05-Uncertainty_JASSS/sugarscape-hm.png" alt="history matching results: plausible parameter combinations" />
+                    <p>Sugarscape - small parameter space.  Measure the implausibility of each parameter pair (metabolism, vision)</p>
                     <p>10 waves performed – use plausible space from wave 1 as input to wave 2 and so forth</p>
                 </section>
 
-                <section>
+                <section id="sugarscape-abc">
                     <h2>Sugarscape: ABC</h2>
-                    <img data-src="../figures/socsimfest/sugarscape-abc.jpg" style="width:80%"
-                         alt="history matcing results: most likely parameter combinations" />
+                    <img data-src="../figures/paper_figures/2021-05-Uncertainty_JASSS/sugarscape-abc.jpg" style="width:80%"
+                         alt="history matching results: most likely parameter combinations" />
                     <p>Results show that the parameters with the highest probability of matching the observation (i.e. sustaining a population of 66 agents) are where {metabolism, vision} are {4, 7}.</p>
+                </section>
+                
+                <section id="jasss-summary">
+                    <h2>Next steps: History Matching and ABC</h2>
+                    <p>Framework applied to two empirical models</p>
+                    <p class="l2">Movements of territorial birds (<a href="https://jasss.soc.surrey.ac.uk/17/3/11.html">Thiele et al. 2014</a>)</p>
+                    <p class="l2">Brexit-related changes in Scottish cattle farms (<a href="https://doi.org/10.1371/journal.pone.0208451">Ge et al, 2018</a>)</p>
+                    <p>HM reduces the number of model runs required compared to using ABC alone and leads
+                    to a narrower posterior.</p>
+                    <p>ABC posterior provides much more information than a single optimal parameter point estimate</p>
+                    <p> .. paper currently in review ..</p>
+                
                 </section>
 
                 
@@ -603,7 +615,7 @@
                     <figure class="right">
                         <img src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trais_model_versus_real.png"
                              alt="Shows that the UKF works best when model and observation error are similar" />
-                        <figcaption>Patricia Ternes, Jonathan A. Ward, Alison Heppenstall, Vijay Kumar, Le-MinhKieu, and Nick Malleson. Using data assimilation to reduce uncertainty in anagent-based pedestrian simulation in real time. <i>In review</i></figcaption>
+                        <figcaption>Patricia Ternes, Jonathan A. Ward, Alison Heppenstall, Vijay Kumar, Le-Minh Kieu, and Nick Malleson. Using data assimilation to reduce uncertainty in anagent-based pedestrian simulation in real time. <i>In review</i></figcaption>
                     </figure>
                     <h2>Difficulties (II)</h2>
                     <h3>Model Discrepancy</h3>

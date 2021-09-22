@@ -25,7 +25,7 @@ from stationsim_gcs_model import Model
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
 from ensemble_kalman_filter import AgentIncluder
-
+from ensemble_kalman_filter import ExitRandomisation
 
 # Classes
 class Modeller():
@@ -671,7 +671,8 @@ class Modeller():
                            station='Grand_Central',
                            results_path='../results/models/baseline/',
                            mode=EnsembleKalmanFilterType.STATE,
-                           inclusion=AgentIncluder.BASE):
+                           inclusion=AgentIncluder.MODE_EN,
+                           exit_randomisation=ExitRandomisation.NONE):
         # Set up filter parameters
         state_vec_length = cls.__make_state_vector_length(pop_size, mode)
 
@@ -679,7 +680,8 @@ class Modeller():
         filter_params = {'vanilla_ensemble_size': ensemble_size,
                          'state_vector_length': state_vec_length,
                          'mode': mode,
-                         'inclusion': inclusion}
+                         'inclusion': inclusion,
+                         'exit_randomisation': exit_randomisation}
         model_params = {'pop_total': pop_size,
                         'station': station,
                         'do_print': False}
@@ -690,6 +692,36 @@ class Modeller():
             enkf.baseline_step()
 
         with open(results_path+'baseline.pkl', 'wb') as f:
+            pickle.dump(enkf, f)
+
+    @classmethod
+    def run_enkf_benchmark_filter(cls,
+                                  ensemble_size=20,
+                                  pop_size=20,
+                                  station='Grand_Central',
+                                  results_path='../results/models/baseline/',
+                                  mode=EnsembleKalmanFilterType.STATE,
+                                  inclusion=AgentIncluder.MODE_EN,
+                                  exit_randomisation=ExitRandomisation.NONE):
+        # Set up filter parameters
+        state_vec_length = cls.__make_state_vector_length(pop_size, mode)
+
+        # Initialise filter with StationSim and params
+        filter_params = {'ensemble_size': ensemble_size,
+                         'state_vector_length': state_vec_length,
+                         'mode': mode,
+                         'inclusion': inclusion,
+                         'exit_randomisation': exit_randomisation}
+        model_params = {'pop_total': pop_size,
+                        'station': station,
+                        'do_print': False}
+        enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
+                                    filtering=True, benchmarking=False)
+
+        while enkf.active:
+            enkf.baseline_step()
+
+        with open(results_path+'baseline_filter.pkl', 'wb') as f:
             pickle.dump(enkf, f)
 
 #         Visualiser.plot_forecast_error_timeseries(enkf, model_params,

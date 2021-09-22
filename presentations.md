@@ -8,6 +8,8 @@ tagline: Presentations about, or relating to, the surf project
 
 **2021**
 
+  - [Quantifying the uncertainty in agent-based models]({{site.baseurl}}/p/2021-09-23-Turing-MAS-Uncertainty-DA.html).  Invited presentation by [Josie McCulloch](https://environment.leeds.ac.uk/geography/staff/9706/dr-josie-mcculloch), [Alison Heppenstall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) and [Nick Malleson](https://www.nickmalleson.co.uk/) for the [Alan Turing Institute](https://turing.ac.uk) [Multi-agent systems group](https://www.turing.ac.uk/research/interest-groups/multi-agent-systems), 23rd September 2021.
+
   - [Simulating Society with Agent-Based Modelling and Microsimulation]({{site.baseurl}}/p/2021-09-14-ABM_DWP_Sparkle.html). DWP 'Sparkle Talk', 14th September, 2021.
 
   - [Quantifying the uncertainty in agent-based models]({{site.baseurl}}/p/2021-03-17-ESSA_SocSimFest.html).  Keynote presentation by [Alison Heppenstall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) and [Nick Malleson](https://www.nickmalleson.co.uk/) at the [ESSA Social Simulation Festival 2021](https://www.socsimfest21.eu/), 17th March 2021.

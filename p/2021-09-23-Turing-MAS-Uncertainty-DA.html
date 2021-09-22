@@ -50,7 +50,7 @@
                             <a href="https://environment.leeds.ac.uk/geography/staff/9706/dr-josie-mcculloch">Josie McCulloch</a>,
                             <a href="https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall">Alison Heppenstall</a> and
                             <a href="http://nickmalleson.co.uk/">Nick Malleson</a></h2>
-                        <h4 style="font-size:20px;">Universities of Leeds &amp; Glasgow, and the Alan Turing Institute, UK<br/>
+                        <h4 style="font-size:20px;">Universities of Leeds &amp; Glasgow, and the Alan Turing Institute, UK<br/></h4>
                         
                           <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
                         <hr/>
@@ -190,7 +190,7 @@
 
                 <section>
                     <h2>ABM and Uncertainty</h2>
-                    <img class="right" src="../figures/socsimfest/abms_uncertainty.png" alt="Different types of uncertainty in a model"/>
+                    <img class="right" data-src="../figures/socsimfest/abms_uncertainty.png" alt="Different types of uncertainty in a model"/>
                     <p>Parameter uncertainty:</p>
                     <p class="l2">Which parameters? Which values? Equifinality.</p>
                     <p>Observation uncertainty</p>
@@ -206,19 +206,26 @@
                 </section>
 
 
-                <section>
+                <section id="uq">
                     <h2>Uncertainty Quantification</h2>
                     <img data-src="../figures/ensemble_uncertainty.png" style="width:80%;"
-                         alt="Model runs with large and small uncertainty. Other areas have well developed approaches to this" />										<p>History Matching (HM)</p>
-										<p class="l2">HM is a procedure used to reduce the size of the parameter space (Craig et al. 1997)</p>
-										<p class="l2">HM discards areas found to be implausible, leaving a (usually) much smaller non-implausible region of inputs</p>
+                         alt="Model runs with large and small uncertainty. Other areas have well developed approaches to this" />
+                    <p>History Matching (HM)</p>
+					<p class="l2">HM is a procedure used to reduce the size of the parameter space (Craig et al. 1997)</p>
+					<p class="l2">HM discards areas found to be implausible, leaving a (usually) much smaller non-implausible region of inputs</p>
                     <p>Approximate Bayesian Computation (ABC)</p>
-										<p class="l2">ABC estimates a posterior distribution that quantifies the probability of specific parameter values given the observed data</p>
+					<p class="l2">ABC estimates a posterior distribution that quantifies the probability of specific parameter values given the observed data</p>
                 </section>
 
-                <section>
+                <section id="combined1">
                     <h2>Combined ... </h2>
-                    <img src="../figures/socsimfest/hm_abc-steps.png" alt="Steps in using history matching and ABC" />
+                    <img data-src="../figures/socsimfest/hm_abc-steps.png" alt="Steps in using history matching and ABC" />
+                </section>
+                    
+                <section id="combined2">
+                    <h2>Combined ... </h2>
+                    <img style="width:80%;" 
+                         data-src="../figures/paper_figures/2021-05-Uncertainty_JASSS/Diagram1.png" alt="Steps in using history matching and ABC" />
                 </section>
 
                 <section>
@@ -238,7 +245,7 @@
 
                 <section>
                     <h2>Sugarscape: HM</h2>
-                    <img src="../figures/socsimfest/sugarscape-hm.png" alt="history matcing results: plausible parameter combinations" />
+                    <img data-src="../figures/socsimfest/sugarscape-hm.png" alt="history matcing results: plausible parameter combinations" />
                     <p>Sugarscape - small parameter space.  Measure the implausiblity of each parameter pair (metabolism, vision)</p>
                     <p>10 waves performed – use plausible space from wave 1 as input to wave 2 and so forth</p>
                 </section>

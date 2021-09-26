@@ -89,6 +89,8 @@ edge_loc_data = get_edge_loc_data()
 
 angle_destination_out_data = get_angle_destination_out_data()
 
+angle_destination_in_data = get_angle_destination_in_data()
+
 # angle_destination_in_data = get_angle_destination_in_data()
 
 # round_target_angle_data = get_round_target_angle_data()
@@ -675,12 +677,23 @@ def test_angle_destination_out(angle, expected):
     assert result == expected
 
 
-# @pytest.mark.parametrize('angle, expected', angle_destination_in_data)
-# def test_angle_destination_in(angle, expected):
-#     enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+@pytest.mark.parametrize('angle, expected', angle_destination_in_data)
+def test_angle_destination_in(angle, expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
 
-#     result = enkf.get_destination_angle(angle)
-#     assert result == expected
+    # Use same offset from wall as in Agent.set_agent_location()
+    offset = enkf.base_model.agents[0].size * 1.05
+
+    result = enkf.get_destination_angle(angle)
+
+    if isinstance(expected[0], tuple):
+        assert pytest.approx(result[1], offset) == expected[1]
+        assert expected[0][0] <= result[0] <= expected[0][1]
+    elif isinstance(expected[1], tuple):
+        assert pytest.approx(result[0], offset) == expected[0]
+        assert expected[1][0] <= result[1] <= expected[1][1]
+    else:
+        raise ValueError(f'Unexpected test value provided: {expected}')
 
 
 # @pytest.mark.parametrize('angle, insertion_idx, expected',

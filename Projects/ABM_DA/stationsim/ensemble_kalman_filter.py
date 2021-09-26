@@ -1124,12 +1124,12 @@ class EnsembleKalmanFilter(Filter):
 
         insertion_idx = self.bisect_left_reverse(angle,
                                                  self.unique_gate_angles)
-        # if insertion_idx in self.in_gate_idx:
-        #     # Get gate from dict based on insertion idx
-        #     g = self.in_gate_idx[insertion_idx]
-        #     # Use agent method to randomly allocate location along gate
-        #     destination = self.base_model.agents[0].set_agent_location(g)
-        if insertion_idx in self.out_gate_idx:
+        if insertion_idx in self.in_gate_idx:
+            # Get gate from dict based on insertion idx
+            g = self.in_gate_idx[insertion_idx]
+            # Use agent method to randomly allocate location along gate
+            destination = self.base_model.agents[0].set_agent_location(g)
+        elif insertion_idx in self.out_gate_idx:
             # Get index of nearest gate edge
             edge_idx = self.round_target_angle(angle, insertion_idx)
             # Use index to get location of gate edge

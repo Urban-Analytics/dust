@@ -602,3 +602,15 @@ def get_angle_destination_out_data():
 
     output = wrap_up([angles, expected])
     return output
+
+
+def get_angle_destination_in_data():
+    angles = [pi, 3*pi/4, -pi/4]
+
+    xs = [0, (0, 250), (555, 740)]
+    ys = [(150, 400), 700, 0]
+
+    expected = list(zip(xs, ys))
+
+    output = wrap_up([angles, expected])
+    return output

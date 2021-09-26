@@ -1110,6 +1110,49 @@ class EnsembleKalmanFilter(Filter):
 
         return None
 
+    def get_destination_angle(self, angle: float,
+                              location: Tuple[float,
+                                              float] = None) -> Tuple[float,
+                                                                      float]:
+
+        # If a location is provided then raise an error,
+        # We haven't considered this case yet
+        if location is not None:
+            raise ValueError('Method not implemented for specified locations')
+
+        location = (self.base_model.width / 2, self.base_model.height / 2)
+
+        insertion_idx = self.bisect_left_reverse(angle,
+                                                 self.unique_gate_angles)
+        # if insertion_idx in self.in_gate_idx:
+        #     # Get gate from dict based on insertion idx
+        #     g = self.in_gate_idx[insertion_idx]
+        #     # Use agent method to randomly allocate location along gate
+        #     destination = self.base_model.agents[0].set_agent_location(g)
+        if insertion_idx in self.out_gate_idx:
+            # Get index of nearest gate edge
+            edge_idx = self.round_target_angle(angle, insertion_idx)
+            # Use index to get location of gate edge
+            destination = self.unique_gate_edges[edge_idx]
+        else:
+            raise ValueError(f'Unrecognised insertion index: {insertion_idx}')
+
+        return destination
+
+    def round_target_angle(self, angle: float, insertion_idx: int) -> int:
+        adjacent_idx = (insertion_idx - 1, insertion_idx)
+        adjacent_angles = (self.unique_gate_angles[adjacent_idx[0]],
+                           self.unique_gate_angles[adjacent_idx[1]])
+        diff_0 = abs(angle - adjacent_angles[0])
+        diff_1 = abs(angle - adjacent_angles[1])
+
+        if diff_0 < diff_1:
+            return adjacent_idx[0]
+        elif diff_1 < diff_0:
+            return adjacent_idx[1]
+        else:
+            return np.random.choice(adjacent_idx)
+
     @staticmethod
     def bisect_left_reverse(element, iterable) -> int:
         # Make sure iterable is reverse sorted
@@ -1118,6 +1161,10 @@ class EnsembleKalmanFilter(Filter):
             if element >= x:
                 return i
         return len(iterable)
+
+    @staticmethod
+    def is_in_gate_angles(angle, edge_angles):
+        return angle >= min(edge_angles) and angle <= max(edge_angles)
 
     # --- Data processing --- #
     def process_results(self):

@@ -1073,6 +1073,15 @@ class EnsembleKalmanFilter(Filter):
 
         return None
 
+    @staticmethod
+    def bisect_left_reverse(element, iterable) -> int:
+        # Make sure iterable is reverse sorted
+        assert iterable == sorted(iterable, reverse=True)
+        for i, x in enumerate(iterable):
+            if element >= x:
+                return i
+        return len(iterable)
+
     # --- Data processing --- #
     def process_results(self):
         """

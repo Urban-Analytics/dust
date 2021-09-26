@@ -573,12 +573,17 @@ def get_edge_angle_data():
     return [angles]
 
 
-def get_angle_destination_in_data():
-    pass
+def get_reverse_bisect_data():
+    elements = [12, 10, 7, 4, 2, 0]
 
+    iterable = [10, 8, 5, 3, 1]
+    iterables = [iterable for _ in range(len(elements))]
 
-def get_round_target_angle_data():
-    angles = [pi/2, 0]
+    expected = [0, 0, 2, 3, 4, 5]
+
+    output = wrap_up([elements, iterables, expected])
+    return output
+
 
     insertion_idx = [3, 9]
 

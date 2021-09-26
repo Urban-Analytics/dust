@@ -595,6 +595,10 @@ def get_edge_loc_data():
     return [edge_locs]
 
 
+def get_angle_destination_out_data():
+    angles = [2.9, 2.4, pi/2]
 
-    output = wrap_up([angles, insertion_idx, expected])
+    expected = [(0, 400), (0, 700), (455, 700)]
+
+    output = wrap_up([angles, expected])
     return output

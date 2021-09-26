@@ -203,17 +203,39 @@ class EnsembleKalmanFilter(Filter):
         n = self.ensemble_size if n is None else n
         models = [dcopy(self.base_model) for _ in range(n)]
 
-        if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+        if self.exit_randomisation == ExitRandomisation.BY_AGENT:
+            gates_in = self.base_model.gates_in
+            gates_out = self.base_model.gates_out
+            for i, agent in enumerate(self.base_model.agents):
+                gate_out = self.make_random_destination(gates_in,
+                                                        gates_out,
+                                                        agent.gate_in)
+                target = agent.set_agent_location(gate_out)
+                for model in models:
+                    model.agents[i].gate_out = gate_out
+                    model.agents[i].loc_desire = target
+        elif self.exit_randomisation == ExitRandomisation.ALL_RANDOM:
+            gates_in = self.base_model.gates_in
+            gates_out = self.base_model.gates_out
             for model in models:
                 for agent in model.agents:
-                    # Randomise the destination of each agent in each model
-                    gate_out = self.make_random_destination(model.gates_in,
-                                                            model.gates_out,
+                    gate_out = self.make_random_destination(gates_in,
+                                                            gates_out,
                                                             agent.gate_in)
                     agent.gate_out = gate_out
-                    agent.loc_desire = agent.set_agent_location(agent.gate_out)
-        elif self.mode != EnsembleKalmanFilterType.STATE:
-            raise ValueError('Filter type not recognised.')
+                    agent.loc_desire = agent.set_agent_location(gate_out)
+
+        # if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+        #     for model in models:
+        #         for agent in model.agents:
+        #             # Randomise the destination of each agent in each model
+        #             gate_out = self.make_random_destination(model.gates_in,
+        #                                                     model.gates_out,
+        #                                                     agent.gate_in)
+        #             agent.gate_out = gate_out
+        #             agent.loc_desire = agent.set_agent_location(agent.gate_out)
+        # elif self.mode != EnsembleKalmanFilterType.STATE:
+        #     raise ValueError('Filter type not recognised.')
         return models
 
     def __set_angle_estimation_defaults(self):
@@ -244,15 +266,28 @@ class EnsembleKalmanFilter(Filter):
         for gate_number in range(n_gates):
             gate_loc = self.base_model.gates_locations[gate_number]
             gate_width = self.base_model.gates_width[gate_number]
+            edge_loc_1, edge_loc_2 = self.__get_gate_edge_locations(gate_loc,
+                                                                    gate_width)
             edge_1, edge_2 = self.__get_gate_edge_angles(self.model_centre,
-                                                         gate_loc,
-                                                         gate_width)
+                                                         edge_loc_1,
+                                                         edge_loc_2)
             self.gate_angles[gate_number] = (edge_1, edge_2)
-            gate_angles.extend([edge_1, edge_2])
+            gate_angles.extend([(edge_1, edge_loc_1),
+                                (edge_2, edge_loc_2)])
 
-        self.unique_gate_angles = sorted(list(set(gate_angles)))
+        unique_angle_list = list(set(gate_angles))
+        sorted_angle_list = sorted(unique_angle_list,
+                                   key=lambda info: info[0],
+                                   reverse=True)
+        self.unique_gate_angles = [x[0] for x in sorted_angle_list]
+        self.unique_gate_edges = [x[1] for x in sorted_angle_list]
 
-    def __get_gate_edge_angles(self, centre_loc, gate_loc, gate_width):
+        in_gate_idx = [0, 2, 4, 6, 8, 10, 12, 14, 15, 16, 17, 19]
+        self.in_gate_idx = {idx: i for i, idx in enumerate(in_gate_idx)}
+        out_gate_idx = [x for x in range(19) if x not in self.in_gate_idx]
+        self.out_gate_idx = set(out_gate_idx)
+
+    def __get_gate_edge_locations(self, gate_loc, gate_width):
         wd = gate_width / 2
 
         if(gate_loc[0] == 0):
@@ -269,7 +304,9 @@ class EnsembleKalmanFilter(Filter):
             edge_loc_2 = (gate_loc[0] - wd, self.base_model.height)
         else:
             raise ValueError(f'Invalid gate location: {gate_loc}')
+        return edge_loc_1, edge_loc_2
 
+    def __get_gate_edge_angles(self, centre_loc, edge_loc_1, edge_loc_2):
         edge_angle_1 = self.get_angle(centre_loc, edge_loc_1)
         edge_angle_2 = self.get_angle(centre_loc, edge_loc_2)
 

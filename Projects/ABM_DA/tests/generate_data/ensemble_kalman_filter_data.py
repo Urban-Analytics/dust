@@ -585,9 +585,16 @@ def get_reverse_bisect_data():
     return output
 
 
-    insertion_idx = [3, 9]
+def get_edge_loc_data():
+    edge_locs = [(0, 400),
+                 (0, 700), (250, 700), (455, 700), (700, 700),
+                 (740, 700), (740, 610), (740, 550), (740, 400),
+                 (740, 340), (740, 190), (740, 125), (740, 5),
+                 (740, 0), (555, 0), (370, 0), (185, 0), (0, 0),
+                 (0, 150)]
+    return [edge_locs]
 
-    expected = []
+
 
     output = wrap_up([angles, insertion_idx, expected])
     return output

@@ -85,6 +85,8 @@ edge_angle_data = get_edge_angle_data()
 
 reverse_bisect_data = get_reverse_bisect_data()
 
+edge_loc_data = get_edge_loc_data()
+
 # angle_destination_in_data = get_angle_destination_in_data()
 
 # round_target_angle_data = get_round_target_angle_data()
@@ -652,6 +654,14 @@ def test_reverse_bisect(element, iterable, expected):
     result = enkf.bisect_left_reverse(element, iterable)
 
     assert result == expected
+
+
+@pytest.mark.parametrize('expected', edge_loc_data)
+def test_unique_edge_locs(expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+    unique_edge_locs = list(enkf.unique_gate_edges)
+    assert unique_edge_locs == expected
 
 
 # @pytest.mark.parametrize('angle, expected', angle_destination_in_data)

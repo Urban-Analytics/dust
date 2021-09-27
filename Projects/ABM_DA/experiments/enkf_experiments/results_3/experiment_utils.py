@@ -698,6 +698,8 @@ class Modeller():
     def run_enkf_benchmark_filter(cls,
                                   ensemble_size=20,
                                   pop_size=20,
+                                  assimilation_period=50,
+                                  obs_noise_std=1.0,
                                   station='Grand_Central',
                                   results_path='../results/models/baseline/',
                                   mode=EnsembleKalmanFilterType.STATE,
@@ -707,11 +709,31 @@ class Modeller():
         state_vec_length = cls.__make_state_vector_length(pop_size, mode)
 
         # Initialise filter with StationSim and params
-        filter_params = {'ensemble_size': ensemble_size,
+        # Filter parameters
+        its = 20000
+        observation_operator = cls.__make_observation_operator(pop_size, mode)
+        state_vec_length = cls.__make_state_vector_length(pop_size, mode)
+        data_mode = EnsembleKalmanFilterType.STATE
+        data_vec_length = cls.__make_state_vector_length(pop_size, data_mode)
+
+        filter_params = {'max_iterations': its,
+                         'assimilation_period': assimilation_period,
+                         'ensemble_size': ensemble_size,
+                         'population_size': pop_size,
+                         'vanilla_ensemble_size': ensemble_size,
                          'state_vector_length': state_vec_length,
+                         'data_vector_length': data_vec_length,
                          'mode': mode,
                          'inclusion': inclusion,
-                         'exit_randomisation': exit_randomisation}
+                         'ensemble_errors': True,
+                         'H': observation_operator,
+                         'R_vector': obs_noise_std * np.ones(data_vec_length),
+                         'keep_results': True,
+                         'run_vanilla': True,
+                         'exit_randomisation': exit_randomisation,
+                         'vis': False}
+
+        # Model params
         model_params = {'pop_total': pop_size,
                         'station': station,
                         'do_print': False}
@@ -719,7 +741,7 @@ class Modeller():
                                     filtering=True, benchmarking=False)
 
         while enkf.active:
-            enkf.baseline_step()
+            enkf.step()
 
         with open(results_path+'baseline_filter.pkl', 'wb') as f:
             pickle.dump(enkf, f)

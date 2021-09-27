@@ -1142,6 +1142,24 @@ class EnsembleKalmanFilter(Filter):
         return destination
 
     def round_target_angle(self, angle: float, insertion_idx: int) -> int:
+        """
+        Identify index of adjacent gate edge.
+
+        Given an angle (radians) and its insertion index, identify which
+        adjacent gate edge index it should be rounded to.
+
+        Parameters
+        ----------
+        angle : float
+            Initial angle.
+        insertion_idx : int
+            Index at which given angle would be inserted into gate edges.
+
+        Returns
+        -------
+        int:
+            Adjacent index to which it is rounded.
+        """
         adjacent_idx = (insertion_idx - 1, insertion_idx)
         adjacent_angles = (self.unique_gate_angles[adjacent_idx[0]],
                            self.unique_gate_angles[adjacent_idx[1]])

@@ -1175,6 +1175,24 @@ class EnsembleKalmanFilter(Filter):
 
     @staticmethod
     def bisect_left_reverse(element, iterable) -> int:
+        """
+        Bisect-left with a reverse-sorted list.
+
+        Given a iterable that is reverse-sorted, i.e. in descending order, find
+        the index at which the element would be inserted.
+
+        Parameters
+        ----------
+        element : numeric
+            Element to be inserted into the iterable.
+        iterable : iterable-type
+            Iterable into which element would be inserted.
+
+        Returns
+        -------
+        int:
+            Index of insertion.
+        """
         # Make sure iterable is reverse sorted
         assert iterable == sorted(iterable, reverse=True)
         for i, x in enumerate(iterable):

@@ -1,0 +1,260 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="author" content="Alison Heppenstall">
+        <meta name="author" content="Nick Malleson">
+        <meta name="keywords" content="Urban data science, synthetic population generation, simulated annealing, transport, modelling">
+
+		<title>Urban Data Science for Sustainable Transport Policies in Emerging Economies</title>
+
+		<link rel="stylesheet" href="reveal/css/reveal.css">
+		<link rel="stylesheet" href="reveal/css/theme/white.css">
+
+        <!-- Some extra bits added by Nick -->
+        <link rel="stylesheet" href="reveal/css/nick.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+
+		<!-- Pr,inting and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+
+
+                <section class="title"  id="index" data-background-image="../figures/utm-hanoi-figs/banner-bg.jpg">
+                    <div class="whitebackground2">
+
+                        <!--<a href="https://turing.ac.uk//">
+                            <img src="../figures/LOGO_TURING.png"
+                                 style="width:30%; padding:0px"
+                                 alt="Alan Turing Institute Logo"/></a>-->
+
+                        <h1 style="font-size: 40px;">
+                            <br/>Urban Data Science for Sustainable Transport Policies in Emerging Economies</h1>
+                            <hr/>
+                        <h2 style="font-size: 30px;">
+                            <a href="http://nickmalleson.co.uk/">Nick Malleson</a>,<br/>
+                            Hang Nguyen Thi Thuy, Thanh Bui Quang, Minh Kieu, Phe Hoang Huu, Alexis Comber
+                        </h2>
+                        <h4 style="font-size:20px;">Universitiy of Leeds, UK; VNU University of Science, Hanoi, Vietnam;
+                            University of Auckland, New Zealand<br/></h4>
+                        
+                          <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
+                        <hr/>
+                        <p style="text-align:center;font-size:25px">
+                            Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a><br/>
+                            
+                            <img style="float:left; padding:20px 10px 10px 10px; width:200px; height:auto;" 
+                                 src="../figures/utm-hanoi-figs/LOGO-r_and_d.png" alt="Research and Development Consultants logo"/>
+                            
+
+                            <a href="">
+                                <img style="float:center; padding:10px 10px 10px 10px; width:150px; height:auto;" 
+                                     src="../figures/utm-hanoi-figs/LOGO-vnu.png" alt="VNU logo"/>
+                            </a>
+
+                            <a href="http://www.leeds.ac.uk/">
+                                <img style="float:center; padding:0px 10px 10px 10px;width:150px; height:auto;" 
+                                     src="../figures/uol_logo.gif" alt="University of Leeds logo"/>
+                            </a>
+
+                            <a href="">
+                                <img style="float:right; padding:20px 10px 10px 10px; width:100px; height:auto;"
+                                     src="../figures/utm-hanoi-figs/LOGO-BA.png" alt="British Academy logo"/>
+                            </a>
+                        </p>
+                    </div>
+
+                </section>
+                
+                <section id="abstract" data-background-image="../figures/utm-hanoi-figs/banner-bg.jpg">
+                    <div class="whitebackground2">
+                        <h2>Abstract</h2>
+                        <p class="small">In the city of Hanoi, Vietnam, as with other rapidly-developing cities, transport infrastructure is failing to keep pace with the burgeoning population. This has lead to high levels of congestion, air pollution, and a broad inequity in the accessibility of large parts of the city to residents. The emerging discipline of Urban Data Science has a valuable role in providing policy makers with robust evidence on which to base policy, but the discipline faces problems with the application of techniques that are based on assumptions that do not hold when applied to emerging economies. </p>
+                        <p class="small">This paper presents the preliminary outputs of a new programme of urban data science work that is being developed specifically for Hanoi. It leverages a spatial microsimulation approach to up-sample a bespoke travel survey and create a synthetic representation of the transport preferences of all residents in the city. These new data are used to assess the impacts that changes in the broader socio-economic context, such as increasing prosperity amongst residents, could have on rates of car ownership and hence on the problems of congestion and pollution. The results begin to highlight parts of the city where the impacts of improved economic conditions coupled with changes to wider transport policies might lead to greater use of personal cars in the future.</p>
+                    </div>
+                </section>
+
+
+                <section>
+                    <h2>Talk overview</h2>
+                    <p>XXXX</p>
+                    <p class="l2"></p>
+                </section>
+                
+
+                
+                <section id="introduction">
+                    <h2>Aims &amp; Motivation</h2>
+                    <p>XXXX</p>
+                    <p class="l2"></p>
+                </section>
+                
+                
+                <section id="background">
+                    <h2>Background &amp; Context</h2>
+                    <p>XXXX</p>
+                    <p class="l2"></p>
+                </section>
+                
+                <section id="data-survey">
+                    <h2>Data</h2>
+                    <h3>Household travel survey</h3>
+                    <p>XXXX</p>
+                    <p class="l2"></p>
+                </section>
+
+                <section id="data-census">
+                    <h2>Data</h2>
+                    <h3>Vietnam Census of Population</h3>
+                    <p>XXXX</p>
+                    <p class="l2"></p>
+                </section>
+                
+                <section id="data-census2">
+                    
+                    <figure>
+                        <img src="../figures/utm-hanoi-figs/hanoi_census.png"/>
+                        <figcaption>The ratio of females to males in Hanoi from the 2019 Vietnam census.</figcaption>
+                    </figure>
+                    
+                </section>
+
+                
+                <section id="synth-pop">
+                    <h2>Methods</h2>
+                    <h3>Synthetic Population Generation</h3>
+                    <p>XXXX</p>
+                    <p class="l2"></p>
+                </section>
+                
+                
+                <section id="synth-pop">
+                    <h2>(Possible) Methods</h2>
+                    <h3>Propensity Score Matching</h3>
+                    <p>XXXX</p>
+                    <p class="l2"></p>
+                </section>
+                
+                
+                <section>
+                    <h2>Preliminary Results</h2>
+                    <p>XXXX people who <i>want</i> to own a car in Hanoi.</p>
+                </section>
+                
+                
+                
+                
+                
+                
+                <section id="synthpop-car_ownership">
+                    
+                    <figure>
+                        <img src="../figures/utm-hanoi-figs/potential_car_owners.png"/>
+                        <figcaption>The proportion of people in the synthetic population who would like to own a car but are prohibitted from purchasing one due to the cost.</figcaption>
+                    </figure>
+                    
+                </section>
+                
+                
+                <section id="conclusions1">
+                    <h2>Conclusions &amp; Future Work</h2>
+                    <h3>Summary</h3>
+                    <p>XXXX</p>
+                    <h3>UDS in Vietnam</h3>
+                    <p>XXXX</p>
+                </section>
+                
+                <section id="conclusions2">
+                    <h2>Conclusions &amp; Future Work</h2>
+                    <h3>Hanoi Urban Infrastructure Data Centre</h3>
+                    <p>XXXX</p>
+                    <p>XXXX</p>
+                </section>
+                
+
+
+                
+                
+                
+                <section class="title"  id="thanks " data-background-image="../figures/utm-hanoi-figs/banner-bg.jpg">
+                    <div class="whitebackground2">
+
+                        <!--<a href="https://turing.ac.uk//">
+                            <img src="../figures/LOGO_TURING.png"
+                                 style="width:30%; padding:0px"
+                                 alt="Alan Turing Institute Logo"/></a>-->
+
+                        <h1 style="font-size: 40px;">
+                            <br/>Urban Data Science for Sustainable Transport Policies in Emerging Economies</h1>
+                            <hr/>
+                        <h2 style="font-size: 30px;">
+                            <a href="http://nickmalleson.co.uk/">Nick Malleson</a>,<br/>
+                            Hang Nguyen Thi Thuy, Thanh Bui Quang, Minh Kieu, Phe Hoang Huu, Alexis Comber
+                        </h2>
+                        <h4 style="font-size:20px;">Universitiy of Leeds, UK; VNU University of Science, Hanoi, Vietnam;
+                            University of Auckland, New Zealand<br/></h4>
+                        
+                          <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
+                        <hr/>
+                        <p style="text-align:center;font-size:25px">
+                            Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a><br/>
+                            
+                            <img style="float:left; padding:20px 10px 10px 10px; width:200px; height:auto;" 
+                                 src="../figures/utm-hanoi-figs/LOGO-r_and_d.png" alt="Research and Development Consultants logo"/>
+                            
+
+                            <a href="">
+                                <img style="float:center; padding:10px 10px 10px 10px; width:150px; height:auto;" 
+                                     src="../figures/utm-hanoi-figs/LOGO-vnu.png" alt="VNU logo"/>
+                            </a>
+
+                            <a href="http://www.leeds.ac.uk/">
+                                <img style="float:center; padding:0px 10px 10px 10px;width:150px; height:auto;" 
+                                     src="../figures/uol_logo.gif" alt="University of Leeds logo"/>
+                            </a>
+
+                            <a href="">
+                                <img style="float:right; padding:20px 10px 10px 10px; width:100px; height:auto;"
+                                     src="../figures/utm-hanoi-figs/LOGO-BA.png" alt="British Academy logo"/>
+                            </a>
+                        </p>
+                    </div>
+
+                </section>
+
+
+
+			</div>
+		</div>
+
+		<script src="reveal/lib/js/head.min.js"></script>
+		<script src="reveal/js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'reveal/plugin/markdown/marked.js' },
+					{ src: 'reveal/plugin/markdown/markdown.js' },
+					{ src: 'reveal/plugin/notes/notes.js', async: true },
+					{ src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>

@@ -1203,6 +1203,24 @@ class EnsembleKalmanFilter(Filter):
     @staticmethod
     def is_in_gate_angles(angle: float,
                           edge_angles: Tuple[float, float]) -> bool:
+        """
+        Check if angle is inside a given gate.
+
+        Given an angle (radians), check if it falls between the two edge angles
+        provided.
+
+        Parameters
+        ----------
+        angle : float
+            Angle to check.
+        edge_angles : Tuple[float, float]
+            Edge angles of a gate.
+
+        Returns
+        -------
+        bool:
+            Indicator of whether angle is within gate.
+        """
         return angle >= min(edge_angles) and angle <= max(edge_angles)
 
     # --- Data processing --- #

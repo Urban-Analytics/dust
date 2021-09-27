@@ -1137,6 +1137,8 @@ class EnsembleKalmanFilter(Filter):
         else:
             raise ValueError(f'Unrecognised insertion index: {insertion_idx}')
 
+        # TODO describe what happens when angle falls exactly on a gate edge
+
         return destination
 
     def round_target_angle(self, angle: float, insertion_idx: int) -> int:

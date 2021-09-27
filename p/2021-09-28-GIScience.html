@@ -53,7 +53,9 @@
                           <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
                         <hr/>
                         <p style="text-align:center;font-size:25px">
-                            Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a><br/>
+                            <!--Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a><br/>-->
+                            
+                            Paper available here: <a href="https://urban-analytics.github.io/dust/papers/2021-GIScience-Transport_Model.pdf">here</a><br/>
                             
                             <img style="float:left; padding:20px 10px 10px 10px; width:200px; height:auto;" 
                                  src="../figures/utm-hanoi-figs/LOGO-r_and_d.png" alt="Research and Development Consultants logo"/>
@@ -87,39 +89,81 @@
                 </section>
 
 
-                <section>
-                    <h2>Talk overview</h2>
-                    <p>XXXX</p>
-                    <p class="l2"></p>
-                </section>
                 
 
                 
-                <section id="introduction">
-                    <h2>Aims &amp; Motivation</h2>
-                    <p>XXXX</p>
-                    <p class="l2"></p>
+                <section id="introduction" data-background-image="../figures/utm-hanoi-figs/hanoi_skyline2.jpg">
+                    <div class="whitebackground2 fragment">
+                        <h2>Aims &amp; Motivation</h2>
+                        <p>Transport inrastructure failing to keep pace in rapidly-developing cities</p>
+                        <p class="l2">Pollution, congestion, inequality in accessibility, etc.</p>
+                        <p>Urban Data Science (UDS)</p>
+                        <p class="l2">Role in providing policy makers with robust evidence for policy</p>
+                        <p class="l2">But some applications/techniques break down in developing cities</p>
+                        <p>Research</p>
+                        <p class="l2">Analysis / modelling work to support transport policy in Hanoi</p>
+                        <p class="l2">New household transport survey; combined with census data</p>
+                        <p class>Answer questions about impacts of possible policies</p>
+                        <p class="l2">E.g. banning motorikes from the city centre</p>
+                    </div>
                 </section>
                 
                 
-                <section id="background">
+                <section id="background1">
                     <h2>Background &amp; Context</h2>
-                    <p>XXXX</p>
-                    <p class="l2"></p>
+                    <p>Application of UDS techniques could help to alleviate transport-related problems. 
+                        But difficult to apply some 'Global North' techniques in emerging economies, e.g.:</p>
+                    <p class="l2">Smart card data / intelligent transport systems, "analytics-empowered, intelligent traffic management"</p>
+                    <p>Difficulties with data</p>
+                    <p class="l2">Systems that are ad-hoc, organised from the ground-up, cash-based, etc.</p>
+                    <p>Difficulties with modelling</p>
+                    <p class="l2">Different vehicle types and 'unconventional' behaviour</p>
+                    <p class="l2">90% vehicles in Hanoi are motorbikes; 2.5 motorbikes per person</p>
+                </section>
+                
+                <section id="background2">
+                    <h2>Background &amp; Context</h2>
+                    <p>Project: <i>Urban Transport Modelling for Sustainable Well-Being in Hanoi</i></p>
+                    <p>Collaboration between University of Leeds, VNU University of Science, 
+                        University of Auckland, R&amp;D Consultants</p>
+                    <p>Funded by the British Academy</p>
+                    <p>Limitted digital data on transport flows</p>
+                    <p>Fall back on a household travel survey and up-sample using the 2019 census</p>
+                    <p class="l2">Synthetic population generation</p>
+                    <p class="l2">Propensity score matching</p>
                 </section>
                 
                 <section id="data-survey">
                     <h2>Data</h2>
+                    <figure class="right" >
+                        <img data-src="../figures/utm-hanoi-figs/silver-ringvee-niFWqrLdjlE-unsplash.jpg" 
+                             alt="Railway line pasing through Hanoi" />
+                        <figcaption>Photo by <a href="https://unsplash.com/@silverringvee?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Silver Ringvee</a> on <a href="https://unsplash.com/s/photos/hanoi?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></figcaption>
+                    </figure>
+                    
                     <h3>Household travel survey</h3>
-                    <p>XXXX</p>
-                    <p class="l2"></p>
+                    <p>Aim for 10,000 respondants</p>
+                    <p class="l2">got to 1,500 ... then March 2020 ... </p>
+                    <p class="l2">recently moved a shorter survey online</p>
+                    <p>Questions:</p>
+                    <p class="l2">Demographics: sex, age group, occupation</p>
+                    <p class="l2">Vehicle ownership: types of vehicles owned by the household</p>
+                    <p class="l2">Travel behaviour: regular journeys made (locations, modes, reasons</p>
+                    <p class="l2">Vehicle ownership aspirations</p>
                 </section>
 
                 <section id="data-census">
                     <h2>Data</h2>
+                    <figure class="right" >
+                        <img data-src="../figures/utm-hanoi-figs/silver-ringvee-niFWqrLdjlE-unsplash.jpg" 
+                             alt="Railway line pasing through Hanoi" />
+                        <figcaption>Photo by <a href="https://unsplash.com/@silverringvee?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Silver Ringvee</a> on <a href="https://unsplash.com/s/photos/hanoi?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></figcaption>
+                    </figure>
+
                     <h3>Vietnam Census of Population</h3>
-                    <p>XXXX</p>
-                    <p class="l2"></p>
+                    <p>Conducted in 2019</p>
+                    <p>8M people in Hanoi</p>
+                    <p>We have access to district-level sex and age counts</p>
                 </section>
                 
                 <section id="data-census2">
@@ -135,7 +179,7 @@
                 <section id="synth-pop">
                     <h2>Methods</h2>
                     <h3>Synthetic Population Generation</h3>
-                    <p>XXXX</p>
+                    <p>XXXX HERE</p>
                     <p class="l2"></p>
                 </section>
                 

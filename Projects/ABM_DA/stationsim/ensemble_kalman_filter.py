@@ -1165,7 +1165,8 @@ class EnsembleKalmanFilter(Filter):
         return len(iterable)
 
     @staticmethod
-    def is_in_gate_angles(angle, edge_angles):
+    def is_in_gate_angles(angle: float,
+                          edge_angles: Tuple[float, float]) -> bool:
         return angle >= min(edge_angles) and angle <= max(edge_angles)
 
     # --- Data processing --- #

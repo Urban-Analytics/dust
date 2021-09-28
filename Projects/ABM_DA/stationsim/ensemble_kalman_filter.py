@@ -470,12 +470,12 @@ class EnsembleKalmanFilter(Filter):
             warns.warn(w, RuntimeWarning)
         X = np.zeros(shape=(self.state_vector_length, self.ensemble_size))
         self.update_data_ensemble(data)
-        gain_matrix = self.make_gain_matrix(self.state_ensemble,
-                                            self.data_covariance,
-                                            self.H,
-                                            self.H_transpose)
+        self.gain_matrix = self.make_gain_matrix(self.state_ensemble,
+                                                 self.data_covariance,
+                                                 self.H,
+                                                 self.H_transpose)
         diff = self.data_ensemble - self.H @ self.state_ensemble
-        X = self.state_ensemble + gain_matrix @ diff
+        X = self.state_ensemble + self.gain_matrix @ diff
         self.state_ensemble = X
 
     # --- Error calculation --- #

@@ -738,18 +738,23 @@ class Modeller():
         model_params = {'pop_total': pop_size,
                         'station': station,
                         'do_print': False}
+
         enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                     filtering=True, benchmarking=False)
+        s = results_path+f'baseline_filter_{exit_randomisation.name}.pkl'
 
-        while enkf.active:
+        for _ in tqdm(range(its)):
             enkf.step()
+            if not enkf.active:
+                break
 
-        with open(results_path+'baseline_filter.pkl', 'wb') as f:
+        with open(s, 'wb') as f:
             pickle.dump(enkf, f)
 
-#         Visualiser.plot_forecast_error_timeseries(enkf, model_params,
-#                                                   filter_params, do_save=True,
-#                                                   plot_period=False)
+        # Visualiser.plot_forecast_error_timeseries(enkf, model_params,
+        #                                           filter_params,
+        #                                           do_save=True,
+        #                                           plot_period=False)
 
     @classmethod
     def run_test(cls):

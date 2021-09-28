@@ -691,7 +691,8 @@ class Modeller():
         while enkf.active:
             enkf.baseline_step()
 
-        with open(results_path+'baseline.pkl', 'wb') as f:
+        s = results_path + f'baseline_{exit_randomisation.name}.pkl'
+        with open(s, 'wb') as f:
             pickle.dump(enkf, f)
 
     @classmethod

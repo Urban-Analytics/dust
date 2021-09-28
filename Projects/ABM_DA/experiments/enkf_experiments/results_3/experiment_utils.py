@@ -5,6 +5,11 @@ A collection of classes and functions for running the enkf.
 """
 
 # Imports
+from ensemble_kalman_filter import ExitRandomisation
+from ensemble_kalman_filter import AgentIncluder
+from ensemble_kalman_filter import EnsembleKalmanFilterType
+from ensemble_kalman_filter import EnsembleKalmanFilter
+from stationsim_gcs_model import Model
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,11 +26,7 @@ from time import sleep
 from tqdm import tqdm
 
 sys.path.append('../../stationsim')
-from stationsim_gcs_model import Model
-from ensemble_kalman_filter import EnsembleKalmanFilter
-from ensemble_kalman_filter import EnsembleKalmanFilterType
-from ensemble_kalman_filter import AgentIncluder
-from ensemble_kalman_filter import ExitRandomisation
+
 
 # Classes
 class Modeller():

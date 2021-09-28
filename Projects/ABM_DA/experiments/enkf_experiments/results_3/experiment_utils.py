@@ -726,7 +726,7 @@ class Modeller():
                          'data_vector_length': data_vec_length,
                          'mode': mode,
                          'inclusion': inclusion,
-                         'ensemble_errors': True,
+                         'ensemble_errors': False,
                          'H': observation_operator,
                          'R_vector': obs_noise_std * np.ones(data_vec_length),
                          'keep_results': True,

@@ -689,8 +689,12 @@ class Modeller():
         enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                     filtering=False, benchmarking=True)
 
-        while enkf.active:
+        t_max = 20000
+
+        for _ in tqdm(range(t_max)):
             enkf.baseline_step()
+            if not enkf.active:
+                break
 
         s = results_path + f'baseline_{exit_randomisation.name}.pkl'
         with open(s, 'wb') as f:

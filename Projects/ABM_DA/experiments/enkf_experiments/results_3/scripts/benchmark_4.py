@@ -26,5 +26,5 @@ fig_dir = '../results/figures/baseline/'
 pop_size = 20
 
 # Run
-Modeller.run_enkf_benchmark_filter(ensemble_size=100, pop_size=pop_size,
+Modeller.run_enkf_benchmark_filter(ensemble_size=20, pop_size=pop_size,
                                    exit_randomisation=ExitRandomisation.ALL_RANDOM)

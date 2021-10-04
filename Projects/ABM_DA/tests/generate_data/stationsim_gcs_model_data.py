@@ -4,6 +4,7 @@ import numpy as np
 import sys
 sys.path.append('../stationsim')
 
+from generate_data.data_utils import wrap_up
 from stationsim_gcs_model import Model
 
 
@@ -264,4 +265,33 @@ def get_agent_gate_location_data():
     output.extend(left_right_gates)
     output.extend(top_bottom_gates)
 
+    return output
+
+
+def get_set_state_gate_data():
+    xs = [[1, 3, 5],
+          [2, 4, 6],
+          [101, 256, 42]]
+    ys = [[2, 4, 6],
+          [101, 256, 42],
+          [1, 3, 5]]
+    gs = [[2, 3, 5],
+          [7, 5, 3],
+          [4, 4, 4]]
+
+    assert len(xs) == len(ys) == len(gs)
+    state_vectors = [xs[i]+ys[i]+gs[i] for i in range(len(xs))]
+
+    a0 = [{'location': [1, 2], 'gate': 2},
+          {'location': [3, 4], 'gate': 3},
+          {'location': [5, 6], 'gate': 5}]
+    a1 = [{'location': [2, 101], 'gate': 7},
+          {'location': [4, 256], 'gate': 5},
+          {'location': [6, 42], 'gate': 3}]
+    a2 = [{'location': [101, 1], 'gate': 4},
+          {'location': [256, 3], 'gate': 4},
+          {'location': [42, 5], 'gate': 4}]
+    agent_states = [a0, a1, a2]
+
+    output = wrap_up([state_vectors, agent_states])
     return output

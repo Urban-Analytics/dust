@@ -769,6 +769,9 @@ class Model:
             exit_state = state[2 * self.pop_total:]
             self.set_state(loc_state, sensor='location')
             self.set_state(exit_state, sensor='exit')
+        elif sensor == 'exit_location':
+            for i, agent in enumerate(self.agents):
+                agent.loc_desire = state[i]
         elif sensor == 'locationVel':
             state0 = np.reshape(state[0], (self.pop_total, 2))
             state1 = np.reshape(state[1], (self.pop_total, 1))

@@ -304,5 +304,16 @@ def get_set_state_gate_data():
           {'location': [42, 5], 'gate': 4}]
     agent_states = [a0, a1, a2]
 
-    output = wrap_up([state_vectors, agent_states])
+    output = wrap_up((state_vectors, agent_states))
+    return output
+
+
+def get_set_state_destination_data():
+    exit_locations = [[(1, 1), (100, 100), (700, 700)],
+                      [(500, 0), (700, 650), (0, 125)],
+                      [(350, 370), (125, 0), (10, 0)]]
+
+    agent_states = exit_locations.copy()
+
+    output = wrap_up((exit_locations, agent_states))
     return output

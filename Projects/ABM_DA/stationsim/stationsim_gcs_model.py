@@ -758,6 +758,9 @@ class Model:
             for i, agent in enumerate(self.agents):
                 agent.gate_out = state[i]
                 agent.loc_desire = agent.set_agent_location(state[i])
+        elif sensor == 'exit_number':
+            for i, agent in enumerate(self.agents):
+                agent.gate_out = state[i]
         elif sensor == 'loc_exit':
             locations = state[: 2 * self.pop_total]
             loc_state = list()

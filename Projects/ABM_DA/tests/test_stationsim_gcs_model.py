@@ -20,6 +20,9 @@ distance_data = get_distance_data()
 
 set_state_gate_data = get_set_state_gate_data()
 
+# set_state_destination_data = get_set_state_destination_data()
+
+set_state_number_destination = get_set_state_number_destination()
 
 # Helper functions
 def __is_valid_location(agent_location, upper, lower, side):
@@ -487,6 +490,17 @@ def test_set_agent_location():
         print(test_location, gate['upper'], gate['lower'], '\n')
 
     assert all(results)
+
+
+@pytest.mark.parametrize('state_vector, agent_states',
+                         set_state_number_destination)
+def test_set_state_exit_number(state_vector, agent_states):
+    model = set_up_model()
+
+    model.set_state(state_vector, sensor='exit_number')
+
+    for i, agent in enumerate(model.agents):
+        assert agent.gate_out == agent_states[i]
 
 
 @pytest.mark.parametrize('state_vector, agent_states', set_state_gate_data)

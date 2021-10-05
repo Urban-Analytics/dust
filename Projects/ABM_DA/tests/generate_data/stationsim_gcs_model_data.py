@@ -268,6 +268,17 @@ def get_agent_gate_location_data():
     return output
 
 
+def get_set_state_number_destination():
+    state_vectors = [[1, 2, 3],
+                     [9, 8, 7],
+                     [2, 3, 5]]
+
+    agent_states = state_vectors.copy()
+
+    output = wrap_up((state_vectors, agent_states))
+    return output
+
+
 def get_set_state_gate_data():
     xs = [[1, 3, 5],
           [2, 4, 6],

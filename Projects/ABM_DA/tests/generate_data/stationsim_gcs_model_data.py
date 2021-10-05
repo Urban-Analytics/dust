@@ -317,3 +317,12 @@ def get_set_state_destination_data():
 
     output = wrap_up((exit_locations, agent_states))
     return output
+
+
+def get_get_state_exit_number_data():
+    agent_states = [[1, 2, 3],
+                    [2, 3, 5],
+                    [9, 8, 7]]
+    state_vectors = agent_states.copy()
+    output = wrap_up((agent_states, state_vectors))
+    return output

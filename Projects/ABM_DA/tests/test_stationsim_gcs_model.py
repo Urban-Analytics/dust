@@ -24,6 +24,8 @@ set_state_destination_data = get_set_state_destination_data()
 
 set_state_number_destination = get_set_state_number_destination()
 
+get_state_exit_number_data = get_get_state_exit_number_data()
+
 # Helper functions
 def __is_valid_location(agent_location, upper, lower, side):
     """
@@ -523,3 +525,15 @@ def test_set_state_destination_data(state_vector, agent_states):
 
     for i, agent in enumerate(model.agents):
         assert agent.loc_desire == agent_states[i]
+
+
+@pytest.mark.parametrize('agent_states, state_vector',
+                         get_state_exit_number_data)
+def test_get_state_exit_number(agent_states, state_vector):
+    model = set_up_model()
+
+    for i, agent in enumerate(model.agents):
+        agent.gate_out = agent_states[i]
+
+    result = model.get_state(sensor='exit_number')
+    assert result == state_vector

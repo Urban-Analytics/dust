@@ -727,6 +727,8 @@ class Model:
             x, y = [l[0] for l in locations], [l[1] for l in locations]
             exits = [agent.gate_out for agent in agents]
             state = x + y + exits
+        elif sensor == 'exit_number':
+            state = [agent.gate_out for agent in agents]
         elif sensor == 'locationVel':
             state0 = [agent.location for agent in agents]
             state0 = np.ravel(state0)

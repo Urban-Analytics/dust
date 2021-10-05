@@ -1068,7 +1068,7 @@ class EnsembleKalmanFilter(Filter):
                     en_statuses[j].append(agent.status == 1)
 
             # Assigned status is the modal status across the ensemble of models
-            statuses = [statistics.mode(l) for l in en_statuses]
+            statuses = [statistics.mode(status) for status in en_statuses]
 
         else:
             s = f'Inclusion type ({self.inclusion}) not recognised.'

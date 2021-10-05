@@ -827,8 +827,8 @@ class Model:
         for i in range(self.pop_total):
             loc_state.extend([locations[i], locations[self.pop_total+i]])
         exit_state = state[2 * self.pop_total:]
-        self.set_state(loc_state, sensor='location')
-        self.set_state(exit_state, sensor='exit')
+        self.set_state_location(loc_state)
+        self.set_state_exit(exit_state)
 
     def set_state_exit_location(self, state) -> None:
         for i, agent in enumerate(self.agents):
@@ -837,9 +837,9 @@ class Model:
 
     def set_state_enkf_gate_angle(self, state) -> None:
         loc_exits = state[: 3 * self.pop_total]
-        self.set_state(loc_exits, sensor='loc_exit')
+        self.set_state_loc_exit(loc_exits)
         destinations = state[3 * self.pop_total :]
-        self.set_state(destinations, sensor='exit_location')
+        self.set_state_exit_location(destinations)
 
     def set_state_locationVel(self, state) -> None:
         state0 = np.reshape(state[0], (self.pop_total, 2))

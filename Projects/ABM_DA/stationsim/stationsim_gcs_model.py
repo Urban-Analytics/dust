@@ -730,7 +730,14 @@ class Model:
         elif sensor == 'exit_number':
             state = [agent.gate_out for agent in agents]
         elif sensor == 'exit_location':
-            state = [agent.loc_desire for agent in agents]
+            locations = [agent.loc_desire for agent in agents]
+            x, y = [l[0] for l in locations], [l[1] for l in locations]
+            state = x + y
+        elif sensor == 'enkf_gate_angle':
+            locations = self.get_state(sensor='location2D')
+            x_y_g = self.get_state(sensor='loc_exit')
+            exit_locs = self.get_state('exit_location')
+            state = x_y_g + exit_locs
         elif sensor == 'locationVel':
             state0 = [agent.location for agent in agents]
             state0 = np.ravel(state0)

@@ -337,7 +337,13 @@ def get_set_state_enkf_gate_angle_data():
     return output
 
 
-    agent_states = exit_locations.copy()
+def get_set_state_destination_data():
+    exit_locations = [[1, 100, 700, 1, 100, 700],
+                      [500, 700, 0, 0, 650, 125],
+                      [350, 125, 10, 370, 0, 0]]
+    agent_states = [[(1, 1), (100, 100), (700, 700)],
+                    [(500, 0), (700, 650), (0, 125)],
+                    [(350, 370), (125, 0), (10, 0)]]
 
     output = wrap_up((exit_locations, agent_states))
     return output

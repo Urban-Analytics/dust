@@ -787,7 +787,7 @@ class Model:
         state = [state0, state1]
         return state
 
-    def set_state(self, state, sensor=None):
+    def set_state(self, state, sensor=None) -> None:
         '''
         Use state vector to set agent locations.
         '''
@@ -803,25 +803,25 @@ class Model:
         else:
             raise ValueError(f'Sensor type ({sensor}) not recognised.')
 
-    def set_state_location(self, state):
+    def set_state_location(self, state) -> None:
         state = np.reshape(state, (self.pop_total, 2))
         for i, agent in enumerate(self.agents):
             agent.location = state[i, :]
 
-    def set_state_location_2d(self, state):
+    def set_state_location_2d(self, state) -> None:
         for i, agent in enumerate(self.agents):
             agent.location = state[i, :]
 
-    def set_state_exit(self, state):
+    def set_state_exit(self, state) -> None:
         for i, agent in enumerate(self.agents):
             agent.gate_out = state[i]
             agent.loc_desire = agent.set_agent_location(state[i])
 
-    def set_state_exit_number(self, state):
+    def set_state_exit_number(self, state) -> None:
         for i, agent in enumerate(self.agents):
             agent.gate_out = state[i]
 
-    def set_state_loc_exit(self, state):
+    def set_state_loc_exit(self, state) -> None:
         locations = state[: 2 * self.pop_total]
         loc_state = list()
         for i in range(self.pop_total):
@@ -830,18 +830,18 @@ class Model:
         self.set_state(loc_state, sensor='location')
         self.set_state(exit_state, sensor='exit')
 
-    def set_state_exit_location(self, state):
+    def set_state_exit_location(self, state) -> None:
         for i, agent in enumerate(self.agents):
             loc_desire = (state[i], state[self.pop_total + i])
             agent.loc_desire = loc_desire
 
-    def set_state_enkf_gate_angle(self, state):
+    def set_state_enkf_gate_angle(self, state) -> None:
         loc_exits = state[: 3 * self.pop_total]
         self.set_state(loc_exits, sensor='loc_exit')
         destinations = state[3 * self.pop_total :]
         self.set_state(destinations, sensor='exit_location')
 
-    def set_state_locationVel(self, state):
+    def set_state_locationVel(self, state) -> None:
         state0 = np.reshape(state[0], (self.pop_total, 2))
         state1 = np.reshape(state[1], (self.pop_total, 1))
         for i, agent in enumerate(self.agents):

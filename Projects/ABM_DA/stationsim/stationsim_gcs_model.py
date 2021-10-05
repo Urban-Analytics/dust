@@ -470,6 +470,14 @@ class Model:
                 RuntimeWarning
             )
 
+        self.state_gets = {'location': self.get_state_location,
+                           'location2D': self.get_state_location_2d,
+                           'loc_exit': self.get_state_loc_exit,
+                           'exit_number': self.get_state_exit_number,
+                           'exit_location': self.get_state_exit_location,
+                           'enkf_gate_angle': self.get_state_enkf_gate_angle,
+                           'locationVel': self.get_state_locationVel}
+
         # Combine kwargs and defaults
         self.params, self.params_changed = Model._init_kwargs(params, kwargs)
 
@@ -717,35 +725,57 @@ class Model:
             state = [(agent.status, *agent.location, agent.speed) for agent in
                      agents]
             state = np.append(self.step_id, np.ravel(state))
-        elif sensor == 'location':
-            state = [agent.location for agent in agents]
-            state = np.ravel(state)
-        elif sensor == 'location2D':
-            state = [agent.location for agent in agents]
-        elif sensor == 'loc_exit':
-            locations = self.get_state('location2D')
-            x, y = [l[0] for l in locations], [l[1] for l in locations]
-            exits = [agent.gate_out for agent in agents]
-            state = x + y + exits
-        elif sensor == 'exit_number':
-            state = [agent.gate_out for agent in agents]
-        elif sensor == 'exit_location':
-            locations = [agent.loc_desire for agent in agents]
-            x, y = [l[0] for l in locations], [l[1] for l in locations]
-            state = x + y
-        elif sensor == 'enkf_gate_angle':
-            locations = self.get_state(sensor='location2D')
-            x_y_g = self.get_state(sensor='loc_exit')
-            exit_locs = self.get_state('exit_location')
-            state = x_y_g + exit_locs
-        elif sensor == 'locationVel':
-            state0 = [agent.location for agent in agents]
-            state0 = np.ravel(state0)
-            state1 = [agent.speed for agent in agents]
-            state1 = np.ravel(state1)
-            state = [state0, state1]
+        elif sensor in self.state_gets:
+            state_getter_func = self.state_gets[sensor]
+            state = state_getter_func(agents)
         else:
             raise ValueError(f'Sensor type ({sensor}) not recognised.')
+        return state
+
+    @staticmethod
+    def get_state_location(agents):
+        state = [agent.location for agent in agents]
+        state = np.ravel(state)
+        return state
+
+    @staticmethod
+    def get_state_location_2d(agents):
+        state = [agent.location for agent in agents]
+        return state
+
+    @staticmethod
+    def get_state_exit_number(agents):
+        state = [agent.gate_out for agent in agents]
+        return state
+
+    def get_state_loc_exit(self, agents):
+        locations = self.get_state_location_2d(agents)
+        x, y = [l[0] for l in locations], [l[1] for l in locations]
+        exits = self.get_state_exit_number(agents)
+        # exits = [agent.gate_out for agent in agents]
+        state = x + y + exits
+        return state
+
+    @staticmethod
+    def get_state_exit_location(agents):
+        locations = [agent.loc_desire for agent in agents]
+        x, y = [l[0] for l in locations], [l[1] for l in locations]
+        state = x + y
+        return state
+
+    def get_state_enkf_gate_angle(self, _):
+        x_y_g = self.get_state(sensor='loc_exit')
+        exit_locs = self.get_state('exit_location')
+        state = x_y_g + exit_locs
+        return state
+
+    @staticmethod
+    def get_state_locationVel(agents):
+        state0 = [agent.location for agent in agents]
+        state0 = np.ravel(state0)
+        state1 = [agent.speed for agent in agents]
+        state1 = np.ravel(state1)
+        state = [state0, state1]
         return state
 
     def set_state(self, state, sensor=None):

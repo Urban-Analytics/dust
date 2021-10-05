@@ -308,10 +308,34 @@ def get_set_state_gate_data():
     return output
 
 
-def get_set_state_destination_data():
-    exit_locations = [[(1, 1), (100, 100), (700, 700)],
-                      [(500, 0), (700, 650), (0, 125)],
-                      [(350, 370), (125, 0), (10, 0)]]
+def get_set_state_enkf_gate_angle_data():
+    state_vectors = [[1, 100, 60,
+                      1, 120, 100,
+                      1, 0, 7,
+                      700, 0, 150,
+                      740, 125, 0],
+                     [42, 275, 647,
+                      628, 100, 190,
+                      4, 5, 1,
+                      740, 740, 125,
+                      475, 265, 700]]
+
+    agent_states = [[{'location': (1, 1), 'destination': (700, 740),
+                      'gate_number': 1},
+                     {'location': (100, 120), 'destination': (0, 125),
+                      'gate_number': 0},
+                     {'location': (60, 100), 'destination': (150, 0),
+                      'gate_number': 7}],
+                    [{'location': (42, 628), 'destination': (740, 475),
+                      'gate_number': 4},
+                     {'location': (275, 100), 'destination': (740, 265),
+                      'gate_number': 5},
+                     {'location': (647, 190), 'destination': (125, 700),
+                      'gate_number': 1}]]
+
+    output = wrap_up((state_vectors, agent_states))
+    return output
+
 
     agent_states = exit_locations.copy()
 

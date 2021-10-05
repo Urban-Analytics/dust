@@ -24,6 +24,8 @@ set_state_destination_data = get_set_state_destination_data()
 
 set_state_number_destination = get_set_state_number_destination()
 
+set_state_enkf_gate_angle_data = get_set_state_enkf_gate_angle_data()
+
 get_state_exit_number_data = get_get_state_exit_number_data()
 
 get_state_exit_location_data = get_get_state_exit_location_data()
@@ -527,6 +529,19 @@ def test_set_state_destination_data(state_vector, agent_states):
 
     for i, agent in enumerate(model.agents):
         assert agent.loc_desire == agent_states[i]
+
+
+@pytest.mark.parametrize('state_vector, agent_states',
+                         set_state_enkf_gate_angle_data)
+def test_set_state_enkf_gate_angle(state_vector, agent_states):
+    model = set_up_model()
+
+    model.set_state(state_vector, sensor='enkf_gate_angle')
+
+    for i, agent in enumerate(model.agents):
+        assert tuple(agent.location) == agent_states[i]['location']
+        assert agent.loc_desire == agent_states[i]['destination']
+        assert agent.gate_out == agent_states[i]['gate_number']
 
 
 @pytest.mark.parametrize('agent_states, state_vector',

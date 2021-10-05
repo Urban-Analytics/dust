@@ -775,7 +775,13 @@ class Model:
             self.set_state(exit_state, sensor='exit')
         elif sensor == 'exit_location':
             for i, agent in enumerate(self.agents):
-                agent.loc_desire = state[i]
+                loc_desire = (state[i], state[self.pop_total + i])
+                agent.loc_desire = loc_desire
+        elif sensor == 'enkf_gate_angle':
+            loc_exits = state[: 3 * self.pop_total]
+            self.set_state(loc_exits, sensor='loc_exit')
+            destinations = state[3 * self.pop_total :]
+            self.set_state(destinations, sensor='exit_location')
         elif sensor == 'locationVel':
             state0 = np.reshape(state[0], (self.pop_total, 2))
             state1 = np.reshape(state[1], (self.pop_total, 1))

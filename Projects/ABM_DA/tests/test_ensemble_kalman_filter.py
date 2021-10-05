@@ -95,6 +95,7 @@ angle_destination_in_data = get_angle_destination_in_data()
 
 # round_target_angle_data = get_round_target_angle_data()
 
+
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
 def test_round_destination(dest, n_dest, expected):
@@ -565,6 +566,7 @@ def test_filter_vector(vector, statuses, expected):
 
 x = 'base_statuses, en_statuses, inclusion, vector_mode, expected'
 
+
 @pytest.mark.parametrize(x, state_vector_statuses_data)
 def test_get_state_vector_statuses(base_statuses, en_statuses, inclusion,
                                    vector_mode, expected):
@@ -585,6 +587,8 @@ def test_get_state_vector_statuses(base_statuses, en_statuses, inclusion,
 
 
 x = 'inclusion, base_statuses, ensemble_statuses, truth, state_mean, expected'
+
+
 @pytest.mark.parametrize(x, forecast_error_data)
 def test_get_forecast_error(inclusion, base_statuses, ensemble_statuses,
                             truth, state_mean, expected):

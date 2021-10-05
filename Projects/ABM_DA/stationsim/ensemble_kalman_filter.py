@@ -233,7 +233,7 @@ class EnsembleKalmanFilter(Filter):
         #                                                     model.gates_out,
         #                                                     agent.gate_in)
         #             agent.gate_out = gate_out
-        #             agent.loc_desire = agent.set_agent_location(agent.gate_out)
+        #             agent.loc_desire = agent.set_agent_location(gate_out)
         # elif self.mode != EnsembleKalmanFilterType.STATE:
         #     raise ValueError('Filter type not recognised.')
         return models
@@ -513,8 +513,8 @@ class EnsembleKalmanFilter(Filter):
 
         Given a dictionary containing the prior error, calculate the posterior
         and observation error.
-        Additionally, if baseline models are being run, calculate error for them
-        too.
+        Additionally, if baseline models are being run, calculate error for
+        them too.
         Uses self.make_obs_error() to calculate observation errors,
         self.make_analysis_errors to calculate posterior error, and
         self.error_func to calculate baseline error when necessary.
@@ -746,8 +746,8 @@ class EnsembleKalmanFilter(Filter):
         This involves:
             - Calculating the differences between truth and estimate for x- and
               y-coords,
-            - Calculating the average x- and y-errors using the appropriate mean
-              function allocated to self.mean_func(),
+            - Calculating the average x- and y-errors using the appropriate
+              mean function allocated to self.mean_func(),
             - Calculating the average distance error using
               self.make_distance_error().
 
@@ -1099,7 +1099,8 @@ class EnsembleKalmanFilter(Filter):
 
         return None
 
-    def set_ensemble_statuses(self, ensemble_statuses: List[List[int]]) -> None:
+    def set_ensemble_statuses(self,
+                              ensemble_statuses: List[List[int]]) -> None:
         assert len(ensemble_statuses) == len(self.models)
 
         for i, model in enumerate(self.models):

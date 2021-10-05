@@ -362,6 +362,8 @@ def get_get_state_exit_location_data():
     agent_states = [[(1, 1), (100, 100), (700, 700)],
                     [(500, 0), (700, 650), (0, 125)],
                     [(350, 370), (125, 0), (10, 0)]]
-    state_vectors = agent_states.copy()
+    state_vectors = [[1, 100, 700, 1, 100, 700],
+                     [500, 700, 0, 0, 650, 125],
+                     [350, 125, 10, 370, 0, 0]]
     output = wrap_up((agent_states, state_vectors))
     return output

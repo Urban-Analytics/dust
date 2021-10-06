@@ -286,6 +286,13 @@ class EnsembleKalmanFilter(Filter):
         self.in_gate_idx = {idx: i for i, idx in enumerate(in_gate_idx)}
         out_gate_idx = [x for x in range(19) if x not in self.in_gate_idx]
         self.out_gate_idx = set(out_gate_idx)
+        # Note equivalence between edge index and gate index
+        self.edge_to_gate = {0: 0, 1: 1, 2: 1,
+                             3: 2, 4: 2, 5: 3,
+                             6: 3, 7: 4, 8: 4,
+                             9: 5, 10: 5, 11: 6,
+                             12: 6, 13: 7, 17: 10,
+                             18: 0}
 
     def __get_gate_edge_locations(self, gate_loc, gate_width):
         wd = gate_width / 2
@@ -1133,6 +1140,7 @@ class EnsembleKalmanFilter(Filter):
         elif insertion_idx in self.out_gate_idx:
             # Get index of nearest gate edge
             edge_idx = self.round_target_angle(angle, insertion_idx)
+            g = self.edge_to_gate[edge_idx]
             # Use index to get location of gate edge
             destination = self.unique_gate_edges[edge_idx]
         else:

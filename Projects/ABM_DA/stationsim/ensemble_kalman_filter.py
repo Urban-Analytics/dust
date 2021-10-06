@@ -864,11 +864,22 @@ class EnsembleKalmanFilter(Filter):
         """
         Update self.state_ensemble based on the states of the models.
         """
-        st = self.sensor_type
+        if self.mode == EnsembleKalmanFilterType.STATE:
+            st = 'location'
+        elif self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            if self.gate_estimator == GateEstimator.ROUNDING:
+                st = 'loc_exit'
+            elif self.gate_estimator == GateEstimator.ANGLE:
+                st = 'enkf_gate_angle'
+            else:
+                st = 'loc_exit'
+        else:
+            raise ValueError(f'Unrecognised mode: {self.mode}')
         if self.filtering:
             for i in range(self.ensemble_size):
-                state_vector = self.models[i].get_state(sensor=st)
-                self.state_ensemble[:, i] = state_vector
+                state = self.models[i].get_state(sensor=st)
+                processed_state = self.process_state_vector(state)
+                self.state_ensemble[:, i] = processed_state
         if self.run_vanilla:
             for i in range(self.vanilla_ensemble_size):
                 state_vector = self.vanilla_models[i].get_state(st)

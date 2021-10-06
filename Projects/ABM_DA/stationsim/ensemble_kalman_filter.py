@@ -1187,13 +1187,13 @@ class EnsembleKalmanFilter(Filter):
                                                  self.unique_gate_angles)
         if insertion_idx in self.in_gate_idx:
             # Get gate from dict based on insertion idx
-            g = self.in_gate_idx[insertion_idx]
+            g = self.in_gate_idx[insertion_idx] % self.base_model.gates_out
             # Use agent method to randomly allocate location along gate
             destination = self.base_model.agents[0].set_agent_location(g)
         elif insertion_idx in self.out_gate_idx:
             # Get index of nearest gate edge
             edge_idx = self.round_target_angle(angle, insertion_idx)
-            g = self.edge_to_gate[edge_idx]
+            g = self.edge_to_gate[edge_idx] % self.base_model.gates_out
             # Use index to get location of gate edge
             destination = self.unique_gate_edges[edge_idx]
         else:

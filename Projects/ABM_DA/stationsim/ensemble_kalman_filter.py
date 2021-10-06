@@ -874,6 +874,26 @@ class EnsembleKalmanFilter(Filter):
                 state_vector = self.vanilla_models[i].get_state(st)
                 self.vanilla_state_ensemble[:, i] = state_vector
 
+    def process_state_vector(self, state):
+        if self.mode == EnsembleKalmanFilterType.STATE:
+            return state
+        elif self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            if self.gate_estimator != GateEstimator.ANGLE:
+                return state
+            else:
+                state = np.array(state)
+                locations = state[:2 * self.population_size]
+                destinations = state[3 * self.population_size:]
+                angles = np.zeros(self.population_size)
+                for i in range(self.population_size):
+                    loc = (destinations[i], destinations[self.population_size + i])
+                    angles[i] = self.get_angle(self.model_centre, loc)
+
+                reduced_state = np.concatenate((locations, angles))
+                return reduced_state
+        else:
+            raise ValueError(f'Unrecognised mode: {self.mode}')
+
     def update_state_means(self) -> None:
         if self.filtering:
             self.state_mean = self.update_state_mean(self.state_ensemble)

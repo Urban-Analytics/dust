@@ -626,7 +626,13 @@ def test_get_forecast_error(inclusion, base_statuses, ensemble_statuses,
 @pytest.mark.parametrize('estimator_type, expected',
                          gate_estimator_allocation_data)
 def test_gate_estimator_allocation(estimator_type, expected):
-    enkf = set_up_enkf(gate_estimator=estimator_type)
+    if (estimator_type == GateEstimator.ROUNDING or estimator_type ==
+            GateEstimator.ANGLE):
+        ft = EnsembleKalmanFilterType.DUAL_EXIT
+    else:
+        ft = EnsembleKalmanFilterType.STATE
+    enkf = set_up_enkf(gate_estimator=estimator_type, filter_type=ft)
+    # enkf = set_up_enkf(gate_estimator=estimator_type)
     assert enkf.gate_estimator == expected
 
 

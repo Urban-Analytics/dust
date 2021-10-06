@@ -1118,17 +1118,14 @@ class EnsembleKalmanFilter(Filter):
 
         return None
 
-    def get_destination_angle(self, angle: float,
-                              location: Tuple[float,
-                                              float] = None) -> Tuple[float,
-                                                                      float]:
+    def get_destination_angle(self, angle: float, gate_out: bool = False):
 
         # If a location is provided then raise an error,
         # We haven't considered this case yet
-        if location is not None:
-            raise ValueError('Method not implemented for specified locations')
+        # if location is not None:
+        #     raise ValueError('Method not implemented for specified locations')
 
-        location = (self.base_model.width / 2, self.base_model.height / 2)
+        # location = (self.base_model.width / 2, self.base_model.height / 2)
 
         insertion_idx = self.bisect_left_reverse(angle,
                                                  self.unique_gate_angles)
@@ -1148,7 +1145,10 @@ class EnsembleKalmanFilter(Filter):
 
         # TODO describe what happens when angle falls exactly on a gate edge
 
-        return destination
+        if gate_out:
+            return destination, g
+        else:
+            return destination
 
     def round_target_angle(self, angle: float, insertion_idx: int) -> int:
         """

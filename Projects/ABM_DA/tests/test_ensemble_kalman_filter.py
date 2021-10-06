@@ -89,6 +89,8 @@ edge_loc_data = get_edge_loc_data()
 
 angle_destination_out_data = get_angle_destination_out_data()
 
+angle_destination_out_gate_data = get_angle_destination_out_gate_data()
+
 angle_destination_in_data = get_angle_destination_in_data()
 
 # angle_destination_in_data = get_angle_destination_in_data()
@@ -679,6 +681,15 @@ def test_angle_destination_out(angle, expected):
     result = enkf.get_destination_angle(angle)
 
     assert result == expected
+
+
+@pytest.mark.parametrize('angle, expected', angle_destination_out_gate_data)
+def test_angle_destination_in_gate(angle, expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+    _, gate = enkf.get_destination_angle(angle, gate_out=True)
+
+    assert gate == expected
 
 
 @pytest.mark.parametrize('angle, expected', angle_destination_in_data)

@@ -920,15 +920,28 @@ class EnsembleKalmanFilter(Filter):
             if self.mode == EnsembleKalmanFilterType.STATE:
                 self.models[i].set_state(state_vector, sensor='location')
             elif self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
-                # Update locations
-                locations = state_vector[:2 * self.population_size]
-                self.models[i].set_state(locations, sensor='location')
+                if self.gate_estimator == GateEstimator.ROUNDING:
+                    # Update locations
+                    locations = state_vector[:2 * self.population_size]
 
-                # Update destinations
-                destinations = state_vector[2 * self.population_size:]
-                destinations = self.round_destinations(destinations,
-                                                       self.n_exits)
-                self.models[i].set_state(destinations, sensor='exit')
+                    # Update destinations
+                    destinations = state_vector[2 * self.population_size:]
+                    destinations = self.round_destinations(destinations,
+                                                           self.n_exits)
+                    x = np.concatenate((locations, destinations))
+                    self.models[i].set_state(x, sensor='loc_exit')
+                elif self.gate_estimator == GateEstimator.ANGLE:
+                    locations = state_vector[:2 * self.population_size]
+                    angles = state_vector[2 * self.population_size:]
+                    # Make sure that we have exactly the correct number of
+                    # angles
+                    assert len(angles) == self.population_size
+                    gates, gate_locs = self.construct_state_from_angles(angles)
+                    x = np.concatenate((locations, gates, gate_locs))
+                    self.models[i].set_state(x, sensor='enkf_gate_angle')
+                else:
+                    s = f'Gate estimator no recognised: {self.gate_estimator}'
+                    raise ValueError(s)
 
     def update_status(self) -> None:
         """

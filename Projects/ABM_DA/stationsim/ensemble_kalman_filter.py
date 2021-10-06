@@ -882,8 +882,9 @@ class EnsembleKalmanFilter(Filter):
                 self.state_ensemble[:, i] = processed_state
         if self.run_vanilla:
             for i in range(self.vanilla_ensemble_size):
-                state_vector = self.vanilla_models[i].get_state(st)
-                self.vanilla_state_ensemble[:, i] = state_vector
+                state = self.vanilla_models[i].get_state(sensor=st)
+                processed_state = self.process_state_vector(state)
+                self.vanilla_state_ensemble[:, i] = processed_state
 
     def process_state_vector(self, state):
         if self.mode == EnsembleKalmanFilterType.STATE:

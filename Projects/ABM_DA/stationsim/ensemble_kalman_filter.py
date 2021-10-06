@@ -888,7 +888,7 @@ class EnsembleKalmanFilter(Filter):
         state_mean = np.mean(state_ensemble, axis=1)
 
         # Round exits if they are in the state vectors
-        if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+        if self.gate_estimator == GateEstimator.ROUNDING:
             destinations = state_mean[2 * self.population_size:]
             destinations = self.round_destinations(destinations,
                                                    self.n_exits)

@@ -93,6 +93,10 @@ angle_destination_out_gate_data = get_angle_destination_out_gate_data()
 
 angle_destination_in_data = get_angle_destination_in_data()
 
+construct_state_from_angles_gates_data = get_construct_state_from_angles_gates_data()
+
+construct_state_from_angles_locs_data = get_construct_state_from_angles_locs_data()
+
 # angle_destination_in_data = get_angle_destination_in_data()
 
 # round_target_angle_data = get_round_target_angle_data()
@@ -719,3 +723,23 @@ def test_angle_destination_in(angle, expected):
 #     result = enkf.round_target_angle(angle, insertion_idx)
 
 #     assert result == expected
+
+
+@pytest.mark.parametrize('angles, expected',
+                         construct_state_from_angles_locs_data)
+def test_construct_state_from_angles_locs(angles, expected):
+    enkf = set_up_enkf(pop_size=3, gate_estimator=GateEstimator.ANGLE)
+
+    _, locations = enkf.construct_state_from_angles(angles)
+
+    assert list(locations) == expected
+
+
+@pytest.mark.parametrize('angles, expected',
+                         construct_state_from_angles_gates_data)
+def test_construct_state_from_angles_gates(angles, expected):
+    enkf = set_up_enkf(pop_size=3, gate_estimator=GateEstimator.ANGLE)
+
+    gates, _ = enkf.construct_state_from_angles(angles)
+
+    assert list(gates) == expected

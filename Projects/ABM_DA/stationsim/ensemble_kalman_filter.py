@@ -1118,6 +1118,17 @@ class EnsembleKalmanFilter(Filter):
 
         return None
 
+    def construct_state_from_angles(self, angles):
+        locations = np.zeros(2*self.population_size)
+        gates = np.zeros(self.population_size)
+        for i, angle in enumerate(angles):
+            loc, gate = self.get_destination_angle(angle, gate_out=True)
+            gates[i] = gate
+            locations[i] = loc[0]
+            locations[self.population_size + i] = loc[1]
+
+        return gates, locations
+
     def get_destination_angle(self, angle: float, gate_out: bool = False):
 
         # If a location is provided then raise an error,

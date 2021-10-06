@@ -623,3 +623,21 @@ def get_angle_destination_in_data():
 
     output = wrap_up([angles, expected])
     return output
+
+
+def get_construct_state_from_angles_gates_data():
+    angles = [[2.9, 2.4, pi/2]]
+
+    expected = [[0, 1, 2]]
+
+    output = wrap_up((angles, expected))
+    return output
+
+
+def get_construct_state_from_angles_locs_data():
+    angles = [[2.9, 2.4, pi/2]]
+
+    expected = [[0, 0, 455, 400, 700, 700]]
+
+    output = wrap_up((angles, expected))
+    return output

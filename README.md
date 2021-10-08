@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/414940761.svg)](https://zenodo.org/badge/latestdoi/414940761)
+
 # dust
 
 Main dust website: [https://urban-analytics.github.io/dust/](https://urban-analytics.github.io/dust/)

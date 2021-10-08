@@ -1103,6 +1103,28 @@ class EnsembleKalmanFilter(Filter):
 
     @staticmethod
     def round_destination(destination: float, n_destinations: int) -> int:
+        """
+        Round estimated destination numbers to whole number values.
+
+        Take a list of estimated destination numbers, and round them to the
+        nearest integer value. Where the estimated value is greater than number
+        of gates in the environment, apply clock-face/modulo arithmetic to take
+        the remainder of the gate number divided by the number of gates, i.e. if
+        there are 11 gates and the estimated gate number is 13, we would apply
+        the modulo operator to get the remained of dividing 13 by 11 - 2.
+
+        Parameters
+        ----------
+        destination : float
+            Estimated gate number.
+        n_destinations : int
+            Number of potential exit gates to which an agent could head.
+
+        Returns
+        -------
+        int:
+            Gate number
+        """
         dest = int(round(destination))
         return dest % n_destinations
 

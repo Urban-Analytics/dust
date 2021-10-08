@@ -1163,8 +1163,28 @@ class EnsembleKalmanFilter(Filter):
 
         return None
 
-    def construct_state_from_angles(self, angles):
-        locations = np.zeros(2*self.population_size)
+    def construct_state_from_angles(self, angles) -> Tuple[np.ndarray,
+                                                           np.ndarray]:
+        """
+        Construct a state vector of gate numbers and locations given a list of
+        gates.
+
+        Take a list of gates - one per agent in the population - and for each
+        angle identify the gate number and destination location to which the
+        agent will head. Use this information to construct a state vector.
+
+        Parameters
+        ----------
+        angles : iterable
+            List of angles pertaining to the agent population.
+
+        Returns
+        -------
+        Tuple[np.ndarray,
+                                                                   np.ndarray]:
+            Numpy array of gate numbers and numpy array of gate locations.
+        """
+        locations = np.zeros(2 * self.population_size)
         gates = np.zeros(self.population_size)
         for i, angle in enumerate(angles):
             loc, gate = self.get_destination_angle(angle, gate_out=True)

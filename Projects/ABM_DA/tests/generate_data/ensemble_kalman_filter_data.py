@@ -641,3 +641,14 @@ def get_construct_state_from_angles_locs_data():
 
     output = wrap_up((angles, expected))
     return output
+
+
+def get_round_target_angle_data():
+    angles = [2.9, 2.4]
+
+    insertion_idxs = [1, 1]
+
+    rounded_idxs = [0, 1]
+
+    output = wrap_up((angles, insertion_idxs, rounded_idxs))
+    return output

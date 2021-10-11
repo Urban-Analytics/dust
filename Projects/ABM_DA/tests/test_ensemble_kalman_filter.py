@@ -99,7 +99,7 @@ construct_state_from_angles_locs_data = get_construct_state_from_angles_locs_dat
 
 # angle_destination_in_data = get_angle_destination_in_data()
 
-# round_target_angle_data = get_round_target_angle_data()
+round_target_angle_data = get_round_target_angle_data()
 
 
 # Tests
@@ -721,14 +721,14 @@ def test_angle_destination_in(angle, expected):
         raise ValueError(f'Unexpected test value provided: {expected}')
 
 
-# @pytest.mark.parametrize('angle, insertion_idx, expected',
-#                          round_target_angle_data)
-# def test_round_target_angle(angle, insertion_idx, expected):
-#     enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+@pytest.mark.parametrize('angle, insertion_idx, expected',
+                         round_target_angle_data)
+def test_round_target_angle(angle, insertion_idx, expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
 
-#     result = enkf.round_target_angle(angle, insertion_idx)
+    result = enkf.round_target_angle(angle, insertion_idx)
 
-#     assert result == expected
+    assert result == expected
 
 
 @pytest.mark.parametrize('angles, expected',

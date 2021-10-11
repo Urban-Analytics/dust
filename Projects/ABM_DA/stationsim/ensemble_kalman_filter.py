@@ -1098,6 +1098,21 @@ class EnsembleKalmanFilter(Filter):
 
     @classmethod
     def round_destinations(cls, destinations, n_destinations):
+        """
+        Vectorize the round_destination() method and apply it to an array of
+        destinations.
+
+        Take an array of estimated destinations, and apply the
+        round_destination() method to each entry. This is achieved by
+        vectorising the method.
+
+        Parameters
+        ----------
+        destinations : np.ndarray
+            Array of estimated destinations
+        n_destinations : int
+            Number of exits in environment
+        """
         vfunc = np.vectorize(cls.round_destination)
         return vfunc(destinations, n_destinations)
 

@@ -511,8 +511,11 @@ class EnsembleKalmanFilter(Filter):
             # Filter ground truth vector and state mean vector
             truth = self.filter_vector(truth, statuses)
             state_mean = self.filter_vector(self.state_mean, statuses)
+            n_active = sum(statuses)
+        else:
+            n_active = self.population_size
 
-        error = self.error_func(truth, state_mean)
+        error = self.error_func(truth, state_mean, n_active)
         return error
 
     def make_metrics(self, metrics: dict, truth: np.ndarray,

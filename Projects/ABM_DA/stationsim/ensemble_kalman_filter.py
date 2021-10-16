@@ -560,6 +560,9 @@ class EnsembleKalmanFilter(Filter):
             if self.run_vanilla:
                 vanilla_state_mean = self.filter_vector(vanilla_state_mean,
                                                         model_statuses)
+            n_active = sum(model_statuses)
+        else:
+            n_active = self.population_size
 
         # Calculating prior and likelihood errors
         metrics['obs'] = self.make_errors(obs_truth, data)
@@ -569,7 +572,7 @@ class EnsembleKalmanFilter(Filter):
             d = self.make_errors(truth, state_mean)
         elif self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
             # USE ANALYSIS ERRORS
-            d, e = self.make_dual_errors(truth, state_mean)
+            d, e = self.make_dual_errors(truth, state_mean, n_active)
             metrics['exit_accuracy'] = e
         else:
             general_message = 'Please provide an appropriate filter type.'
@@ -629,8 +632,8 @@ class EnsembleKalmanFilter(Filter):
 
         return d
 
-    def make_dual_errors(self, truth: np.ndarray,
-                         result: np.ndarray) -> Tuple[float, float]:
+    def make_dual_errors(self, truth: np.ndarray, result: np.ndarray,
+                         n_active: int) -> Tuple[float, float]:
         """
         Calculate errors for dual filter.
 
@@ -654,8 +657,13 @@ class EnsembleKalmanFilter(Filter):
         Tuple[float, float, float, float]:
             distance error, x-error, y-error, exit accuracy.
         """
-        x_result, y_result, exit_result = self.separate_coords_exits(result)
-        x_truth, y_truth, exit_truth = self.separate_coords_exits(truth)
+        x_result, y_result, exit_result = self.separate_coords_exits(n_active,
+                                                                     result)
+        x_truth, y_truth, exit_truth = self.separate_coords_exits(n_active,
+                                                                  truth)
+
+        print(f'r {len(x_result)}, {len(y_result)}, {len(exit_result)}')
+        print(f't {len(x_truth)}, {len(y_truth)}, {len(exit_truth)}')
 
         d, _, _ = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
         exit_accuracy = accuracy_score(exit_truth, exit_result)
@@ -1092,13 +1100,13 @@ class EnsembleKalmanFilter(Filter):
                 raise ValueError('Unrecognised AgentIncluder type')
         return n
 
-    def separate_coords_exits(self,
+    def separate_coords_exits(self, n_active: int,
                               state_vector: np.ndarray) -> Tuple[np.ndarray,
                                                                  np.ndarray,
                                                                  np.ndarray]:
-        x = state_vector[:self.population_size]
-        y = state_vector[self.population_size: 2 * self.population_size]
-        e = state_vector[2 * self.population_size:]
+        x = state_vector[: n_active]
+        y = state_vector[n_active: 2 * n_active]
+        e = state_vector[2 * n_active:]
         return x, y, e
 
     @classmethod

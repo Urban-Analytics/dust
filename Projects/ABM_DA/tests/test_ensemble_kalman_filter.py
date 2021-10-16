@@ -443,7 +443,7 @@ def test_separate_coords_exits(state_vector, pop_size, expected):
     enkf.population_size = pop_size
     np.testing.assert_array_equal
 
-    result = enkf.separate_coords_exits(state_vector)
+    result = enkf.separate_coords_exits(pop_size, state_vector)
 
     for i in range(len(result)):
         np.testing.assert_array_equal(result[i], expected[i])

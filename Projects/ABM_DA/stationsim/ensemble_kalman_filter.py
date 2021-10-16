@@ -196,6 +196,8 @@ class EnsembleKalmanFilter(Filter):
         self.n_exits = self.base_model.gates_out
         self.sensor_type = self.sensor_types[self.mode]
         self.error_func = self.error_funcs[self.mode]
+        if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            self.exits = list()
 
     def __set_up_models(self, n=None):
         # Set up ensemble of models

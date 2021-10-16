@@ -545,16 +545,19 @@ class EnsembleKalmanFilter(Filter):
             vanilla_state_mean = self.vanilla_state_mean.copy()
         if self.inclusion is not None:
             # Get statuses by which to filter state vector
-            statuses = self.get_state_vector_statuses(vector_mode=self.mode)
+            obs_mode = EnsembleKalmanFilterType.STATE
+
+            model_statuses = self.get_state_vector_statuses(self.mode)
+            obs_statuses = self.get_state_vector_statuses(obs_mode)
 
             # Filter ground truth vector and state mean vector
-            truth = self.filter_vector(truth, statuses)
-            obs_truth = self.filter_vector(obs_truth, statuses)
-            data = self.filter_vector(data, statuses)
-            state_mean = self.filter_vector(state_mean, statuses)
+            truth = self.filter_vector(truth, model_statuses)
+            obs_truth = self.filter_vector(obs_truth, obs_statuses)
+            data = self.filter_vector(data, obs_statuses)
+            state_mean = self.filter_vector(state_mean, model_statuses)
             if self.run_vanilla:
                 vanilla_state_mean = self.filter_vector(vanilla_state_mean,
-                                                        statuses)
+                                                        model_statuses)
 
         # Calculating prior and likelihood errors
         metrics['obs'] = self.make_errors(obs_truth, data)
@@ -1171,8 +1174,15 @@ class EnsembleKalmanFilter(Filter):
 
         agent_statuses = self.get_agent_statuses()
 
+        if vector_mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            n = 3
+        elif vector_mode == EnsembleKalmanFilterType.STATE:
+            n = 2
+        else:
+            raise ValueError(f'Unrecognised filter type: {vector_mode}')
+
         # Define whether to repeat statuses 2 or 3 times
-        n = 3 if vector_mode == EnsembleKalmanFilterType.DUAL_EXIT else 2
+        # n = 3 if vector_mode == EnsembleKalmanFilterType.DUAL_EXIT else 2
 
         statuses = list()
         for x in agent_statuses:

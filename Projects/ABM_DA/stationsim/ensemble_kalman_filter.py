@@ -515,7 +515,10 @@ class EnsembleKalmanFilter(Filter):
         else:
             n_active = self.population_size
 
-        error = self.error_func(truth, state_mean, n_active)
+        if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            error = self.error_func(truth, state_mean, n_active)
+        elif self.mode == EnsembleKalmanFilterType.STATE:
+            error = self.error_func(truth, state_mean)
         return error
 
     def make_metrics(self, metrics: dict, truth: np.ndarray,
@@ -590,7 +593,11 @@ class EnsembleKalmanFilter(Filter):
 
         # Vanilla error
         if self.run_vanilla:
-            v = self.error_func(truth, vanilla_state_mean)
+            if self.mode == EnsembleKalmanFilterType.STATE:
+                v = self.error_func(truth, state_mean)
+            elif self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+                # USE ANALYSIS ERRORS
+                v = self.error_func(truth, state_mean, n_active)
             metrics['baseline'] = v
 
         return metrics

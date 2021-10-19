@@ -1234,7 +1234,7 @@ class EnsembleKalmanFilter(Filter):
                                                            np.ndarray]:
         """
         Construct a state vector of gate numbers and locations given a list of
-        gates.
+        gate angles.
 
         Take a list of gates - one per agent in the population - and for each
         angle identify the gate number and destination location to which the

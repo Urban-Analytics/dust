@@ -381,36 +381,8 @@ class EnsembleKalmanFilter(Filter):
             prior_ensemble = self.state_ensemble.copy()
 
             if self.time % self.assimilation_period == 0:
-                # Construct observations
-                obs_truth = self.base_model.get_state(sensor='location')
-                data = self.make_data(obs_truth, self.R_vector)
-
-                # Plot model state
-                if self.vis:
-                    self.plot_model_state('before')
-
-                # Update
-                self.update(data)
-                self.update_state_means()
-                self.update_models()
-
-                metrics = forecast_error.copy()
-                metrics = self.make_metrics(metrics, truth, obs_truth, data)
-                self.metrics.append(metrics)
-
-                if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
-                    exits = self.state_mean[2 * self.population_size]
-                    self.exits.append(exits)
-
-                # Plot posterior
-                if self.vis:
-                    self.plot_model_state('after')
-
-                # Collect state information for vis
-                result = self.collect_results(obs_truth, prior, data,
-                                              prior_ensemble)
-                self.results.append(result)
-
+                self.assimilation_step(truth, data, forecast_error, prior,
+                                       prior_ensemble)
             # else:
                 # self.update_state_mean()
 
@@ -424,6 +396,38 @@ class EnsembleKalmanFilter(Filter):
             # self.base_model.pop_active))
         # print('time: {0}, models: {1}'.format(self.time, [m.pop_active for
         #                                                   m in self.models]))
+
+    def assimilation_step(self, truth, data, forecast_error, prior,
+                          prior_ensemble):
+        # Construct observations
+        obs_truth = self.base_model.get_state(sensor='location')
+        data = self.make_data(obs_truth, self.R_vector)
+
+        # Plot model state
+        if self.vis:
+            self.plot_model_state('before')
+
+        # Update
+        self.update(data)
+        self.update_state_means()
+        self.update_models()
+
+        metrics = forecast_error.copy()
+        metrics = self.make_metrics(metrics, truth, obs_truth, data)
+        self.metrics.append(metrics)
+
+        if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            exits = self.state_mean[2 * self.population_size]
+            self.exits.append(exits)
+
+        # Plot posterior
+        if self.vis:
+            self.plot_model_state('after')
+
+        # Collect state information for vis
+        result = self.collect_results(obs_truth, prior, data,
+                                      prior_ensemble)
+        self.results.append(result)
 
     def baseline_step(self) -> None:
         # Check if any of the models are active

@@ -516,6 +516,8 @@ class EnsembleKalmanFilter(Filter):
             n_active = self.population_size
 
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            if self.gate_estimator == GateEstimator.ANGLE:
+                state_mean = self.convert_vector_angle_to_gate(state_mean)
             error = self.error_func(truth, state_mean, n_active)
         elif self.mode == EnsembleKalmanFilterType.STATE:
             error = self.error_func(truth, state_mean)

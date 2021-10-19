@@ -551,6 +551,10 @@ class EnsembleKalmanFilter(Filter):
             Vector of observations of agent locations.
         """
         state_mean = self.state_mean.copy()
+
+        if self.gate_estimator == GateEstimator.ANGLE:
+            state_mean = self.convert_vector_angle_to_gate(state_mean)
+
         if self.run_vanilla:
             vanilla_state_mean = self.vanilla_state_mean.copy()
         if self.inclusion is not None:

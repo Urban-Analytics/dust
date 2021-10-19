@@ -578,9 +578,6 @@ class EnsembleKalmanFilter(Filter):
             if self.run_vanilla:
                 vanilla_state_mean = self.filter_vector(vanilla_state_mean,
                                                         model_statuses)
-            n_active = sum(model_statuses)
-        else:
-            n_active = self.population_size
 
         # Calculating prior and likelihood errors
         metrics['obs'] = self.make_errors(obs_truth, data)

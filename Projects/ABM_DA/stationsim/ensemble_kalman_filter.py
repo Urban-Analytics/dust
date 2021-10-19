@@ -508,6 +508,9 @@ class EnsembleKalmanFilter(Filter):
     def get_forecast_error(self, truth):
         state_mean = self.state_mean.copy()
 
+        if self.gate_estimator == GateEstimator.ANGLE:
+            state_mean = self.convert_vector_angle_to_gate(state_mean)
+
         if self.inclusion is not None:
             # Get statuses by which to filter state vector
             statuses = self.get_state_vector_statuses(vector_mode=self.mode)

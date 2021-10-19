@@ -611,6 +611,15 @@ class EnsembleKalmanFilter(Filter):
 
         return metrics
 
+    def convert_vector_angle_to_gate(self, state: np.ndarray) -> np.ndarray:
+        locs = state[: 2 * self.population_size]
+        angles = state[2 * self.population_size:]
+        gates, _ = self.construct_state_from_angles(angles)
+
+        print(f'gates: {gates}')
+        new_state = np.concatenate((locs, gates))
+        return new_state
+
     def get_ensemble_errors(self, truth: np.ndarray) -> dict:
         ensemble_errors = dict()
         for i in range(self.ensemble_size):

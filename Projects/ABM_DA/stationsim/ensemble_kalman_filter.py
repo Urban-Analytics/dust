@@ -690,9 +690,6 @@ class EnsembleKalmanFilter(Filter):
         x_truth, y_truth, exit_truth = self.separate_coords_exits(n_active,
                                                                   truth)
 
-        print(f'r {len(x_result)}, {len(y_result)}, {len(exit_result)}')
-        print(f't {len(x_truth)}, {len(y_truth)}, {len(exit_truth)}')
-
         d, _, _ = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
         exit_accuracy = accuracy_score(exit_truth, exit_result)
 

@@ -526,6 +526,8 @@ class EnsembleKalmanFilter(Filter):
             error, _ = self.error_func(truth, state_mean, n_active)
         elif self.mode == EnsembleKalmanFilterType.STATE:
             error = self.error_func(truth, state_mean)
+        else:
+            raise ValueError(f'Filter type: {self.mode}')
         return error
 
     def make_metrics(self, metrics: dict, truth: np.ndarray,

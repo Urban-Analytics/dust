@@ -557,6 +557,12 @@ class EnsembleKalmanFilter(Filter):
 
         if self.run_vanilla:
             vanilla_state_mean = self.vanilla_state_mean.copy()
+
+        if self.inclusion is None:
+            n_active = self.population_size
+        else:
+            n_active = self.get_n_active_agents()
+
         if self.inclusion is not None:
             # Get statuses by which to filter state vector
             obs_mode = EnsembleKalmanFilterType.STATE

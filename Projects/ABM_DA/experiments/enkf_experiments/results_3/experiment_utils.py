@@ -9,6 +9,7 @@ from ensemble_kalman_filter import ExitRandomisation
 from ensemble_kalman_filter import AgentIncluder
 from ensemble_kalman_filter import EnsembleKalmanFilterType
 from ensemble_kalman_filter import EnsembleKalmanFilter
+from ensemble_kalman_filter import GateEstimator
 from stationsim_gcs_model import Model
 import json
 import numpy as np
@@ -545,8 +546,9 @@ class Modeller():
     def run_experiment_1(cls, ensemble_size=20, pop_size=20,
                          assimilation_period=20, obs_noise_std=1.0,
                          model_path='../results/models/exp1/',
-                         mode=EnsembleKalmanFilterType.STATE,
-                         inclusion=AgentIncluder.MODE_EN):
+                         mode=EnsembleKalmanFilterType.DUAL_EXIT,
+                         inclusion=AgentIncluder.MODE_EN,
+                         gate_estimator=GateEstimator.ANGLE):
 
         # Model parameters
         model_params = {'pop_total': pop_size,
@@ -569,7 +571,8 @@ class Modeller():
                          'data_vector_length': data_vec_length,
                          'mode': mode,
                          'inclusion': inclusion,
-                         'ensemble_errors': True,
+                         'gate_estimator': gate_estimator,
+                         'ensemble_errors': False,
                          'H': observation_operator,
                          'R_vector': obs_noise_std * np.ones(data_vec_length),
                          'keep_results': True,

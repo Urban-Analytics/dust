@@ -1215,22 +1215,29 @@ class EnsembleKalmanFilter(Filter):
         # Three times for DUAL_EXIT, i.e. x-y-exit
 
         agent_statuses = self.get_agent_statuses()
+        statuses = list()
 
         if vector_mode == EnsembleKalmanFilterType.DUAL_EXIT:
             n = 3
+
+            for _ in range(n):
+                statuses.extend(agent_statuses)
+
+            return statuses
+
         elif vector_mode == EnsembleKalmanFilterType.STATE:
             n = 2
+
+            for x in agent_statuses:
+                statuses.extend([x for _ in range(n)])
+
+            return statuses
         else:
             raise ValueError(f'Unrecognised filter type: {vector_mode}')
 
         # Define whether to repeat statuses 2 or 3 times
         # n = 3 if vector_mode == EnsembleKalmanFilterType.DUAL_EXIT else 2
 
-        statuses = list()
-        for x in agent_statuses:
-            statuses.extend([x for _ in range(n)])
-
-        return statuses
 
     def set_base_statuses(self, base_statuses: List[int]) -> None:
         assert len(base_statuses) == len(self.base_model.agents)

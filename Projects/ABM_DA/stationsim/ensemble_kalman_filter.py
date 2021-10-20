@@ -615,7 +615,7 @@ class EnsembleKalmanFilter(Filter):
                 v = self.error_func(truth, state_mean)
             elif self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
                 # USE ANALYSIS ERRORS
-                v = self.error_func(truth, state_mean, n_active)
+                v, _ = self.error_func(truth, state_mean, n_active)
             metrics['baseline'] = v
 
         return metrics

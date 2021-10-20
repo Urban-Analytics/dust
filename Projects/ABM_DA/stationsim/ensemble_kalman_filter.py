@@ -624,7 +624,6 @@ class EnsembleKalmanFilter(Filter):
         angles = state[2 * self.population_size:]
         gates, _ = self.construct_state_from_angles(angles)
 
-        print(f'gates: {gates}')
         new_state = np.concatenate((locs, gates))
         return new_state
 

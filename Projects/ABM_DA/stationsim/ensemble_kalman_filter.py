@@ -518,7 +518,7 @@ class EnsembleKalmanFilter(Filter):
 
             # Filter ground truth vector and state mean vector
             truth = self.filter_vector(truth, statuses)
-            state_mean = self.filter_vector(self.state_mean, statuses)
+            state_mean = self.filter_vector(state_mean, statuses)
             n_active = self.get_n_active_agents()
         else:
             n_active = self.population_size

@@ -699,6 +699,11 @@ class EnsembleKalmanFilter(Filter):
                                                                   truth)
 
         d, _, _ = self.calculate_rmse(x_truth, y_truth, x_result, y_result)
+        # print(self.time)
+        # print('truth', truth)
+        # print('exit t', exit_truth)
+        # print('res', result)
+        # print('exit r', exit_result)
         exit_accuracy = accuracy_score(exit_truth, exit_result)
 
         return d, exit_accuracy

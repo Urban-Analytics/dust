@@ -369,20 +369,21 @@ class EnsembleKalmanFilter(Filter):
 
             # f = self.error_func(truth, state_mean)[0]
 
-            truth = self.base_model.get_state(sensor=self.sensor_type)
-            f = self.get_forecast_error(truth)
-            forecast_error = {'time': self.time,
-                              'forecast': f}
-            self.forecast_error.append(forecast_error)
+            if self.get_n_active_agents() > 0:
+                truth = self.base_model.get_state(sensor=self.sensor_type)
+                f = self.get_forecast_error(truth)
+                forecast_error = {'time': self.time,
+                                  'forecast': f}
+                self.forecast_error.append(forecast_error)
 
-            data = None
+                data = None
 
-            prior = self.state_mean.copy()
-            prior_ensemble = self.state_ensemble.copy()
+                prior = self.state_mean.copy()
+                prior_ensemble = self.state_ensemble.copy()
 
-            if self.time % self.assimilation_period == 0:
-                self.assimilation_step(truth, data, forecast_error, prior,
-                                       prior_ensemble)
+                if self.time % self.assimilation_period == 0:
+                    self.assimilation_step(truth, data, forecast_error, prior,
+                                           prior_ensemble)
             # else:
                 # self.update_state_mean()
 

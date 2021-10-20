@@ -513,13 +513,14 @@ class EnsembleKalmanFilter(Filter):
             state_mean = self.convert_vector_angle_to_gate(state_mean)
 
         if self.inclusion is not None:
+            n_active = self.get_n_active_agents()
+
             # Get statuses by which to filter state vector
             statuses = self.get_state_vector_statuses(vector_mode=self.mode)
 
             # Filter ground truth vector and state mean vector
             truth = self.filter_vector(truth, statuses)
             state_mean = self.filter_vector(state_mean, statuses)
-            n_active = self.get_n_active_agents()
         else:
             n_active = self.population_size
 

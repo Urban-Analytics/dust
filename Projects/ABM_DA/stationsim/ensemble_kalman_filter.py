@@ -1128,15 +1128,16 @@ class EnsembleKalmanFilter(Filter):
         return results
 
     def get_n_active_agents(self) -> int:
-        if self.inclusion == AgentIncluder.BASE:
-            n = self.base_model.pop_active
-        else:
-            n_active_ensemble = [model.pop_active for model in self.models]
-            if self.inclusion == AgentIncluder.MODE_EN:
-                n = statistics.mode(n_active_ensemble)
-            else:
-                raise ValueError('Unrecognised AgentIncluder type')
-        return n
+        return sum(self.get_agent_statuses())
+        # if self.inclusion == AgentIncluder.BASE:
+        #     n = self.base_model.pop_active
+        # else:
+        #     n_active_ensemble = [model.pop_active for model in self.models]
+        #     if self.inclusion == AgentIncluder.MODE_EN:
+        #         n = statistics.mode(n_active_ensemble)
+        #     else:
+        #         raise ValueError('Unrecognised AgentIncluder type')
+        # return n
 
     def separate_coords_exits(self, n_active: int,
                               state_vector: np.ndarray) -> Tuple[np.ndarray,

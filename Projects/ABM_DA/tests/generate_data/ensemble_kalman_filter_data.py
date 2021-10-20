@@ -484,8 +484,8 @@ def get_state_vector_statuses_data():
                  False, False, False,
                  False, False, False]]
 
-    output = wrap_up([base_statuses, en_statuses, inclusion,
-                      vector_mode, expected])
+    output = wrap_up((base_statuses, en_statuses, inclusion,
+                      vector_mode, expected))
     return output
 
 
@@ -522,8 +522,8 @@ def get_forecast_error_data():
 
     expected = [5, 9, 9, 9, 9]
 
-    output = wrap_up([inclusion, base_statuses, ensemble_statuses,
-                      truth, state_mean, expected])
+    output = wrap_up((inclusion, base_statuses, ensemble_statuses,
+                      truth, state_mean, expected))
     return output
 
 

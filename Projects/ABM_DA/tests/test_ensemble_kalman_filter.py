@@ -101,6 +101,8 @@ construct_state_from_angles_locs_data = get_construct_state_from_angles_locs_dat
 
 round_target_angle_data = get_round_target_angle_data()
 
+convert_vector_angle_to_gate_data = get_convert_vector_angle_to_gate_data()
+
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -749,3 +751,13 @@ def test_construct_state_from_angles_gates(angles, expected):
     gates, _ = enkf.construct_state_from_angles(angles)
 
     assert list(gates) == expected
+
+
+@pytest.mark.parametrize('state_vector, expected',
+                         convert_vector_angle_to_gate_data)
+def test_convert_vector_angle_to_gate(state_vector, expected):
+    enkf = set_up_enkf(pop_size=3, gate_estimator=GateEstimator.ANGLE)
+
+    gate_state_vector = enkf.convert_vector_angle_to_gate(state_vector)
+
+    np.testing.assert_array_equal(gate_state_vector, expected)

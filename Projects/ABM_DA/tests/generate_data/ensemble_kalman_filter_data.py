@@ -652,3 +652,18 @@ def get_round_target_angle_data():
 
     output = wrap_up((angles, insertion_idxs, rounded_idxs))
     return output
+
+
+def get_convert_vector_angle_to_gate_data():
+    state_vectors = [[25, 155, 740,
+                      0, 0, 400,
+                      2.9, 2.4, pi/2]]
+    expected = [[25, 155, 740,
+                 0, 0, 400,
+                 0, 1, 2]]
+
+    state_vectors = [np.array(x) for x in state_vectors]
+    expected = [np.array(x) for x in expected]
+
+    output = wrap_up((state_vectors, expected))
+    return output

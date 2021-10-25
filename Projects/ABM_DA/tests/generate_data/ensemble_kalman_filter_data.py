@@ -476,13 +476,13 @@ def get_state_vector_statuses_data():
                    EnsembleKalmanFilterType.DUAL_EXIT]
 
     expected = [[False, False, True, True, False, False],
-                [False, False, False,
-                 True, True, True,
-                 False, False, False],
+                [False, True, False,
+                 False, True, False,
+                 False, True, False],
                 [True, True, False, False, False, False],
-                [True, True, True,
-                 False, False, False,
-                 False, False, False]]
+                [True, False, False,
+                 True, False, False,
+                 True, False, False]]
 
     output = wrap_up((base_statuses, en_statuses, inclusion,
                       vector_mode, expected))

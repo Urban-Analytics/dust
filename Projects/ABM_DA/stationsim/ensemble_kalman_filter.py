@@ -1207,7 +1207,7 @@ class EnsembleKalmanFilter(Filter):
         return dest % n_destinations
 
     @staticmethod
-    def mod_angles(angles):
+    def mod_angles(angles: np.ndarray) -> np.ndarray:
         positive_angles = angles + pi
         bounded_angles = np.mod(positive_angles, 2 * pi)
         output_angles = bounded_angles - pi

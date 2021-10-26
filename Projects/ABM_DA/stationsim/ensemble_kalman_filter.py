@@ -919,8 +919,10 @@ class EnsembleKalmanFilter(Filter):
             st = 'location'
         elif self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
             if self.gate_estimator == GateEstimator.ROUNDING:
+                # Returns x, y, g
                 st = 'loc_exit'
             elif self.gate_estimator == GateEstimator.ANGLE:
+                # Returns x, y, g, d_x, d_y
                 st = 'enkf_gate_angle'
             else:
                 st = 'loc_exit'
@@ -944,10 +946,14 @@ class EnsembleKalmanFilter(Filter):
             if self.gate_estimator != GateEstimator.ANGLE:
                 return state
             else:
+                # state is x, y, g, d_x, d_y
                 state = np.array(state)
                 locations = state[:2 * self.population_size]
                 destinations = state[3 * self.population_size:]
+
+                # Set up empty array to fill with angles
                 angles = np.zeros(self.population_size)
+
                 for i in range(self.population_size):
                     loc = (destinations[i], destinations[self.population_size + i])
                     angles[i] = self.get_angle(self.model_centre, loc)

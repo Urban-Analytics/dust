@@ -9,7 +9,7 @@ A class to represent a general Ensemble Kalman Filter for use with StationSim.
 from copy import deepcopy as dcopy
 from enum import Enum, auto
 from filter import Filter
-from math import atan2
+from math import atan2, pi
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -977,11 +977,16 @@ class EnsembleKalmanFilter(Filter):
         state_mean = np.mean(state_ensemble, axis=1)
 
         # Round exits if they are in the state vectors
-        if self.gate_estimator == GateEstimator.ROUNDING:
-            destinations = state_mean[2 * self.population_size:]
-            destinations = self.round_destinations(destinations,
-                                                   self.n_exits)
-            state_mean[2 * self.population_size:] = destinations
+        if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            if self.gate_estimator == GateEstimator.ROUNDING:
+                destinations = state_mean[2 * self.population_size:]
+                destinations = self.round_destinations(destinations,
+                                                       self.n_exits)
+                state_mean[2 * self.population_size:] = destinations
+            elif self.gate_estimator == GateEstimator.ANGLE:
+                angles = state_mean[2 * self.population_size:]
+                angles = self.mod_angles(angles)
+                state_mean[2 * self.population_size:] = angles
 
         return state_mean
 
@@ -1200,6 +1205,14 @@ class EnsembleKalmanFilter(Filter):
         """
         dest = int(round(destination))
         return dest % n_destinations
+
+    @staticmethod
+    def mod_angles(angles):
+        positive_angles = angles + pi
+        bounded_angles = np.mod(positive_angles, 2 * pi)
+        output_angles = bounded_angles - pi
+
+        return output_angles
 
     def get_agent_statuses(self) -> List[bool]:
         if self.inclusion is None or self.inclusion == AgentIncluder.BASE:

@@ -105,6 +105,8 @@ convert_vector_angle_to_gate_data = get_convert_vector_angle_to_gate_data()
 
 process_state_vector_data = get_process_state_vector_data()
 
+mod_angles_data = get_mod_angles_data()
+
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -774,3 +776,12 @@ def test_process_state_vector(state, filter_mode, gate_estimator, expected):
     state_vector = enkf.process_state_vector(state)
 
     np.testing.assert_array_equal(state_vector, expected)
+
+
+@pytest.mark.parametrize('angles, expected', mod_angles_data)
+def test_mod_angles(angles, expected):
+    enkf = set_up_enkf()
+
+    modded_angles = enkf.mod_angles(angles)
+
+    np.testing.assert_array_almost_equal(modded_angles, expected)

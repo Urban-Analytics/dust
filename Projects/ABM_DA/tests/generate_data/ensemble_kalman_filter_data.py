@@ -700,3 +700,18 @@ def get_process_state_vector_data():
 
     output = wrap_up((states, filter_modes, gate_estimators, expected))
     return output
+
+
+def get_mod_angles_data():
+    angles = [np.array([pi/4, pi/2, 3*pi/4]),
+              np.array([-pi/4, -pi/2, -3*pi/4]),
+              np.array([5*pi/4, 3*pi/2, 7*pi/4]),
+              np.array([-5*pi/4, -3*pi/2, -7*pi/4])]
+
+    expected = [np.array([pi/4, pi/2, 3*pi/4]),
+                np.array([-pi/4, -pi/2, -3*pi/4]),
+                np.array([-3*pi/4, -pi/2, -pi/4]),
+                np.array([3*pi/4, pi/2, pi/4])]
+
+    output = wrap_up((angles, expected))
+    return output

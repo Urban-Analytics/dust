@@ -548,6 +548,7 @@ class Modeller():
                          model_path='../results/models/exp1/',
                          mode=EnsembleKalmanFilterType.DUAL_EXIT,
                          inclusion=AgentIncluder.MODE_EN,
+                         exit_randomisation=ExitRandomisation.ALL_RANDOM,
                          gate_estimator=GateEstimator.ANGLE):
 
         # Model parameters
@@ -572,6 +573,7 @@ class Modeller():
                          'mode': mode,
                          'inclusion': inclusion,
                          'gate_estimator': gate_estimator,
+                         'exit_randomisation': exit_randomisation,
                          'ensemble_errors': False,
                          'H': observation_operator,
                          'R_vector': obs_noise_std * np.ones(data_vec_length),

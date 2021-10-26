@@ -103,6 +103,8 @@ round_target_angle_data = get_round_target_angle_data()
 
 convert_vector_angle_to_gate_data = get_convert_vector_angle_to_gate_data()
 
+process_state_vector_data = get_process_state_vector_data()
+
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -761,3 +763,14 @@ def test_convert_vector_angle_to_gate(state_vector, expected):
     gate_state_vector = enkf.convert_vector_angle_to_gate(state_vector)
 
     np.testing.assert_array_equal(gate_state_vector, expected)
+
+
+@pytest.mark.parametrize('state, filter_mode, gate_estimator, expected',
+                         process_state_vector_data)
+def test_process_state_vector(state, filter_mode, gate_estimator, expected):
+    enkf = set_up_enkf(pop_size=3, gate_estimator=gate_estimator,
+                       filter_type=filter_mode)
+
+    state_vector = enkf.process_state_vector(state)
+
+    np.testing.assert_array_equal(state_vector, expected)

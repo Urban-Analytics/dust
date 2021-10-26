@@ -6,7 +6,7 @@ import pytest
 import sys
 sys.path.append('../stationsim/')
 
-from generate_data.data_utils import wrap_up
+from generate_data.data_utils import wrap_up, get_angle
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
 # from ensemble_kalman_filter import ActiveAgentNormaliser
@@ -666,4 +666,37 @@ def get_convert_vector_angle_to_gate_data():
     expected = [np.array(x) for x in expected]
 
     output = wrap_up((state_vectors, expected))
+    return output
+
+
+def get_process_state_vector_data():
+    states = [[10, 15, 100, 221, 52, 700],
+              [10, 100, 52, 15, 221, 700, 1, 2, 3],
+              [10, 100, 52,
+               15, 221, 700,
+               1, 2, 3,
+               125, 577.5, 740,
+               700, 700, 655]]
+
+    filter_modes = [EnsembleKalmanFilterType.STATE,
+                    EnsembleKalmanFilterType.DUAL_EXIT,
+                    EnsembleKalmanFilterType.DUAL_EXIT]
+
+    gate_estimators = [None, GateEstimator.ROUNDING, GateEstimator.ANGLE]
+
+    model_centre = (370, 350)
+    dest0 = (states[2][9], states[2][12])
+    dest1 = (states[2][10], states[2][13])
+    dest2 = (states[2][11], states[2][14])
+    theta0 = get_angle(model_centre, dest0)
+    theta1 = get_angle(model_centre, dest1)
+    theta2 = get_angle(model_centre, dest2)
+    expected = [[10, 15, 100, 221, 52, 700],
+                [10, 100, 52, 15, 221, 700, 1, 2, 3],
+                [10, 100, 52, 15, 221, 700, theta0, theta1, theta2]]
+
+    states = [np.array(x) for x in states]
+    expected = [np.array(x) for x in expected]
+
+    output = wrap_up((states, filter_modes, gate_estimators, expected))
     return output

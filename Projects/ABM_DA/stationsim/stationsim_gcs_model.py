@@ -28,7 +28,7 @@ class Agent:
         '''
         Initialise a new agent.
 
-        Description:
+        Desctiption:
             Creates a new agent and gives it a randomly chosen exit,
             and desired speed.
             All agents start with active state 0 ('not started').
@@ -137,7 +137,7 @@ class Agent:
                         self.location = new_location
                         self.status = 1
                         self.model.pop_active += 1
-                        # self.mode.step_id
+                        # self.model.step_id
                         self.step_start = self.model.total_time
                         self.loc_start = self.location
                         break
@@ -294,7 +294,8 @@ class Agent:
         '''
         dist = self.distance(self.location, self.loc_desire)
         if dist < self.model.gates_space:
-            print('deactivating agent')
+            if self.model.do_print:
+                print('deactivating agent')
             self.status = 2
             self.model.pop_active -= 1
             self.model.pop_finished += 1
@@ -347,8 +348,8 @@ class Agent:
         collisionTime = 1.0e300
 
         direction = self.get_direction(self.loc_desire, self.location)
-        vx = self.speed*direction[0]  # horizontal velocity
-        vy = self.speed*direction[1]  # vertical velocity
+        vx = self.speed * direction[0]  # horizontal velocity
+        vy = self.speed * direction[1]  # vertical velocity
 
         if(vy > 0):  # collision in botton wall
             collisionTime = (self.model.height - self.size -
@@ -400,7 +401,7 @@ class Model:
 
     def __init__(self, unique_id=None, **kwargs):
         '''
-        Create a new model, reading parameters from a keyword argument
+        Create a new model, reading parameters from a keyword arguement
         dictionary.
         '''
         self.unique_id = unique_id
@@ -413,7 +414,6 @@ class Model:
         # Defaults for all modes
         param_defaults_all = {
             'pop_total': 100,
-            'birth_rate': 1.0,
             'separation': 5,  # just used in animation
             'step_limit': 10000,
             'do_history': True,
@@ -436,7 +436,8 @@ class Model:
             'speed_min': .2,
             'speed_mean': 1,
             'speed_std': 1,
-            'speed_steps': 3
+            'speed_steps': 3,
+            'birth_rate': 1.0
         }
 
         # Defaults for GCS mode
@@ -449,10 +450,11 @@ class Model:
             'gates_out': 11,
             'gates_space': 28.0,
 
-            'speed_min': 0.2,  # pixel / frame
-            'speed_mean': 0.839236,  # pixel / frame
-            'speed_std': 0.349087,  # pixel / frame
-            'speed_steps': 3
+            'speed_min': 0.174,  # pixel / frame
+            'speed_mean': 0.897,  # pixel / frame
+            'speed_std': 0.372,  # pixel / frame
+            'speed_steps': 3,
+            'birth_rate': 1.6
         }
 
         # Make a combined dictionary of default params
@@ -544,7 +546,13 @@ class Model:
             self.gates_in = len(self.gates_locations)
             self.gates_out = len(self.gates_locations)
 
-            # Clock
+            # Group gate numbers by side
+            self.gates_left = [0]
+            self.gates_top = [1, 2]
+            self.gates_right = [3, 4, 5, 6]
+            self.gates_bottom = [7, 8, 9, 10]
+
+            # Set up clock
             self.clock = Agent(self, self.pop_total)
             self.clock.size = 56.0  # 4 m
             self.clock.location = [370, 275]  # 26.4 m, 20 m
@@ -608,7 +616,6 @@ class Model:
                 self.step_id < self.step_limit and self.status == 1:
             if self.do_print and self.step_id % 100 == 0:
                 print(f'\tIteration: {self.step_id}/{self.step_limit}')
-
             [agent.activate() for agent in self.agents]
 
             t = 1.0
@@ -633,11 +640,16 @@ class Model:
 
             self.step_id += 1
 
-        elif self.do_print and self.status == 1:
-            print(f'StationSim {self.unique_id} - Everyone made it!')
+        elif self.status == 1:
+            if self.do_print:
+                print(f'StationSim {self.unique_id} - Everyone made it!')
             self.status = 0
-        else:
-            print(self.unique_id, 'pass')
+            self.finish_step_id = self.step_id
+        # else:
+        #     if self.do_print and self.status == 1:
+        #         print(f'StationSim {self.unique_id} - Everyone made it!')
+        #         self.status = 0
+        #         self.finish_step_id = self.step_id
 
     # information about next collision
     def get_collisionTable(self):
@@ -692,30 +704,37 @@ class Model:
                     if (abs(line[0] - time) < self.tolerance)])
 
     # State
-    def get_state(self, sensor=None):
+    def get_state(self, sensor=None, inactive_agents=True):
         '''
         Convert list of agents in model to state vector.
         '''
+        if inactive_agents:
+            agents = self.agents.copy()
+        else:
+            agents = [agent for agent in self.agents if agent.status == 1]
+
         if sensor is None:
             state = [(agent.status, *agent.location, agent.speed) for agent in
-                     self.agents]
+                     agents]
             state = np.append(self.step_id, np.ravel(state))
         elif sensor == 'location':
-            state = [agent.location for agent in self.agents]
+            state = [agent.location for agent in agents]
             state = np.ravel(state)
         elif sensor == 'location2D':
-            state = [agent.location for agent in self.agents]
+            state = [agent.location for agent in agents]
         elif sensor == 'loc_exit':
             locations = self.get_state('location2D')
             x, y = [l[0] for l in locations], [l[1] for l in locations]
-            exits = [agent.gate_out for agent in self.agents]
+            exits = [agent.gate_out for agent in agents]
             state = x + y + exits
         elif sensor == 'locationVel':
-            state0 = [agent.location for agent in self.agents]
+            state0 = [agent.location for agent in agents]
             state0 = np.ravel(state0)
-            state1 = [agent.speed for agent in self.agents]
+            state1 = [agent.speed for agent in agents]
             state1 = np.ravel(state1)
             state = [state0, state1]
+        else:
+            raise ValueError(f'Sensor type ({sensor}) not recognised.')
         return state
 
     def set_state(self, state, sensor=None):
@@ -746,7 +765,7 @@ class Model:
                 agent.location = state0[i, :]
                 agent.speed = state1[i, :]
         else:
-            raise ValueError('Sensor type not recognised.')
+            raise ValueError(f'Sensor type ({sensor}) not recognised.')
 
     # TODO: Deprecated, update PF
     def agents2state(self, do_ravel=True):
@@ -979,7 +998,9 @@ class Model:
         return ani
 
     def get_distace_plot(self, real_data_dir, frame_i, frame_f, dt):
-        self.graphX1, self.graphY1, self.graphERR1 = [], [], []  # x, y, dy
+        self.graphX1 = []
+        self.graphY1 = []
+        self.graphERR1 = []  # x, y, dy
         data = []
         for frame in range(frame_i, frame_f, dt):
             ID, x, y = np.loadtxt(real_data_dir + str(frame) + '.0.dat',
@@ -1004,7 +1025,9 @@ class Model:
         data1 = sorted(data, key=itemgetter(0))
 
         frame = data1[0][0]
-        self.graphX2, self.graphY2, self.graphERR2 = [], [], []  # x, y, dy
+        self.graphX2 = []
+        self.graphY2 = []
+        self.graphERR2 = []  # x, y, dy
         dist = []
         for line in data1:
             if (line[0] == frame):

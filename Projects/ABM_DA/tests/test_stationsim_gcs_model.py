@@ -1,6 +1,5 @@
 # Imports
 from generate_data.stationsim_gcs_model_data import *
-from math import floor
 import numpy as np
 import pytest
 import sys
@@ -225,15 +224,15 @@ def test_get_state_location(agent_locations, expected):
     """
     Test Model.get_state('location').
 
-    Test that Model.get_state('location') provides a state vector in the correct
-    form with the correct values.
+    Test that Model.get_state('location') provides a state vector in the
+    correct form with the correct values.
 
     Parameters
     ----------
     agent_locations : list_like
         List of tuples, each of which is an (x, y) location to prescribe for an
         agent in the model.
-    expected : array_like 
+    expected : array_like
         A state vector representing the locations of the agents.
     """
     model = set_up_model()
@@ -256,7 +255,7 @@ def test_get_state_location2D(agent_locations, expected):
     agent_locations : list_like
         List of tuples, each of which is an (x, y) location to prescribe for an
         agent in the model.
-    expected : array_like 
+    expected : array_like
         A state vector representing the locations of the agents.
     """
     model = set_up_model()
@@ -271,17 +270,17 @@ def test_get_state_loc_exit(agent_locations, exits, expected):
     """
     Test Model.get_state('loc_exit').
 
-    Test that Model.get_state('loc_exit') provides a state vector in the correct
-    form with the correct values.
+    Test that Model.get_state('loc_exit') provides a state vector in the
+    correct form with the correct values.
 
     Parameters
     ----------
     agent_locations : list_like
         List of tuples, each of which is an (x, y) location to prescribe for an
         agent in the model.
-    exits : list_like 
+    exits : list_like
         List of integers, each of which indexes a gate.
-    expected : array_like 
+    expected : array_like
         A state vector representing the locations of the agents.
     """
     model = set_up_model()
@@ -344,9 +343,9 @@ def test_model_speed_defaults():
     model = set_up_model(population_size=1)
 
     # Model speed params
-    assert model.speed_min == 0.2
-    assert model.speed_mean == 0.839236
-    assert model.speed_std == 0.349087
+    assert model.speed_min == 0.174
+    assert model.speed_mean == 0.897
+    assert model.speed_std == 0.372
     assert model.speed_steps == 3
 
 
@@ -488,5 +487,5 @@ def test_set_agent_location():
     assert all(results)
 
 
-def test_set_wiggle():
-    pass
+# def test_set_wiggle():
+#     pass

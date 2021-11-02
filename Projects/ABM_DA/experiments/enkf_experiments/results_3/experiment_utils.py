@@ -10,6 +10,7 @@ from ensemble_kalman_filter import AgentIncluder
 from ensemble_kalman_filter import EnsembleKalmanFilterType
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import GateEstimator
+from ensemble_kalman_filter import Inflation
 from stationsim_gcs_model import Model
 import json
 import numpy as np
@@ -549,7 +550,9 @@ class Modeller():
                          mode=EnsembleKalmanFilterType.DUAL_EXIT,
                          inclusion=AgentIncluder.MODE_EN,
                          exit_randomisation=ExitRandomisation.ALL_RANDOM,
-                         gate_estimator=GateEstimator.ANGLE):
+                         gate_estimator=GateEstimator.ROUNDING,
+                         inflation=Inflation.NONE,
+                         inflation_rate=None):
 
         # Model parameters
         model_params = {'pop_total': pop_size,
@@ -574,6 +577,8 @@ class Modeller():
                          'inclusion': inclusion,
                          'gate_estimator': gate_estimator,
                          'exit_randomisation': exit_randomisation,
+                         'inflation': inflation,
+                         'inflation_rate': inflation_rate,
                          'ensemble_errors': False,
                          'H': observation_operator,
                          'R_vector': obs_noise_std * np.ones(data_vec_length),

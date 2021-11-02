@@ -715,3 +715,29 @@ def get_mod_angles_data():
 
     output = wrap_up((angles, expected))
     return output
+
+
+def get_multi_gain_data():
+    inf_rates = [1.0, 1.1]
+
+    state = np.array([[10, 20, 30],
+                      [40, 60, 80],
+                      [3, 4, 5]])
+    data_cov = np.array([[1, 0],
+                         [0, 1]])
+    H = np.array([[1, 0, 0],
+                  [0, 1, 0]])
+
+    states = [state for _ in range(len(inf_rates))]
+    data_covs = [data_cov for _ in range(len(inf_rates))]
+    Hs = [H for _ in range(len(inf_rates))]
+
+    expected = [np.array([[0.1996008, 0.3992016],
+                          [0.3992016, 0.79840319],
+                          [0.01996008, 0.03992016]]),
+                np.array([[0.19963702, 0.39927405],
+                          [0.39927405, 0.79854809],
+                          [0.0199637, 0.0399274]])]
+
+    output = wrap_up((states, data_covs, Hs, inf_rates, expected))
+    return output

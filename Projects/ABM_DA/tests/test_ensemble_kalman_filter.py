@@ -11,6 +11,7 @@ from ensemble_kalman_filter import EnsembleKalmanFilter
 # from ensemble_kalman_filter import ActiveAgentNormaliser
 from ensemble_kalman_filter import AgentIncluder
 from ensemble_kalman_filter import GateEstimator
+from ensemble_kalman_filter import Inflation
 
 # Test data
 round_destination_data = get_round_destination_data()
@@ -106,6 +107,8 @@ convert_vector_angle_to_gate_data = get_convert_vector_angle_to_gate_data()
 process_state_vector_data = get_process_state_vector_data()
 
 mod_angles_data = get_mod_angles_data()
+
+multi_gain_data = get_multi_gain_data()
 
 
 # Tests
@@ -785,3 +788,15 @@ def test_mod_angles(angles, expected):
     modded_angles = enkf.mod_angles(angles)
 
     np.testing.assert_array_almost_equal(modded_angles, expected)
+
+
+@pytest.mark.parametrize('state, data_cov, H, inf_rate, expected',
+                         multi_gain_data)
+def test_multi_gain(state, data_cov, H, inf_rate, expected):
+    enkf = set_up_enkf()
+    enkf.inflation = Inflation.MULTIPLICATIVE
+    enkf.inflation_rate = inf_rate
+
+    gain_matrix = enkf.make_gain_matrix(state, data_cov, H, H.T)
+
+    np.testing.assert_array_almost_equal(gain_matrix, expected)

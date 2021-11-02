@@ -962,7 +962,8 @@ class EnsembleKalmanFilter(Filter):
                 angles = np.zeros(self.population_size)
 
                 for i in range(self.population_size):
-                    loc = (destinations[i], destinations[self.population_size + i])
+                    loc = (destinations[i],
+                           destinations[self.population_size + i])
                     angles[i] = self.get_angle(self.model_centre, loc)
 
                 reduced_state = np.concatenate((locations, angles))
@@ -1279,7 +1280,6 @@ class EnsembleKalmanFilter(Filter):
 
         # Define whether to repeat statuses 2 or 3 times
         # n = 3 if vector_mode == EnsembleKalmanFilterType.DUAL_EXIT else 2
-
 
     def set_base_statuses(self, base_statuses: List[int]) -> None:
         assert len(base_statuses) == len(self.base_model.agents)

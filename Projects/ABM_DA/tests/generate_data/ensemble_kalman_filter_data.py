@@ -745,3 +745,4 @@ def get_multi_gain_data():
 
 def get_exit_randomisation_adjacent_data():
     n_adjacents = [1, 2, 3]
+    return n_adjacents

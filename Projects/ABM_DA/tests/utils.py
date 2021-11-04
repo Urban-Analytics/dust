@@ -6,6 +6,7 @@ sys.path.append('../stationsim/')
 
 from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import EnsembleKalmanFilterType
+from ensemble_kalman_filter import ExitRandomisation
 # from ensemble_kalman_filter import ActiveAgentNormaliser
 from stationsim_gcs_model import Model
 
@@ -38,7 +39,8 @@ def make_state_vector_length(population_size, mode):
 def set_up_enkf(ensemble_size=5, pop_size=5,
                 filter_type=EnsembleKalmanFilterType.STATE,
                 error_normalisation=None, agent_inclusion=None,
-                gate_estimator=None):
+                exit_randomisation=ExitRandomisation.NONE,
+                n_adjacent=None, gate_estimator=None):
     np.random.seed(666)
     pop_size = pop_size
     mode = filter_type
@@ -67,6 +69,8 @@ def set_up_enkf(ensemble_size=5, pop_size=5,
                      'error_normalisation': error_normalisation,
                      'inclusion': agent_inclusion,
                      'gate_estimator': gate_estimator,
+                     'exit_randomisation': exit_randomisation,
+                     'n_adjacent': n_adjacent,
                      'H': observation_operator,
                      'R_vector': OBS_NOISE_STD * np.ones(data_vec_length),
                      'keep_results': True,

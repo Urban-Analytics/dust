@@ -12,6 +12,7 @@ from ensemble_kalman_filter import EnsembleKalmanFilter
 from ensemble_kalman_filter import AgentIncluder
 from ensemble_kalman_filter import GateEstimator
 from ensemble_kalman_filter import Inflation
+from ensemble_kalman_filter import ExitRandomisation
 
 # Test data
 round_destination_data = get_round_destination_data()
@@ -109,6 +110,8 @@ process_state_vector_data = get_process_state_vector_data()
 mod_angles_data = get_mod_angles_data()
 
 multi_gain_data = get_multi_gain_data()
+
+exit_randomisation_adjacent_data = get_exit_randomisation_adjacent_data()
 
 
 # Tests
@@ -810,3 +813,21 @@ def test_exit_randomisation_by_agent():
 
         for j, model in enumerate(enkf.models):
             assert model.agents[i].gate_out == agent_gate_out
+
+
+@pytest.mark.parametrize('n_adjacent', exit_randomisation_adjacent_data)
+def test_exit_randomisation_adjacent(n_adjacent):
+    enkf = set_up_enkf(exit_randomisation=ExitRandomisation.ADJACENT,
+                       n_adjacent=n_adjacent)
+
+    adjacent_range = list(range(-n_adjacent, n_adjacent+1))
+    n_gates = enkf.base_model.gates_out
+
+    for i, agent in enumerate(enkf.base_model.agents):
+        base_gate_out = agent.gate_out
+
+        gate_range = [(base_gate_out + x) % n_gates for x in adjacent_range]
+
+        for model in enkf.models:
+            model_gate_out = model.agents[i].gate_out
+            assert model_gate_out in gate_range

@@ -41,6 +41,7 @@ class ExitRandomisation(Enum):
     NONE = auto()
     BY_AGENT = auto()
     ALL_RANDOM = auto()
+    ADJACENT = auto()
 
 
 class Inflation(Enum):
@@ -181,6 +182,7 @@ class EnsembleKalmanFilter(Filter):
         self.error_normalisation = None
         self.inclusion = None
         self.exit_randomisation = ExitRandomisation.NONE
+        self.n_adjacent = None
         self.inflation = Inflation.NONE
         self.active = True
         self.gate_estimator = GateEstimator.NO_ESTIMATE
@@ -233,6 +235,23 @@ class EnsembleKalmanFilter(Filter):
                                                             agent.gate_in)
                     agent.gate_out = gate_out
                     agent.loc_desire = agent.set_agent_location(gate_out)
+        elif self.exit_randomisation == ExitRandomisation.ADJACENT:
+            for i, agent in enumerate(self.base_model.agents):
+                gate_out = agent.gate_out
+
+                for model in models:
+                    # Set up offsets
+                    lower_offset = -self.n_adjacent
+                    upper_offset = self.n_adjacent
+                    offset = np.random.randint(lower_offset, upper_offset)
+                    # Apply offset to gate_out
+                    model_gate_out = gate_out + offset
+                    model_gate_out = model_gate_out % self.base_model.gates_out
+                    # Create location
+                    target = agent.set_agent_location(model_gate_out)
+                    # Assign to agent
+                    model.agents[i].gate_out = model_gate_out
+                    model.agents[i].loc_desire = target
 
         # if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
         #     for model in models:

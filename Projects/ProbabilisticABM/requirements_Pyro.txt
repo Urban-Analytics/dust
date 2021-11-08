@@ -42,7 +42,7 @@ olefile=0.46=py37_0
 openssl=1.1.1c=he774522_1
 opt-einsum=2.3.2=pypi_0
 pillow>=6.2.2
-pip=19.1.1=py37_0
+pip>=19.2
 protobuf=3.8.0=py37h33f27b4_0
 pycparser=2.19=py37_0
 pyparsing=2.4.0=py_0

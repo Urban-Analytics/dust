@@ -113,6 +113,8 @@ multi_gain_data = get_multi_gain_data()
 
 exit_randomisation_adjacent_data = get_exit_randomisation_adjacent_data()
 
+standardisation_data = get_standardisation_data()
+
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -831,3 +833,15 @@ def test_exit_randomisation_adjacent(n_adjacent):
         for model in enkf.models:
             model_gate_out = model.agents[i].gate_out
             assert model_gate_out in gate_range
+
+
+@pytest.mark.parametrize('state_vector, top, bottom, expected',
+                         standardisation_data)
+def test_standardisation(state_vector, top, bottom, expected):
+    enkf = set_up_enkf()
+
+    # Set state
+    result = enkf.standardise(state_vector, top, bottom)
+
+    # Test
+    np.testing.assert_equal(result, expected)

@@ -1195,6 +1195,14 @@ class EnsembleKalmanFilter(Filter):
         e = state_vector[2 * n_active:]
         return x, y, e
 
+    def standardise(self, vector, top, bottom):
+        span = top - bottom
+        mid = span / 2
+        shift_vector = vector - mid
+        standard_vector = shift_vector / mid
+        return standard_vector
+
+
     @classmethod
     def round_destinations(cls, destinations, n_destinations):
         """

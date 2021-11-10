@@ -746,3 +746,17 @@ def get_multi_gain_data():
 def get_exit_randomisation_adjacent_data():
     n_adjacents = [1, 2, 3]
     return n_adjacents
+
+
+def get_standardisation_data():
+    vectors = [np.array([0, 185, 370, 555, 740]),
+               np.array([0, 175, 350, 525, 700])]
+
+    tops = [740, 700]
+    bottoms = [0, 0]
+
+    expected = [np.array([-1, -0.5, 0, 0.5, 1]),
+                np.array([-1, -0.5, 0, 0.5, 1])]
+
+    output = wrap_up((vectors, tops, bottoms, expected))
+    return output

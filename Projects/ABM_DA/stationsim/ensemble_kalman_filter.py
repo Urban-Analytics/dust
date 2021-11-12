@@ -1196,10 +1196,17 @@ class EnsembleKalmanFilter(Filter):
         return x, y, e
 
     def standardise(self, vector, top, bottom):
-        span = top - bottom
-        mid = span / 2
-        shift_vector = vector - mid
-        standard_vector = shift_vector / mid
+        # Find midpoint of range
+        midpoint = (top + bottom) / 2
+
+        # Apply shift
+        shift_vector = vector - midpoint
+
+        # Calculate shifted top
+        shift_top = top - midpoint
+
+        # Scale by shifted top
+        standard_vector = shift_vector / shift_top
         return standard_vector
 
 

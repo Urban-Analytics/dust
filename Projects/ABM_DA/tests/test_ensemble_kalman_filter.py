@@ -813,7 +813,7 @@ def test_exit_randomisation_by_agent():
     for i in range(len(enkf.base_model.agents)):
         agent_gate_out = enkf.models[0].agents[i].gate_out
 
-        for j, model in enumerate(enkf.models):
+        for _, model in enumerate(enkf.models):
             assert model.agents[i].gate_out == agent_gate_out
 
 

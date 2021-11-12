@@ -818,7 +818,7 @@ def test_exit_randomisation_by_agent():
 
 
 @pytest.mark.parametrize('n_adjacent', exit_randomisation_adjacent_data)
-def test_exit_randomisation_adjacent_u(n_adjacent):
+def test_exit_randomisation_adjacent(n_adjacent):
     enkf = set_up_enkf(exit_randomisation=ExitRandomisation.ADJACENT,
                        n_adjacent=n_adjacent)
 

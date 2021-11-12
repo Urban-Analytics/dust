@@ -1195,7 +1195,8 @@ class EnsembleKalmanFilter(Filter):
         e = state_vector[2 * n_active:]
         return x, y, e
 
-    def standardise(self, vector, top, bottom):
+    @staticmethod
+    def standardise(vector, top, bottom):
         # Find midpoint of range
         midpoint = (top + bottom) / 2
 

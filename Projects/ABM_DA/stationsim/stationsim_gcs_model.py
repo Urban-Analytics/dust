@@ -829,7 +829,7 @@ class Model:
             loc_state.extend([locations[i], locations[self.pop_total+i]])
         exit_state = state[2 * self.pop_total:]
         self.set_state_location(loc_state)
-        self.set_state_exit_number(exit_state)
+        self.set_state_exit(exit_state)
 
     def set_state_exit_location(self, state) -> None:
         for i, agent in enumerate(self.agents):

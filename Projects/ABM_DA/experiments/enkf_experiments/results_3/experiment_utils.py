@@ -549,8 +549,9 @@ class Modeller():
                          model_path='../results/models/exp1/',
                          mode=EnsembleKalmanFilterType.DUAL_EXIT,
                          inclusion=AgentIncluder.MODE_EN,
-                         exit_randomisation=ExitRandomisation.ALL_RANDOM,
-                         gate_estimator=GateEstimator.ROUNDING,
+                         exit_randomisation=ExitRandomisation.ADJACENT,
+                         n_adjacent=1,
+                         gate_estimator=GateEstimator.ANGLE,
                          inflation=Inflation.NONE,
                          inflation_rate=None):
 
@@ -560,7 +561,7 @@ class Modeller():
                         'do_print': False}
 
         # Filter parameters
-        its = 20000
+        its = 5000
         observation_operator = cls.__make_observation_operator(pop_size, mode)
         state_vec_length = cls.__make_state_vector_length(pop_size, mode)
         data_mode = EnsembleKalmanFilterType.STATE
@@ -577,6 +578,7 @@ class Modeller():
                          'inclusion': inclusion,
                          'gate_estimator': gate_estimator,
                          'exit_randomisation': exit_randomisation,
+                         'n_adjacent': n_adjacent,
                          'inflation': inflation,
                          'inflation_rate': inflation_rate,
                          'ensemble_errors': False,

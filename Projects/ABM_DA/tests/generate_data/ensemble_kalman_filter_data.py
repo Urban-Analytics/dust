@@ -764,3 +764,21 @@ def get_standardisation_data():
 
     output = wrap_up((vectors, tops, bottoms, expected))
     return output
+
+
+def get_unstandardisation_data():
+    vectors = [np.array([-1, -0.5, 0, 0.5, 1]),
+               np.array([-1, -0.5, 0, 0.5, 1]),
+               np.array([-1, -0.6, 0, 0.6, 1]),
+               np.array([-1, -0.5, 0, 0.5, 1])]
+
+    tops = [740, 700, 10, pi]
+    bottoms = [0, 0, 0, -pi]
+
+    expected = [np.array([0, 185, 370, 555, 740]),
+                np.array([0, 175, 350, 525, 700]),
+                np.array([0, 2, 5, 8, 10]),
+                np.array([-pi, -pi/2, 0, pi/2, pi])]
+
+    output = wrap_up((vectors, tops, bottoms, expected))
+    return output

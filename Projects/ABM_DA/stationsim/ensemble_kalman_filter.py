@@ -1210,6 +1210,17 @@ class EnsembleKalmanFilter(Filter):
         return standard_vector
 
 
+    @staticmethod
+    def unstandardise(vector, top, bottom):
+        midpoint = (top + bottom) / 2
+        shift_top = top - midpoint
+
+        unstandard_vector = vector * shift_top
+        unshift_vector = unstandard_vector + midpoint
+
+        return unshift_vector
+
+
     @classmethod
     def round_destinations(cls, destinations, n_destinations):
         """

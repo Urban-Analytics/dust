@@ -115,6 +115,8 @@ exit_randomisation_adjacent_data = get_exit_randomisation_adjacent_data()
 
 standardisation_data = get_standardisation_data()
 
+unstandardisation_data = get_unstandardisation_data()
+
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -844,4 +846,14 @@ def test_standardisation(state_vector, top, bottom, expected):
     result = enkf.standardise(state_vector, top, bottom)
 
     # Test
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize('state_vector, top, bottom, expected',
+                         unstandardisation_data)
+def test_unstandardisation(state_vector, top, bottom, expected):
+    enkf = set_up_enkf()
+
+    result = enkf.unstandardise(state_vector, top, bottom)
+
     np.testing.assert_equal(result, expected)

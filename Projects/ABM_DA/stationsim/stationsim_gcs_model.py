@@ -814,8 +814,9 @@ class Model:
 
     def set_state_exit(self, state) -> None:
         for i, agent in enumerate(self.agents):
-            agent.gate_out = state[i]
-            agent.loc_desire = agent.set_agent_location(state[i])
+            exit = int(state[i])
+            agent.gate_out = exit
+            agent.loc_desire = agent.set_agent_location(exit)
 
     def set_state_exit_number(self, state) -> None:
         for i, agent in enumerate(self.agents):

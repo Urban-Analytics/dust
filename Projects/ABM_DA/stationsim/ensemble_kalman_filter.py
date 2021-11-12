@@ -1195,6 +1195,12 @@ class EnsembleKalmanFilter(Filter):
         e = state_vector[2 * n_active:]
         return x, y, e
 
+    @classmethod
+    def convert_alternating_to_sequential(cls, vector):
+        assert len(vector) % 2 == 0
+        a, b = cls.separate_coords(vector)
+        return a + b
+
     @staticmethod
     def standardise(vector, top, bottom):
         # Find midpoint of range

@@ -117,6 +117,8 @@ standardisation_data = get_standardisation_data()
 
 unstandardisation_data = get_unstandardisation_data()
 
+alternating_to_sequential_data = get_alternating_to_sequential_data()
+
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -857,3 +859,12 @@ def test_unstandardisation(state_vector, top, bottom, expected):
     result = enkf.unstandardise(state_vector, top, bottom)
 
     np.testing.assert_equal(result, expected)
+
+@pytest.mark.parametrize('state_vector, expected',
+                         alternating_to_sequential_data)
+def test_alternating_to_sequential(state_vector, expected):
+    enkf = set_up_enkf()
+
+    result = enkf.convert_alternating_to_sequential(state_vector)
+
+    assert result == expected

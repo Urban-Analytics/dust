@@ -479,13 +479,13 @@ class Model:
                            'locationVel': self.get_state_locationVel}
 
         self.state_sets = {'location': self.set_state_location,
-                          'location2D': self.set_state_location_2d,
-                          'exit': self.set_state_exit,
-                          'exit_number': self.set_state_exit_number,
-                          'loc_exit': self.set_state_loc_exit,
-                          'exit_location': self.set_state_exit_location,
-                          'enkf_gate_angle': self.set_state_enkf_gate_angle,
-                          'locationVel': self.set_state_locationVel}
+                           'location2D': self.set_state_location_2d,
+                           'exit': self.set_state_exit,
+                           'exit_number': self.set_state_exit_number,
+                           'loc_exit': self.set_state_loc_exit,
+                           'exit_location': self.set_state_exit_location,
+                           'enkf_gate_angle': self.set_state_enkf_gate_angle,
+                           'locationVel': self.set_state_locationVel}
 
         # Combine kwargs and defaults
         self.params, self.params_changed = Model._init_kwargs(params, kwargs)

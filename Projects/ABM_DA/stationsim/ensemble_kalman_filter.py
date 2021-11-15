@@ -402,13 +402,11 @@ class EnsembleKalmanFilter(Filter):
                                   'forecast': f}
                 self.forecast_error.append(forecast_error)
 
-                data = None
-
                 prior = self.state_mean.copy()
                 prior_ensemble = self.state_ensemble.copy()
 
                 if self.time % self.assimilation_period == 0:
-                    self.assimilation_step(truth, data, forecast_error, prior,
+                    self.assimilation_step(truth, forecast_error, prior,
                                            prior_ensemble)
             # else:
                 # self.update_state_mean()
@@ -424,7 +422,7 @@ class EnsembleKalmanFilter(Filter):
         # print('time: {0}, models: {1}'.format(self.time, [m.pop_active for
         #                                                   m in self.models]))
 
-    def assimilation_step(self, truth, data, forecast_error, prior,
+    def assimilation_step(self, truth, forecast_error, prior,
                           prior_ensemble):
         # Construct observations
         obs_truth = self.base_model.get_state(sensor='location')

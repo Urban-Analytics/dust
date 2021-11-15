@@ -177,6 +177,7 @@ class EnsembleKalmanFilter(Filter):
         self.data_covariance = None
         self.keep_results = False
         self.vis = False
+        self.standardise_state = False
         self.run_vanilla = False
         self.mode = EnsembleKalmanFilterType.STATE
         self.error_normalisation = None
@@ -425,6 +426,7 @@ class EnsembleKalmanFilter(Filter):
     def assimilation_step(self, truth, forecast_error, prior,
                           prior_ensemble):
         # Construct observations
+        # get_station('location') returns [x, y, x, ..., x, y]
         obs_truth = self.base_model.get_state(sensor='location')
         data = self.make_data(obs_truth, self.R_vector)
 
@@ -514,12 +516,26 @@ class EnsembleKalmanFilter(Filter):
             self.data_ensemble = data
         else:
             raise ValueError(f'Data has unexpected ndim: {data.ndim}')
-        self.gain_matrix = self.make_gain_matrix(self.state_ensemble,
-                                                 self.data_covariance,
-                                                 self.H,
+
+        # Make sure data_ensemble is correctly formatted for the filter type
+        if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            self.data_ensemble = self.reformat_obs(self.data_ensemble)
+
+        if self.standardise_state:
+            state_ensemble = self.standardise_ensemble(self.state_ensemble)
+            data_ensemble = self.standardise_ensemble(self.data_ensemble)
+            data_covariance = np.cov(data_ensemble)
+        else:
+            state_ensemble = self.state_ensemble.copy()
+            data_ensemble = self.data_ensemble.copy()
+            data_covariance = self.data_covariance.copy()
+
+        self.gain_matrix = self.make_gain_matrix(state_ensemble,
+                                                 data_covariance, self.H,
                                                  self.H_transpose)
-        diff = self.data_ensemble - self.H @ self.state_ensemble
-        X = self.state_ensemble + self.gain_matrix @ diff
+        diff = data_ensemble - self.H @ state_ensemble
+        X = state_ensemble + self.gain_matrix @ diff
+        X = self.unstandardise_ensemble(X) if self.standardise_state else X
         self.state_ensemble = X
 
     # --- Error calculation --- #
@@ -1264,6 +1280,55 @@ class EnsembleKalmanFilter(Filter):
 
         return new_ensemble
 
+    def unstandardise_ensemble(self, ensemble: np.ndarray,
+                             n_vars: int) -> np.ndarray:
+        assert n_vars in (2, 3)
+        assert len(ensemble) % self.population_size == 0
+        assert len(ensemble) % n_vars == 0
+
+        if n_vars == 2:
+            new_ensemble = np.zeros(shape=(len(ensemble), self.ensemble_size))
+            # Standardise xs
+            for i in range(self.population_size):
+                new_ensemble[i, :] = self.unstandardise(ensemble[i, :],
+                                                        self.base_model.width,
+                                                        0)
+
+            # Standardise ys
+            for i in range(self.population_size, 2 * self.population_size):
+                new_ensemble[i, :] = self.unstandardise(ensemble[i, :],
+                                                        self.base_model.height,
+                                                        0)
+        elif n_vars == 3:
+            new_ensemble = np.zeros(shape=(len(ensemble), self.ensemble_size))
+            # Standardise xs
+            for i in range(self.population_size):
+                new_ensemble[i, :] = self.unstandardise(ensemble[i, :],
+                                                        self.base_model.width,
+                                                        0)
+
+            # Standardise ys
+            for i in range(self.population_size, 2 * self.population_size):
+                new_ensemble[i, :] = self.unstandardise(ensemble[i, :],
+                                                        self.base_model.height,
+                                                        0)
+
+            # Standardise gates
+            if self.gate_estimator == GateEstimator.ANGLE:
+                top = pi
+                bottom = -pi
+            elif self.gate_estimator == GateEstimator.ROUNDING:
+                top = len(self.base_model.gates_width) - 1
+                bottom = 0
+
+            for i in range(2 * self.population_size, 3 * self.population_size):
+                new_ensemble[i, :] = self.unstandardise(ensemble[i, :], top,
+                                                        bottom)
+        else:
+            raise ValueError('Provide correct value for n_vars')
+
+        return new_ensemble
+
     @staticmethod
     def standardise(vector, top, bottom):
         # Find midpoint of range
@@ -1288,6 +1353,19 @@ class EnsembleKalmanFilter(Filter):
         unshift_vector = unstandard_vector + midpoint
 
         return unshift_vector
+
+    # def standardise_R_vector(self, R_vector):
+    #     # Note that 1-d R vector contains uncertainties pertaining to
+    #     # x, y, x, y, ..., x, y
+    #     # So we need to apply x-standardisation to the xs
+    #     # and y-standardisation to the ys
+    #     # Then we can recompile the list
+    #     xs, ys = self.separate_coords(R_vector)
+    #     standard_xs = self.standardise(xs, self.base_model.width, 0)
+    #     standard_ys = self.standardise(ys, self.base_model.height, 0)
+
+    #     standard_R_vector = self.pair_coords(standard_xs, standard_ys)
+    #     return standard_R_vector
 
 
     @classmethod

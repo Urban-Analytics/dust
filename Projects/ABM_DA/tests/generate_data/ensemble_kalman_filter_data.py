@@ -792,3 +792,36 @@ def get_alternating_to_sequential_data():
 
     output = wrap_up((vector, expected))
     return output
+
+
+def get_update_data():
+    fts = [EnsembleKalmanFilterType.DUAL_EXIT]
+
+    state_ensembles = [np.array([[5, 6, 4],
+                                 [25, 26, 24],
+                                 [10, 11, 9],
+                                 [20, 21, 19],
+                                 [1, 2, 1],
+                                 [2, 3, 3]])]
+
+    data_covs = [np.eye(4)]
+
+    data = [np.array([[7, 8, 9],
+                      [21, 22, 23],
+                      [10, 11, 9],
+                      [17, 18, 19]])]
+
+    Hs = [np.array([[1, 0, 0, 0, 0, 0],
+                    [0, 1, 0, 0, 0, 0],
+                    [0, 0, 1, 0, 0, 0],
+                    [0, 0, 0, 1, 0, 0]])]
+
+    expected = [np.array([[4, 5, 4.8],
+                          [24, 25, 24.8],
+                          [9, 10, 9.8],
+                          [19, 20, 19.8],
+                          [0.5, 1.5, 1.4],
+                          [2, 3, 3]])]
+
+    output = wrap_up((fts, state_ensembles, data_covs, data, Hs, expected))
+    return output

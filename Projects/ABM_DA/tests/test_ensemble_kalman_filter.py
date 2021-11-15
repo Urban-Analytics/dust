@@ -119,6 +119,8 @@ unstandardisation_data = get_unstandardisation_data()
 
 alternating_to_sequential_data = get_alternating_to_sequential_data()
 
+update_data = get_update_data()
+
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -869,3 +871,27 @@ def test_alternating_to_sequential(state_vector, expected):
     result = enkf.convert_alternating_to_sequential(state_vector)
 
     assert result == expected
+
+
+@pytest.mark.parametrize('ft, state_ensemble, data_cov, data, H, expected',
+                         update_data)
+def test_update(ft, state_ensemble, data_cov, data, H, expected):
+    # Derive params
+    pop_size = len(data_cov)
+    ensemble_size = state_ensemble.shape[1]
+
+    # Set up enkf
+    enkf = set_up_enkf(pop_size=pop_size, ensemble_size=ensemble_size,
+                       filter_type=ft)
+
+    # Assign attributes
+    enkf.state_ensemble = state_ensemble
+    enkf.data_covariance = data_cov
+    enkf.H = H
+    enkf.H_transpose = H.T
+
+    # Run update
+    enkf.update(data)
+
+    # Assert updated ensemble is expected value
+    np.testing.assert_allclose(enkf.state_ensemble, expected)

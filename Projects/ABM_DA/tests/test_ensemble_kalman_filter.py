@@ -860,6 +860,7 @@ def test_unstandardisation(state_vector, top, bottom, expected):
 
     np.testing.assert_equal(result, expected)
 
+
 @pytest.mark.parametrize('state_vector, expected',
                          alternating_to_sequential_data)
 def test_alternating_to_sequential(state_vector, expected):

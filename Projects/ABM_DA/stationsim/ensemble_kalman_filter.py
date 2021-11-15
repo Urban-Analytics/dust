@@ -1210,6 +1210,15 @@ class EnsembleKalmanFilter(Filter):
         else:
             raise TypeError(f'Objects are wrong types: {type(a)} {type(b)}')
 
+    def reformat_obs(self, data):
+        new_data = np.zeros(shape=(self.data_vector_length, self.ensemble_size))
+
+        for i in range(self.ensemble_size):
+            data_col = data[:, i]
+            new_data[:, i] = self.convert_alternating_to_sequential(data_col)
+
+        return new_data
+
     @staticmethod
     def standardise(vector, top, bottom):
         # Find midpoint of range

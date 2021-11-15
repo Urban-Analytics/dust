@@ -842,3 +842,33 @@ def get_update_data():
 
     output = wrap_up((fts, state_ensembles, data_covs, data, Hs, expected))
     return output
+
+
+def get_reformat_obs_data():
+    vector_lengths = [4, 6]
+    ensemble_sizes = [2, 3]
+
+    data = [np.array([[1, 2],
+                      [3, 4],
+                      [5, 6],
+                      [7, 8]]),
+            np.array([[1, 2, 3],
+                      [4, 5, 6],
+                      [7, 8, 9],
+                      [10, 11, 12],
+                      [13, 14, 15],
+                      [16, 17, 18]])]
+
+    expected = [np.array([[1, 2],
+                          [5, 6],
+                          [3, 4],
+                          [7, 8]]),
+                np.array([[1, 2, 3],
+                          [7, 8, 9],
+                          [13, 14, 15],
+                          [4, 5, 6],
+                          [10, 11, 12],
+                          [16, 17, 18]])]
+
+    output = wrap_up((vector_lengths, ensemble_sizes, data, expected))
+    return output

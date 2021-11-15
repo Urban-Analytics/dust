@@ -121,6 +121,8 @@ alternating_to_sequential_data = get_alternating_to_sequential_data()
 
 update_data = get_update_data()
 
+reformat_obs_data = get_reformat_obs_data()
+
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -895,3 +897,18 @@ def test_update(ft, state_ensemble, data_cov, data, H, expected):
 
     # Assert updated ensemble is expected value
     np.testing.assert_allclose(enkf.state_ensemble, expected)
+
+
+@pytest.mark.parametrize('dvector_length, ensemble_size, data, expected',
+                         reformat_obs_data)
+def test_reformat_obs(dvector_length, ensemble_size, data, expected):
+    # Set up filter
+    enkf = set_up_enkf(ensemble_size=ensemble_size)
+
+    # Assign attributes
+    enkf.data_vector_length = dvector_length
+
+    # Reformat data
+    result = enkf.reformat_obs(data)
+
+    np.testing.assert_equal(result, expected)

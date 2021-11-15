@@ -504,10 +504,10 @@ class EnsembleKalmanFilter(Filter):
         Returns:
             None
         """
-        if len(data) != self.data_vector_length:
-            w = 'len(data)={0}, expected {1}'.format(len(data),
-                                                     self.data_vector_length)
-            warns.warn(w, RuntimeWarning)
+        # if len(data) != self.data_vector_length:
+        #     w = 'len(data)={0}, expected {1}'.format(len(data),
+        #                                              self.data_vector_length)
+        #     warns.warn(w, RuntimeWarning)
         X = np.zeros(shape=(self.state_vector_length, self.ensemble_size))
 
         if data.ndim == 1:

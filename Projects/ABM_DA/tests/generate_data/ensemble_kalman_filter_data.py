@@ -917,3 +917,48 @@ def get_standardise_ensemble_data():
     output = wrap_up((states, pop_sizes, en_sizes, n_vars, gate_estimators,
                       expected))
     return output
+
+
+def get_unstandardise_ensemble_data():
+    states = [np.array([[-1, 1],
+                        [-0.5, 0.5],
+                        [-1, 1],
+                        [-0.5, 0.5]]),
+              np.array([[-1, 1],
+                        [-0.5, 0.5],
+                        [-1, 1],
+                        [-0.5, 0.5],
+                        [0, 0.5],
+                        [1, -0.5]]),
+              np.array([[-1, 1],
+                        [-0.5, 0.5],
+                        [-1, 1],
+                        [-0.5, 0.5],
+                        [-1, 1],
+                        [0, 0.6]])]
+
+    pop_sizes = [2, 2, 2]
+    en_sizes = [2, 2, 2]
+    n_vars = [2, 3, 3]
+    gate_estimators = [None, GateEstimator.ANGLE, GateEstimator.ROUNDING]
+
+    expected = [np.array([[0, 740],
+                          [185, 555],
+                          [0, 700],
+                          [175, 525]]),
+                np.array([[0, 740],
+                          [185, 555],
+                          [0, 700],
+                          [175, 525],
+                          [0, pi/2],
+                          [pi, -pi/2]]),
+                np.array([[0, 740],
+                          [185, 555],
+                          [0, 700],
+                          [175, 525],
+                          [0, 10],
+                          [5, 8]])]
+
+    output = wrap_up((states, pop_sizes, en_sizes, n_vars, gate_estimators,
+                      expected))
+    return output

@@ -509,7 +509,13 @@ class EnsembleKalmanFilter(Filter):
                                                      self.data_vector_length)
             warns.warn(w, RuntimeWarning)
         X = np.zeros(shape=(self.state_vector_length, self.ensemble_size))
-        self.update_data_ensemble(data)
+
+        if data.ndim == 1:
+            self.update_data_ensemble(data)
+        elif data.ndim == 2:
+            self.data_ensemble = data
+        else:
+            raise ValueError(f'Data has unexpected ndim: {data.ndim}')
         self.gain_matrix = self.make_gain_matrix(self.state_ensemble,
                                                  self.data_covariance,
                                                  self.H,

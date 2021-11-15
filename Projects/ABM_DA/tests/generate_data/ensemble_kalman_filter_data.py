@@ -784,9 +784,11 @@ def get_unstandardisation_data():
     return output
 
 def get_alternating_to_sequential_data():
-    vector = [[1, 2, 3, 4, 5, 6]]
+    vector = [[1, 2, 3, 4, 5, 6],
+              ['x1', 'y1', 'x2', 'y2']]
 
-    expected = [[1, 3, 5, 2, 4, 6]]
+    expected = [[1, 3, 5, 2, 4, 6],
+                ['x1', 'x2', 'y1', 'y2']]
 
     output = wrap_up((vector, expected))
     return output

@@ -891,6 +891,7 @@ def test_update(ft, state_ensemble, data_cov, data, H, expected):
     enkf.data_covariance = data_cov
     enkf.H = H
     enkf.H_transpose = H.T
+    enkf.data_vector_length = len(data_cov.diagonal())
 
     # Run update
     enkf.update(data)

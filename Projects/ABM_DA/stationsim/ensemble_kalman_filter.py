@@ -1219,6 +1219,51 @@ class EnsembleKalmanFilter(Filter):
 
         return new_data
 
+    def standardise_ensemble(self, ensemble: np.ndarray,
+                             n_vars: int) -> np.ndarray:
+        assert n_vars in (2, 3)
+        assert len(ensemble) % self.population_size == 0
+        assert len(ensemble) % n_vars == 0
+
+        if n_vars == 2:
+            new_ensemble = np.zeros(shape=(len(ensemble), self.ensemble_size))
+            # Standardise xs
+            for i in range(self.population_size):
+                new_ensemble[i, :] = self.standardise(ensemble[i, :],
+                                                      self.base_model.width, 0)
+
+            # Standardise ys
+            for i in range(self.population_size, 2 * self.population_size):
+                new_ensemble[i, :] = self.standardise(ensemble[i, :],
+                                                      self.base_model.height, 0)
+        elif n_vars == 3:
+            new_ensemble = np.zeros(shape=(len(ensemble), self.ensemble_size))
+            # Standardise xs
+            for i in range(self.population_size):
+                new_ensemble[i, :] = self.standardise(ensemble[i, :],
+                                                      self.base_model.width, 0)
+
+            # Standardise ys
+            for i in range(self.population_size, 2 * self.population_size):
+                new_ensemble[i, :] = self.standardise(ensemble[i, :],
+                                                      self.base_model.height, 0)
+
+            # Standardise gates
+            if self.gate_estimator == GateEstimator.ANGLE:
+                top = pi
+                bottom = -pi
+            elif self.gate_estimator == GateEstimator.ROUNDING:
+                top = len(self.base_model.gates_width) - 1
+                bottom = 0
+
+            for i in range(2 * self.population_size, 3 * self.population_size):
+                new_ensemble[i, :] = self.standardise(ensemble[i, :],
+                                                      top, bottom)
+        else:
+            raise ValueError('Provide correct value for n_vars')
+
+        return new_ensemble
+
     @staticmethod
     def standardise(vector, top, bottom):
         # Find midpoint of range
@@ -1233,7 +1278,6 @@ class EnsembleKalmanFilter(Filter):
         # Scale by shifted top
         standard_vector = shift_vector / shift_top
         return standard_vector
-
 
     @staticmethod
     def unstandardise(vector, top, bottom):

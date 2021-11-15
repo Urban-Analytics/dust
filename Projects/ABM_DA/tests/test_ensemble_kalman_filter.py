@@ -123,6 +123,8 @@ update_data = get_update_data()
 
 reformat_obs_data = get_reformat_obs_data()
 
+standardise_ensemble_data = get_standardise_ensemble_data()
+
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -911,5 +913,17 @@ def test_reformat_obs(dvector_length, ensemble_size, data, expected):
 
     # Reformat data
     result = enkf.reformat_obs(data)
+
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize('state, pop_size, en_size, n_var, gate_est, expected',
+                         standardise_ensemble_data)
+def test_standardise_ensemble(state, pop_size, en_size, n_var, gate_est,
+                              expected):
+    enkf = set_up_enkf(ensemble_size=en_size, pop_size=pop_size,
+                       gate_estimator=gate_est)
+
+    result = enkf.standardise_ensemble(state, n_var)
 
     np.testing.assert_equal(result, expected)

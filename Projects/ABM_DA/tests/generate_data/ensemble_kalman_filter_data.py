@@ -872,3 +872,48 @@ def get_reformat_obs_data():
 
     output = wrap_up((vector_lengths, ensemble_sizes, data, expected))
     return output
+
+
+def get_standardise_ensemble_data():
+    states = [np.array([[0, 740],
+                        [185, 555],
+                        [0, 700],
+                        [175, 525]]),
+              np.array([[0, 740],
+                        [185, 555],
+                        [0, 700],
+                        [175, 525],
+                        [0, pi/2],
+                        [pi, -pi/2]]),
+              np.array([[0, 740],
+                        [185, 555],
+                        [0, 700],
+                        [175, 525],
+                        [0, 10],
+                        [5, 8]])]
+
+    pop_sizes = [2, 2, 2]
+    en_sizes = [2, 2, 2]
+    n_vars = [2, 3, 3]
+    gate_estimators = [None, GateEstimator.ANGLE, GateEstimator.ROUNDING]
+
+    expected = [np.array([[-1, 1],
+                          [-0.5, 0.5],
+                          [-1, 1],
+                          [-0.5, 0.5]]),
+                np.array([[-1, 1],
+                          [-0.5, 0.5],
+                          [-1, 1],
+                          [-0.5, 0.5],
+                          [0, 0.5],
+                          [1, -0.5]]),
+                np.array([[-1, 1],
+                          [-0.5, 0.5],
+                          [-1, 1],
+                          [-0.5, 0.5],
+                          [-1, 1],
+                          [0, 0.6]])]
+
+    output = wrap_up((states, pop_sizes, en_sizes, n_vars, gate_estimators,
+                      expected))
+    return output

@@ -870,7 +870,7 @@ def test_alternating_to_sequential(state_vector, expected):
 
     result = enkf.convert_alternating_to_sequential(state_vector)
 
-    assert result == expected
+    np.testing.assert_equal(result, expected)
 
 
 @pytest.mark.parametrize('ft, state_ensemble, data_cov, data, H, expected',

@@ -786,10 +786,12 @@ def get_unstandardisation_data():
 
 def get_alternating_to_sequential_data():
     vector = [[1, 2, 3, 4, 5, 6],
-              ['x1', 'y1', 'x2', 'y2']]
+              ['x1', 'y1', 'x2', 'y2'],
+              np.array([1, 2, 3, 4, 5, 6])]
 
     expected = [[1, 3, 5, 2, 4, 6],
-                ['x1', 'x2', 'y1', 'y2']]
+                ['x1', 'x2', 'y1', 'y2'],
+                np.array([1, 3, 5, 2, 4, 6])]
 
     output = wrap_up((vector, expected))
     return output

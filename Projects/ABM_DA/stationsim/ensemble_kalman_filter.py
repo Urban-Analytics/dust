@@ -1203,7 +1203,12 @@ class EnsembleKalmanFilter(Filter):
     def convert_alternating_to_sequential(cls, vector):
         assert len(vector) % 2 == 0
         a, b = cls.separate_coords(vector)
-        return a + b
+        if isinstance(a, list) and isinstance(b, list):
+            return a + b
+        elif isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
+            return np.concatenate((a, b))
+        else:
+            raise TypeError(f'Objects are wrong types: {type(a)} {type(b)}')
 
     @staticmethod
     def standardise(vector, top, bottom):

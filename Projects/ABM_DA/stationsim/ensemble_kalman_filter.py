@@ -127,6 +127,12 @@ class EnsembleKalmanFilter(Filter):
         self.update_state_means()
 
         self.results = list()
+
+        if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
+            self.initial_gates = list()
+            for i in range(self.population_size):
+                idx = (2 * self.population_size) + i
+                self.initial_gates.append(self.state_ensemble[idx].copy())
 #        self.results = [self.state_mean]
 
         # Agent to plot individually

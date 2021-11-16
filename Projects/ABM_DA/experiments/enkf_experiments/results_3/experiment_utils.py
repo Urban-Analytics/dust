@@ -562,7 +562,7 @@ class Modeller():
                         'do_print': False}
 
         # Filter parameters
-        its = 5000
+        its = 10000
         observation_operator = cls.__make_observation_operator(pop_size, mode)
         state_vec_length = cls.__make_state_vector_length(pop_size, mode)
         data_mode = EnsembleKalmanFilterType.STATE

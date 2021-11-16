@@ -520,10 +520,14 @@ class EnsembleKalmanFilter(Filter):
         # Make sure data_ensemble is correctly formatted for the filter type
         if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
             self.data_ensemble = self.reformat_obs(self.data_ensemble)
+            n_state = 3
+        else:
+            n_state = 2
 
         if self.standardise_state:
-            state_ensemble = self.standardise_ensemble(self.state_ensemble)
-            data_ensemble = self.standardise_ensemble(self.data_ensemble)
+            state_ensemble = self.standardise_ensemble(self.state_ensemble,
+                                                       n_state)
+            data_ensemble = self.standardise_ensemble(self.data_ensemble, 2)
             data_covariance = np.cov(data_ensemble)
         else:
             state_ensemble = self.state_ensemble.copy()
@@ -535,7 +539,8 @@ class EnsembleKalmanFilter(Filter):
                                                  self.H_transpose)
         diff = data_ensemble - self.H @ state_ensemble
         X = state_ensemble + self.gain_matrix @ diff
-        X = self.unstandardise_ensemble(X) if self.standardise_state else X
+        if self.standardise_state:
+            X = self.unstandardise_ensemble(X, n_state)
         self.state_ensemble = X
 
     # --- Error calculation --- #

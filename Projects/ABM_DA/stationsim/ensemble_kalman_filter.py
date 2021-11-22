@@ -249,7 +249,7 @@ class EnsembleKalmanFilter(Filter):
                 for model in models:
                     # Set up offsets
                     lower_offset = -self.n_adjacent
-                    upper_offset = self.n_adjacent
+                    upper_offset = self.n_adjacent + 1
                     offset = np.random.randint(lower_offset, upper_offset)
                     # Apply offset to gate_out
                     model_gate_out = gate_out + offset

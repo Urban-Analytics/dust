@@ -847,6 +847,48 @@ def test_exit_randomisation_adjacent(n_adjacent):
             assert model_gate_out in gate_range
 
 
+@pytest.mark.parametrize('n_adjacent', exit_randomisation_adjacent_data)
+def test_exit_randomisation_adjacent_range(n_adjacent):
+    n_runs = 100
+    pop_size = 3
+    ensemble_size = 25
+    min_results = [[] for _ in range(pop_size)]
+    max_results = [[] for _ in range(pop_size)]
+    adjacent_range = list(range(-n_adjacent, n_adjacent+1))
+
+
+    for _ in range(n_runs):
+        enkf = set_up_enkf(exit_randomisation=ExitRandomisation.ADJACENT,
+                           n_adjacent=n_adjacent, pop_size=pop_size,
+                           ensemble_size=ensemble_size)
+        # base_gates = [agent.gate_out for agent in enkf.base_model.agents]
+        n_gates = enkf.base_model.gates_out
+
+        for i in range(pop_size):
+            base_gate_out = enkf.base_model.agents[i].gate_out
+            gate_range = [(base_gate_out + x) % n_gates for x in adjacent_range]
+            max_gate = max(gate_range)
+            min_gate = min(gate_range)
+
+            ensemble_gates_out = list()
+
+            for model in enkf.models:
+                ensemble_gates_out.append(model.agents[i].gate_out)
+
+            min_correct = [gate == min_gate for gate in ensemble_gates_out]
+            max_correct = [gate == max_gate for gate in ensemble_gates_out]
+
+            min_results[i].append(any(min_correct))
+            max_results[i].append(any(max_correct))
+
+    for i in range(pop_size):
+        min_proportion = sum(min_results[i]) / len(min_results[i])
+        max_proportion = sum(max_results[i]) / len(max_results[i])
+
+        assert min_proportion > 0.5
+        assert max_proportion > 0.5
+
+
 @pytest.mark.parametrize('state_vector, top, bottom, expected',
                          standardisation_data)
 def test_standardisation(state_vector, top, bottom, expected):

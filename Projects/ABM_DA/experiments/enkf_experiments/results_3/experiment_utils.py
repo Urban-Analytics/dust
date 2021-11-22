@@ -598,8 +598,12 @@ class Modeller():
         enkf = EnsembleKalmanFilter(Model, filter_params, model_params,
                                     filtering=True, benchmarking=True)
 
-        while enkf.active:
+        for _ in tqdm(range(its)):
             enkf.step()
+            if not enkf.active:
+                break
+        # while enkf.active:
+        #     enkf.step()
 
         with open(mpath + f'model.pkl', 'wb') as f:
             pickle.dump(enkf, f)

@@ -200,6 +200,13 @@ class EnsembleKalmanFilter(Filter):
             EnsembleKalmanFilterType.DUAL_EXIT: self.make_dual_errors
         }
         self.ensemble_errors = False
+        self.set_up_dict = {
+            ExitRandomisation.NONE: self.__set_up_models_none,
+            ExitRandomisation.BY_AGENT: self.__set_up_models_by_agent,
+            ExitRandomisation.ALL_RANDOM: self.__set_up_models_all_random,
+            ExitRandomisation.ADJACENT: self.__set_up_models_adjacent
+        }
+
 
     def __assign_filter_params(self, filter_params: dict) -> None:
         for k, v in filter_params.items():
@@ -221,44 +228,12 @@ class EnsembleKalmanFilter(Filter):
         n = self.ensemble_size if n is None else n
         models = [dcopy(self.base_model) for _ in range(n)]
 
-        if self.exit_randomisation == ExitRandomisation.BY_AGENT:
-            gates_in = self.base_model.gates_in
-            gates_out = self.base_model.gates_out
-            for i, agent in enumerate(self.base_model.agents):
-                gate_out = self.make_random_destination(gates_in,
-                                                        gates_out,
-                                                        agent.gate_in)
-                target = agent.set_agent_location(gate_out)
-                for model in models:
-                    model.agents[i].gate_out = gate_out
-                    model.agents[i].loc_desire = target
-        elif self.exit_randomisation == ExitRandomisation.ALL_RANDOM:
-            gates_in = self.base_model.gates_in
-            gates_out = self.base_model.gates_out
-            for model in models:
-                for agent in model.agents:
-                    gate_out = self.make_random_destination(gates_in,
-                                                            gates_out,
-                                                            agent.gate_in)
-                    agent.gate_out = gate_out
-                    agent.loc_desire = agent.set_agent_location(gate_out)
-        elif self.exit_randomisation == ExitRandomisation.ADJACENT:
-            for i, agent in enumerate(self.base_model.agents):
-                gate_out = agent.gate_out
-
-                for model in models:
-                    # Set up offsets
-                    lower_offset = -self.n_adjacent
-                    upper_offset = self.n_adjacent + 1
-                    offset = np.random.randint(lower_offset, upper_offset)
-                    # Apply offset to gate_out
-                    model_gate_out = gate_out + offset
-                    model_gate_out = model_gate_out % self.base_model.gates_out
-                    # Create location
-                    target = agent.set_agent_location(model_gate_out)
-                    # Assign to agent
-                    model.agents[i].gate_out = model_gate_out
-                    model.agents[i].loc_desire = target
+        try:
+            set_up_func = self.set_up_dict[self.exit_randomisation]
+            models = set_up_func(models)
+        except KeyError:
+            er = self.exit_randomisation
+            raise ValueError(f'Unexpected exit randomisation: {er}')
 
         # if self.mode == EnsembleKalmanFilterType.DUAL_EXIT:
         #     for model in models:
@@ -271,6 +246,56 @@ class EnsembleKalmanFilter(Filter):
         #             agent.loc_desire = agent.set_agent_location(gate_out)
         # elif self.mode != EnsembleKalmanFilterType.STATE:
         #     raise ValueError('Filter type not recognised.')
+        return models
+
+    def __set_up_models_none(self, models):
+        return models
+
+    def __set_up_models_by_agent(self, models):
+        gates_in = self.base_model.gates_in
+        gates_out = self.base_model.gates_out
+        for i, agent in enumerate(self.base_model.agents):
+            gate_out = self.make_random_destination(gates_in,
+                                                    gates_out,
+                                                    agent.gate_in)
+            target = agent.set_agent_location(gate_out)
+            for model in models:
+                model.agents[i].gate_out = gate_out
+                model.agents[i].loc_desire = target
+
+        return models
+
+    def __set_up_models_all_random(self, models):
+        gates_in = self.base_model.gates_in
+        gates_out = self.base_model.gates_out
+        for model in models:
+            for agent in model.agents:
+                gate_out = self.make_random_destination(gates_in,
+                                                        gates_out,
+                                                        agent.gate_in)
+                agent.gate_out = gate_out
+                agent.loc_desire = agent.set_agent_location(gate_out)
+
+        return models
+
+    def __set_up_models_adjacent(self, models):
+        for i, agent in enumerate(self.base_model.agents):
+            gate_out = agent.gate_out
+
+            for model in models:
+                # Set up offsets
+                lower_offset = -self.n_adjacent
+                upper_offset = self.n_adjacent + 1
+                offset = np.random.randint(lower_offset, upper_offset)
+                # Apply offset to gate_out
+                model_gate_out = gate_out + offset
+                model_gate_out = model_gate_out % self.base_model.gates_out
+                # Create location
+                target = agent.set_agent_location(model_gate_out)
+                # Assign to agent
+                model.agents[i].gate_out = model_gate_out
+                model.agents[i].loc_desire = target
+
         return models
 
     def __set_angle_estimation_defaults(self):

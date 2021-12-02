@@ -56,7 +56,17 @@ def get_separate_coords_error_data():
 
 
 def get_random_destination_data():
-    return [(10, 10, 0)]
+    gate_ins = [0, 1, 3, 7]
+    excluded_gates = [{0},
+                      {1, 2},
+                      {3, 4, 5, 6},
+                      {7, 8, 9, 10}]
+
+    gates_in = [10 for _ in range(len(gate_ins))]
+    gates_out = [10 for _ in range(len(gate_ins))]
+
+    output = wrap_up((gates_in, gates_out, gate_ins, excluded_gates))
+    return output
 
 
 def get_n_active_agents_base_data():

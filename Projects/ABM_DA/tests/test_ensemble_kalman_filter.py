@@ -240,13 +240,14 @@ def test_separate_coords_error(arr, expected):
         assert EnsembleKalmanFilter.separate_coords(arr)
 
 
-@pytest.mark.parametrize('gates_in, gates_out, gate_in',
+@pytest.mark.parametrize('gates_in, gates_out, gate_in, excluded_gates',
                          random_destination_data)
-def test_make_random_destination(gates_in, gates_out, gate_in):
+def test_make_random_destination(gates_in, gates_out, gate_in, excluded_gates):
     enkf = set_up_enkf()
     gate_out = enkf.make_random_destination(gates_in, gates_out, gate_in)
     assert gate_out != gate_in
     assert 0 <= gate_out < enkf.n_exits
+    assert gate_out not in excluded_gates
 
 
 def test_error_normalisation_default_init():

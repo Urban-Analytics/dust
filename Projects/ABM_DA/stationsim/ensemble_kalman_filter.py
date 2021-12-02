@@ -382,10 +382,15 @@ class EnsembleKalmanFilter(Filter):
     def make_random_destination(self, gates_in: int,
                                 gates_out: int, gate_in: int) -> int:
         # Ensure that their destination is not the same as their origin
-        gate_out = np.random.randint(gates_out) + gates_in
-        while (gate_out == gate_in or gate_out >= self.n_exits):
-            gate_out = np.random.randint(gates_out)
+        gate_out = self.base_model.agents[0].set_gate_out(gate_in)
+        # gate_out = np.random.randint(gates_out) + gates_in
+        # while (gate_out == gate_in or gate_out >= self.n_exits):
+        #     gate_out = np.random.randint(gates_out)
         return gate_out
+
+    def make_random_destination_side(self, gates_in: int, gates_out: int,
+                                     gate_in: int) -> int:
+        pass
 
     @staticmethod
     def get_angle(vector_tail: Tuple[float, float],

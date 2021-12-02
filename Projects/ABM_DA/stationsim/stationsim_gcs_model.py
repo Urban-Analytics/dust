@@ -47,7 +47,7 @@ class Agent:
         self.size = model.agent_size
 
         self.gate_in = np.random.randint(model.gates_in)
-        self.set_gate_out()
+        self.gate_out = self.set_gate_out(self.gate_in)
         self.loc_desire = self.set_agent_location(self.gate_out)
 
         # Speed
@@ -70,7 +70,7 @@ class Agent:
             self.history_locations = []  # necessary in Particle Filter
             self.step_start = None
 
-    def set_gate_out(self):
+    def set_gate_out(self, gate_in=None):
         '''
         Set a exit gate for the agent.
         - ['Grand_Central'] The exit gate can be any gate that is on a
@@ -79,29 +79,39 @@ class Agent:
                   the entrance gate.
         '''
 
+        if gate_in is None:
+            gate_in = self.gate_in
+
         if (self.model.station == 'Grand_Central'):
             # Use set differences to allocate gate_out on different side to
             # gate_in
-            gates = set(range(self.model.gates_out))
-            gates_left = {0}
-            gates_top = {1, 2}
-            gates_right = {3, 4, 5, 6}
-            gates_bottom = {7, 8, 9, 10}
-
-            if (self.gate_in in gates_left):
-                options = list(gates - gates_left)
-            elif (self.gate_in in gates_top):
-                options = list(gates - gates_top)
-            elif (self.gate_in in gates_right):
-                options = list(gates - gates_right)
-            elif (self.gate_in in gates_bottom):
-                options = list(gates - gates_bottom)
-            else:
-                raise ValueError(f'Invalid entrance gates: {self.gate_in}')
-            self.gate_out = np.random.choice(options)
+            gate_out = self.choose_gate_out_gcs(gate_in)
         else:
             random_gate_out = np.random.randint(self.model.gates_out)
-            self.gate_out = random_gate_out + self.model.gates_in
+            gate_out = random_gate_out + self.model.gates_in
+        return gate_out
+
+    @staticmethod
+    def choose_gate_out_gcs(gate_in):
+        gates_left = {0}
+        gates_top = {1, 2}
+        gates_right = {3, 4, 5, 6}
+        gates_bottom = {7, 8, 9, 10}
+        all_gates = [gates_left, gates_top, gates_right, gates_bottom]
+        gates = set().union(*all_gates)
+
+        if (gate_in in gates_left):
+            options = list(gates - gates_left)
+        elif (gate_in in gates_top):
+            options = list(gates - gates_top)
+        elif (gate_in in gates_right):
+            options = list(gates - gates_right)
+        elif (gate_in in gates_bottom):
+            options = list(gates - gates_bottom)
+        else:
+            raise ValueError(f'Invalid entrance gates: {gate_in}')
+        gate_out = np.random.choice(options)
+        return gate_out
 
     def step(self, time):
         '''

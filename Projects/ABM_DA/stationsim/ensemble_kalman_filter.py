@@ -201,10 +201,10 @@ class EnsembleKalmanFilter(Filter):
         }
         self.ensemble_errors = False
         self.set_up_dict = {
-            ExitRandomisation.NONE: self.__set_up_models_none,
-            ExitRandomisation.BY_AGENT: self.__set_up_models_by_agent,
-            ExitRandomisation.ALL_RANDOM: self.__set_up_models_all_random,
-            ExitRandomisation.ADJACENT: self.__set_up_models_adjacent
+            ExitRandomisation.NONE: self.set_up_models_none,
+            ExitRandomisation.BY_AGENT: self.set_up_models_by_agent,
+            ExitRandomisation.ALL_RANDOM: self.set_up_models_all_random,
+            ExitRandomisation.ADJACENT: self.set_up_models_adjacent
         }
 
 
@@ -248,10 +248,10 @@ class EnsembleKalmanFilter(Filter):
         #     raise ValueError('Filter type not recognised.')
         return models
 
-    def __set_up_models_none(self, models):
+    def set_up_models_none(self, models):
         return models
 
-    def __set_up_models_by_agent(self, models):
+    def set_up_models_by_agent(self, models):
         gates_in = self.base_model.gates_in
         gates_out = self.base_model.gates_out
         for i, agent in enumerate(self.base_model.agents):
@@ -265,7 +265,7 @@ class EnsembleKalmanFilter(Filter):
 
         return models
 
-    def __set_up_models_all_random(self, models):
+    def set_up_models_all_random(self, models):
         gates_in = self.base_model.gates_in
         gates_out = self.base_model.gates_out
         for model in models:
@@ -278,14 +278,14 @@ class EnsembleKalmanFilter(Filter):
 
         return models
 
-    def __set_up_models_adjacent(self, models):
+    def set_up_models_adjacent(self, models):
+        lower_offset = -self.n_adjacent
+        upper_offset = self.n_adjacent + 1
         for i, agent in enumerate(self.base_model.agents):
             gate_out = agent.gate_out
 
             for model in models:
                 # Set up offsets
-                lower_offset = -self.n_adjacent
-                upper_offset = self.n_adjacent + 1
                 offset = np.random.randint(lower_offset, upper_offset)
                 # Apply offset to gate_out
                 model_gate_out = gate_out + offset

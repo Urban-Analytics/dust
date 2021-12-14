@@ -1,0 +1,3 @@
+for g in self.agent_groups:
+    num_infected = sum[a.state for a in self.agents if a.group == g]
+    self.infected_per_group[g].append(num_infected)

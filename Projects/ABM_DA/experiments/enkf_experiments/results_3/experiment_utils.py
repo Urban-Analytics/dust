@@ -5,13 +5,6 @@ A collection of classes and functions for running the enkf.
 """
 
 # Imports
-from ensemble_kalman_filter import ExitRandomisation
-from ensemble_kalman_filter import AgentIncluder
-from ensemble_kalman_filter import EnsembleKalmanFilterType
-from ensemble_kalman_filter import EnsembleKalmanFilter
-from ensemble_kalman_filter import GateEstimator
-from ensemble_kalman_filter import Inflation
-from stationsim_gcs_model import Model
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,6 +21,14 @@ from time import sleep
 from tqdm import tqdm
 
 sys.path.append('../../stationsim')
+
+from ensemble_kalman_filter import ExitRandomisation
+from ensemble_kalman_filter import AgentIncluder
+from ensemble_kalman_filter import EnsembleKalmanFilterType
+from ensemble_kalman_filter import EnsembleKalmanFilter
+from ensemble_kalman_filter import GateEstimator
+from ensemble_kalman_filter import Inflation
+from stationsim_gcs_model import Model
 
 
 # Classes
@@ -554,7 +555,10 @@ class Modeller():
                          n_adjacent=1,
                          gate_estimator=GateEstimator.ANGLE,
                          inflation=Inflation.NONE,
-                         inflation_rate=None):
+                         inflation_rate=None,
+                         sim_number=None):
+
+        assert ((sim_number is None) or isinstance(sim_number, str))
 
         # Model parameters
         model_params = {'pop_total': pop_size,
@@ -605,7 +609,9 @@ class Modeller():
         # while enkf.active:
         #     enkf.step()
 
-        with open(mpath + f'model.pkl', 'wb') as f:
+        fn = 'model.pkl' if sim_number is None else f'model_{sim_number}.pkl'
+
+        with open(mpath + fn, 'wb') as f:
             pickle.dump(enkf, f)
 
     @classmethod
@@ -691,7 +697,8 @@ class Modeller():
                            results_path='../results/models/baseline/',
                            mode=EnsembleKalmanFilterType.STATE,
                            inclusion=AgentIncluder.MODE_EN,
-                           exit_randomisation=ExitRandomisation.NONE):
+                           exit_randomisation=ExitRandomisation.NONE,
+                           n_adjacent=1):
         # Set up filter parameters
         state_vec_length = cls.__make_state_vector_length(pop_size, mode)
 
@@ -700,7 +707,8 @@ class Modeller():
                          'state_vector_length': state_vec_length,
                          'mode': mode,
                          'inclusion': inclusion,
-                         'exit_randomisation': exit_randomisation}
+                         'exit_randomisation': exit_randomisation,
+                         'n_adjacent': n_adjacent}
         model_params = {'pop_total': pop_size,
                         'station': station,
                         'do_print': False}
@@ -728,7 +736,8 @@ class Modeller():
                                   results_path='../results/models/baseline/',
                                   mode=EnsembleKalmanFilterType.STATE,
                                   inclusion=AgentIncluder.MODE_EN,
-                                  exit_randomisation=ExitRandomisation.NONE):
+                                  exit_randomisation=ExitRandomisation.NONE,
+                                  n_adjacent=1):
         # Set up filter parameters
         state_vec_length = cls.__make_state_vector_length(pop_size, mode)
 
@@ -755,6 +764,7 @@ class Modeller():
                          'keep_results': True,
                          'run_vanilla': True,
                          'exit_randomisation': exit_randomisation,
+                         'n_adjacent': n_adjacent,
                          'vis': False}
 
         # Model params
@@ -1059,16 +1069,25 @@ class Processor():
     @classmethod
     def process_experiment_1(cls, pop_size=20,
                              mpath='../results/models/exp1/',
-                             dpath='../results/data/exp1/'):
+                             dpath='../results/data/exp1/',
+                             multirun=False):
 
         model_dir = mpath + f'p{pop_size}/'
+
         model_paths = listdir(model_dir)
 
-        model_path = [p for p in model_paths if p.endswith('.pkl')][0]
+        if not multirun:
+            model_path = [p for p in model_paths if p.endswith('l.pkl')][0]
 
-        with open(model_dir + model_path, 'rb') as f:
-            model = pickle.load(f)
-        results = model.metrics
+            with open(model_dir + model_path, 'rb') as f:
+                model = pickle.load(f)
+            results = model.metrics
+
+        else:
+            raise NotImplementedError('')
+#             results = list
+#             model_paths
+#             for model_path in model_paths
 
         output_data_dir = f'{dpath}p{pop_size}/'
 

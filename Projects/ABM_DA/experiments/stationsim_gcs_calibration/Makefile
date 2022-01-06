@@ -1,6 +1,6 @@
 # Makefile for calibration process
 
-all: inputs/activation.dat all_frames
+all: inputs/activation.dat all_frames outputs/figures/speed outputs/figures/activation_rate outputs/data
 
 inputs/activation.dat: ../grand_central_terminal_data/GCT_final_real_data/activation.dat
 	cp ../grand_central_terminal_data/GCT_final_real_data/activation.dat inputs/activation.dat
@@ -19,3 +19,15 @@ zip_outputs:
 
 unzip_outputs:
 	tar -xzf all_outputs.tar.gz outputs/
+
+outputs/figures:
+	cd outputs/ && mkdir figures
+
+outputs/figures/speed: outputs/figures
+	cd outputs/figures/ && mkdir speed
+
+outputs/figures/activation_rate: outputs/figures
+	cd outputs/figures/ && mkdir activation_rate
+
+outputs/data:
+	cd outputs/ && mkdir data

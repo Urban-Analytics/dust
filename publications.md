@@ -45,6 +45,8 @@ Malleson, N., A. Tapper, J. Ward, A. Evans (2017). Forecasting Short-Term Urban 
 
 ## Preprints
 
+A. Whipp, N. Malleson, Jonathan Ward, Alison Heppenstall (2021). Towards a Comprehensive Measure of the Ambient Population: Building Estimates Using Geographically Weighted Regression _Preprint_: [10.31235/osf.io/pquvy](https://doi.org/10.31235/osf.io/pquvy).
+
 Tang, D. (2020). Finding the Maximum-a-Posteriori Behaviour of Agents in an Agent-Based Model. [ArXiv:2005.02096 [Cs]](http://arxiv.org/abs/2005.02096).
 
 Tang, D. (2020) Decentralised, Privacy-Preserving Bayesian Inference for Mobile Phone Contact Tracing’, 2020. [arXiv: 2005.05086 [cs.CY]](https://arxiv.org/abs/2005.05086).

@@ -1,6 +1,10 @@
 # Makefile for calibration process
 
-all: inputs/activation.dat all_frames outputs/figures/speed outputs/figures/activation_rate outputs/data
+all: all_inputs all_figures outputs/frames outputs/data outputs/models
+
+all_inputs: inputs/activation.dat all_frames
+
+all_figures: outputs/figures/speed outputs/figures/activation_rate outputs/figures/sensitivity_analysis
 
 inputs/activation.dat: ../grand_central_terminal_data/GCT_final_real_data/activation.dat
 	cp ../grand_central_terminal_data/GCT_final_real_data/activation.dat inputs/activation.dat
@@ -29,5 +33,14 @@ outputs/figures/speed: outputs/figures
 outputs/figures/activation_rate: outputs/figures
 	cd outputs/figures/ && mkdir activation_rate
 
+outputs/frames:
+	cd outputs/ && mkdir frames
+
 outputs/data:
 	cd outputs/ && mkdir data
+
+outputs/figures/sensitivity_analysis:
+	cd outputs/figures/ && mkdir sensitivity_analysis
+
+outputs/models:
+	cd outputs/ && mkdir models

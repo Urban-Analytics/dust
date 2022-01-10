@@ -57,7 +57,8 @@ Malleson, N., Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew A. West, Alis
 
 Kieu, Le-Minh, N. Malleson, and A. Heppenstall (2019) Dealing with Uncertainty in Agent-Based Models for Short-Term Predictions’.  [arXiv:1908.08288 [cs.MA]](https://arxiv.org/abs/1908.08288).
 
-## Other documents
+## Other documents and resources
 
+ - [Exploration of Gaussian processes for emulation of stochastic models](https://github.com/Urban-Analytics/stochastic-gp/). _A series of notbooks exploring the challanges with using Gaussian Processes to estimate stochastic models, like agent-based modelling_. 
  - The original [DUST Project Funding Proposal](./docs/dust_proposal.html) (outline).
  - A [Review of Agent-Based Pedestrian Simulation Software](./docs/ped_sim_review.html).

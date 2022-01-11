@@ -11,7 +11,7 @@ tagline:
 This is the website for the _dust_ research project, a new initiative at the [University of Leeds](http://www.leeds.ac.uk/) that has been funded with €1.5M from the [European Research Council](https://erc.europa.eu/). It started in Janurary 2018. 
 
  - For the latest news, see the [blog]({{site.baseurl}}/blog.html).
- - For some relevant presentations, see [presentations]({{site.baseurl}}/presentations.html).
+ - See the following pages for some relevant [presentations]({{site.baseurl}}/presentations.html) and [publications]({{site.baseurl}}/publications.html).
  - If you have any questions, or would like to discuss the project, then please contact the Principal Investigator: [Nick Malleson](http://www.geog.leeds.ac.uk/people/n.malleson/).
  - For the model code and other programming work see the [GitHub page](https://github.com/Urban-Analytics/dust)
 

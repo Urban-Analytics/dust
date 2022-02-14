@@ -608,8 +608,9 @@ class Modeller():
                 break
         # while enkf.active:
         #     enkf.step()
+        model_name = f'model_{exit_randomisation.name}_{gate_estimator.name}'
 
-        fn = 'model.pkl' if sim_number is None else f'model_{sim_number}.pkl'
+        fn = f'{model_name}.pkl' if sim_number is None else f'{model_name}_{sim_number}.pkl'
 
         with open(mpath + fn, 'wb') as f:
             pickle.dump(enkf, f)
@@ -1070,14 +1071,20 @@ class Processor():
     def process_experiment_1(cls, pop_size=20,
                              mpath='../results/models/exp1/',
                              dpath='../results/data/exp1/',
+                             gate_estimator=None,
+                             exit_randomisation=None,
                              multirun=False):
 
         model_dir = mpath + f'p{pop_size}/'
 
         model_paths = listdir(model_dir)
+        if gate_estimator is not None and exit_randomisation is not None:
+            ge_name = gate_estimator.name
+            er_name = exit_randomisation.name
+            model_paths = [mp for mp in model_paths if ge_name in mp and er_name in mp]
 
         if not multirun:
-            model_path = [p for p in model_paths if p.endswith('l.pkl')][0]
+            model_path = [p for p in model_paths if p.endswith('.pkl')][0]
 
             with open(model_dir + model_path, 'rb') as f:
                 model = pickle.load(f)
@@ -1089,7 +1096,12 @@ class Processor():
 #             model_paths
 #             for model_path in model_paths
 
-        output_data_dir = f'{dpath}p{pop_size}/'
+        if gate_estimator is None or exit_randomisation is None:
+            output_data_dir = f'{dpath}p{pop_size}/'
+        else:
+            ge_name = gate_estimator.name
+            er_name = exit_randomisation.name
+            output_data_dir = f'{dpath}p{pop_size}/{er_name}_{ge_name}/'
 
         if not os.path.isdir(output_data_dir):
             os.makedirs(output_data_dir)

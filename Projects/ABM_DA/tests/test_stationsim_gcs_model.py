@@ -18,6 +18,17 @@ gate_location_data = get_gate_location_data()
 
 distance_data = get_distance_data()
 
+set_state_gate_data = get_set_state_gate_data()
+
+set_state_destination_data = get_set_state_destination_data()
+
+set_state_number_destination = get_set_state_number_destination()
+
+set_state_enkf_gate_angle_data = get_set_state_enkf_gate_angle_data()
+
+get_state_exit_number_data = get_get_state_exit_number_data()
+
+get_state_exit_location_data = get_get_state_exit_location_data()
 
 # Helper functions
 def __is_valid_location(agent_location, upper, lower, side):
@@ -487,5 +498,71 @@ def test_set_agent_location():
     assert all(results)
 
 
-# def test_set_wiggle():
-#     pass
+@pytest.mark.parametrize('state_vector, agent_states',
+                         set_state_number_destination)
+def test_set_state_exit_number(state_vector, agent_states):
+    model = set_up_model()
+
+    model.set_state(state_vector, sensor='exit_number')
+
+    for i, agent in enumerate(model.agents):
+        assert agent.gate_out == agent_states[i]
+
+
+@pytest.mark.parametrize('state_vector, agent_states', set_state_gate_data)
+def test_set_state_gate(state_vector, agent_states):
+    model = set_up_model()
+
+    model.set_state(state_vector, sensor='loc_exit')
+
+    for i, agent in enumerate(model.agents):
+        assert list(agent.location) == agent_states[i]['location']
+        assert agent.gate_out == agent_states[i]['gate']
+
+
+@pytest.mark.parametrize('state_vector, agent_states',
+                         set_state_destination_data)
+def test_set_state_destination_data(state_vector, agent_states):
+    model = set_up_model()
+
+    model.set_state(state_vector, sensor='exit_location')
+
+    for i, agent in enumerate(model.agents):
+        assert agent.loc_desire == agent_states[i]
+
+
+@pytest.mark.parametrize('state_vector, agent_states',
+                         set_state_enkf_gate_angle_data)
+def test_set_state_enkf_gate_angle(state_vector, agent_states):
+    model = set_up_model()
+
+    model.set_state(state_vector, sensor='enkf_gate_angle')
+
+    for i, agent in enumerate(model.agents):
+        assert tuple(agent.location) == agent_states[i]['location']
+        assert agent.loc_desire == agent_states[i]['destination']
+        assert agent.gate_out == agent_states[i]['gate_number']
+
+
+@pytest.mark.parametrize('agent_states, state_vector',
+                         get_state_exit_number_data)
+def test_get_state_exit_number(agent_states, state_vector):
+    model = set_up_model()
+
+    for i, agent in enumerate(model.agents):
+        agent.gate_out = agent_states[i]
+
+    result = model.get_state(sensor='exit_number')
+    assert result == state_vector
+
+
+@pytest.mark.parametrize('agent_states, state_vector',
+                         get_state_exit_location_data)
+def test_get_state_exit_location(agent_states, state_vector):
+    model = set_up_model()
+
+    for i, agent in enumerate(model.agents):
+        agent.loc_desire = agent_states[i]
+
+    result = model.get_state(sensor='exit_location')
+    assert result == state_vector

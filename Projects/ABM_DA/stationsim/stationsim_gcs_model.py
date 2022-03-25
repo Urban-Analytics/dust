@@ -47,7 +47,7 @@ class Agent:
         self.size = model.agent_size
 
         self.gate_in = np.random.randint(model.gates_in)
-        self.set_gate_out()
+        self.gate_out = self.set_gate_out(self.gate_in)
         self.loc_desire = self.set_agent_location(self.gate_out)
 
         # Speed
@@ -70,7 +70,7 @@ class Agent:
             self.history_locations = []  # necessary in Particle Filter
             self.step_start = None
 
-    def set_gate_out(self):
+    def set_gate_out(self, gate_in=None):
         '''
         Set a exit gate for the agent.
         - ['Grand_Central'] The exit gate can be any gate that is on a
@@ -79,29 +79,39 @@ class Agent:
                   the entrance gate.
         '''
 
+        if gate_in is None:
+            gate_in = self.gate_in
+
         if (self.model.station == 'Grand_Central'):
             # Use set differences to allocate gate_out on different side to
             # gate_in
-            gates = set(range(self.model.gates_out))
-            gates_left = {0}
-            gates_top = {1, 2}
-            gates_right = {3, 4, 5, 6}
-            gates_bottom = {7, 8, 9, 10}
-
-            if (self.gate_in in gates_left):
-                options = list(gates - gates_left)
-            elif (self.gate_in in gates_top):
-                options = list(gates - gates_top)
-            elif (self.gate_in in gates_right):
-                options = list(gates - gates_right)
-            elif (self.gate_in in gates_bottom):
-                options = list(gates - gates_bottom)
-            else:
-                raise ValueError(f'Invalid entrance gates: {self.gate_in}')
-            self.gate_out = np.random.choice(options)
+            gate_out = self.choose_gate_out_gcs(gate_in)
         else:
             random_gate_out = np.random.randint(self.model.gates_out)
-            self.gate_out = random_gate_out + self.model.gates_in
+            gate_out = random_gate_out + self.model.gates_in
+        return gate_out
+
+    @staticmethod
+    def choose_gate_out_gcs(gate_in):
+        gates_left = {0}
+        gates_top = {1, 2}
+        gates_right = {3, 4, 5, 6}
+        gates_bottom = {7, 8, 9, 10}
+        all_gates = [gates_left, gates_top, gates_right, gates_bottom]
+        gates = set().union(*all_gates)
+
+        if (gate_in in gates_left):
+            options = list(gates - gates_left)
+        elif (gate_in in gates_top):
+            options = list(gates - gates_top)
+        elif (gate_in in gates_right):
+            options = list(gates - gates_right)
+        elif (gate_in in gates_bottom):
+            options = list(gates - gates_bottom)
+        else:
+            raise ValueError(f'Invalid entrance gates: {gate_in}')
+        gate_out = np.random.choice(options)
+        return gate_out
 
     def step(self, time):
         '''
@@ -470,6 +480,23 @@ class Model:
                 RuntimeWarning
             )
 
+        self.state_gets = {'location': self.get_state_location,
+                           'location2D': self.get_state_location_2d,
+                           'loc_exit': self.get_state_loc_exit,
+                           'exit_number': self.get_state_exit_number,
+                           'exit_location': self.get_state_exit_location,
+                           'enkf_gate_angle': self.get_state_enkf_gate_angle,
+                           'locationVel': self.get_state_locationVel}
+
+        self.state_sets = {'location': self.set_state_location,
+                           'location2D': self.set_state_location_2d,
+                           'exit': self.set_state_exit,
+                           'exit_number': self.set_state_exit_number,
+                           'loc_exit': self.set_state_loc_exit,
+                           'exit_location': self.set_state_exit_location,
+                           'enkf_gate_angle': self.set_state_enkf_gate_angle,
+                           'locationVel': self.set_state_locationVel}
+
         # Combine kwargs and defaults
         self.params, self.params_changed = Model._init_kwargs(params, kwargs)
 
@@ -717,27 +744,60 @@ class Model:
             state = [(agent.status, *agent.location, agent.speed) for agent in
                      agents]
             state = np.append(self.step_id, np.ravel(state))
-        elif sensor == 'location':
-            state = [agent.location for agent in agents]
-            state = np.ravel(state)
-        elif sensor == 'location2D':
-            state = [agent.location for agent in agents]
-        elif sensor == 'loc_exit':
-            locations = self.get_state('location2D')
-            x, y = [l[0] for l in locations], [l[1] for l in locations]
-            exits = [agent.gate_out for agent in agents]
-            state = x + y + exits
-        elif sensor == 'locationVel':
-            state0 = [agent.location for agent in agents]
-            state0 = np.ravel(state0)
-            state1 = [agent.speed for agent in agents]
-            state1 = np.ravel(state1)
-            state = [state0, state1]
+        elif sensor in self.state_gets:
+            state_getter_func = self.state_gets[sensor]
+            state = state_getter_func(agents)
         else:
             raise ValueError(f'Sensor type ({sensor}) not recognised.')
         return state
 
-    def set_state(self, state, sensor=None):
+    @staticmethod
+    def get_state_location(agents):
+        state = [agent.location for agent in agents]
+        state = np.ravel(state)
+        return state
+
+    @staticmethod
+    def get_state_location_2d(agents):
+        state = [agent.location for agent in agents]
+        return state
+
+    @staticmethod
+    def get_state_exit_number(agents):
+        state = [agent.gate_out for agent in agents]
+        return state
+
+    def get_state_loc_exit(self, agents):
+        locations = self.get_state_location_2d(agents)
+        x, y = [l[0] for l in locations], [l[1] for l in locations]
+        exits = self.get_state_exit_number(agents)
+        # exits = [agent.gate_out for agent in agents]
+        state = x + y + exits
+        return state
+
+    @staticmethod
+    def get_state_exit_location(agents):
+        locations = [agent.loc_desire for agent in agents]
+        x, y = [l[0] for l in locations], [l[1] for l in locations]
+        state = x + y
+        return state
+
+    def get_state_enkf_gate_angle(self, _):
+        x_y_g = self.get_state(sensor='loc_exit')
+        exit_locs = self.get_state('exit_location')
+        state = x_y_g + exit_locs
+        return state
+
+    @staticmethod
+    def get_state_locationVel(agents):
+        state0 = [agent.location for agent in agents]
+        state0 = np.ravel(state0)
+        state1 = [agent.speed for agent in agents]
+        state1 = np.ravel(state1)
+        state = [state0, state1]
+        return state
+
+    def set_state(self, state, sensor=None) -> None:
         '''
         Use state vector to set agent locations.
         '''
@@ -747,25 +807,57 @@ class Model:
             for i, agent in enumerate(self.agents):
                 agent.status = int(state[i, 0])
                 agent.location = state[i, 1:]
-        elif sensor == 'location':
-            state = np.reshape(state, (self.pop_total, 2))
-            for i, agent in enumerate(self.agents):
-                agent.location = state[i, :]
-        elif sensor == 'location2D':
-            for i, agent in enumerate(self.agents):
-                agent.location = state[i, :]
-        elif sensor == 'exit':
-            for i, agent in enumerate(self.agents):
-                agent.gate_out = state[i]
-                agent.loc_desire = agent.set_agent_location(state[i])
-        elif sensor == 'locationVel':
-            state0 = np.reshape(state[0], (self.pop_total, 2))
-            state1 = np.reshape(state[1], (self.pop_total, 1))
-            for i, agent in enumerate(self.agents):
-                agent.location = state0[i, :]
-                agent.speed = state1[i, :]
+        elif sensor in self.state_sets:
+            state_setter_func = self.state_sets[sensor]
+            state_setter_func(state)
         else:
             raise ValueError(f'Sensor type ({sensor}) not recognised.')
+
+    def set_state_location(self, state) -> None:
+        state = np.reshape(state, (self.pop_total, 2))
+        for i, agent in enumerate(self.agents):
+            agent.location = state[i, :]
+
+    def set_state_location_2d(self, state) -> None:
+        for i, agent in enumerate(self.agents):
+            agent.location = state[i, :]
+
+    def set_state_exit(self, state) -> None:
+        for i, agent in enumerate(self.agents):
+            exit = int(state[i])
+            agent.gate_out = exit
+            agent.loc_desire = agent.set_agent_location(exit)
+
+    def set_state_exit_number(self, state) -> None:
+        for i, agent in enumerate(self.agents):
+            agent.gate_out = state[i]
+
+    def set_state_loc_exit(self, state) -> None:
+        locations = state[: 2 * self.pop_total]
+        loc_state = list()
+        for i in range(self.pop_total):
+            loc_state.extend([locations[i], locations[self.pop_total+i]])
+        exit_state = state[2 * self.pop_total:]
+        self.set_state_location(loc_state)
+        self.set_state_exit(exit_state)
+
+    def set_state_exit_location(self, state) -> None:
+        for i, agent in enumerate(self.agents):
+            loc_desire = (state[i], state[self.pop_total + i])
+            agent.loc_desire = loc_desire
+
+    def set_state_enkf_gate_angle(self, state) -> None:
+        loc_exits = state[: 3 * self.pop_total]
+        self.set_state_loc_exit(loc_exits)
+        destinations = state[3 * self.pop_total :]
+        self.set_state_exit_location(destinations)
+
+    def set_state_locationVel(self, state) -> None:
+        state0 = np.reshape(state[0], (self.pop_total, 2))
+        state1 = np.reshape(state[1], (self.pop_total, 1))
+        for i, agent in enumerate(self.agents):
+            agent.location = state0[i, :]
+            agent.speed = state1[i, :]
 
     # TODO: Deprecated, update PF
     def agents2state(self, do_ravel=True):

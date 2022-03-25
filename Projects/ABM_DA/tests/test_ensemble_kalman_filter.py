@@ -10,6 +10,9 @@ sys.path.append('../stationsim/')
 from ensemble_kalman_filter import EnsembleKalmanFilter
 # from ensemble_kalman_filter import ActiveAgentNormaliser
 from ensemble_kalman_filter import AgentIncluder
+from ensemble_kalman_filter import GateEstimator
+from ensemble_kalman_filter import Inflation
+from ensemble_kalman_filter import ExitRandomisation
 
 # Test data
 round_destination_data = get_round_destination_data()
@@ -75,6 +78,55 @@ filter_vector_data = get_filter_vector_data()
 state_vector_statuses_data = get_state_vector_statuses_data()
 
 forecast_error_data = get_forecast_error_data()
+
+gate_estimator_allocation_data = get_gate_estimator_allocation_data()
+
+get_angle_data = get_get_angle_data()
+
+edge_angle_data = get_edge_angle_data()
+
+reverse_bisect_data = get_reverse_bisect_data()
+
+edge_loc_data = get_edge_loc_data()
+
+angle_destination_out_data = get_angle_destination_out_data()
+
+angle_destination_out_gate_data = get_angle_destination_out_gate_data()
+
+angle_destination_in_data = get_angle_destination_in_data()
+
+construct_state_from_angles_gates_data = get_construct_state_from_angles_gates_data()
+
+construct_state_from_angles_locs_data = get_construct_state_from_angles_locs_data()
+
+# angle_destination_in_data = get_angle_destination_in_data()
+
+round_target_angle_data = get_round_target_angle_data()
+
+convert_vector_angle_to_gate_data = get_convert_vector_angle_to_gate_data()
+
+process_state_vector_data = get_process_state_vector_data()
+
+mod_angles_data = get_mod_angles_data()
+
+multi_gain_data = get_multi_gain_data()
+
+exit_randomisation_adjacent_data = get_exit_randomisation_adjacent_data()
+
+standardisation_data = get_standardisation_data()
+
+unstandardisation_data = get_unstandardisation_data()
+
+alternating_to_sequential_data = get_alternating_to_sequential_data()
+
+update_data = get_update_data()
+
+reformat_obs_data = get_reformat_obs_data()
+
+standardise_ensemble_data = get_standardise_ensemble_data()
+
+unstandardise_ensemble_data = get_unstandardise_ensemble_data()
+
 
 # Tests
 @pytest.mark.parametrize('dest, n_dest, expected', round_destination_data)
@@ -188,13 +240,14 @@ def test_separate_coords_error(arr, expected):
         assert EnsembleKalmanFilter.separate_coords(arr)
 
 
-@pytest.mark.parametrize('gates_in, gates_out, gate_in',
+@pytest.mark.parametrize('gates_in, gates_out, gate_in, excluded_gates',
                          random_destination_data)
-def test_make_random_destination(gates_in, gates_out, gate_in):
+def test_make_random_destination(gates_in, gates_out, gate_in, excluded_gates):
     enkf = set_up_enkf()
     gate_out = enkf.make_random_destination(gates_in, gates_out, gate_in)
     assert gate_out != gate_in
     assert 0 <= gate_out < enkf.n_exits
+    assert gate_out not in excluded_gates
 
 
 def test_error_normalisation_default_init():
@@ -417,7 +470,7 @@ def test_separate_coords_exits(state_vector, pop_size, expected):
     enkf.population_size = pop_size
     np.testing.assert_array_equal
 
-    result = enkf.separate_coords_exits(state_vector)
+    result = enkf.separate_coords_exits(pop_size, state_vector)
 
     for i in range(len(result)):
         np.testing.assert_array_equal(result[i], expected[i])
@@ -546,6 +599,7 @@ def test_filter_vector(vector, statuses, expected):
 
 x = 'base_statuses, en_statuses, inclusion, vector_mode, expected'
 
+
 @pytest.mark.parametrize(x, state_vector_statuses_data)
 def test_get_state_vector_statuses(base_statuses, en_statuses, inclusion,
                                    vector_mode, expected):
@@ -566,6 +620,8 @@ def test_get_state_vector_statuses(base_statuses, en_statuses, inclusion,
 
 
 x = 'inclusion, base_statuses, ensemble_statuses, truth, state_mean, expected'
+
+
 @pytest.mark.parametrize(x, forecast_error_data)
 def test_get_forecast_error(inclusion, base_statuses, ensemble_statuses,
                             truth, state_mean, expected):
@@ -592,3 +648,339 @@ def test_get_forecast_error(inclusion, base_statuses, ensemble_statuses,
     result = enkf.get_forecast_error(truth)
 
     assert result == expected
+
+
+@pytest.mark.parametrize('estimator_type, expected',
+                         gate_estimator_allocation_data)
+def test_gate_estimator_allocation(estimator_type, expected):
+    if (estimator_type == GateEstimator.ROUNDING or estimator_type ==
+            GateEstimator.ANGLE):
+        ft = EnsembleKalmanFilterType.DUAL_EXIT
+    else:
+        ft = EnsembleKalmanFilterType.STATE
+    enkf = set_up_enkf(gate_estimator=estimator_type, filter_type=ft)
+    # enkf = set_up_enkf(gate_estimator=estimator_type)
+    assert enkf.gate_estimator == expected
+
+
+@pytest.mark.parametrize('vector_tail, vector_head, expected',
+                         get_angle_data)
+def test_get_angle(vector_tail, vector_head, expected):
+    enkf = set_up_enkf()
+    assert enkf.get_angle(vector_tail, vector_head) == expected
+
+
+@pytest.mark.parametrize('expected', edge_angle_data)
+def test_edge_angle_setup(expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+    edge_angles = list()
+    for _, gate_angles in enkf.gate_angles.items():
+        edge_angles.extend(gate_angles)
+
+    unique_edge_angles = list(set(edge_angles))
+    unique_edge_angles.sort(reverse=True)
+
+    assert unique_edge_angles == expected
+
+
+@pytest.mark.parametrize('expected', edge_angle_data)
+def test_unique_edge_angles(expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+    unique_edge_angles = list(enkf.unique_gate_angles)
+    unique_edge_angles.sort(reverse=True)
+
+    assert unique_edge_angles == expected
+
+
+@pytest.mark.parametrize('element, iterable, expected', reverse_bisect_data)
+def test_reverse_bisect(element, iterable, expected):
+    enkf = set_up_enkf()
+
+    result = enkf.bisect_left_reverse(element, iterable)
+
+    assert result == expected
+
+
+@pytest.mark.parametrize('expected', edge_loc_data)
+def test_unique_edge_locs(expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+    unique_edge_locs = list(enkf.unique_gate_edges)
+    assert unique_edge_locs == expected
+
+
+@pytest.mark.parametrize('angle, expected', angle_destination_out_data)
+def test_angle_destination_out(angle, expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+    result = enkf.get_destination_angle(angle)
+
+    assert result == expected
+
+
+@pytest.mark.parametrize('angle, expected', angle_destination_out_gate_data)
+def test_angle_destination_in_gate(angle, expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+    _, gate = enkf.get_destination_angle(angle, gate_out=True)
+
+    assert gate == expected
+
+
+@pytest.mark.parametrize('angle, expected', angle_destination_in_data)
+def test_angle_destination_in(angle, expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+    # Use same offset from wall as in Agent.set_agent_location()
+    offset = enkf.base_model.agents[0].size * 1.05
+
+    result = enkf.get_destination_angle(angle)
+
+    if isinstance(expected[0], tuple):
+        assert pytest.approx(result[1], offset) == expected[1]
+        assert expected[0][0] <= result[0] <= expected[0][1]
+    elif isinstance(expected[1], tuple):
+        assert pytest.approx(result[0], offset) == expected[0]
+        assert expected[1][0] <= result[1] <= expected[1][1]
+    else:
+        raise ValueError(f'Unexpected test value provided: {expected}')
+
+
+@pytest.mark.parametrize('angle, insertion_idx, expected',
+                         round_target_angle_data)
+def test_round_target_angle(angle, insertion_idx, expected):
+    enkf = set_up_enkf(gate_estimator=GateEstimator.ANGLE)
+
+    result = enkf.round_target_angle(angle, insertion_idx)
+
+    assert result == expected
+
+
+@pytest.mark.parametrize('angles, expected',
+                         construct_state_from_angles_locs_data)
+def test_construct_state_from_angles_locs(angles, expected):
+    enkf = set_up_enkf(pop_size=3, gate_estimator=GateEstimator.ANGLE)
+
+    _, locations = enkf.construct_state_from_angles(angles)
+
+    assert list(locations) == expected
+
+
+@pytest.mark.parametrize('angles, expected',
+                         construct_state_from_angles_gates_data)
+def test_construct_state_from_angles_gates(angles, expected):
+    enkf = set_up_enkf(pop_size=3, gate_estimator=GateEstimator.ANGLE)
+
+    gates, _ = enkf.construct_state_from_angles(angles)
+
+    assert list(gates) == expected
+
+
+@pytest.mark.parametrize('state_vector, expected',
+                         convert_vector_angle_to_gate_data)
+def test_convert_vector_angle_to_gate(state_vector, expected):
+    enkf = set_up_enkf(pop_size=3, gate_estimator=GateEstimator.ANGLE)
+
+    gate_state_vector = enkf.convert_vector_angle_to_gate(state_vector)
+
+    np.testing.assert_array_equal(gate_state_vector, expected)
+
+
+@pytest.mark.parametrize('state, filter_mode, gate_estimator, expected',
+                         process_state_vector_data)
+def test_process_state_vector(state, filter_mode, gate_estimator, expected):
+    enkf = set_up_enkf(pop_size=3, gate_estimator=gate_estimator,
+                       filter_type=filter_mode)
+
+    state_vector = enkf.process_state_vector(state)
+
+    np.testing.assert_array_equal(state_vector, expected)
+
+
+@pytest.mark.parametrize('angles, expected', mod_angles_data)
+def test_mod_angles(angles, expected):
+    enkf = set_up_enkf()
+
+    modded_angles = enkf.mod_angles(angles)
+
+    np.testing.assert_array_almost_equal(modded_angles, expected)
+
+
+@pytest.mark.parametrize('state, data_cov, H, inf_rate, expected',
+                         multi_gain_data)
+def test_multi_gain(state, data_cov, H, inf_rate, expected):
+    enkf = set_up_enkf()
+    enkf.inflation = Inflation.MULTIPLICATIVE
+    enkf.inflation_rate = inf_rate
+
+    gain_matrix = enkf.make_gain_matrix(state, data_cov, H, H.T)
+
+    np.testing.assert_array_almost_equal(gain_matrix, expected)
+
+
+def test_exit_randomisation_by_agent():
+    enkf = set_up_enkf(exit_randomisation=ExitRandomisation.BY_AGENT)
+
+    for i in range(len(enkf.base_model.agents)):
+        agent_gate_out = enkf.models[0].agents[i].gate_out
+
+        for _, model in enumerate(enkf.models):
+            assert model.agents[i].gate_out == agent_gate_out
+
+
+@pytest.mark.parametrize('n_adjacent', exit_randomisation_adjacent_data)
+def test_exit_randomisation_adjacent(n_adjacent):
+    enkf = set_up_enkf(exit_randomisation=ExitRandomisation.ADJACENT,
+                       n_adjacent=n_adjacent)
+
+    adjacent_range = list(range(-n_adjacent, n_adjacent+1))
+    n_gates = enkf.base_model.gates_out
+
+    for i, agent in enumerate(enkf.base_model.agents):
+        base_gate_out = agent.gate_out
+
+        gate_range = [(base_gate_out + x) % n_gates for x in adjacent_range]
+
+        for model in enkf.models:
+            model_gate_out = model.agents[i].gate_out
+            assert model_gate_out in gate_range
+
+
+@pytest.mark.parametrize('n_adjacent', exit_randomisation_adjacent_data)
+def test_exit_randomisation_adjacent_range(n_adjacent):
+    n_runs = 100
+    pop_size = 3
+    ensemble_size = 25
+    min_results = [[] for _ in range(pop_size)]
+    max_results = [[] for _ in range(pop_size)]
+    adjacent_range = list(range(-n_adjacent, n_adjacent+1))
+
+
+    for _ in range(n_runs):
+        enkf = set_up_enkf(exit_randomisation=ExitRandomisation.ADJACENT,
+                           n_adjacent=n_adjacent, pop_size=pop_size,
+                           ensemble_size=ensemble_size)
+        # base_gates = [agent.gate_out for agent in enkf.base_model.agents]
+        n_gates = enkf.base_model.gates_out
+
+        for i in range(pop_size):
+            base_gate_out = enkf.base_model.agents[i].gate_out
+            gate_range = [(base_gate_out + x) % n_gates for x in adjacent_range]
+            max_gate = max(gate_range)
+            min_gate = min(gate_range)
+
+            ensemble_gates_out = list()
+
+            for model in enkf.models:
+                ensemble_gates_out.append(model.agents[i].gate_out)
+
+            min_correct = [gate == min_gate for gate in ensemble_gates_out]
+            max_correct = [gate == max_gate for gate in ensemble_gates_out]
+
+            min_results[i].append(any(min_correct))
+            max_results[i].append(any(max_correct))
+
+    for i in range(pop_size):
+        min_proportion = sum(min_results[i]) / len(min_results[i])
+        max_proportion = sum(max_results[i]) / len(max_results[i])
+
+        assert min_proportion > 0.5
+        assert max_proportion > 0.5
+
+
+@pytest.mark.parametrize('state_vector, top, bottom, expected',
+                         standardisation_data)
+def test_standardisation(state_vector, top, bottom, expected):
+    enkf = set_up_enkf()
+
+    # Set state
+    result = enkf.standardise(state_vector, top, bottom)
+
+    # Test
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize('state_vector, top, bottom, expected',
+                         unstandardisation_data)
+def test_unstandardisation(state_vector, top, bottom, expected):
+    enkf = set_up_enkf()
+
+    result = enkf.unstandardise(state_vector, top, bottom)
+
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize('state_vector, expected',
+                         alternating_to_sequential_data)
+def test_alternating_to_sequential(state_vector, expected):
+    enkf = set_up_enkf()
+
+    result = enkf.convert_alternating_to_sequential(state_vector)
+
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize('ft, state_ensemble, data_cov, data, H, expected',
+                         update_data)
+def test_update(ft, state_ensemble, data_cov, data, H, expected):
+    # Derive params
+    pop_size = len(data_cov)
+    ensemble_size = state_ensemble.shape[1]
+
+    # Set up enkf
+    enkf = set_up_enkf(pop_size=pop_size, ensemble_size=ensemble_size,
+                       filter_type=ft)
+
+    # Assign attributes
+    enkf.state_ensemble = state_ensemble
+    enkf.data_covariance = data_cov
+    enkf.H = H
+    enkf.H_transpose = H.T
+    enkf.data_vector_length = len(data_cov.diagonal())
+
+    # Run update
+    enkf.update(data)
+
+    # Assert updated ensemble is expected value
+    np.testing.assert_allclose(enkf.state_ensemble, expected)
+
+
+@pytest.mark.parametrize('dvector_length, ensemble_size, data, expected',
+                         reformat_obs_data)
+def test_reformat_obs(dvector_length, ensemble_size, data, expected):
+    # Set up filter
+    enkf = set_up_enkf(ensemble_size=ensemble_size)
+
+    # Assign attributes
+    enkf.data_vector_length = dvector_length
+
+    # Reformat data
+    result = enkf.reformat_obs(data)
+
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize('state, pop_size, en_size, n_var, gate_est, expected',
+                         standardise_ensemble_data)
+def test_standardise_ensemble(state, pop_size, en_size, n_var, gate_est,
+                              expected):
+    enkf = set_up_enkf(ensemble_size=en_size, pop_size=pop_size,
+                       gate_estimator=gate_est)
+
+    result = enkf.standardise_ensemble(state, n_var)
+
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize('state, pop_size, en_size, n_var, gate_est, expected',
+                         unstandardise_ensemble_data)
+def test_unstandardise_ensemble(state, pop_size, en_size, n_var, gate_est,
+                                expected):
+    enkf = set_up_enkf(ensemble_size=en_size, pop_size=pop_size,
+                       gate_estimator=gate_est)
+
+    result = enkf.unstandardise_ensemble(state, n_var)
+
+    np.testing.assert_equal(result, expected)

@@ -50,6 +50,8 @@ Malleson, N., A. Tapper, J. Ward, A. Evans (2017). Forecasting Short-Term Urban 
 
 ## Preprints
 
+Tang, D. and N. Malleson (2022). Data assimilation with agent-based models using Markov chain sampling. [arXiv:2205.01616 [cs.MA]](https://doi.org/10.48550/arXiv.2205.01616).
+
 A. Whipp, N. Malleson, Jonathan Ward, Alison Heppenstall (2021). Towards a Comprehensive Measure of the Ambient Population: Building Estimates Using Geographically Weighted Regression _Preprint_: [10.31235/osf.io/pquvy](https://doi.org/10.31235/osf.io/pquvy).
 
 Tang, D. (2020). Finding the Maximum-a-Posteriori Behaviour of Agents in an Agent-Based Model. [ArXiv:2005.02096 [Cs]](http://arxiv.org/abs/2005.02096).

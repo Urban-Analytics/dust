@@ -4,7 +4,16 @@ title: Project Publications and Documentation
 tagline: Documentation produced by, or associated with, the DUST project
 ---
 
-_The following publications report on the current progress of the DUST project or on related activities_
+_The following publications and other outputs report on the current progress of the DUST project or on related activities_
+
+Contents
+
+1. [Peer Reviewed Articles](#peer-reviewed-articles)
+2. [Conference proceedings](#conference-proceedings)
+3. [Preprints](#preprints)
+4. [Data](#data)
+5. [Other documents and resources](#other-documents-and-resources)
+
 
 ## Peer Reviewed Articles
 
@@ -64,8 +73,16 @@ Malleson, N., Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew A. West, Alis
 
 Kieu, Le-Minh, N. Malleson, and A. Heppenstall (2019) Dealing with Uncertainty in Agent-Based Models for Short-Term Predictions’.  [arXiv:1908.08288 [cs.MA]](https://arxiv.org/abs/1908.08288).
 
+## Data
+
+[Manually Collected Footfall Counts in Leeds](https://data.cdrc.ac.uk/dataset/manually-collected-footfall-counts-leeds). Manually-collected counts of the number of people passing certain points over time in Leeds, UK. 
+
+[Leeds City Council Footfall Camera Aggregated Data](https://data.cdrc.ac.uk/dataset/leeds-city-council-footfall-camera-aggregated-data). Amalgamated dataset containing counts of passers-by from a number of cameras in central Leeds, UK.
+
 ## Other documents and resources
 
- - [Exploration of Gaussian processes for emulation of stochastic models](https://github.com/Urban-Analytics/stochastic-gp/). _A series of notbooks exploring the challanges with using Gaussian Processes to estimate stochastic models, like agent-based modelling_. 
- - The original [DUST Project Funding Proposal](./docs/dust_proposal.html) (outline).
- - A [Review of Agent-Based Pedestrian Simulation Software](./docs/ped_sim_review.html).
+[Exploration of Gaussian processes for emulation of stochastic models](https://github.com/Urban-Analytics/stochastic-gp/). _A series of notbooks exploring the challanges with using Gaussian Processes to estimate stochastic models, like agent-based modelling_. 
+
+The original [DUST Project Funding Proposal](./docs/dust_proposal.html) (outline).
+
+A [Review of Agent-Based Pedestrian Simulation Software](./docs/ped_sim_review.html).

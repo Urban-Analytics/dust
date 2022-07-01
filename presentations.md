@@ -6,6 +6,10 @@ tagline: Presentations about, or relating to, the surf project
 
 ### Presentations about, or relating to, the dust project (most recent first)
 
+**2022**
+
+ - [Challenges for ABM in Applied Urban Modelling]({{site.baseurl}}/p/2022-07-01-AUM.pdf). Presentation by [Nick Malleson](https://www.nickmalleson.co.uk/), Ed Manley and Alison Heppenstall for the [Applied Urbam Modelling (AUM)](https://www.arct.cam.ac.uk/research/conferences/applied-urban-modelling-aum/aum2022-understanding-common-challenges) conference, 29th June -- 1st July, University of Cambridge, UK. [[PDF (slides)]({{site.baseurl}}/p/2022-07-01-AUM.pdf)]
+
 **2021**
 
   - [Quantifying the uncertainty in agent-based models]({{site.baseurl}}/p/2021-09-23-Turing-MAS-Uncertainty-DA.html).  Invited presentation by [Josie McCulloch](https://environment.leeds.ac.uk/geography/staff/9706/dr-josie-mcculloch), [Alison Heppenstall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) and [Nick Malleson](https://www.nickmalleson.co.uk/) for the [Alan Turing Institute](https://turing.ac.uk) [Multi-agent systems group](https://www.turing.ac.uk/research/interest-groups/multi-agent-systems), 23rd September 2021.

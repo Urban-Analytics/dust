@@ -6,6 +6,10 @@ tagline: Presentations about, or relating to, the surf project
 
 ### Presentations about, or relating to, the dust project (most recent first)
 
+**2022**
+
+ - [Simulating social systems with individual-based models: is worth it?]({{site.baseurl}}/p/2022-07-14-Augsberg.pdf). Invited presentation by [Alison Heppenstall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) and [Nick Malleson](https://www.nickmalleson.co.uk/) to the GIScience Colloquium, [Institute of Geography](https://www.uni-augsburg.de/en/fakultaet/fai/geo/), University of Augsburg, 14th July 2022.
+
 **2021**
 
   - [Quantifying the uncertainty in agent-based models]({{site.baseurl}}/p/2021-09-23-Turing-MAS-Uncertainty-DA.html).  Invited presentation by [Josie McCulloch](https://environment.leeds.ac.uk/geography/staff/9706/dr-josie-mcculloch), [Alison Heppenstall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) and [Nick Malleson](https://www.nickmalleson.co.uk/) for the [Alan Turing Institute](https://turing.ac.uk) [Multi-agent systems group](https://www.turing.ac.uk/research/interest-groups/multi-agent-systems), 23rd September 2021.

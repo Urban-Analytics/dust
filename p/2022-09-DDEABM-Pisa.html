@@ -132,8 +132,34 @@
                     
                     <img class="fragment" style="width:60%; float:center" data-src="../figures/google_mobility_lockdown_data.png" 
                              alt="Google Mobility Data: people spending much more time at home" />
-                    
+                </section>
                 
+                <section id="vision" data-background-video="../videos/skylines_mov-long.mp4"
+                         data-background-video-loop="loop">
+                    <div class="whitebackground2 fragment">
+                        <h2>Vision</h2>
+                        <img class="right" style="width:40%" data-src="../figures/digital_twin_engineering.png"
+                         alt="A digital twin (in engineering)" />
+                        <p>An ABM that simulates urban processes</p>
+                        <p>Updated in real-time</p>
+                        <p>A 'digital twin'?</p>
+                    </div>
+                    
+                </section>
+                
+                <!-- ************************************************************
+                *********************** OUTLINE *********************************
+                ************************************************************ -->
+
+                <section id="outline">
+                    <h2>Presentation Outline</h2>
+                    <p>Data assimilation and ABM challenges</p>
+                    <p>Latest research with a Particle Filter and a crowd simulation:</p>
+                    <p class="l2">'Vanilla' filter </p>
+                    <p class="l2">Estimating categorical parameters</p>
+                    <p>Other opportunities</p>
+                    <p class="l2">Unscented / Ensemble Kalman Filters</p>
+                    <p class="l2">MCMC sampling</p>
                 </section>
                 
                 
@@ -172,6 +198,7 @@
                 ************************* ABM ***********************************
                 ************************************************************ -->
                 
+                <!--
                 <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
                          data-background-video-loop="loop">
                     <div class="whitebackground2 fragment">
@@ -181,15 +208,16 @@
                         <p>Systems are driven by individuals</p>
                         <p class="l2">(cars, people, ants, trees, whatever)</p>
                         <p>Individual-level modelling</p>
-                        <!--<p class="l2">An alternative approach to modelling</p>-->
+                        <p class="l2">An alternative approach to modelling</p>
                         <p class="l2">Rather than controlling from the top, try to represent the individuals</p>
-                        <!--<p class="l2">Account for system behaviour directly</p>-->
+                        <p class="l2">Account for system behaviour directly</p>
                         <p>Autonomous, interacting agents</p>
                         <p>Represent individuals or groups</p>
                         <p>Situated in a virtual environment</p>
                     </div>
                     
                 </section>
+                -->
                 
                 <!--                
                 <section id="abm-advantages">    
@@ -245,33 +273,18 @@
                 ************************************************************ -->
 
                 <section id="prob-divergence"
-                         data-background-video="../videos/BBC_Swarm_Natures_Incredible_Invasions.mp4"
+                         data-background-video="../videos/starlings1-short.mp4"
                          data-background-video-muted
                          data-background-video-loop="loop">
 
                     <div class="whitebackground fragment">
-                        <h2>Problem: Models will Diverge</h2>
-                        <p>Lots of uncertainties</p>
-                        <p class="l2">Inputs (measurement noise)</p>
-                        <p class="l2">Parameter values</p>
-                        <p class="l2">Model structure</p>
-                        <p> ... and that's assuming that the system hasn't changed fundamentally</p>
-                    </div>
-                </section>
-                
-                
-                
-                <section id="dda" data-background-image="../figures/weather2.jpg" >
-                    <div class="whitebackground fragment">
-                        <h2>Possible Solution: Data Assimilation</h2>
-                        <p>Used in meteorology and hydrology to bring models closer to reality.</p>
-                        <p>Try to improve estimates of the true system state by combining:</p>
+                        <h2>Why we need Data Assimilation</h2>
+                        <p>Complex models will always diverge</p>
+                        <p class="l2">(due to inherent uncertainties in inputs, parameter values, model structure, etc.)</p>
+                        <p>Possible Solution: Data Assimilation</p>
+                        <p>Used in meteorology and hydrology to bring models closer to reality. Combines:</p>
                         <p class="l2">Noisy, real-world observations</p>
                         <p class="l2">Model estimates of the system state</p>
-                        <p>Other advantages</p>
-                        <p class="l2">Move information from data-rich to data-poor areas</p>
-                        <p class="l2">Quantify the uncertainties in the model </p>
-                        <p class="l3">I.e. model structure v.s. parameter / variable values</p>
                     </div>
                 </section>
                 
@@ -279,6 +292,23 @@
                 <section id="abm-dda-overview">
                     <img data-src="../figures/paper_figures/dda.jpg" alt="Diagram of data assimilation and an ABM" />
                 </section>
+                
+                
+                <section id="da-challenges">
+                    
+                    <h2>XXXX NM Challenges with DA for ABMs</h2>
+                
+                </section>
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 
                 
                 
@@ -456,6 +486,19 @@
                         </figure>
                 </section>
                 
+                
+                
+                
+                <!-- ************************************************************
+                ************************* OTHER METHODS  ************************
+                ************************************************************ -->   
+                
+                
+                <section id="other-methods">
+                    <h2>XXXX NM: a couple of slides on Rob and Dan's work.</h2>
+                </section>
+                
+                
                 <section id="other_methods">
                     <h2>Other Methods (ongoing)</h2>
                     
@@ -481,7 +524,7 @@
                 
 
                 
-                
+                <!--
                 <section id="big_brother" >
                     <h2>Ethical Implications</h2>
                     <p>Data Bias</p>
@@ -490,37 +533,8 @@
                     <p>Tracking People</p>
                     <p class="l2">Advantage with these methods is we <i>don't need to track people</i></p>
                     <p class="l2">Models work with counts of flows</p>
-                
                 </section>
-                
-                
-                
-                
-                <!-- ************************************************************
-                ************************ DUST & TURING **************************
-                ************************************************************ -->
-
-                <section id="related_projects" data-background-image="../figures/the-roaming-platypus-310824-unsplash-small.jpg">
-                    <div class="whitebackground2">
-                        <h2>Related Projects</h2>
-                        <a href="https://erc.europa.eu/">
-                            <img class="right" style="width:200px;" data-src="../figures/erc_logo.jpg" alt="ESRC Logo"/>
-                        </a>
-                        <h3>Data Assimilation for Agent-Based Models (DUST)</h3>
-                        <p><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></p>
-                        <p>Create new methods for dynamically assimilating data into agent-based models.</p>
-
-
-                        <a href="https://erc.europa.eu/">
-                            <img class="right" style="width:200px;" data-src="../figures/LOGO_TURING.png" alt="Turing logo"/>
-                        </a>
-                        <h3>Uncertainty in agent-based models for smart city forecasts </h3>
-                        <p><a href="https://www.turing.ac.uk/research/research-projects/uncertainty-agent-based-models-smart-city-forecasts">turing.ac.uk</a></p>
-
-                        <p>Developing methods that can be used to better understand uncertainty in individual-level models of cities</p>
-                    </div>
-                </section>
-                
+                -->
                 
                 
                 <!-- ************************************************************
@@ -546,6 +560,16 @@
                         <p>Real-time analysis tools and virtual labs for policy development</p>
 
 
+                    </div>
+
+                </section>
+                
+                <section id="acknowledgements" data-background-image="../figures/digital_twin_engineering.png">
+                    
+                    <div class="whitebackground2">
+                    
+                        <p>XXXX Acknowledgements: funding and other people</p>
+                        
                     </div>
 
                 </section>

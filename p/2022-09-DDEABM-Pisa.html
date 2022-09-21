@@ -1,109 +1,115 @@
 <!doctype html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <meta name="author" content="Nick Malleson">
-        <meta name="author" content="Patricia Ternes">
-        <meta name="keywords" content="ABM, data assimilation, city simulation, particle filter">
 
-		<title>Data Assimilation for Agent-Based Models</title>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="author" content="Nick Malleson">
+    <meta name="author" content="Patricia Ternes">
+    <meta name="keywords" content="ABM, data assimilation, city simulation, particle filter">
 
-		<link rel="stylesheet" href="reveal/css/reveal.css">
-		<link rel="stylesheet" href="reveal/css/theme/white.css">
+    <title>Data Assimilation for Agent-Based Models</title>
 
-        <!-- Some extra bits added by Nick -->
-        <link rel="stylesheet" href="reveal/css/nick.css">
+    <link rel="stylesheet" href="reveal/css/reveal.css">
+    <link rel="stylesheet" href="reveal/css/theme/white.css">
 
-		<!-- Theme used for syntax highlighting of code -->
-		<link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+    <!-- Some extra bits added by Nick -->
+    <link rel="stylesheet" href="reveal/css/nick.css">
 
-		<!-- Pr,inting and PDF exports -->
-		<script>
-			var link = document.createElement( 'link' );
-			link.rel = 'stylesheet';
-			link.type = 'text/css';
-			link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
-			document.getElementsByTagName( 'head' )[0].appendChild( link );
-		</script>
-	</head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
+    <!-- Theme used for syntax highlighting of code -->
+    <link rel="stylesheet" href="reveal/lib/css/zenburn.css">
 
-                <section class="title"  id="index" data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
-                    <div class="whitebackground2">
+    <!-- Pr,inting and PDF exports -->
+    <script>
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = window.location.search.match(/print-pdf/gi) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
+        document.getElementsByTagName('head')[0].appendChild(link);
+    </script>
+</head>
 
-                        <h5>Workshop on Data-Driven Economic <br/> 
-                            Agent-Based Models (<a href="https://sites.google.com/view/wddeabm">DDEABM</a>) </h5>
-                        <h5 style="font-size: 18pt;">Sant'Anna School of Advanced Studies, Pisa,
-                            27-28 September 2022</h5>
+<body>
+    <div class="reveal">
+        <div class="slides">
 
-                        <hr/>
-                        <h1 style="font-size: 45px;">Data Assimilation for Agent-Based Models</h1>
-                        <hr/>
-                        
-                        <h2 style="font-size: 35px;">
-                            <a href="http://nickmalleson.co.uk/">Nick Malleson</a> and
-                            <a href="https://www.linkedin.com/in/patricia-ternes/?originalSubdomain=uk">Patricia Ternes</a>
-                            
-                        </h2>
-                        
-                        <h4>University of Leeds, UK</h4>
-                        <h4><a href="mailto:n.s.malleson@leeds.ac.uk">n.s.malleson@leeds.ac.uk</a></h4>
-                          <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
-                        <hr/>
-                        <p style="text-align:center;font-size:25px">Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+            <section class="title" id="index"
+                data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                <div class="whitebackground2">
 
-                        <a href="https://europa.eu/european-union/index_en">
-                            <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;" src="../figures/LOGO_EU.jpg"/>
-                        </a>
+                    <h5>Workshop on Data-Driven Economic <br />
+                        Agent-Based Models (<a href="https://sites.google.com/view/wddeabm">DDEABM</a>) </h5>
+                    <h5 style="font-size: 18pt;">Sant'Anna School of Advanced Studies, Pisa,
+                        27-28 September 2022</h5>
 
-                        <a href="http://www.leeds.ac.uk/">
-                            <img style="float:center;padding:10px;width:150px; height:auto;" src="../figures/uol_logo.gif"/>
-                        </a>
-                        
-                        <a href="https://environment.leeds.ac.uk/geography">
-                            <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_SOG.png"/>
-                        </a>
+                    <hr />
+                    <h1 style="font-size: 45px;">Data Assimilation for Agent-Based Models</h1>
+                    <hr />
 
-                        <!-- <a href="http://www.turing.ac.uk/">
+                    <h2 style="font-size: 35px;">
+                        <a href="http://nickmalleson.co.uk/">Nick Malleson</a> and
+                        <a href="https://www.linkedin.com/in/patricia-ternes/?originalSubdomain=uk">Patricia Ternes</a>
+
+                    </h2>
+
+                    <h4>University of Leeds, UK</h4>
+                    <h4><a href="mailto:n.s.malleson@leeds.ac.uk">n.s.malleson@leeds.ac.uk</a></h4>
+                    <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
+                    <hr />
+                    <p style="text-align:center;font-size:25px">Slides available at: <br /><a
+                            href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a>
+                    </p>
+
+                    <a href="https://europa.eu/european-union/index_en">
+                        <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;"
+                            src="../figures/LOGO_EU.jpg" />
+                    </a>
+
+                    <a href="http://www.leeds.ac.uk/">
+                        <img style="float:center;padding:10px;width:150px; height:auto;"
+                            src="../figures/uol_logo.gif" />
+                    </a>
+
+                    <a href="https://environment.leeds.ac.uk/geography">
+                        <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_SOG.png" />
+                    </a>
+
+                    <!-- <a href="http://www.turing.ac.uk/">
                             <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_TURING.png"/>
                         </a> -->
-                    </div>
+                </div>
 
-                </section>
-
-
+            </section>
 
 
-                <!-- ************************************************************
+
+
+            <!-- ************************************************************
                 *********************** VISION **********************************
                 ************************************************************ -->
 
-                <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
-                         data-background-video-loop="loop"
-                         id="Context-UrbanFlows">
-                    <div class="whitebackground2 fragment">
-                        <h3>Quantifying Real-Time Urban Dynamics</h3>
-                        
-                        <p><i>People</i> are the drivers of processes in cities</p>
+            <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                data-background-video-loop="loop" id="Context-UrbanFlows">
+                <div class="whitebackground2 fragment">
+                    <h3>Quantifying Real-Time Urban Dynamics</h3>
 
-                        <p>We need to understand mobility patterns:</p> 
+                    <p><i>People</i> are the drivers of processes in cities</p>
 
-                        <p class="l2">Crime – how many possible victims?</p>
-                        <p class="l2">Pollution – who is being exposed? Where are the hotspots?</p>
-                        <p class="l2">Economy – can we attract more people to our city centres?</p>
-                        <!--<p class="l2">Health - can we encourage more active travel?</p>-->
-                        <p class="l2">Disease - which times / places have large numbers of interactions</p>
-                        
-                        <p>Traditional data may quickly become out of date ... </p>
+                    <p>We need to understand mobility patterns:</p>
 
-                    </div>
-                </section>
-                
-                
-                <!--
+                    <p class="l2">Crime – how many possible victims?</p>
+                    <p class="l2">Pollution – who is being exposed? Where are the hotspots?</p>
+                    <p class="l2">Economy – can we attract more people to our city centres?</p>
+                    <!--<p class="l2">Health - can we encourage more active travel?</p>-->
+                    <p class="l2">Disease - which times / places have large numbers of interactions</p>
+
+                    <p>Traditional data may quickly become out of date ... </p>
+
+                </div>
+            </section>
+
+
+            <!--
                 <section data-background-video="../videos/trafalgar_timelapse2-1280x720.mp4"
                          data-background-video-loop="loop"
                          id="Context-UrbanFlows2">
@@ -113,61 +119,61 @@
                     </div>
                 </section>
                 -->
-                
-                
-                <section  id="Context-UrbanFlows2b">
-                    
-                     <video data-autoplay controls loop width="45%" height="auto" 
-                            alt="Trafalgar square before COVID: busy">
-                        <source data-src="../videos/trafalgar_timelapse-1280×720.mp4" type="video/mp4"/>
-                         Your browser does not support the video tag.
-                    </video>
-                    
-                     <video data-autoplay controls loop width="45%" height="auto" class="fragment"
-                            alt="Trafalgar square after COVID: quieter">
-                        <source data-src="../videos/trafalgar_timelapse2-1280x720.mp4" type="video/mp4"/>
-                         Your browser does not support the video tag.
-                    </video>
-                    
-                    
-                    <img class="fragment" style="width:60%; float:center" data-src="../figures/google_mobility_lockdown_data.png" 
-                             alt="Google Mobility Data: people spending much more time at home" />
-                </section>
-                
-                <section id="vision" data-background-video="../videos/skylines_mov-long.mp4"
-                         data-background-video-loop="loop">
-                    <div class="whitebackground2 fragment">
-                        <h2>Vision</h2>
-                        <img class="right" style="width:40%" data-src="../figures/digital_twin_engineering.png"
-                         alt="A digital twin (in engineering)" />
-                        <p>An ABM that simulates urban processes</p>
-                        <p>Updated in real-time</p>
-                        <p>A 'digital twin'?</p>
-                    </div>
-                    
-                </section>
-                
-                <!-- ************************************************************
+
+
+            <section id="Context-UrbanFlows2b">
+
+                <video data-autoplay controls loop width="45%" height="auto" alt="Trafalgar square before COVID: busy">
+                    <source data-src="../videos/trafalgar_timelapse-1280×720.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
+
+                <video data-autoplay controls loop width="45%" height="auto" class="fragment"
+                    alt="Trafalgar square after COVID: quieter">
+                    <source data-src="../videos/trafalgar_timelapse2-1280x720.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
+
+
+                <img class="fragment" style="width:60%; float:center"
+                    data-src="../figures/google_mobility_lockdown_data.png"
+                    alt="Google Mobility Data: people spending much more time at home" />
+            </section>
+
+            <section id="vision" data-background-video="../videos/skylines_mov-long.mp4"
+                data-background-video-loop="loop">
+                <div class="whitebackground2 fragment">
+                    <h2>Vision</h2>
+                    <img class="right" style="width:40%" data-src="../figures/digital_twin_engineering.png"
+                        alt="A digital twin (in engineering)" />
+                    <p>An ABM that simulates urban processes</p>
+                    <p>Updated in real-time</p>
+                    <p>A 'digital twin'?</p>
+                </div>
+
+            </section>
+
+            <!-- ************************************************************
                 *********************** OUTLINE *********************************
                 ************************************************************ -->
 
-                <section id="outline">
-                    <h2>Presentation Outline</h2>
-                    <p>Data assimilation and ABM challenges</p>
-                    <p>Latest research with a Particle Filter and a crowd simulation:</p>
-                    <p class="l2">'Vanilla' filter </p>
-                    <p class="l2">Estimating categorical parameters</p>
-                    <p>Other opportunities</p>
-                    <p class="l2">Unscented / Ensemble Kalman Filters</p>
-                    <p class="l2">MCMC sampling</p>
-                </section>
-                
-                
-                <!-- ************************************************************
+            <section id="outline">
+                <h2>Presentation Outline</h2>
+                <p>Data assimilation and ABM challenges</p>
+                <p>Latest research with a Particle Filter and a crowd simulation:</p>
+                <p class="l2">'Vanilla' filter </p>
+                <p class="l2">Estimating categorical parameters</p>
+                <p>Other opportunities</p>
+                <p class="l2">Unscented / Ensemble Kalman Filters</p>
+                <p class="l2">MCMC sampling</p>
+            </section>
+
+
+            <!-- ************************************************************
                 ************** CONTEXT: NEW DATA & METHODS **********************
                 ************************************************************ -->
-                
-                <!--
+
+            <!--
                 <section id="Data">
                     
                     <figure class="right" style="width:40%;">
@@ -192,13 +198,13 @@
                 
                 </section>
                 -->
-                
-                
-                <!-- ************************************************************
+
+
+            <!-- ************************************************************
                 ************************* ABM ***********************************
                 ************************************************************ -->
-                
-                <!--
+
+            <!--
                 <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
                          data-background-video-loop="loop">
                     <div class="whitebackground2 fragment">
@@ -218,8 +224,8 @@
                     
                 </section>
                 -->
-                
-                <!--                
+
+            <!--                
                 <section id="abm-advantages">    
                     <h2>Agent-Based Modelling - Appeal</h2>
                     <img class="right" data-src="../figures/virtual_city.jpeg"/>
@@ -256,10 +262,10 @@
 
                 </section>
                 -->
-                
-                
 
-                <!--<section id="IntroToABM4XXXX" data-background-video="../videos/skylines_mov-long.mp4"
+
+
+            <!--<section id="IntroToABM4XXXX" data-background-video="../videos/skylines_mov-long.mp4"
                          data-background-video-loop="loop">
                     <div class="whitebackground2 fragment">
                         <h2>City Simulation</h2>
@@ -267,264 +273,278 @@
                     </div>
 
                 </section>-->
-                
-                <!-- ************************************************************
+
+            <!-- ************************************************************
                 ********************* DATA ASSIMILATION *************************
                 ************************************************************ -->
 
-                <section id="prob-divergence"
-                         data-background-video="../videos/starlings1-short.mp4"
-                         data-background-video-muted
-                         data-background-video-loop="loop">
+            <section id="prob-divergence" data-background-video="../videos/starlings1-short.mp4"
+                data-background-video-muted data-background-video-loop="loop">
 
-                    <div class="whitebackground fragment">
-                        <h2>Why we need Data Assimilation</h2>
-                        <p>Complex models will always diverge</p>
-                        <p class="l2">(due to inherent uncertainties in inputs, parameter values, model structure, etc.)</p>
-                        <p>Possible Solution: Data Assimilation</p>
-                        <p>Used in meteorology and hydrology to bring models closer to reality. Combines:</p>
-                        <p class="l2">Noisy, real-world observations</p>
-                        <p class="l2">Model estimates of the system state</p>
-                    </div>
-                </section>
-                
+                <div class="whitebackground fragment">
+                    <h2>Why we need Data Assimilation</h2>
+                    <p>Complex models will always diverge</p>
+                    <p class="l2">(due to inherent uncertainties in inputs, parameter values, model structure, etc.)</p>
+                    <p>Possible Solution: Data Assimilation</p>
+                    <p>Used in meteorology and hydrology to bring models closer to reality. Combines:</p>
+                    <p class="l2">Noisy, real-world observations</p>
+                    <p class="l2">Model estimates of the system state</p>
+                </div>
+            </section>
 
-                <section id="abm-dda-overview">
-                    <img data-src="../figures/paper_figures/dda.jpg" alt="Diagram of data assimilation and an ABM" />
-                </section>
-                
-                
-                <section id="da-challenges">
-                    
-                    <h2>XXXX NM Challenges with DA for ABMs</h2>
-                
-                </section>
 
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                <!-- ************************************************************
+            <section id="abm-dda-overview">
+                <img data-src="../figures/paper_figures/dda.jpg" alt="Diagram of data assimilation and an ABM" />
+            </section>
+
+
+            <section id="da-challenges">
+
+                <h2>XXXX NM Challenges with DA for ABMs</h2>
+
+            </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <!-- ************************************************************
                 ******************** REAL TIME CROWD MODELLING*******************
                 ************************************************************ -->
-                
-                <section id="real-time-crowd-modelling" 
->
 
-                    <h2>Real Time <strike>City</strike> Crowd Modelling</h2>
-                    <img class="right" data-src="../figures/train_station_pedestrian.jpg"
-                                 alt="Image of escalators in a train station" />
-                    <p>Simulating a city in real-time is too hard!! (for now)</p>
-                    <p>For now lets start a crowd</p>
-                    <p class="l2">What methods can we use to incorporate data?</p>
-                    <p class="l2">How much data do we need?</p>
-                    <p class="l3">Track every individual?</p>
-                    <p class="l3">Track some individuals?</p>
-                    <p class="l3">Just aggregate counts (e.g. number of people passing a footfall camera)</p>
-                </section>
-                
-                <section id="gcs" 
-                         data-background-video="../videos/grandcentral-short.mp4"
-                         data-background-video-muted
-                         data-background-video-loop="loop">
-                    
-                    <div class="whitebackground2 fragment">
-                        <h2>Grand Central Terminal (New York)</h2>
-                    
-                        <p>Pedestrian traces</p>
-                        <p class="l2">B. Zhou, X. Wang and X. Tang. (2012) Understanding Collective Crowd Behaviors: Learning a Mixture Model of Dynamic Pedestrian-Agents. In <i>Proceedings of IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</i> 2012</p>
-                        <p class="l2"><a href="http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html"> http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html</a></p>
-                        
-                        
-                        <img class="left", style="width:50%" 
-                             data-src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/grand_central_floorplan.png" 
-                                 alt="Grand Central Terminal floor plan with entrances around the sides and an obstruction in the centre." />
-                        
-                        <img class="right" style="width:30%"
-                                 src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trajectories-structure.png" 
-                                 alt="Pedestrian trajectories estimated from the video" />
-                    
-                        
-                    </div>
-                
-                </section>
-                
-                
-                <!-- ************************************************************
+            <section id="real-time-crowd-modelling">
+
+                <h2>Real Time <strike>City</strike> Crowd Modelling</h2>
+                <img class="right" data-src="../figures/train_station_pedestrian.jpg"
+                    alt="Image of escalators in a train station" />
+                <p>Simulating a city in real-time is too hard!! (for now)</p>
+                <p>For now lets start a crowd</p>
+                <p class="l2">What methods can we use to incorporate data?</p>
+                <p class="l2">How much data do we need?</p>
+                <p class="l3">Track every individual?</p>
+                <p class="l3">Track some individuals?</p>
+                <p class="l3">Just aggregate counts (e.g. number of people passing a footfall camera)</p>
+            </section>
+
+            <!-- ************************************************************
                 *************************  PARTICLE FILTER **********************
                 ************************************************************ -->
-                
-                <section id="pf-experiments">
-                    <h2>Data assimilation with a Particle Filter</h2>
-                    
-                    <img data-src="../figures/PF_flowchart3.png"
-                         alt="Flowchart of the experimental design. Lots of models ('particles') are run simultaneously." />
 
-                </section>
+            <section id="pf-experiments">
+                <h2>Data assimilation with a Particle Filter</h2>
 
+                <img data-src="../figures/PF_flowchart3.png"
+                    alt="Flowchart of the experimental design. Lots of models ('particles') are run simultaneously." />
 
-                <section id="pf-stationsim2-a" data-transition="fade">
-                    <h2>Crowd Simulation with a Particle Filter</h2>
-                    <img data-src="../figures/pf_animation-static.png"
-                         alt="Animation of a crowding model with data assimilation" />
-                </section>
+            </section>
 
-                <section id="pf-stationsim2-b" data-transition="fade">
-                    <h2>Crowd Simulation with a Particle Filter</h2>
-                    <img data-src="../figures/pf_animation.gif"
-                         alt="Animation of a crowding model with data assimilation" />
-                </section>
-                
-                <!-- Individual pictures of results
-                <section id="pf-results-10_agents_10_particles">
-                    <h2>Particle Filter Results</h2>
-                    <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/ani-10agents-10particles-window100.png"
-                         style="width:80%;"
-                         alt="Predictions of the PF with 10 agents and 10 particles - most particles
-                              predict the locations of the agents well. " />
-                </section>
+            <!-- ************************************************************
+            **************************  PF STATIONSIM ***********************
+            ************************************************************ -->
+            
+            <section id="pf-station-experiments">
+                <h3>Particle Filter & Crowd Simulation</h3>
 
+                <img style="width:80%" data-src="../figures/pf_overview.png" alt="Station PF experimental design." />
 
-                <section id="pf-results-40_agents_10_particles">
-                    <h2>Particle Filter Results</h2>
-                    <img data-src="../figures/paper_figures/2018-ParticleFilterFigs/ani-40agents-10particles-window100.png"
-                         style="width:80%;"
-                         alt="Predictions of the PF with 40 agents and 10 particles - now the model is 
-                              too complex for only 10 particles to reliably estimate its behaviour." />
-                </section>
-                -->
+            </section>
 
+            <section id="pf-stationsim2-b" data-transition="fade">
+                <h2>Crowd Simulation with a Particle Filter</h2>
+                <img data-src="../figures/pf_animation.gif"
+                    alt="Animation of a crowding model with data assimilation" />
+            </section>
 
+            <section id="pf-results-median_error">
 
-                <section id="pf-results-median_error">
-                    
-                    <h2>Preliminary Particle Filter Results</h2>
-                    <h3>Box Environment: More particles = lower error</h3>
-                    <figure>
-                        <img style="width:70%" data-src="../figures/paper_figures/2018-ParticleFilterFigs/median_abs_error.png"
-                         alt="median absolute error change with number of agents and particles: greater
+                <h2>Preliminary Particle Filter Results</h2>
+                <h3>Box Environment: More particles = lower error</h3>
+                <figure>
+                    <img style="width:70%"
+                        data-src="../figures/paper_figures/2018-ParticleFilterFigs/median_abs_error.png" alt="median absolute error change with number of agents and particles: greater
                               complexity caused by larger numbers of agents can be mitigated by increasing
                               the numbers of particles." />
-                        </figure>
+                </figure>
+                <figcaption>
+                    Malleson, Nick, Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew West, and Alison Heppenstall.
+                    (2020) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. <i>Journal
+                        of Artificial Societies and Social Simulation</i> 23(3) DOI: <a
+                        href="https://doi.org/10.18564/jasss.4266">10.18564/jasss.4266</a>.
+                </figcaption>
+            </section>
+
+            <section id="pf-results-wiggle-count">
+                <h2>Difficulties (I)</h2>
+                <h3>Exponential increase in complexity</h3>
+                <figure>
+
+                    <img style="width:70%;" data-src="../figures/paper_figures/2018-ParticleFilterFigs/wiggle_count.png"
+                        alt="Number of collisions increases exponentially with number of agents" />
                     <figcaption>
-                        Malleson, Nick, Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew West, and Alison Heppenstall. (2020) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. <i>Journal of Artificial Societies and Social Simulation</i> 23(3) DOI: <a href="https://doi.org/10.18564/jasss.4266">10.18564/jasss.4266</a>.
+                        N. Malleson, K. Minors, Le-Minh Kieu, J. A. Ward, A. West and Alison Heppenstall (2020).
+                        Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter.
+                        <i>Journal of Artificial Societies and Social Simulation (JASSS)</i>
+                        <a href="http://jasss.soc.surrey.ac.uk/23/3/3.html">23(3), 3</a>.
                     </figcaption>
-                </section>
-                
-                <section id="pf-results-wiggle-count">
-                    <h2>Difficulties (I)</h2>
-                    <h3>Exponential increase in complexity</h3>
-                    <figure>
-                    
-                        <img style="width:70%;" 
-                             data-src="../figures/paper_figures/2018-ParticleFilterFigs/wiggle_count.png"
-                             alt="Number of collisions increases exponentially with number of agents" />
-                        <figcaption>
-                            N. Malleson, K. Minors, Le-Minh Kieu, J. A. Ward, A. West and Alison Heppenstall (2020).
-                            Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter.
-                            <i>Journal of Artificial Societies and Social Simulation (JASSS)</i>
-                            <a href="http://jasss.soc.surrey.ac.uk/23/3/3.html">23(3), 3</a>.
-                        </figcaption>
-                    </figure>
-                </section>
-                
-                                
-                <section id="pf_results-gcs-worse-1">
-                    
-                    <h2>Preliminary Particle Filter Results</h2>
-                    <h3>Grand Central Station: Filtering makes it worse! </h3>
-                    <p>No data assimilation. Entrance gate is known; speed and exit gate are unknown</p>
-                    <figure>
-                        <img src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/exp2_distance.png" />
-                        <figcaption>Distance between agent and real trajectory. (a) Model time; (b) Pedestrian time.
-                            <br/><br/>Ternes, P., J. Ward, A. Heppenstall, V. Kumar, Le-Minh Kieu, N. Malleson (2020) 
-                                Using data assimilation to reduce uncertainty in an agent-based pedestrian simulations in real time.
-                            <i>Under review</i>.</figcaption>
-                    </figure>
-                    
-                </section>
-                
-                <section id="pf_results-gcs-worse-1">
-                    
-                    <h2>Preliminary Particle Filter Results</h2>
-                    <h3>Grand Central Station: Filtering makes it worse! </h3>
-                    <p>With data assimilation - error increases!</p>
-                    <figure>
-                        <img src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/exp4_distance.png" />
-                        <figcaption>Distance between agent and real trajectory. (a) Model time; (b) Pedestrian time.
-                            <br/><br/>Ternes, P., J. Ward, A. Heppenstall, V. Kumar, Le-Minh Kieu, N. Malleson (2020) 
-                                Using data assimilation to reduce uncertainty in an agent-based pedestrian simulations in real time.
-                            <i>Under review</i>.</figcaption>
-                    </figure>
-                    
-                </section>
-                
-                
-                
-                
+                </figure>
+            </section>
 
-                
-                <section id="pf-results-nonlinear_trajectories">
-                    <h2>Difficulties (II)</h2>
-                    <h3>Nonlinear trajectories</h3>
-                    <figure >
-                        <img style="width:50%;" accesskey=""src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trais_model_versus_real.png"
-                         alt="Shows that some pedestrian trajectories are linear, others very curved" />
-                        <figcaption>
-                            Ternes, P., J. Ward, A. Heppenstall, V. Kumar, Le-Minh Kieu, N. Malleson (2020) 
-                                Using data assimilation to reduce uncertainty in an agent-based pedestrian simulations in real time.
-                            <i>Under review</i>.
-                        </figcaption>
-                        </figure>
-                </section>
-                
-                
-                
-                
-                <!-- ************************************************************
-                ************************* OTHER METHODS  ************************
-                ************************************************************ -->   
-                
-                
-                <section id="other-methods">
-                    <h2>XXXX NM: a couple of slides on Rob and Dan's work.</h2>
-                </section>
-                
-                
-                <section id="other_methods">
-                    <h2>Other Methods (ongoing)</h2>
-                    
-                    <p>Ensemble Kalman Filter</p>
-                    <p class="l2">Ward, Jonathan A., Andrew J. Evans, and Nicolas S. Malleson. (2016) Dynamic Calibration of Agent-Based Models Using Data Assimilation. <i>Royal Society Open Science</i> 3(4). DOI: <a href="https://doi.org/10.1098/rsos.150703">10.1098/rsos.150703</a>.</p>
-                
-                    <p>Unscented Kalman Filter</p>
-                    <p class="l2">Clay, Robert, Le-Minh Kieu, Jonathan A. Ward, Alison Heppenstall, and Nick Malleson (2020) Towards Real-Time Crowd Simulation Under Uncertainty Using an Agent-Based Model and an Unscented Kalman Filter’. In <i>Advances in Practical Applications of Agents, Multi-Agent Systems, and Trustworthiness. The PAAMS Collection</i> 12092:68–79. <i>Lecture Notes in Computer Science</i>. DOI:<a href="https://doi.org/10.1007/978-3-030-49778-1_6">10.1007/978-3-030-49778-1_6</a>.</p>
-                    
-                    
-                    <p>Quantum Field Theory - Creation and Annihilation Operators</p>
-                    <p class="l2">Tang, Daniel. (2019) Data Assimilation in Agent-Based Models Using Creation and Annihilation Operators. <i>ArXiv:1910.09442 [Cs]</i>. <a href="http://arxiv.org/abs/1910.09442">arxiv.org/abs/1910.09442</a>.</p>
-                </section>
-                
-                
-                
-                
-                
-                <!-- ************************************************************
+            <!-- ************************************************************
+            **********************  Grand Central Station ********************
+            ************************************************************ -->
+
+            <section id="gcs" data-background-video="../videos/grandcentral-short.mp4" data-background-video-muted
+                data-background-video-loop="loop">
+
+                <div class="whitebackground2 fragment">
+                    <h2>Grand Central Terminal (New York)</h2>
+
+                    <p>Pedestrian traces</p>
+                    <p class="l2">B. Zhou, X. Wang and X. Tang. (2012) Understanding Collective Crowd Behaviors:
+                        Learning a Mixture Model of Dynamic Pedestrian-Agents. In <i>Proceedings of IEEE Conference on
+                            Computer Vision and Pattern Recognition (CVPR)</i> 2012</p>
+                    <p class="l2"><a href="http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html">
+                            http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html</a></p>
+
+
+                    <img class="left" , style="width:50%"
+                        data-src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/grand_central_floorplan.png"
+                        alt="Grand Central Terminal floor plan with entrances around the sides and an obstruction in the centre." />
+
+                    <img class="right" style="width:30%"
+                        src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trajectories-structure.png"
+                        alt="Pedestrian trajectories estimated from the video" />
+
+
+                </div>
+            </section>
+
+            <!-- ************************************************************
+            ********************  GCS: ORE Particle Filter ******************
+            ************************************************************ -->
+
+            <section id="pf_results-gcs-worse-1">
+
+                <h2>Preliminary Particle Filter Results</h2>
+                <h3>Grand Central Station: Filtering makes it worse! </h3>
+                <p>Entrance gate is known; speed and exit gate are unknown</p>
+                <figure>
+                    <img src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/exp2_versus_exp4.png" />
+                    <figcaption>Distance between agent and real trajectory (Pedestrian time).
+                        <br /><br />Ternes, P., J. Ward, A. Heppenstall, V. Kumar, Le-Minh Kieu, N. Malleson (2022)
+                        Data assimilation and agent-based modelling: towards the incorporation of categorical agent
+                        parameters.
+                        <i>Open Research Europe</i>
+                        <a href="https://doi.org/10.12688/openreseurope.14144.2">1(131)</a>.
+                    </figcaption>
+                </figure>
+            </section>
+
+            <section id="pf_dynimic">
+
+                <video data-autoplay controls loop width="100%" height="auto" alt="Trafalgar square before COVID: busy">
+                    <source data-src="../videos/20_particles_sirPF.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
+            </section>
+
+            <section id="pf-difficultiesII">
+                <h2>Difficulties (II)</h2>
+                <ul>
+                    <li>Exponential increase in complexity</li>
+                    <li>Categorical Parameters</li>
+                    <li>Nonlinear trajectories (change in categorical parameters)</li>
+                </ul>
+            </section>
+
+            <!-- ************************************************************
+            ******************  GCS: Noise Particle Filter ******************
+            ************************************************************ -->
+
+            <section id="noise-pf-overview">
+                <h2>Difficulties (II)</h2>
+                <h3>Nonlinear trajectories</h3>
+                <figure>
+                    <img style="width:100%;" accesskey="" src="../figures/CCPF-Flowchart.png"
+                        alt="Shows that some pedestrian trajectories are linear, others very curved" />
+                    <figcaption>
+                        Ternes, P., R. Clay, A. Heppenstall, N. Malleson (2020)
+                        Assimilating realistic data into agent-based models in real-time with a categorical-noise
+                        particle filter step
+                        <i>Under Production</i>.
+                    </figcaption>
+                </figure>
+            </section>
+
+            <section id="noise-pf-results">
+                <h2>Difficulties (II)</h2>
+                <h3>Nonlinear trajectories</h3>
+                <figure>
+                    <img style="width:30%;" accesskey="" src="../figures/noise-pf.png"
+                        alt="Shows that some pedestrian trajectories are linear, others very curved" />
+                    <img style="width:60%;" accesskey="" src="../figures/noise-pf-map.png"
+                        alt="Shows that some pedestrian trajectories are linear, others very curved" />
+                    <figcaption>
+                        Ternes, P., R. Clay, A. Heppenstall, N. Malleson (2020)
+                        Assimilating realistic data into agent-based models in real-time with a categorical-noise
+                        particle filter step
+                        <i>Under Production</i>.
+                    </figcaption>
+                </figure>
+            </section>
+
+            <!-- ************************************************************
+            ************************* OTHER METHODS  ************************
+            ************************************************************ -->
+
+
+            <section id="other-methods">
+                <h2>XXXX NM: a couple of slides on Rob and Dan's work.</h2>
+            </section>
+
+
+            <section id="other_methods">
+                <h2>Other Methods (ongoing)</h2>
+
+                <p>Ensemble Kalman Filter</p>
+                <p class="l2">Ward, Jonathan A., Andrew J. Evans, and Nicolas S. Malleson. (2016) Dynamic Calibration of
+                    Agent-Based Models Using Data Assimilation. <i>Royal Society Open Science</i> 3(4). DOI: <a
+                        href="https://doi.org/10.1098/rsos.150703">10.1098/rsos.150703</a>.</p>
+
+                <p>Unscented Kalman Filter</p>
+                <p class="l2">Clay, Robert, Le-Minh Kieu, Jonathan A. Ward, Alison Heppenstall, and Nick Malleson (2020)
+                    Towards Real-Time Crowd Simulation Under Uncertainty Using an Agent-Based Model and an Unscented
+                    Kalman Filter’. In <i>Advances in Practical Applications of Agents, Multi-Agent Systems, and
+                        Trustworthiness. The PAAMS Collection</i> 12092:68–79. <i>Lecture Notes in Computer Science</i>.
+                    DOI:<a href="https://doi.org/10.1007/978-3-030-49778-1_6">10.1007/978-3-030-49778-1_6</a>.</p>
+
+
+                <p>Quantum Field Theory - Creation and Annihilation Operators</p>
+                <p class="l2">Tang, Daniel. (2019) Data Assimilation in Agent-Based Models Using Creation and
+                    Annihilation Operators. <i>ArXiv:1910.09442 [Cs]</i>. <a
+                        href="http://arxiv.org/abs/1910.09442">arxiv.org/abs/1910.09442</a>.</p>
+            </section>
+
+
+
+
+
+            <!-- ************************************************************
                 ***************************  ETHICS  ************************
-                ************************************************************ -->   
-                
-                
+                ************************************************************ -->
 
-                
-                <!--
+
+
+
+            <!--
                 <section id="big_brother" >
                     <h2>Ethical Implications</h2>
                     <p>Data Bias</p>
@@ -535,91 +555,95 @@
                     <p class="l2">Models work with counts of flows</p>
                 </section>
                 -->
-                
-                
-                <!-- ************************************************************
+
+
+            <!-- ************************************************************
                 ************** CONCLUSION / ACKNOWLEDGEMENTS ********************
                 ************************************************************ -->
 
 
-                                        
-                <section id="conclusion-future" data-background-image="../figures/digital_twin_engineering.png">
-                    
-                    <div class="whitebackground2 fragment">
-                    
-                        <img class="right" style="padding:1px; margin:1px;"
-                             data-src="../figures/make_more_digital_twins.jpg" alt="Nature article: Make more digital twins" />
-                        
-                        <h3>Conclusions</h3>
-                        <p>Feeding data into agent-based models is hard!</p>
-                        <p class="l2">Computational and <i>methodological</i> challenges</p>
-                        <p>Particle filters work on simple models, but naive filter breaks down</p>
-                        <h3>Future Work</h3>
-                        <p>Towards Digital Twins of Human Systems</p>
-                        <p class="l2">Join up simulations at multiple spatial and temporal resolutions</p>
-                        <p>Real-time analysis tools and virtual labs for policy development</p>
+
+            <section id="conclusion-future" data-background-image="../figures/digital_twin_engineering.png">
+
+                <div class="whitebackground2 fragment">
+
+                    <img class="right" style="padding:1px; margin:1px;"
+                        data-src="../figures/make_more_digital_twins.jpg"
+                        alt="Nature article: Make more digital twins" />
+
+                    <h3>Conclusions</h3>
+                    <p>Feeding data into agent-based models is hard!</p>
+                    <p class="l2">Computational and <i>methodological</i> challenges</p>
+                    <p>Particle filters work on simple models, but naive filter breaks down</p>
+                    <h3>Future Work</h3>
+                    <p>Towards Digital Twins of Human Systems</p>
+                    <p class="l2">Join up simulations at multiple spatial and temporal resolutions</p>
+                    <p>Real-time analysis tools and virtual labs for policy development</p>
 
 
-                    </div>
+                </div>
 
-                </section>
-                
-                <section id="acknowledgements" data-background-image="../figures/digital_twin_engineering.png">
-                    
-                    <div class="whitebackground2">
-                    
-                        <p>XXXX Acknowledgements: funding and other people</p>
-                        
-                    </div>
+            </section>
 
-                </section>
+            <section id="acknowledgements" data-background-image="../figures/digital_twin_engineering.png">
+
+                <div class="whitebackground2">
+
+                    <p>XXXX Acknowledgements: funding and other people</p>
+
+                </div>
+
+            </section>
 
 
 
-                <section class="title"  id="thanks" data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
-                    <div class="whitebackground2">
+            <section class="title" id="thanks"
+                data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                <div class="whitebackground2">
 
-                        <h5>Workshop on Data-Driven Economic <br/> 
-                            Agent-Based Models (<a href="https://sites.google.com/view/wddeabm">DDEABM</a>) </h5>
-                        <h5 style="font-size: 18pt;">Sant'Anna School of Advanced Studies, Pisa,
-                            27-28 September 2022</h5>
+                    <h5>Workshop on Data-Driven Economic <br />
+                        Agent-Based Models (<a href="https://sites.google.com/view/wddeabm">DDEABM</a>) </h5>
+                    <h5 style="font-size: 18pt;">Sant'Anna School of Advanced Studies, Pisa,
+                        27-28 September 2022</h5>
 
-                        <hr/>
-                        <h1 style="font-size: 45px;">Data Assimilation for Agent-Based Models</h1>
-                        <hr/>
-                        
-                        <h2 style="font-size: 35px;">
-                            <a href="http://nickmalleson.co.uk/">Nick Malleson</a> and
-                            <a href="https://www.linkedin.com/in/patricia-ternes/?originalSubdomain=uk">Patricia Ternes</a>
-                            
-                        </h2>
-                        
-                        <h4>University of Leeds, UK</h4>
-                        <h4><a href="mailto:n.s.malleson@leeds.ac.uk">n.s.malleson@leeds.ac.uk</a></h4>
-                          <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
-                        <hr/>
-                        <p style="text-align:center;font-size:25px">Slides available at: <br/><a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a></p>
+                    <hr />
+                    <h1 style="font-size: 45px;">Data Assimilation for Agent-Based Models</h1>
+                    <hr />
 
-                        <a href="https://europa.eu/european-union/index_en">
-                            <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;" src="../figures/LOGO_EU.jpg"/>
-                        </a>
+                    <h2 style="font-size: 35px;">
+                        <a href="http://nickmalleson.co.uk/">Nick Malleson</a> and
+                        <a href="https://www.linkedin.com/in/patricia-ternes/?originalSubdomain=uk">Patricia Ternes</a>
 
-                        <a href="http://www.leeds.ac.uk/">
-                            <img style="float:center;padding:10px;width:150px; height:auto;" src="../figures/uol_logo.gif"/>
-                        </a>
-                        
-                        <a href="https://environment.leeds.ac.uk/geography">
-                            <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_SOG.png"/>
-                        </a>
+                    </h2>
 
-                        <!-- <a href="http://www.turing.ac.uk/">
+                    <h4>University of Leeds, UK</h4>
+                    <h4><a href="mailto:n.s.malleson@leeds.ac.uk">n.s.malleson@leeds.ac.uk</a></h4>
+                    <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
+                    <hr />
+                    <p style="text-align:center;font-size:25px">Slides available at: <br /><a
+                            href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a>
+                    </p>
+
+                    <a href="https://europa.eu/european-union/index_en">
+                        <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;"
+                            src="../figures/LOGO_EU.jpg" />
+                    </a>
+
+                    <a href="http://www.leeds.ac.uk/">
+                        <img style="float:center;padding:10px;width:150px; height:auto;"
+                            src="../figures/uol_logo.gif" />
+                    </a>
+
+                    <a href="https://environment.leeds.ac.uk/geography">
+                        <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_SOG.png" />
+                    </a>
+
+                    <!-- <a href="http://www.turing.ac.uk/">
                             <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_TURING.png"/>
                         </a> -->
-                    </div>
+                </div>
 
-                </section>
-
-
+            </section>
 
 
 
@@ -627,25 +651,28 @@
 
 
 
-			</div>
-		</div>
 
-		<script src="reveal/lib/js/head.min.js"></script>
-		<script src="reveal/js/reveal.js"></script>
 
-		<script>
-			// More info https://github.com/hakimel/reveal.js#configuration
-			Reveal.initialize({
-				history: true,
+        </div>
+    </div>
 
-				// More info https://github.com/hakimel/reveal.js#dependencies
-				dependencies: [
-					{ src: 'reveal/plugin/markdown/marked.js' },
-					{ src: 'reveal/plugin/markdown/markdown.js' },
-					{ src: 'reveal/plugin/notes/notes.js', async: true },
-					{ src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
-				]
-			});
-		</script>
-	</body>
+    <script src="reveal/lib/js/head.min.js"></script>
+    <script src="reveal/js/reveal.js"></script>
+
+    <script>
+        // More info https://github.com/hakimel/reveal.js#configuration
+        Reveal.initialize({
+            history: true,
+
+            // More info https://github.com/hakimel/reveal.js#dependencies
+            dependencies: [
+                { src: 'reveal/plugin/markdown/marked.js' },
+                { src: 'reveal/plugin/markdown/markdown.js' },
+                { src: 'reveal/plugin/notes/notes.js', async: true },
+                { src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function () { hljs.initHighlightingOnLoad(); } }
+            ]
+        });
+    </script>
+</body>
+
 </html>

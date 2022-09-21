@@ -349,7 +349,7 @@
             <!-- ************************************************************
             **************************  PF STATIONSIM ***********************
             ************************************************************ -->
-            
+
             <section id="pf-station-experiments">
                 <h3>Particle Filter & Crowd Simulation</h3>
 
@@ -368,7 +368,7 @@
                 <h2>Preliminary Particle Filter Results</h2>
                 <h3>Box Environment: More particles = lower error</h3>
                 <figure>
-                    <img style="width:70%"
+                    <img style="width:60%"
                         data-src="../figures/paper_figures/2018-ParticleFilterFigs/median_abs_error.png" alt="median absolute error change with number of agents and particles: greater
                               complexity caused by larger numbers of agents can be mitigated by increasing
                               the numbers of particles." />
@@ -386,7 +386,7 @@
                 <h3>Exponential increase in complexity</h3>
                 <figure>
 
-                    <img style="width:70%;" data-src="../figures/paper_figures/2018-ParticleFilterFigs/wiggle_count.png"
+                    <img style="width:60%;" data-src="../figures/paper_figures/2018-ParticleFilterFigs/wiggle_count.png"
                         alt="Number of collisions increases exponentially with number of agents" />
                     <figcaption>
                         N. Malleson, K. Minors, Le-Minh Kieu, J. A. Ward, A. West and Alison Heppenstall (2020).
@@ -437,7 +437,8 @@
                 <h3>Grand Central Station: Filtering makes it worse! </h3>
                 <p>Entrance gate is known; speed and exit gate are unknown</p>
                 <figure>
-                    <img src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/exp2_versus_exp4.png" />
+                    <img style="width:100%;"
+                        src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/exp2_versus_exp4.png" />
                     <figcaption>Distance between agent and real trajectory (Pedestrian time).
                         <br /><br />Ternes, P., J. Ward, A. Heppenstall, V. Kumar, Le-Minh Kieu, N. Malleson (2022)
                         Data assimilation and agent-based modelling: towards the incorporation of categorical agent
@@ -449,7 +450,7 @@
             </section>
 
             <section id="pf_dynimic">
-
+                <h2>Particle Filter & Categorical Parameters</h2>
                 <video data-autoplay controls loop width="100%" height="auto" alt="Trafalgar square before COVID: busy">
                     <source data-src="../videos/20_particles_sirPF.mp4" type="video/mp4" />
                     Your browser does not support the video tag.
@@ -461,7 +462,7 @@
                 <ul>
                     <li>Exponential increase in complexity</li>
                     <li>Categorical Parameters</li>
-                    <li>Nonlinear trajectories (change in categorical parameters)</li>
+                    <li>Non-linear trajectories (change in categorical parameters)</li>
                 </ul>
             </section>
 
@@ -470,32 +471,32 @@
             ************************************************************ -->
 
             <section id="noise-pf-overview">
-                <h2>Difficulties (II)</h2>
-                <h3>Nonlinear trajectories</h3>
+                <h2>Categorical-Noise PF Step</h2>
+                <h3>Overview</h3>
                 <figure>
                     <img style="width:100%;" accesskey="" src="../figures/CCPF-Flowchart.png"
                         alt="Shows that some pedestrian trajectories are linear, others very curved" />
                     <figcaption>
-                        Ternes, P., R. Clay, A. Heppenstall, N. Malleson (2020)
+                        Ternes, P., R. Clay, A. Heppenstall, N. Malleson.
                         Assimilating realistic data into agent-based models in real-time with a categorical-noise
-                        particle filter step
+                        particle filter step.
                         <i>Under Production</i>.
                     </figcaption>
                 </figure>
             </section>
 
             <section id="noise-pf-results">
-                <h2>Difficulties (II)</h2>
-                <h3>Nonlinear trajectories</h3>
+                <h2>Categorical-Noise PF Step</h2>
+                <h3>Results</h3>
                 <figure>
                     <img style="width:30%;" accesskey="" src="../figures/noise-pf.png"
                         alt="Shows that some pedestrian trajectories are linear, others very curved" />
                     <img style="width:60%;" accesskey="" src="../figures/noise-pf-map.png"
                         alt="Shows that some pedestrian trajectories are linear, others very curved" />
                     <figcaption>
-                        Ternes, P., R. Clay, A. Heppenstall, N. Malleson (2020)
+                        Ternes, P., R. Clay, A. Heppenstall, N. Malleson.
                         Assimilating realistic data into agent-based models in real-time with a categorical-noise
-                        particle filter step
+                        particle filter step.
                         <i>Under Production</i>.
                     </figcaption>
                 </figure>

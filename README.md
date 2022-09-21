@@ -21,14 +21,14 @@ The presentations are all normal `html` files, placed in the [p](./p) directory 
 
 Presentations go in the [p](./p) directory and a link to them should also be added in the [presentations.md](./presentations.md) file (otherwise there's no way to find them). There are loads of [figures](./figures/) and [videos](./videos/) in their respective folder that might be useful. (If adding new figures/videos please put them in those folders).
 
-The slides use a library called [reveal.js](https://revealjs.com/) which makes them look nice and handles moving between slides etc. The easiest way to see how this works is just to look at an existing presentation (e.g. [this one](./p/2021-09-14-ABM_DWP_Sparkle.html). There is some library loading at the top of the html file which looks complicated, but most of that doesn't need to be editted. 
+The slides use a library called [reveal.js](https://revealjs.com/) which makes them look nice and handles moving between slides etc. The easiest way to see how this works is just to look at an existing presentation (e.g. [this one](./p/2021-09-14-ABM_DWP_Sparkle.html)). There is some library loading at the top of the html file which looks complicated, but most of that doesn't need to be editted. 
 
 A basic slide goes between `<section>` tags and looks like this:
 
 ```html
 <section id="Intro">
     <h2>Overview</h2>
-	<p>Introduction to ABM</p>
+    <p>Introduction to ABM</p>
     <p>ABM Example: Simulating daily mobility</p>
     <p>Introduction to Microsimulation</p>
     <p>Microsimulation examples</p>

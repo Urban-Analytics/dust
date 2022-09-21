@@ -17,6 +17,9 @@ Contents
 
 ## Peer Reviewed Articles
 
+N. Malleson, Birkin, M., Birks, D., Ge, J., Heppenstall, A., Manley, E., McCulloch, J., Ternes, P. (2022) Agent-based modelling for Urban Analytics: State of the art and challenges. _AI Communications_ 35, 393–406. DOI:
+[10.3233/AIC-220114](https://doi.org/10.3233/AIC-220114)
+
 Tang, D. and N. Malleson (2022). Data assimilation with agent-based models using Markov chain sampling. _Open Research Europe_ 2(70). DOI: [10.12688/openreseurope.14800.1](https://doi.org/10.12688/openreseurope.14800.1) (open access)
 
 Kieu, M., H. Nguyen, J.A. Ward and N. Malleson (2022). Towards real-time predictions using emulators of agent-based models. _Journal of Simulation_ 1–18. DOI: [10.1080/17477778.2022.2080008](https://doi.org/10.1080/17477778.2022.2080008) [[PDF](https://www.nickmalleson.co.uk/papers/2022-06-Emulators_Minh.pdf)].

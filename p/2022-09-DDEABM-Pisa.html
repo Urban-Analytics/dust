@@ -62,16 +62,16 @@
 
                     <a href="https://europa.eu/european-union/index_en">
                         <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;"
-                            src="../figures/LOGO_EU.jpg" />
+                            data-src="../figures/LOGO_EU.jpg" />
                     </a>
 
                     <a href="http://www.leeds.ac.uk/">
                         <img style="float:center;padding:10px;width:150px; height:auto;"
-                            src="../figures/uol_logo.gif" />
+                            data-src="../figures/uol_logo.gif" />
                     </a>
 
                     <a href="https://environment.leeds.ac.uk/geography">
-                        <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_SOG.png" />
+                        <img style="float:right;padding:10px;width:150px; height:auto;" data-src="../figures/LOGO_SOG.png" />
                     </a>
 
                     <!-- <a href="http://www.turing.ac.uk/">
@@ -265,7 +265,7 @@
 
 
 
-            <!--<section id="IntroToABM4XXXX" data-background-video="../videos/skylines_mov-long.mp4"
+            <!--<section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
                          data-background-video-loop="loop">
                     <div class="whitebackground2 fragment">
                         <h2>City Simulation</h2>
@@ -300,16 +300,20 @@
 
             <section id="da-challenges">
 
-                <h2>XXXX NM Challenges with DA for ABMs</h2>
+                <h2>Challenges for using DA with ABMs</h2>
+                
+                <p>Model size</p>
+                <p class="l2">10,000 agents * 5 variables = 50,000 distinct parameters</p>
+                <p>Model complexity</p>
+                <p class="l2">ABMs are usually non-linear and exhibit emergence</p>
+                <p>Agent behaviour</p>
+                <p class="l2">Agent's have goals, needs, etc., so can't be arbitrarily adjusted</p>
+                <p>Assumptions and parameter types</p>
+                <p class="l2">Maths typically developed for continuous parameters and 
+                    assume normal distributions</p>
+                <p>... but, at least, many of these problems are shared by climate models</p>
 
             </section>
-
-
-
-
-
-
-
 
 
 
@@ -420,7 +424,7 @@
                         alt="Grand Central Terminal floor plan with entrances around the sides and an obstruction in the centre." />
 
                     <img class="right" style="width:30%"
-                        src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trajectories-structure.png"
+                        data-src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trajectories-structure.png"
                         alt="Pedestrian trajectories estimated from the video" />
 
 
@@ -438,7 +442,7 @@
                 <p>Entrance gate is known; speed and exit gate are unknown</p>
                 <figure>
                     <img style="width:100%;"
-                        src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/exp2_versus_exp4.png" />
+                        data-src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/exp2_versus_exp4.png" />
                     <figcaption>Distance between agent and real trajectory (Pedestrian time).
                         <br /><br />Ternes, P., J. Ward, A. Heppenstall, V. Kumar, Le-Minh Kieu, N. Malleson (2022)
                         Data assimilation and agent-based modelling: towards the incorporation of categorical agent
@@ -474,7 +478,7 @@
                 <h2>Categorical-Noise PF Step</h2>
                 <h3>Overview</h3>
                 <figure>
-                    <img style="width:100%;" accesskey="" src="../figures/CCPF-Flowchart.png"
+                    <img style="width:100%;" accesskey="" data-src="../figures/CCPF-Flowchart.png"
                         alt="Shows that some pedestrian trajectories are linear, others very curved" />
                     <figcaption>
                         Ternes, P., R. Clay, A. Heppenstall, N. Malleson.
@@ -489,9 +493,9 @@
                 <h2>Categorical-Noise PF Step</h2>
                 <h3>Results</h3>
                 <figure>
-                    <img style="width:30%;" accesskey="" src="../figures/noise-pf.png"
+                    <img style="width:30%;" accesskey="" data-src="../figures/noise-pf.png"
                         alt="Shows that some pedestrian trajectories are linear, others very curved" />
-                    <img style="width:60%;" accesskey="" src="../figures/noise-pf-map.png"
+                    <img style="width:60%;" accesskey="" data-src="../figures/noise-pf-map.png"
                         alt="Shows that some pedestrian trajectories are linear, others very curved" />
                     <figcaption>
                         Ternes, P., R. Clay, A. Heppenstall, N. Malleson.
@@ -501,17 +505,74 @@
                     </figcaption>
                 </figure>
             </section>
+            
+            
+            
+            
+            
+            
 
             <!-- ************************************************************
             ************************* OTHER METHODS  ************************
             ************************************************************ -->
 
 
-            <section id="other-methods">
-                <h2>XXXX NM: a couple of slides on Rob and Dan's work.</h2>
+            <section id="ukf">
+                <h2>Other DA methods (i)</h2>
+                <h3>Unscented Kalman Filter (UKF)</h3>
+                <p>Similar to the (very popular) Ensemble Kalman filter</p>
+                <p class="l2">Should be more efficient</p>
+                <p class="l2">But assumes Gaussian distributions</p>
+                <p>A few <i>sigma points</i> are chosen to represent the model state</p>
+                <p>Then some complicated maths happens ... </p>
+            </section>
+            
+            <section id="ukf-results1">
+                <h3>Unscented Kalman Filter (UKF)</h3>
+                <p>Observe a proportion of the agents</p>
+                <figure>
+                    <img style="width:80%;" data-src="../figures/paper_figures/2019-UKF/ukf_pairs050.png" 
+                         alt="Results of the UKF. Most agent positions are estimated reasonably well."/>
+                    <figcaption>Clay, Robert, J. A. Ward, P. Ternes, Le-Minh Kieu, N. Malleson (2021) Real-time agent-based crowd simulation with the Reversible Jump Unscented Kalman Filter. <i>Simulation Modelling Practice and Theory</i> 113 (102386) DOI: <a href="https://dx.doi.org/10.1016/j.simpat.2021.102386">10.1016/j.simpat.2021.102386</a></figcaption>
+                </figure>
+            </section>
+            
+            <section id="ukf-results2">
+                <h3>Unscented Kalman Filter (UKF)</h3>
+                <p>Observed v.s. Unobserved agents</p>
+                <figure>
+                    <img class="left" data-src="../figures/paper_figures/2019-UKF/Mixed_Choropleth.png" />
+                    <img class="right" data-src="../figures/paper_figures/2019-UKF/Unobserved_Choropleth.png" 
+                         alt="Results of the UKF (2). For agents who we have no information about ('unobserved'),
+                              the algorithm is sometimes able to infer their behaviour from that of agents
+                              who we do have information about."/>
+                    <figcaption>Clay, Robert, J. A. Ward, P. Ternes, Le-Minh Kieu, N. Malleson (2021) Real-time agent-based crowd simulation with the Reversible Jump Unscented Kalman Filter. <i>Simulation Modelling Practice and Theory</i> 113 (102386) DOI: <a href="https://dx.doi.org/10.1016/j.simpat.2021.102386">10.1016/j.simpat.2021.102386</a></figcaption>
+                </figure>
+            </section>
+            
+            
+            <section id="mcmc">
+                <h2>Other DA methods (ii)</h2>
+                <h3>Monte-Carlo Markov Chain</h3>
+                <p style="font-size:80%;">Tang, D. and N. Malleson (2022). Data assimilation with agent-based models using Markov chain sampling. <i>Open Research Europe</i> 2(70). DOI: <a href="https://dx.doi.org/10.12688/openreseurope.14800.1">10.12688/openreseurope.14800.1</a></p>
+                <p>Define an ABM using a particular scheme (similar to normal ABM definition)</p>
+                <p>New algorithm to allow efficient sampling from the ABM</p>
+                <p>Use MCMC to combine the model with data to create a posterior</p>
+                <p></p>
+            </section>
+            
+            <section id="mcmc-results">
+                <h3>Monte-Carlo Markov Chain</h3>
+                <p>Posterior estimates of predators and prey</p>
+                <figure>
+                    <img data-src="../figures/paper_figures/2022-ABMCMC/endState.png" style="width:80%;"
+                         alt="Results of the MCMC algorithm: posterior estimates of locations of predators and prey" />
+                    <figcaption>Tang, D. and N. Malleson (2022). Data assimilation with agent-based models using Markov chain sampling. <i>Open Research Europe</i> 2(70). DOI: <a href="https://dx.doi.org/10.12688/openreseurope.14800.1">10.12688/openreseurope.14800.1</a></figcaption>
+                </figure>
             </section>
 
 
+            <!--
             <section id="other_methods">
                 <h2>Other Methods (ongoing)</h2>
 
@@ -533,7 +594,7 @@
                     Annihilation Operators. <i>ArXiv:1910.09442 [Cs]</i>. <a
                         href="http://arxiv.org/abs/1910.09442">arxiv.org/abs/1910.09442</a>.</p>
             </section>
-
+            -->
 
 
 
@@ -586,16 +647,6 @@
 
             </section>
 
-            <section id="acknowledgements" data-background-image="../figures/digital_twin_engineering.png">
-
-                <div class="whitebackground2">
-
-                    <p>XXXX Acknowledgements: funding and other people</p>
-
-                </div>
-
-            </section>
-
 
 
             <section class="title" id="thanks"
@@ -627,16 +678,16 @@
 
                     <a href="https://europa.eu/european-union/index_en">
                         <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;"
-                            src="../figures/LOGO_EU.jpg" />
+                            data-src="../figures/LOGO_EU.jpg" />
                     </a>
 
                     <a href="http://www.leeds.ac.uk/">
                         <img style="float:center;padding:10px;width:150px; height:auto;"
-                            src="../figures/uol_logo.gif" />
+                            data-src="../figures/uol_logo.gif" />
                     </a>
 
                     <a href="https://environment.leeds.ac.uk/geography">
-                        <img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_SOG.png" />
+                        <img style="float:right;padding:10px;width:150px; height:auto;" data-src="../figures/LOGO_SOG.png" />
                     </a>
 
                     <!-- <a href="http://www.turing.ac.uk/">

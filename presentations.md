@@ -8,6 +8,8 @@ tagline: Presentations about, or relating to, the surf project
 
 **2022**
 
+- [Data Assimilation for Agent-Based Models]({{site.baseurl}}/p/2022-09-DDEABM-Pisa.html). Invited presentation by [Nick Malleson](http://www.nickmalleson.co.uk) and [Patricia Ternes](https://www.linkedin.com/in/patricia-ternes/?originalSubdomain=uk) to the workshop on [Data-driven economic agent-based models](https://sites.google.com/view/wddeabm/home) (DDEABM), at the at [Sant'Anna School of Advanced Studies](https://www.santannapisa.it/en), Pisa, 27-28 September 2022.
+
  - [Simulating social systems with individual-based models: is worth it?]({{site.baseurl}}/p/2022-07-14-Augsberg.pdf). Invited presentation by [Alison Heppenstall](https://environment.leeds.ac.uk/geography/staff/1046/professor-alison-heppenstall) and [Nick Malleson](https://www.nickmalleson.co.uk/) to the GIScience Colloquium, [Institute of Geography](https://www.uni-augsburg.de/en/fakultaet/fai/geo/), University of Augsburg, 14th July 2022.
  
  - [Challenges for ABM in Applied Urban Modelling]({{site.baseurl}}/p/2022-07-01-AUM.pdf). Presentation by [Nick Malleson](https://www.nickmalleson.co.uk/), Ed Manley and Alison Heppenstall for the [Applied Urbam Modelling (AUM)](https://www.arct.cam.ac.uk/research/conferences/applied-urban-modelling-aum/aum2022-understanding-common-challenges) conference, 29th June -- 1st July, University of Cambridge, UK. [[PDF (slides)]({{site.baseurl}}/p/2022-07-01-AUM.pdf)]

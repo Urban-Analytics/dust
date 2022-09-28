@@ -103,8 +103,6 @@
                     <!--<p class="l2">Health - can we encourage more active travel?</p>-->
                     <p class="l2">Disease - which times / places have large numbers of interactions</p>
 
-                    <p>Traditional data may quickly become out of date ... </p>
-
                 </div>
             </section>
 
@@ -121,6 +119,7 @@
                 -->
 
 
+            <!--
             <section id="Context-UrbanFlows2b">
 
                 <video data-autoplay controls loop width="45%" height="auto" alt="Trafalgar square before COVID: busy">
@@ -139,6 +138,7 @@
                     data-src="../figures/google_mobility_lockdown_data.png"
                     alt="Google Mobility Data: people spending much more time at home" />
             </section>
+            -->
 
             <section id="vision" data-background-video="../videos/skylines_mov-long.mp4"
                 data-background-video-loop="loop">
@@ -147,7 +147,7 @@
                     <img class="right" style="width:40%" data-src="../figures/digital_twin_engineering.png"
                         alt="A digital twin (in engineering)" />
                     <p>An ABM that simulates urban processes</p>
-                    <p>Updated in real-time</p>
+                    <p>Updated in real-time using <i>data assimilation</i></p>
                     <p>A 'digital twin'?</p>
                 </div>
 
@@ -156,7 +156,7 @@
             <!-- ************************************************************
                 *********************** OUTLINE *********************************
                 ************************************************************ -->
-
+            
             <section id="outline">
                 <h2>Presentation Outline</h2>
                 <p>Data assimilation and ABM challenges</p>
@@ -166,6 +166,37 @@
                 <p>Other opportunities</p>
                 <p class="l2">Unscented / Ensemble Kalman Filters</p>
                 <p class="l2">MCMC sampling</p>
+            </section>
+            
+          <section id="dust" data-background-image="../figures/the-roaming-platypus-310824-unsplash-small.jpg" >
+                
+                <div class="whitebackground2">
+                    
+                    <figure class="right" style="width:30%;">
+                        
+                        <a href="https://europa.eu/european-union/index_en">
+                            <img data-src="../figures/LOGO_EU.jpg" />
+                        </a>
+                        
+                        <!--
+                        <a href="http://www.leeds.ac.uk/">
+                            <img data-src="../figures/uol_logo.gif" />
+                        </a>
+                        -->
+                    </figure>
+                    
+                    <h2>Data Assimilation for Agent-Based Modelling</h2>
+                    
+                    <p><a href="https://dust.leeds.ac.uk/">dust.leeds.ac.uk/</a></p>
+                    
+                    <h3>Thanks</h3>
+                    
+                    <p>Josie McCulloch, Alison Heppenstall, Keiran Suchak, Minh Kieu, Molly Asher,
+                        Kevin Minors, Andrew West, Dan Tang, Yannick Oswald, Robert Clay, 
+                        Annabel Whipp, Jon Ward, Thomas Crols</p>
+
+                </div>
+            
             </section>
 
 
@@ -302,9 +333,11 @@
             </section>
 
 
+            <!--
             <section id="abm-dda-overview">
                 <img data-src="../figures/paper_figures/dda.jpg" alt="Diagram of data assimilation and an ABM" />
             </section>
+            -->
 
 
             <section id="da-challenges">
@@ -313,8 +346,6 @@
                 
                 <p>Model size</p>
                 <p class="l2">10,000 agents * 5 variables = 50,000 distinct parameters</p>
-                <p>Model complexity</p>
-                <p class="l2">ABMs are usually non-linear and exhibit emergence</p>
                 <p>Agent behaviour</p>
                 <p class="l2">Agent's have goals, needs, etc., so can't be arbitrarily adjusted</p>
                 <p>Assumptions and parameter types</p>
@@ -333,6 +364,7 @@
                 ******************** REAL TIME CROWD MODELLING*******************
                 ************************************************************ -->
 
+            
             <section id="real-time-crowd-modelling">
 
                 <h2>Real Time <strike>City</strike> Crowd Modelling</h2>
@@ -633,36 +665,7 @@
                 ************************************************************ -->
             
             
-            <section id="dust" data-background-image="../figures/the-roaming-platypus-310824-unsplash-small.jpg" >
-                
-                <div class="whitebackground2">
-                    
-                    <figure class="right" style="width:30%;">
-                        
-                        <a href="https://europa.eu/european-union/index_en">
-                            <img data-src="../figures/LOGO_EU.jpg" />
-                        </a>
-                        
-                        <!--
-                        <a href="http://www.leeds.ac.uk/">
-                            <img data-src="../figures/uol_logo.gif" />
-                        </a>
-                        -->
-                    </figure>
-                    
-                    <h3>Data Assimilation for Agent-Based Modelling</h3>
-                    
-                    <p><a href="https://dust.leeds.ac.uk/">dust.leeds.ac.uk/</a></p>
-                    
-                    <h3>Thanks</h3>
-                    
-                    <p>Josie McCulloch, Alison Heppenstall, Keiran Suchak, Minh Kieu, Molly Asher,
-                        Kevin Minors, Andrew West, Dan Tang, Yannick Oswald, Robert Clay, 
-                        Annabel Whipp, Jon Ward, Thomas Crols</p>
-
-                </div>
-            
-            </section>
+  
 
 
             <section id="conclusion-future" data-background-image="../figures/digital_twin_engineering.png">

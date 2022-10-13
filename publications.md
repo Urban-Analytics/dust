@@ -89,3 +89,5 @@ Kieu, Le-Minh, N. Malleson, and A. Heppenstall (2019) Dealing with Uncertainty i
 The original [DUST Project Funding Proposal](./docs/dust_proposal.html) (outline).
 
 A [Review of Agent-Based Pedestrian Simulation Software](./docs/ped_sim_review.html).
+
+A [Review of pedestrian footfall data](./docs/footfall_data_review.html).

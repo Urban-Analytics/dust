@@ -18,7 +18,7 @@ Contents
 ## Peer Reviewed Articles
 
 N. Malleson, Birkin, M., Birks, D., Ge, J., Heppenstall, A., Manley, E., McCulloch, J., Ternes, P. (2022) Agent-based modelling for Urban Analytics: State of the art and challenges. _AI Communications_ 35, 393–406. DOI:
-[10.3233/AIC-220114](https://doi.org/10.3233/AIC-220114)
+[10.3233/AIC-220114](https://doi.org/10.3233/AIC-220114). [[PDF (open access)](https://arxiv.org/abs/2210.06955)]
 
 Tang, D. and N. Malleson (2022). Data assimilation with agent-based models using Markov chain sampling. _Open Research Europe_ 2(70). DOI: [10.12688/openreseurope.14800.1](https://doi.org/10.12688/openreseurope.14800.1) (open access)
 

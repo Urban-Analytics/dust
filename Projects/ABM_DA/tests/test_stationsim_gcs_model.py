@@ -1,6 +1,5 @@
 # Imports
 from generate_data.stationsim_gcs_model_data import *
-from math import floor
 import numpy as np
 import pytest
 import sys
@@ -19,6 +18,17 @@ gate_location_data = get_gate_location_data()
 
 distance_data = get_distance_data()
 
+set_state_gate_data = get_set_state_gate_data()
+
+set_state_destination_data = get_set_state_destination_data()
+
+set_state_number_destination = get_set_state_number_destination()
+
+set_state_enkf_gate_angle_data = get_set_state_enkf_gate_angle_data()
+
+get_state_exit_number_data = get_get_state_exit_number_data()
+
+get_state_exit_location_data = get_get_state_exit_location_data()
 
 # Helper functions
 def __is_valid_location(agent_location, upper, lower, side):
@@ -225,15 +235,15 @@ def test_get_state_location(agent_locations, expected):
     """
     Test Model.get_state('location').
 
-    Test that Model.get_state('location') provides a state vector in the correct
-    form with the correct values.
+    Test that Model.get_state('location') provides a state vector in the
+    correct form with the correct values.
 
     Parameters
     ----------
     agent_locations : list_like
         List of tuples, each of which is an (x, y) location to prescribe for an
         agent in the model.
-    expected : array_like 
+    expected : array_like
         A state vector representing the locations of the agents.
     """
     model = set_up_model()
@@ -256,7 +266,7 @@ def test_get_state_location2D(agent_locations, expected):
     agent_locations : list_like
         List of tuples, each of which is an (x, y) location to prescribe for an
         agent in the model.
-    expected : array_like 
+    expected : array_like
         A state vector representing the locations of the agents.
     """
     model = set_up_model()
@@ -271,17 +281,17 @@ def test_get_state_loc_exit(agent_locations, exits, expected):
     """
     Test Model.get_state('loc_exit').
 
-    Test that Model.get_state('loc_exit') provides a state vector in the correct
-    form with the correct values.
+    Test that Model.get_state('loc_exit') provides a state vector in the
+    correct form with the correct values.
 
     Parameters
     ----------
     agent_locations : list_like
         List of tuples, each of which is an (x, y) location to prescribe for an
         agent in the model.
-    exits : list_like 
+    exits : list_like
         List of integers, each of which indexes a gate.
-    expected : array_like 
+    expected : array_like
         A state vector representing the locations of the agents.
     """
     model = set_up_model()
@@ -344,9 +354,9 @@ def test_model_speed_defaults():
     model = set_up_model(population_size=1)
 
     # Model speed params
-    assert model.speed_min == 0.2
-    assert model.speed_mean == 0.839236
-    assert model.speed_std == 0.349087
+    assert model.speed_min == 0.174
+    assert model.speed_mean == 0.897
+    assert model.speed_std == 0.372
     assert model.speed_steps == 3
 
 
@@ -488,5 +498,71 @@ def test_set_agent_location():
     assert all(results)
 
 
-def test_set_wiggle():
-    pass
+@pytest.mark.parametrize('state_vector, agent_states',
+                         set_state_number_destination)
+def test_set_state_exit_number(state_vector, agent_states):
+    model = set_up_model()
+
+    model.set_state(state_vector, sensor='exit_number')
+
+    for i, agent in enumerate(model.agents):
+        assert agent.gate_out == agent_states[i]
+
+
+@pytest.mark.parametrize('state_vector, agent_states', set_state_gate_data)
+def test_set_state_gate(state_vector, agent_states):
+    model = set_up_model()
+
+    model.set_state(state_vector, sensor='loc_exit')
+
+    for i, agent in enumerate(model.agents):
+        assert list(agent.location) == agent_states[i]['location']
+        assert agent.gate_out == agent_states[i]['gate']
+
+
+@pytest.mark.parametrize('state_vector, agent_states',
+                         set_state_destination_data)
+def test_set_state_destination_data(state_vector, agent_states):
+    model = set_up_model()
+
+    model.set_state(state_vector, sensor='exit_location')
+
+    for i, agent in enumerate(model.agents):
+        assert agent.loc_desire == agent_states[i]
+
+
+@pytest.mark.parametrize('state_vector, agent_states',
+                         set_state_enkf_gate_angle_data)
+def test_set_state_enkf_gate_angle(state_vector, agent_states):
+    model = set_up_model()
+
+    model.set_state(state_vector, sensor='enkf_gate_angle')
+
+    for i, agent in enumerate(model.agents):
+        assert tuple(agent.location) == agent_states[i]['location']
+        assert agent.loc_desire == agent_states[i]['destination']
+        assert agent.gate_out == agent_states[i]['gate_number']
+
+
+@pytest.mark.parametrize('agent_states, state_vector',
+                         get_state_exit_number_data)
+def test_get_state_exit_number(agent_states, state_vector):
+    model = set_up_model()
+
+    for i, agent in enumerate(model.agents):
+        agent.gate_out = agent_states[i]
+
+    result = model.get_state(sensor='exit_number')
+    assert result == state_vector
+
+
+@pytest.mark.parametrize('agent_states, state_vector',
+                         get_state_exit_location_data)
+def test_get_state_exit_location(agent_states, state_vector):
+    model = set_up_model()
+
+    for i, agent in enumerate(model.agents):
+        agent.loc_desire = agent_states[i]
+
+    result = model.get_state(sensor='exit_location')
+    assert result == state_vector

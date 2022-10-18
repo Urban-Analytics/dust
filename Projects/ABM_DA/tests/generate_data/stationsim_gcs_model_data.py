@@ -4,6 +4,7 @@ import numpy as np
 import sys
 sys.path.append('../stationsim')
 
+from generate_data.data_utils import wrap_up
 from stationsim_gcs_model import Model
 
 
@@ -264,4 +265,105 @@ def get_agent_gate_location_data():
     output.extend(left_right_gates)
     output.extend(top_bottom_gates)
 
+    return output
+
+
+def get_set_state_number_destination():
+    state_vectors = [[1, 2, 3],
+                     [9, 8, 7],
+                     [2, 3, 5]]
+
+    agent_states = state_vectors.copy()
+
+    output = wrap_up((state_vectors, agent_states))
+    return output
+
+
+def get_set_state_gate_data():
+    xs = [[1, 3, 5],
+          [2, 4, 6],
+          [101, 256, 42]]
+    ys = [[2, 4, 6],
+          [101, 256, 42],
+          [1, 3, 5]]
+    gs = [[2, 3, 5],
+          [7, 5, 3],
+          [4, 4, 4]]
+
+    assert len(xs) == len(ys) == len(gs)
+    state_vectors = [xs[i]+ys[i]+gs[i] for i in range(len(xs))]
+
+    a0 = [{'location': [1, 2], 'gate': 2},
+          {'location': [3, 4], 'gate': 3},
+          {'location': [5, 6], 'gate': 5}]
+    a1 = [{'location': [2, 101], 'gate': 7},
+          {'location': [4, 256], 'gate': 5},
+          {'location': [6, 42], 'gate': 3}]
+    a2 = [{'location': [101, 1], 'gate': 4},
+          {'location': [256, 3], 'gate': 4},
+          {'location': [42, 5], 'gate': 4}]
+    agent_states = [a0, a1, a2]
+
+    output = wrap_up((state_vectors, agent_states))
+    return output
+
+
+def get_set_state_enkf_gate_angle_data():
+    state_vectors = [[1, 100, 60,
+                      1, 120, 100,
+                      1, 0, 7,
+                      700, 0, 150,
+                      740, 125, 0],
+                     [42, 275, 647,
+                      628, 100, 190,
+                      4, 5, 1,
+                      740, 740, 125,
+                      475, 265, 700]]
+
+    agent_states = [[{'location': (1, 1), 'destination': (700, 740),
+                      'gate_number': 1},
+                     {'location': (100, 120), 'destination': (0, 125),
+                      'gate_number': 0},
+                     {'location': (60, 100), 'destination': (150, 0),
+                      'gate_number': 7}],
+                    [{'location': (42, 628), 'destination': (740, 475),
+                      'gate_number': 4},
+                     {'location': (275, 100), 'destination': (740, 265),
+                      'gate_number': 5},
+                     {'location': (647, 190), 'destination': (125, 700),
+                      'gate_number': 1}]]
+
+    output = wrap_up((state_vectors, agent_states))
+    return output
+
+
+def get_set_state_destination_data():
+    exit_locations = [[1, 100, 700, 1, 100, 700],
+                      [500, 700, 0, 0, 650, 125],
+                      [350, 125, 10, 370, 0, 0]]
+    agent_states = [[(1, 1), (100, 100), (700, 700)],
+                    [(500, 0), (700, 650), (0, 125)],
+                    [(350, 370), (125, 0), (10, 0)]]
+
+    output = wrap_up((exit_locations, agent_states))
+    return output
+
+
+def get_get_state_exit_number_data():
+    agent_states = [[1, 2, 3],
+                    [2, 3, 5],
+                    [9, 8, 7]]
+    state_vectors = agent_states.copy()
+    output = wrap_up((agent_states, state_vectors))
+    return output
+
+
+def get_get_state_exit_location_data():
+    agent_states = [[(1, 1), (100, 100), (700, 700)],
+                    [(500, 0), (700, 650), (0, 125)],
+                    [(350, 370), (125, 0), (10, 0)]]
+    state_vectors = [[1, 100, 700, 1, 100, 700],
+                     [500, 700, 0, 0, 650, 125],
+                     [350, 125, 10, 370, 0, 0]]
+    output = wrap_up((agent_states, state_vectors))
     return output

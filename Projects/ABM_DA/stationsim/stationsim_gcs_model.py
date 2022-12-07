@@ -60,15 +60,13 @@ class Agent:
         self.steps_activate = self.unique_id * 25.0 / model.birth_rate
 
         # History
+        self.history_locations = []
+        self.step_start = None
+        self.step_end = None
         if model.do_history:
-            self.history_locations = []
             self.history_speeds = []
             self.history_wiggles = 0
             self.history_collisions = 0
-            self.step_start = None
-        else:
-            self.history_locations = []  # necessary in Particle Filter
-            self.step_start = None
 
     def set_gate_out(self, gate_in=None):
         '''
@@ -307,6 +305,7 @@ class Agent:
             if self.model.do_print:
                 print('deactivating agent')
             self.status = 2
+            self.step_end = self.model.total_time
             self.model.pop_active -= 1
             self.model.pop_finished += 1
             if self.model.do_history:

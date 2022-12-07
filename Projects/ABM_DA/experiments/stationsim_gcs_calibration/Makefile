@@ -54,3 +54,6 @@ outputs/figures/sensitivity_analysis/global: outputs/figures/sensitivity_analysi
 
 outputs/models:
 	cd outputs/ && mkdir models
+
+outputs/figures/validation: outputs/figures
+	cd outputs/figures && mkdir validation

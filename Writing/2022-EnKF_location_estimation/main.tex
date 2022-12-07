@@ -1,0 +1,93 @@
+\documentclass{article}
+
+% Packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[round]{natbib}
+
+% Document metadata
+\title{Untitled EnKF paper}
+\author{Keiran Suchak}
+
+\begin{document}
+
+\maketitle{}
+
+\begin{abstract}
+    Write abstract here.
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+
+Contents:
+\begin{itemize}
+    \item Provide context and motivation for investigation.
+    \item Outline aims and objectives.
+\end{itemize}
+
+Points of distinction to highlight:
+\begin{itemize}
+    \item Defining an approach for defining whether an agent is active or
+        inactive in an ensemble of models.
+    \item Comparing error in ensemble mean with mean of errors of
+        ensemble-member models.
+    \item Explaining the importance of an appropriate summary statistic
+        (median instead of mean) when calculating the average error over
+        time.
+    \item Explaining the importance of considering time-steps when a
+        sufficient number of filters are still running when collecting
+        summary statistics of multiple filter runs.
+    \item Using EnKF to improve the accuracy with which an ABM simulates a
+        pedestrian system.
+\end{itemize}
+
+\section{Background}\label{sec:background}
+
+\begin{itemize}
+    \item Discuss previous relevant work:
+    \begin{itemize}
+        \item \citet{ward2016dynamic}
+        \item \citet{malleson2020simulating}
+        \item \citet{clay2020towards}
+    \end{itemize}
+\end{itemize}
+
+\section{Methods}\label{sec:methods}
+
+\subsection{Model}\label{sub:methods:model}
+
+Explain about \texttt{StationSim\_GCS}.
+
+\subsection{Ensemble Kalman Filter}\label{sub:methods:enkf}
+
+\begin{itemize}
+    \item Explain about the Ensemble Kalman Filter~\citep{evensen2003ensemble},
+        which is based on the Kalman Filter~\citep{kalman1960new}.
+\end{itemize}
+
+\section{Experiments}\label{sec:exp}
+
+\subsection{Benchmarking}\label{sub:exp:bench}
+
+\subsection{Untitled Section}
+
+\begin{itemize}
+    \item Talk about measures used when running experiments with multiple EnKFs
+        to ensure that outliers don't skew results:
+    \begin{itemize}
+        \item Median instead of mean error.
+        \item Only considering time-steps when a sufficient number of models are
+            active.
+    \end{itemize}
+\end{itemize}
+
+\section{Results}\label{sec:results}
+
+\subsection{Benchmarking}\label{sub:results:bench}
+
+\section{Conclusion}\label{sec:conc}
+
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+\end{document}

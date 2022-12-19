@@ -7,7 +7,7 @@
 \usepackage{subcaption}
 \usepackage{todonotes}
 \usepackage{booktabs}
-\usepackage[margin=3cm]{geometry}
+\usepackage[left=4cm, right=4cm, top=3cm, bottom=3cm]{geometry}
 
 % Document metadata
 \title{Untitled EnKF paper}
@@ -123,15 +123,13 @@ The experiments, outlined visually in Figure~\ref{fig:exp}, aim to demonstrate t
 
 \begin{figure}[htp]
     \centering
-    \begin{subfigure}[htb]{0.50\textwidth}
+    \begin{subfigure}[htb]{0.49\textwidth}
         \centering
         \includegraphics[width=\textwidth ]{figures/exp_1}
         \caption{Experiment 1: Benchmarking}\label{fig:exp:exp_1}
     \end{subfigure}
-
-    \vspace{2em}
-    
-    \begin{subfigure}[htb]{0.50\textwidth}
+    \hfill  
+    \begin{subfigure}[htb]{0.49\textwidth}
         \centering
         \includegraphics[width=\textwidth]{figures/exp_2}
         \caption{Experiment 2: Exploring Ensemble-Member Models}\label{fig:exp:exp_2}
@@ -481,7 +479,7 @@ This shows us that the Ensemble Kalman Filter is extremely effective at using ob
 
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=0.6\textwidth]{figures/exp1/benchmark.pdf}
+	\includegraphics[width=0.8\textwidth]{figures/exp1/benchmark.pdf}
 	\caption{Line plot of the average error per agent based on the mean state of
 		the benchmarking ensemble and the mean state of the filter
 		ensemble.}\label{fig:gcs_line_benchmark}
@@ -497,12 +495,12 @@ We can now explore how the average error per agent varies across the filter ense
 
 \begin{figure}[htbp]
 	\centering
-	\begin{subfigure}[ht]{0.60\textwidth}
+	\begin{subfigure}[ht]{0.49\textwidth}
 		\includegraphics[width=\textwidth]{figures/exp1/lineplot.pdf}
 		\caption{Error per agent based of each ensemble member.}\label{fig:gcs_line}
 	\end{subfigure}
-
-	\begin{subfigure}[ht]{0.60\textwidth}
+    \hfill
+	\begin{subfigure}[ht]{0.49\textwidth}
 	\includegraphics[width=\textwidth]{figures/exp1/lineplot_ci.pdf}
 	\caption{Average error per agent from all ensemble member models, with confidence intervals.}\label{fig:gcs_line_ci}
 	\end{subfigure}
@@ -514,13 +512,99 @@ It is worth nothing that the error in the ensemble mean state appears to typical
 
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=0.6\textwidth]{figures/exp1/working_example.pdf}
+	\includegraphics[width=0.8\textwidth]{figures/exp1/working_example.pdf}
 	\caption{Working example --- calculating error based on the ensemble mean compared to the mean error of each individual member models.}\label{fig:gcs_working_eg}
 \end{figure}
 
 In summary, this experiment has demonstrated ... \todo[inline]{Keiran what do you think are the main takeaway messages from this section? Other than the Filter is good!}
 
 \subsection{Results 3: Assessing the EnKF}
+
+Having established a model baseline level of error and undertaken some exploration of the variation in error across the ensemble-member models within an EnKF, this section completes the experiments by assessing the success of the EnKF as a means of updating an ABM in real time and explores some of the emerging challenges. 
+
+\todo[inline]{NM: is it clear that this section is all about error per agent, not aggregate performance?}
+
+\subsubsection*{Agent Behaviour under EnKF}
+
+It is illuminating to explore the behaviour of the individual agents as their state variables are manipulated by the EnKF. To this end, Figure~\ref{fig:gcs_updating} illustrates the prior and posterior positions of two individual agents (`agent A' and `agent B').
+When comparing the prior and posterior for both agents, we see that the
+introduction of observations through data assimilation has resulted in the
+reduction in the spread of the ensemble-member model representations of the
+agents, i.e. the uncertainty in the model estimate of the positions has been reduced.
+This pattern is observed across the other agents in the system.
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[width=0.7\textwidth]{figures/updating_state.pdf}
+	\caption{Comparison of prior and posterior positions (in blue and pink, respectively) of two agents (`A' and `B') in all ensemble member models. 
+		Boxes A and B: the prior and posterior positions of agent A.
+		Boxes C and D: the prior and posterior positions of agent B.}\label{fig:gcs_updating}
+\end{figure}
+
+Having established the ability of the EnKF to reduced the uncertainty in the estimates of pedestrians' positions in the environment, we see to tackle a number of additional challenges.
+
+\todo[inline]{It's great to see that actual impact of the filter on the estimated positions. Any room to elaborate further on this result? Maybe a comparison with the baseline? It just feels as though the section ends a bit abruptly. }
+
+\subsubsection*{Managing Outliers}
+
+When running a large number of filters with the same filter and model parameters, there is inevitably some variation in the results. This pertains to both the way in which the average error per agent varies over time, and the length of time a filter takes to reach completion. Whilst the majority of the filters reach completion within the first 4500 time-steps, which is consistent with the baseline, some do not until approximately 10000 time-steps. This is evidenced in Figure~\ref{fig:end_time_cdf}. \todo{Briefly, why does this happen? I'd query this if I were a reviewer.} These outliers must be removed as they artificially increase the apparent error of the filter. Hence when calculating error, time-steps after which 90\% of the models have completed (typically around 5000 time-steps\todo{Is 5000 correct?} are disregarded. In addition, the median, rather than the mean, is used to summarise the overall error per agent. 
+% Lots more discussion about this in Keiran's thesis but I think this is probably enough..
+
+\begin{figure}[hbt]
+	\centering
+	\includegraphics[width=0.8\textwidth]{figures/exp2/end_time_cdf.pdf}
+	\caption{Empirical cumulative distribution function (eCDF) plot of filter finish times; dotted line represents a cumulative level of 90\%.}\label{fig:end_time_cdf}
+\end{figure}
+
+
+\subsubsection*{Filter Performance}
+
+When assessing the average error per agent, three comparisons need to be drawn: (i) benchmarking ensembles against the analysis of the filter ensembles; (ii) the forecast of
+the filter ensembles against the analysis of the filter ensembles; (iii) and the observations against the analysis of the filter ensembles.  This section goes on to explore each of these comparison. In each case, the comparison is aided by the use of three figures: 
+\begin{itemize}
+	\item  a line plot of the average error per agent over time where the line represents the median of
+the collection of filters at each time-step and the shaded area represents the
+95\% confidence interval around the line; 
+	\item a boxplot showing the distribution of these errors when aggregated over time (logged to reduce the visual impact of the skewed distributions);
+\end{itemize}
+
+Figure~\ref{fig:median_analysis_baseline} plots the median error per agent by comparing the benchmarking ensembles to the analysis of the filter ensembles. In Figure~\ref{fig:analysis_baseline_line}, we can see that the average error per agent in the
+filter analysis states is much lower throughout. This is echoed by the logged boxplot in Figure~\ref{fig:analysis_baseline_log_box}  
+
+XXXX HERE 
+
+The majority of the data pertaining to the analysis error lies below 0,
+indicating that the average error per agent for the analysis is often below 1.
+In the case of the benchmarking data, however, the majority of the data lie
+above 0, indicating that in most cases, the average error per agent for the
+benchmarking ensembles is much higher.
+
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}[htb]{0.8\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{Chapters/ch_6_results_2/figures/exp2/truncated_median_analysis_baseline_line.pdf}
+		\caption{Line plot of average error per agent over
+			time.}\label{fig:analysis_baseline_line}
+	\end{subfigure}
+	
+	\begin{subfigure}[htb]{0.45\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{Chapters/ch_6_results_2/figures/exp2/truncated_median_analysis_baseline_box.pdf}
+		\caption{Box plot of average error per
+			agent.}\label{fig:analysis_baseline_box}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[htb]{0.45\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{Chapters/ch_6_results_2/figures/exp2/truncated_median_analysis_baseline_log_box.pdf}
+		\caption{Box plot of log of average error per
+			agent.}\label{fig:analysis_baseline_log_box}
+	\end{subfigure}
+	\caption{Comparison of average error per agent between analysis and
+		benchmarking filters}\label{fig:median_analysis_baseline}
+\end{figure}
+
 
 
 

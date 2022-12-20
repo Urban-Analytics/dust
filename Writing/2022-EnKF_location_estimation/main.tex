@@ -560,44 +560,31 @@ When running a large number of filters with the same filter and model parameters
 \subsubsection*{Filter Performance}
 
 When assessing the average error per agent, three comparisons need to be drawn: (i) benchmarking ensembles against the analysis of the filter ensembles; (ii) the forecast of
-the filter ensembles against the analysis of the filter ensembles; (iii) and the observations against the analysis of the filter ensembles.  This section goes on to explore each of these comparison. In each case, the comparison is aided by the use of three figures: 
+the filter ensembles against the analysis of the filter ensembles; (iii) and the observations against the analysis of the filter ensembles.  This section goes on to explore each of these comparison. In each case, the comparison is aided by the use of two figures: 
 \begin{itemize}
-	\item  a line plot of the average error per agent over time where the line represents the median of
-the collection of filters at each time-step and the shaded area represents the
-95\% confidence interval around the line; 
+	\item  a line plot of the average error per agent over time where the line represents the median of the collection of filters at each time-step and the shaded area represents the 95\% confidence interval around the line; 
 	\item a boxplot showing the distribution of these errors when aggregated over time (logged to reduce the visual impact of the skewed distributions);
 \end{itemize}
 
-Figure~\ref{fig:median_analysis_baseline} plots the median error per agent by comparing the benchmarking ensembles to the analysis of the filter ensembles. In Figure~\ref{fig:analysis_baseline_line}, we can see that the average error per agent in the
-filter analysis states is much lower throughout. This is echoed by the logged boxplot in Figure~\ref{fig:analysis_baseline_log_box}  
-
-XXXX HERE 
-
-The majority of the data pertaining to the analysis error lies below 0,
-indicating that the average error per agent for the analysis is often below 1.
-In the case of the benchmarking data, however, the majority of the data lie
-above 0, indicating that in most cases, the average error per agent for the
-benchmarking ensembles is much higher.
+Figure~\ref{fig:median_analysis_baseline} plots the median error per agent by comparing the benchmarking ensembles to the analysis of the filter ensembles. In Figure~\ref{fig:analysis_baseline_line}\todo{why does it increase at the end?}, we can see that the average error per agent in the filter analysis states is much lower throughout. This is echoed by the logged boxplot in Figure~\ref{fig:analysis_baseline_log_box}. The majority of the logged data pertaining to the analysis error lie below 0, indicating that the average error per agent for the analysis is often below 1. In the case of the benchmarking data, however, the majority of the data lie above 0, indicating that in most cases, the average error per agent for the benchmarking ensembles is much higher.
 
 \begin{figure}[htbp]
 	\centering
-	\begin{subfigure}[htb]{0.8\textwidth}
+	\begin{subfigure}[htb]{0.54\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Chapters/ch_6_results_2/figures/exp2/truncated_median_analysis_baseline_line.pdf}
-		\caption{Line plot of average error per agent over
-			time.}\label{fig:analysis_baseline_line}
+		\includegraphics[width=\textwidth]{figures/exp2/truncated_median_analysis_baseline_line.pdf}
+		\caption{Line plot of average error per agent over time.}\label{fig:analysis_baseline_line}
 	\end{subfigure}
-	
+%	\begin{subfigure}[htb]{0.45\textwidth}
+%		\centering
+%		\includegraphics[width=\textwidth]{Chapters/ch_6_results_2/figures/exp2/truncated_median_analysis_baseline_box.pdf}
+%		\caption{Box plot of average error per
+%			agent.}\label{fig:analysis_baseline_box}
+%	\end{subfigure}
+%	\hfill
 	\begin{subfigure}[htb]{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{Chapters/ch_6_results_2/figures/exp2/truncated_median_analysis_baseline_box.pdf}
-		\caption{Box plot of average error per
-			agent.}\label{fig:analysis_baseline_box}
-	\end{subfigure}
-	\hfill
-	\begin{subfigure}[htb]{0.45\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{Chapters/ch_6_results_2/figures/exp2/truncated_median_analysis_baseline_log_box.pdf}
+		\includegraphics[width=\textwidth]{figures/exp2/truncated_median_analysis_baseline_log_box.pdf}
 		\caption{Box plot of log of average error per
 			agent.}\label{fig:analysis_baseline_log_box}
 	\end{subfigure}
@@ -605,8 +592,63 @@ benchmarking ensembles is much higher.
 		benchmarking filters}\label{fig:median_analysis_baseline}
 \end{figure}
 
+Figure~\ref{fig:median_analysis_forecast} compares the average error per agent in the forecast and analysis states of the filter model ensembles, i.e. the error before and after assimilating data at each time-step.  We see that the error in the analysis state is typically an improvement on the error in the forecast state, with the improvements being most noticeable at the beginning of the set of time-steps and at the end of the time-steps (Figure~\ref{fig:analysis_forecast_line}). The difference at the beginning is due to the reasoning outlined in Section~\ref{sub:loc_est_gcs:res:baseline}\todo{fix ref} --- the entrance of multiple agents at the beginning of the filter run time and the entry of agents at points on the gates that do not match the exact entry point of corresponding agents in the base model lead to an initial growth in error. The error in the analysis state does not suffer from this growth as it is
+updated by the provided observations.  The increase in the variance of the errors towards the end of the experiment is a consequence of many filters reaching completion and hence the summary statistics being drawn over a decreasing number of filters. Furthermore, Figure~\ref{fig:analysis_forecast_log_box} illustrates that, again, the majority of the data lie below 0, indicating that the average error per agent in each case often lies below 1.
 
 
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}[htb]{0.54\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/exp2/truncated_median_analysis_forecast_line.pdf}
+		\caption{Line plot of average error per agent over
+			time.}\label{fig:analysis_forecast_line}
+	\end{subfigure}
+%	\begin{subfigure}[htb]{0.45\textwidth}
+%		\centering
+%		\includegraphics[width=\textwidth]{Chapters/ch_6_results_2/figures/exp2/truncated_median_analysis_forecast_box.pdf}
+%		\caption{Box plot of average error per
+%			agent.}\label{fig:analysis_forecast_box}
+%	\end{subfigure}
+	\hfill
+	\begin{subfigure}[htb]{0.45\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/exp2/truncated_median_analysis_forecast_log_box.pdf}
+		\caption{Box plot of log of average error per
+			agent.}\label{fig:analysis_forecast_log_box}
+	\end{subfigure}
+	\caption{Comparison of average error per agent between analysis and
+		forecast.}\label{fig:median_analysis_forecast}
+\end{figure}
+
+Finally, Figure~\ref{fig:median_analysis_obs} compares the variation of the average error per agent in the (pseudo-true) observations and the analysis states of the filter model ensembles. 
+The average observation error is largely constant throughout the experiment (Figure~\ref{fig:analysis_obs_line}). The increase in error variance is again caused by averaging over a decreasing number of filters. In comparison to the observation error, the analysis error is typically lower
+for the majority of the time-steps for which the filters are running. This is not always the case, however, as highlighted in Figure~\ref{fig:analysis_obs_log_box}. In each case, the errors appear to be low; however, there are substantial outliers pertaining to the analysis error. The observation error, on the other hand, contains relatively few outliers. This is a consequence of how the observations are produced; by adding normally distributed random noise to the base model state.
+
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}[htb]{0.54\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/exp2/truncated_median_analysis_obs_line.pdf}
+		\caption{Line plot of average error per agent over
+			time.}\label{fig:analysis_obs_line}
+	\end{subfigure}
+%	\begin{subfigure}[htb]{0.45\textwidth}
+%		\centering
+%		\includegraphics[width=\textwidth]{Chapters/ch_6_results_2/figures/exp2/truncated_median_analysis_obs_box.pdf}
+%		\caption{Box plot of average error per
+%			agent.}\label{fig:analysis_obs_box}
+%	\end{subfigure}
+%	\hfill
+	\begin{subfigure}[htb]{0.45\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/exp2/truncated_median_analysis_obs_log_box.pdf}
+		\caption{Box plot of log of average error per
+			agent.}\label{fig:analysis_obs_log_box}
+	\end{subfigure}
+	\caption{Comparison of average error per agent between analysis and
+		observations.}\label{fig:median_analysis_obs}
+\end{figure}
 
 
 

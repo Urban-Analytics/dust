@@ -54,6 +54,7 @@ nbproject
 
 # ********** Latex **********
 *.aux
+*.out
 *.bbl
 *.log
 *.toc

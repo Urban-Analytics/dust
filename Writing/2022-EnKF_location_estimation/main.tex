@@ -3,11 +3,13 @@
 % Packages
 \usepackage{amsmath}
 \usepackage{graphicx}
-\usepackage[round]{natbib}
+\usepackage{natbib}
+\setcitestyle{numbers}  % because use 'vancouver' style later which needs this
 \usepackage{subcaption}
 \usepackage{todonotes}
 \usepackage{booktabs}
 \usepackage[left=4cm, right=4cm, top=3cm, bottom=3cm]{geometry}
+\usepackage{hyperref}
 
 % Document metadata
 \title{Untitled EnKF paper}
@@ -25,6 +27,9 @@
 % *********************************************************************************
 % *********************************************************************************
 \section{Introduction}\label{sec:intro}
+
+Agent-based modelling is an effective, albeit not widely used, method for creating simulations of systems that are driven by the behaviours and actions of individual entities. 
+
 
 \todo[inline]{Write introduction}
 
@@ -664,10 +669,12 @@ A drawback with the current approach is that it uses the same ABM to generate `r
 
 \todo[inline]{Any other advantages / disadvantages to mention?  }
 
+\section*{Funding}
 
+This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No. 757455)
 
 \newpage 
-\bibliographystyle{unsrtnat}
+\bibliographystyle{vancouver}
 \bibliography{references}
 
 \end{document}

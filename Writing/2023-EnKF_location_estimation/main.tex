@@ -28,18 +28,11 @@
 % *********************************************************************************
 \section{Introduction}\label{sec:intro}
 
-Agent-based modelling is an effective, albeit not widely used, method for creating simulations of systems that are driven by the behaviours and actions of individual entities. 
+Agent-based modelling (ABM)~\citep{bonabeau_agent_2002} is an effective, albeit not widely used, method for creating simulations of systems that are driven by the behaviours and actions of individual entities. Rather than attempting to describe systems in terms of their aggregate properties, agent-based models (ABMs) simulate individual `agents' (e.g. people, animals, vehicles, particles, etc.) directly. This allows modellers to capture many important characteristics that are inherent to the underlying system and cannot be represented with aggregate models~\citep{an_challenges_2021, heppenstall_agentbased_2012}.
 
+Despite progress in recent decades to improve the robustness of the methodology~\citep[e.g.][]{thiele_facilitating_2014}), ABM still faces a number of challenges\citep{an_challenges_2021, filatova_spatial_2013, lippe_using_2019} including the understanding and managing of uncertainty~\citep{kieu_dealing_2020}. In particular, only a handful of studies have attempted to reduce the uncertainty that will naturally arise as a model and a system evolve in isolation. Model calibration is not sufficient for this as even a perfectly calibrated model will diverge from a real system over time.  Hence ``live'' simulations~\cite{swarup_live_2020}---i.e. those that are attempting to simulate a system in \textit{real-time}---need a way to update a model state in response to emerging data. Such systems could be transformational in managing a number of different problems. For example, a live simulation of a busy public place such as a public transport hub could allow a manager to better understand how people were moving around and prevent dangerous crowd bottlenecks from forming. Similar `real time' systems could revolutionise approaches to disaster response or the spread of disease~\citep{swarup_live_2020}.
 
-\todo[inline]{Write introduction}
-
-Contents:
-\begin{itemize}
-    \item Provide context and motivation for investigation.
-    \item Outline aims and objectives.
-\end{itemize}
-
-Main aim: show that an Ensemble Kalman Filter (EnKF) can improve the accuracy with which an agent-based model simulates a system of pedestrians.
+This paper ....   Specifically, it's aim is to ... . Main aim: show that an Ensemble Kalman Filter (EnKF) can improve the accuracy with which an agent-based model simulates a system of pedestrians.
 
 Points of distinction to highlight:
 \begin{itemize}
@@ -78,9 +71,10 @@ Other things to mention in the introduction:
 \begin{itemize}
     \item Discuss previous relevant work:
     \begin{itemize}
-        \item \citet{ward2016dynamic}
-        \item \citet{malleson2020simulating}
-        \item \citet{clay2020towards}
+    	\item data driven ABM (briefly)  \citep{oloo_predicting_2018} 
+    	\item ABM approximations~\citep{ward_dynamic_2016, lueck_who_2019}
+        \item simple ABMs~\citet{malleson_simulating_2020, clay_realtime_2020, tang_data_2022}
+
     \end{itemize}
 \end{itemize}
 

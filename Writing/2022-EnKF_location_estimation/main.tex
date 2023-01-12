@@ -526,12 +526,10 @@ Having established a model baseline level of error and undertaken some explorati
 
 \subsubsection*{Agent Behaviour under EnKF}
 
-It is illuminating to explore the behaviour of the individual agents as their state variables are manipulated by the EnKF. To this end, Figure~\ref{fig:gcs_updating} illustrates the prior and posterior positions of two individual agents (`agent A' and `agent B').
-When comparing the prior and posterior for both agents, we see that the
-introduction of observations through data assimilation has resulted in the
-reduction in the spread of the ensemble-member model representations of the
-agents, i.e. the uncertainty in the model estimate of the positions has been reduced.
-This pattern is observed across the other agents in the system.
+It is illuminating to explore the behaviour of the individual agents as their state variables are manipulated by the EnKF. To this end, Figure~\ref{fig:gcs_updating} illustrates the prior and posterior positions of two individual agents (`agent A' and `agent B'). We see that the introduction of observations through data assimilation has resulted in the reduction in the spread of the ensemble-member model representations of the
+agents, i.e. the uncertainty in the model estimate of the positions has been reduced. This pattern is observed across the other agents in the system.
+
+\todo[inline]{Figure~\ref{fig:gcs_updating} is fantastic, but could be improved by: (i) aking the observations more obvious (I think they are obscured) (ii) reducing the size of the print area (there is a lot of unnecessary empty space) (iii) removing the points that you're not displaying from the legend. (ii) and (iii) can be done by editting the pdf if it's annoying to re-produce the figure (I can do this) but I'm not sure about (i).}
 
 \begin{figure}[htb]
 	\centering
@@ -547,7 +545,7 @@ Having established the ability of the EnKF to reduced the uncertainty in the est
 
 \subsubsection*{Managing Outliers}
 
-When running a large number of filters with the same filter and model parameters, there is inevitably some variation in the results. This pertains to both the way in which the average error per agent varies over time, and the length of time a filter takes to reach completion. Whilst the majority of the filters reach completion within the first 4500 time-steps, which is consistent with the baseline, some do not until approximately 10000 time-steps. This is evidenced in Figure~\ref{fig:end_time_cdf}. \todo{Briefly, why does this happen? I'd query this if I were a reviewer.} These outliers must be removed as they artificially increase the apparent error of the filter. Hence when calculating error, time-steps after which 90\% of the models have completed (typically around 5000 time-steps\todo{Is 5000 correct?} are disregarded. In addition, the median, rather than the mean, is used to summarise the overall error per agent. 
+When running a large number of filters with the same filter and model parameters, there is inevitably some variation in the results. This pertains to both the way in which the average error per agent varies over time, and the length of time a filter takes to reach completion. Whilst the majority of the filters reach completion within the first 4500 time-steps, which is consistent with the baseline, some do not until approximately 10000 time-steps. This is evidenced in Figure~\ref{fig:end_time_cdf}. \todo{Briefly, why does this happen? I'd query this if I were a reviewer.} These outliers must be removed as they artificially increase the apparent error of the filter. Hence when calculating error, time-steps after which 90\% of the models have completed (typically around 5000 time-steps)\todo{Is 5000 correct?} are disregarded. In addition, the median, rather than the mean, is used to summarise the overall error per agent. 
 % Lots more discussion about this in Keiran's thesis but I think this is probably enough..
 
 \begin{figure}[hbt]
@@ -656,9 +654,17 @@ for the majority of the time-steps for which the filters are running. This is no
 % *********************************************************************************
 % *********************************************************************************
 % *********************************************************************************
-\section{Conclusion}\label{sec:conc}
+\section{Discussion and Conclusion}\label{sec:conc}
 
-\todo[inline]{Write conclusions}
+This paper has, for the first time, developed an Ensemble Kalman Filter (EnKF) that is able to update the individual positions of agents in an agent-based pedestrian model (ABM) in pseudo-real time. It does this by comparing the pseudo-real positions of the agents (the `observations') to the equivalent positions that are being predicted by an ensemble of agent-based models, updating the positions accordingly. The paper demonstrates that the ABM-EnKF system performs considerably better at predicting the positions of the pedestrians than the ABM is capable of doing in isolation. 
+
+Similar attempts to use data assimilation to optimise an ABM in real time have often used variations on the particle filter~\citep{wang_data_2015, kieu_dealing_2020, malleson2020simulating, ternes_data_2021}. However, a drawback with the particle filter is that it typically requires a very large number of particles to ensure that the space of all possible model states is adequately covered, making it extremely computationally expensive. Although a direct comparison with similar work is difficult as the systems and models are different, here an ensemble of only 100 models was adequate to reliably capture the behaviour of the pedestrians in the pseudo-real system. In other work tens of thousands of ensemble members (`particles') were required~\citep{malleson2020simulating} \todo[inline]{Keiran can you say anything about computation time? Or something mathsy to back up what I have said? Otherwise this paragraph is a little vague}
+
+A drawback with the current approach is that it uses the same ABM to generate `real world' observations (termed \textit{pseudo-true} data) and to predict the behaviour of the system. This means that there is no model discrepancy; i.e. no uncertainty between the data generating mechanism and the simulation. In reality there will always be a degree of model discrepancy and this will undoubtedly influence accuracy of the predictions of the EnKF. The use of pseudo-truth data is common for exploratory studies such as this \citep[see for example][]{wang_data_2015, malleson2020simulating} and has the advantage that we can precisely attribute any uncertainty to its underlying causes, but leaves open the question of how well might this approach work in the real world. Immediate future work will begin to test this by incorporating data that are derived from the movements of real people such as \citet{zhou_understanding_2012}
+
+\todo[inline]{Any other advantages / disadvantages to mention?  }
+
+
 
 \newpage 
 \bibliographystyle{unsrtnat}

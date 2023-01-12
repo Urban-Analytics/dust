@@ -106,8 +106,8 @@ Things to note:
 \subsection{Ensemble Kalman Filter}\label{sub:methods:enkf}
 
 \begin{itemize}
-    \item Explain about the Ensemble Kalman Filter~\citep{evensen2003ensemble},
-        which is based on the Kalman Filter~\citep{kalman1960new}.
+    \item Explain about the Ensemble Kalman Filter~\citep{evensen_ensemble_2003},
+        which is based on the Kalman Filter~\citep{kalman_new_1960}.
     \item Point to previous experiments in the thesis. E.g. ``Results: The data assimilation scheme was tested for a range of different filter
 parameter values, and it was found that improvements in filter performance
 resulted from increases in the ensemble size, reductions in the standard
@@ -122,7 +122,7 @@ between successive attempts to assimilate observational data into the system.'' 
 % *********************************************************************************
 \section{Experiments}\label{sec:exp}
 
-The experiments, outlined visually in Figure~\ref{fig:exp}, aim to demonstrate that the EnFK can improve the accuracy of a pedestrian system in comparison to a baseline scenario with no data assimilation. In order to better understand the impact of data assimilation on an agent-based model, rather assess the realism of the model itself, we use the ``identical twin'' approach \citet{lueck_who_2019}. In this approach, a `Base Model' is used. A Base Model is an instance of    \texttt{StationSim\_GCS} that is used to generate `pseudo-true' data that are taken as the real-world observations in the experiments (in lieu of data from a real crowd).
+The experiments, outlined visually in Figure~\ref{fig:exp}, aim to demonstrate that the EnFK can improve the accuracy of a pedestrian system in comparison to a baseline scenario with no data assimilation. In order to better understand the impact of data assimilation on an agent-based model, rather assess the realism of the model itself, we use the ``identical twin'' approach \citep{lueck_who_2019}. In this approach, a `Base Model' is used. A Base Model is an instance of \texttt{StationSim\_GCS} that is used to generate `pseudo-true' data that are taken as the real-world observations in the experiments (in lieu of data from a real crowd).
 
 %The experiments run for this chapter can be found in the notebooks found in \texttt{Projects/ABM\_DA/experiments/enkf\_experiments/results\_2/notebooks/} in the \href{https://zenodo.org/record/6469804}{dust repository archive}}.
 
@@ -663,7 +663,7 @@ for the majority of the time-steps for which the filters are running. This is no
 
 This paper has, for the first time, developed an Ensemble Kalman Filter (EnKF) that is able to update the individual positions of agents in an agent-based pedestrian model (ABM) in pseudo-real time. It does this by comparing the pseudo-real positions of the agents (the `observations') to the equivalent positions that are being predicted by an ensemble of agent-based models, updating the positions accordingly. The paper demonstrates that the ABM-EnKF system performs considerably better at predicting the positions of the pedestrians than the ABM is capable of doing in isolation. 
 
-Similar attempts to use data assimilation to optimise an ABM in real time have often used variations on the particle filter~\citep{wang_data_2015, kieu_dealing_2020, malleson2020simulating, ternes_data_2021}. However, a drawback with the particle filter is that it typically requires a very large number of particles to ensure that the space of all possible model states is adequately covered, making it extremely computationally expensive. Although a direct comparison with similar work is difficult as the systems and models are different, here an ensemble of only 100 models was adequate to reliably capture the behaviour of the pedestrians in the pseudo-real system. In other work tens of thousands of ensemble members (`particles') were required~\citep{malleson2020simulating} \todo[inline]{Keiran can you say anything about computation time? Or something mathsy to back up what I have said? Otherwise this paragraph is a little vague}
+Similar attempts to use data assimilation to optimise an ABM in real time have often used variations on the particle filter~\citep{wang_data_2015, kieu_dealing_2020, malleson2020simulating, ternes_data_2021}. However, a drawback with the particle filter is that it typically requires a very large number of particles to ensure that the space of all possible model states is adequately covered, making it extremely computationally expensive. Although a direct comparison with similar work is difficult as the systems and models are different, here an ensemble of only 100 models was adequate to reliably capture the behaviour of the pedestrians in the pseudo-real system. In other work tens of thousands of ensemble members (`particles') were required~\citep{malleson_simulating_2020} \todo[inline]{Keiran can you say anything about computation time? Or something mathsy to back up what I have said? Otherwise this paragraph is a little vague}
 
 A drawback with the current approach is that it uses the same ABM to generate `real world' observations (termed \textit{pseudo-true} data) and to predict the behaviour of the system. This means that there is no model discrepancy; i.e. no uncertainty between the data generating mechanism and the simulation. In reality there will always be a degree of model discrepancy and this will undoubtedly influence accuracy of the predictions of the EnKF. The use of pseudo-truth data is common for exploratory studies such as this \citep[see for example][]{wang_data_2015, malleson2020simulating} and has the advantage that we can precisely attribute any uncertainty to its underlying causes, but leaves open the question of how well might this approach work in the real world. Immediate future work will begin to test this by incorporating data that are derived from the movements of real people such as \citet{zhou_understanding_2012}
 
@@ -675,6 +675,6 @@ This project has received funding from the European Research Council (ERC) under
 
 \newpage 
 \bibliographystyle{vancouver}
-\bibliography{references}
+\bibliography{2023-EnKF_location_estimation}
 
 \end{document}

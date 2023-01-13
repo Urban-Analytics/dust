@@ -12,8 +12,8 @@
 \usepackage{hyperref}
 
 % Document metadata
-\title{Untitled EnKF paper}
-\author{Keiran Suchak}
+\title{Coupling an Agent-Based Model and Ensemble Kalman Filter for Real-Time Crowd Modelling}
+\author{Keiran Suchak \and  Jonathan A. Ward \and Le-Minh Kieu \and Nick Malleson}
 
 \begin{document}
 
@@ -21,44 +21,43 @@
 
 \begin{abstract}
     Write abstract here.
+    
+    $ $ \\ {\bf KEYWORDS:} Agent-Based Model; Crowd Simulation; Data Assimilation; Ensemble Kalman Filter; Data-Driven Agent-Based Modelling.
+    
 \end{abstract}
+
+
 
 % *********************************************************************************
 % *********************************************************************************
 % *********************************************************************************
 \section{Introduction}\label{sec:intro}
 
-Agent-based modelling (ABM)~\citep{bonabeau_agent_2002} is an effective, albeit not widely used, method for creating simulations of systems that are driven by the behaviours and actions of individual entities. Rather than attempting to describe systems in terms of their aggregate properties, agent-based models (ABMs) simulate individual `agents' (e.g. people, animals, vehicles, particles, etc.) directly. This allows modellers to capture many important characteristics that are inherent to the underlying system and cannot be represented with aggregate models~\citep{an_challenges_2021, heppenstall_agentbased_2012}.
+Agent-based modelling (ABM)~\citep{epstein_growing_1996, bonabeau_agent_2002} is an effective, albeit not particularly widely used, method for creating simulations of systems that are driven by the behaviours and actions of individuals. Rather than attempting to describe systems in terms of their aggregate properties, agent-based models (ABMs) simulate individual `agents' (e.g. people, animals, vehicles, particles, etc.) directly. This allows modellers to capture many important characteristics that are inherent to the underlying system and cannot be represented with aggregate models~\citep{an_challenges_2021, heppenstall_agentbased_2012}.
 
-Despite progress in recent decades to improve the robustness of the methodology~\citep[e.g.][]{thiele_facilitating_2014}), ABM still faces a number of challenges\citep{an_challenges_2021, filatova_spatial_2013, lippe_using_2019} including the understanding and managing of uncertainty~\citep{kieu_dealing_2020}. In particular, only a handful of studies have attempted to reduce the uncertainty that will naturally arise as a model and a system evolve in isolation. Model calibration is not sufficient for this as even a perfectly calibrated model will diverge from a real system over time.  Hence ``live'' simulations~\cite{swarup_live_2020}---i.e. those that are attempting to simulate a system in \textit{real-time}---need a way to update a model state in response to emerging data. Such systems could be transformational in managing a number of different problems. For example, a live simulation of a busy public place such as a public transport hub could allow a manager to better understand how people were moving around and prevent dangerous crowd bottlenecks from forming. Similar `real time' systems could revolutionise approaches to disaster response or the spread of disease~\citep{swarup_live_2020}.
+Despite progress in recent decades to improve the robustness of the methodology~\citep[e.g.][]{thiele_facilitating_2014}), ABM still faces a number of challenges~\citep[for example see][]{an_challenges_2021, filatova_spatial_2013, lippe_using_2019} including the understanding and managing of uncertainty~\citep{kieu_dealing_2020}. In particular, only a handful of studies have attempted to reduce the uncertainty that will naturally arise as a model and a system evolve. Model calibration is not sufficient for this as even a perfectly calibrated model will diverge from a real system over time.   Models are typically calibrated once, using historical data, and then projected forward in time to make a prediction independently of any new data that might arise. Hence ``live'' simulations~\cite{swarup_live_2020}---i.e. those that are attempting to simulate a system in \textit{real-time}---need a way to update a model state in response to emerging data. Such systems could be transformational in managing a number of different problems. For example, a live simulation of a busy public place such as a public transport hub could allow a manager to better understand how people were moving around and prevent dangerous crowd bottlenecks from forming. Similar `real time' systems could revolutionise approaches to disaster response or the spread of disease~\citep{swarup_live_2020}.
 
-This paper ....   Specifically, it's aim is to ... . Main aim: show that an Ensemble Kalman Filter (EnKF) can improve the accuracy with which an agent-based model simulates a system of pedestrians.
+This paper makes an important contribution that is necessary if agent-based models are to become more widely used in policy, particularly for \textit{real-time} applications. Specifically, its main aim is to demonstrate that an Ensemble Kalman Filter (EnKF)---a method that has shown great value in updating models of physical systems such as the climate---can improve the accuracy with which an agent-based model simulates a system of pedestrians. We present an existing model that can be used to simulate pedestrians in a public transport terminal and show that the model state, i.e. the positions of the pedestrian agents, can be updated with new observations as they emerge to keep the model in line with the evolution of the real system. \todo{Need any more about the results?}
 
-Points of distinction to highlight:
-\begin{itemize}
-	\item Comprehensive assessment of efficacy of an EnKF for an ABM.
-    \item Defining an approach for defining whether an agent is active or
-        inactive in an ensemble of models.
-    \item Comparing error in ensemble mean with mean of errors of
-        ensemble-member models.
-    \item Explaining the importance of an appropriate summary statistic
-        (median instead of mean) when calculating the average error over
-        time.
-    \item Explaining the importance of considering time-steps when a
-        sufficient number of filters are still running when collecting
-        summary statistics of multiple filter runs.
-    \item Using EnKF to improve the accuracy with which an ABM simulates a
-        pedestrian system.
-\end{itemize}
+The paper is structured as follows: Section~\ref{sec:background} reviews the relevant literature; Section~\ref{sec:methods} outlines the agent-based model, the Ensemble Kalman Filter and the data used; Section~\ref{sec:exp} outlines the experiments that will be conducted; Section~\ref{sec:results} outlines the results; and Section~\ref{sec:conc} draws conclusions.
 
-Other things to mention in the introduction:
-\begin{itemize}
-  \item Pseudo-truth data. ``The purpose of the base model for these experiments is simply to provide a state against which to compare the performance of filters.''
-  \item Broad overview of the experimental approach (how do the experiments show that the EnKF is/isn't working?)
-\end{itemize}
-
-
-
+% NM: these are very good points but probably things to bring out in their relevant sections. I think it's better to keep the intro shorter and focus on the key contribution(s)
+%Points of distinction to highlight:
+%\begin{itemize}
+%	\item Comprehensive assessment of efficacy of an EnKF for an ABM.
+%    \item Defining an approach for defining whether an agent is active or
+%        inactive in an ensemble of models.
+%    \item Comparing error in ensemble mean with mean of errors of
+%        ensemble-member models.
+%    \item Explaining the importance of an appropriate summary statistic
+%        (median instead of mean) when calculating the average error over
+%        time.
+%    \item Explaining the importance of considering time-steps when a
+%        sufficient number of filters are still running when collecting
+%        summary statistics of multiple filter runs.
+%    \item Using EnKF to improve the accuracy with which an ABM simulates a
+%        pedestrian system.
+%\end{itemize}
 
 
 % *********************************************************************************
@@ -66,17 +65,27 @@ Other things to mention in the introduction:
 % *********************************************************************************
 \section{Background}\label{sec:background}
 
-\todo[inline]{Write background}
+\subsection{Real-Time Agent-Based Modelling}\todo{Could drop these subheadings?}
 
-\begin{itemize}
-    \item Discuss previous relevant work:
+Agent-based modelling (ABM) is technique that has developed as a means of modelling systems that are ultimately driven by discrete, heterogeneous and autonomous \textit{agents}~\cite{epstein_growing_1996, bonabeau_agent_2002}. Many human systems are well suited to simulation with ABM because it avoids the loss of accuracy that can occur when individual-level dynamics are `smoothed out' by models that work at an aggregate level~\citep{batty_agents_2005}. Simulations of short-term human movements, such as pedestrian dynamics---the subject of this paper---are no exception. ABM has become a particularly popular methods for modelling crowds~\citep{helbing_agentbased_2012} because it captures the individual heterogeneity in a population as well as the interactions between them, both of which are essential for creating reliable micro-level crowd models~\citep{xu_crowd_2014}. 
+
+Most agent-based crowd models (and agent-based models more broadly) are essentially models of the past. They are designed to represent a particular scenario and then calibrated and validated using historical data. If the model can successfully reproduce these data then it is subsequently used to predict the impacts of internal or external changes to the system, akin to a thought experiment. Such an approach has theoretical and empirical value---for example by revealing the underlying mechanisms behind observed crowd dynamics or for general policy or infrastructure planning, respectively---but breaks down if crowds need to be simulated in \textit{real time}. In this case, various inevitable uncertainties would cause even a perfect model to quickly diverge from reality~\citep{heesterbeek_modeling_2015}.  Despite considerable progress in the area of ABM calibration~\citep{thiele_facilitating_2014, vandervaart_calibration_2015}, little progress has been made towards methods that can control the uncertainty in models \textit{during run time}. This makes it hard to predict systems that rapidly evolve, such as pedestrian systems, in real-time using agent-based models.
+
+\subsection{Calibration and Data Assimilation}
+
+An approach that could potentially resolve the issue of real-time model divergence is that of \textit{data assimilation} (DA). DA has had a variety of uses in the physical sciences, the most notable of which is in weather forecasting, where DA has been on of the key innovations that has caused weather predictions to improve so substantially in recent decades~\citep{kalnay_atmospheric_2003}. DA refers to a variety of mathematical approaches that allow new observational data to be incorporated into models at run time~\citep{lewis_dynamic_2006}, reducing the uncertainty in the model's predictions. 
+
+A fundamental difference between typical optimisation (`calibration') and DA is that rather than trying to find optimal model parameter values, DA attempts to estimate the `true' model \textit{state}. In other words, DA allows model’s evolution to be constrained against the observations as they arise~\citep{ward_dynamic_2016}. Whilst real-time calibration efforts exist~\citep[e.g.][]{oloo_predicting_2018}, these are not able to reduce the natural uncertainty in the system state that arises as stochastic models evolve.
+
+\subsection{Real-Time Agent-Based Models}
+
+\todo[inline]{Discuss previous relevant ABMs:}
     \begin{itemize}
     	\item data driven ABM (briefly)  \citep{oloo_predicting_2018} 
     	\item ABM approximations~\citep{ward_dynamic_2016, lueck_who_2019}
         \item simple ABMs~\citet{malleson_simulating_2020, clay_realtime_2020, tang_data_2022}
-
     \end{itemize}
-\end{itemize}
+
 
 
 % *********************************************************************************
@@ -85,6 +94,13 @@ Other things to mention in the introduction:
 \section{Methods}\label{sec:methods}
 
 \todo[inline]{Write methods}
+
+\subsection{Data and Case Study Area}
+
+\todo[inline]{About GCT and data}
+
+% USEFUL CUT FROM JASSS PAPER: this will be achieved through a number of experiments following an ‘identical twin’ approach (Wang & Hu 2015). In the identical twin approach, the agent-based model is first executed to produce hypothetical real data — also known as pseudo-truth (Grazzini et al. 2017) data — and these data are assumed to be drawn from the real world. During data assimilation, noisy observations are derived from the pseudo-truth data. This approach has the advantage that the ‘true’ system state can be known precisely, and so the accuracy of the particle filter can be calculated. In reality, the true system state can never be known.
+
 
 \subsection{Model}\label{sub:methods:model}
 
@@ -96,6 +112,8 @@ Things to note:
   \item Which model variables are known to the ensemble models (start gate and exit gates?)  % Create an ensemble of 100 models, each of which is a copy of the base model; this means that each of the duplicates in the ensemble contain the same information regarding which exits each of the agents will enter and exit through, as well as at what time they will be activated within the model. 
   \item `side stepping' behaviour the agents use to avoid each other and obstacles.
 \end{itemize}
+
+% 
 
 \subsection{Ensemble Kalman Filter}\label{sub:methods:enkf}
 

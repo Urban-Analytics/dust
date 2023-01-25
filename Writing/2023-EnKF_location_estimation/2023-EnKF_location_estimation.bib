@@ -66,6 +66,23 @@
   keywords = {ABM,data assimilation,MyPublications}
 }
 
+@article{cocucci_inference_2022,
+  title = {Inference in Epidemiological Agent-Based Models Using Ensemble-Based Data Assimilation},
+  author = {Cocucci, Tadeo Javier and Pulido, Manuel and Aparicio, Juan Pablo and Ru{\'i}z, Juan and Simoy, Mario Ignacio and Rosa, Santiago},
+  editor = {Gontis, Vygintas},
+  year = {2022},
+  journal = {PLOS ONE},
+  volume = {17},
+  number = {3},
+  pages = {e0264892},
+  issn = {1932-6203},
+  doi = {10.1371/journal.pone.0264892},
+  abstract = {To represent the complex individual interactions in the dynamics of disease spread informed by data, the coupling of an epidemiological agent-based model with the ensemble Kalman filter is proposed. The statistical inference of the propagation of a disease by means of ensemble-based data assimilation systems has been studied in previous works. The models used are mostly compartmental models representing the mean field evolution through ordinary differential equations. These techniques allow to monitor the propagation of the infections from data and to estimate several parameters of epidemiological interest. However, there are many important features which are based on the individual interactions that cannot be represented in the mean field equations, such as social network and bubbles, contact tracing, isolating individuals in risk, and social network-based distancing strategies. Agent-based models can describe contact networks at an individual level, including demographic attributes such as age, neighborhood, household, workplaces, schools, entertainment places, among others. Nevertheless, these models have several unknown parameters which are thus difficult to prescribe. In this work, we propose the use of ensemble-based data assimilation techniques to calibrate an agent-based model using daily epidemiological data. This raises the challenge of having to adapt the agent populations to incorporate the information provided by the coarse-grained data. To do this, two stochastic strategies to correct the model predictions are developed. The ensemble Kalman filter with perturbed observations is used for the joint estimation of the state and some key epidemiological parameters. We conduct experiments with an agent based-model designed for COVID-19 and assess the proposed methodology on synthetic data and on COVID-19 daily reports from Ciudad Aut\'onoma de Buenos Aires, Argentina.},
+  langid = {english},
+  keywords = {ABM,covid,data assimilation},
+  file = {/Users/nick/Zotero/storage/78XGUMKX/Cocucci et al. - 2022 - Inference in epidemiological agent-based models us.pdf}
+}
+
 @book{epstein_growing_1996,
   title = {Growing {{Artificial Societies}}: {{Social Science}} from the {{Bottom Up}}},
   author = {Epstein, J. and Axtell, R.},
@@ -284,6 +301,20 @@
   file = {/Users/nick/Zotero/storage/RQF8BZYQ/Swarup and Mortveit - 2020 - Live simulations.pdf}
 }
 
+@article{tang_data_2019,
+  title = {Data Assimilation in {{Agent-based}} Models Using Creation and Annihilation Operators},
+  author = {Tang, Daniel},
+  year = {2019},
+  journal = {arXiv:1910.09442 [cs]},
+  eprint = {1910.09442},
+  eprinttype = {arxiv},
+  primaryclass = {cs},
+  abstract = {Agent-based models are a powerful tool for studying the behaviour of complex systems that can be described in terms of multiple, interacting ``agents''. However, because of their inherently discrete and often highly non-linear nature, it is very difficult to reason about the relationship between the state of the model, on the one hand, and our observations of the real world on the other. In this paper we consider agents that have a discrete set of states that, at any instant, act with a probability that may depend on the environment or the state of other agents. Given this, we show how the mathematical apparatus of quantum field theory can be used to reason probabilistically about the state and dynamics the model, and describe an algorithm to update our belief in the state of the model in the light of new, real-world observations. Using a simple predator-prey model on a 2-dimensional spatial grid as an example, we demonstrate the assimilation of incomplete, noisy observations and show that this leads to an increase in the mutual information between the actual state of the observed system and the posterior distribution given the observations, when compared to a null model.},
+  archiveprefix = {arXiv},
+  keywords = {ABM,Computer Science - Machine Learning,Computer Science - Multiagent Systems,data assimilation},
+  file = {/Users/nick/Zotero/storage/BL87TESK/Tang - 2019 - Data assimilation in Agent-based models using crea.pdf;/Users/nick/Zotero/storage/I9GL5UDY/1910.html}
+}
+
 @article{tang_data_2022,
   title = {Data Assimilation with Agent-Based Models Using {{Markov}} Chain Sampling},
   author = {Tang, Daniel and Malleson, Nick},
@@ -383,6 +414,21 @@
   langid = {english},
   keywords = {ABM,pedestrian},
   file = {/Users/nick/Zotero/storage/CVIXB5A9/Xu et al. - 2014 - Crowd Simulation and Its Applications Recent Adva.pdf}
+}
+
+@inproceedings{zhang_datadriven_2015,
+  title = {Data-{{Driven Agent-Based Modeling}}, with {{Application}} to {{Rooftop Solar Adoption}}},
+  booktitle = {Proceedings of the 2015 {{International Conference}} on {{Autonomous Agents}} and {{Multiagent Systems}}},
+  author = {Zhang, Haifeng and Vorobeychik, Yevgeniy and Letchford, Joshua and Lakkaraju, Kiran},
+  year = {2015},
+  series = {{{AAMAS}} '15},
+  pages = {513--521},
+  publisher = {{International Foundation for Autonomous Agents and Multiagent Systems}},
+  address = {{Richland, SC}},
+  abstract = {Agent-based modeling is commonly used for studying complex system properties emergent from interactions among many agents. We present a novel data-driven agent-based modeling framework applied to forecasting individual and aggregate residential rooftop solar adoption in San Diego county. Our first step is to learn a model of individual agent behavior from combined data of individual adoption characteristics and property assessment. We then construct an agent-based simulation with the learned model embedded in artificial agents, and proceed to validate it using a holdout sequence of collective adoption decisions. We demonstrate that the resulting agent-based model successfully forecasts solar adoption trends and provides a meaningful quantification of uncertainty about its predictions. We utilize our model to optimize two classes of policies aimed at spurring solar adoption: one that subsidizes the cost of adoption, and another that gives away free systems to low-income households. We find that the optimal policies derived for the latter class are significantly more efficacious, whereas the policies similar to the current California Solar Initiative incentive scheme appear to have a limited impact on overall adoption trends.},
+  isbn = {978-1-4503-3413-6},
+  keywords = {ABM,agent-based modeling,data assimilation,innovation diffusion,machine learning,policy optimization,rooftop solar},
+  file = {/Users/nick/Zotero/storage/BZASPRXU/abmsolar copy.pdf}
 }
 
 @inproceedings{zhou_understanding_2012,

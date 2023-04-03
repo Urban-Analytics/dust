@@ -91,11 +91,12 @@
                          data-background-image="../figures/ready_player_one_stacks.jpg">
                     <div class="whitebackground2 fragment" >
                         <h2>Critical (urban?) social problems</h2>
-                        <p>Education</p>
-                        <p>Mobility</p>
-                        <p>Housing</p>
-                        <p>Health</p>
-                        <p> ... </p>
+                        <p class="l2">Children in the most deprived neighbourhoods have <a href="https://arc-nenc.nihr.ac.uk/news/the-child-of-the-north-building-a-fairer-future-after-covid-19/">10 year shorter life expectancy</a>
+                        than those born in affluent neighbourhoods.</p>
+                        <p class="l2">The use of food banks has <a href="https://www.trusselltrust.org/news-and-blog/latest-stats/end-year-stats/">increase by 81% in five years</a></p>
+                        <p class="l2">Rape has been largely decriminalised (in 2021 <a href="https://victimscommissioner.org.uk/news/the-distressing-truth-is-that-if-you-are-raped-in-britain-today-your-chances-of-seeing-justice-are-slim/">only 5% of recorded rapes resulted in a charge</a>).</p>
+                        <p class="l2"><a href="https://fingertips.phe.org.uk/profile/national-child-measurement-programme">A third</a> of English children leaving primary school are overweight or living with obesity</p>
+                        <p class="l2">The use of food banks has <a href="https://www.trusselltrust.org/news-and-blog/latest-stats/end-year-stats/">increase by 81% in five years</a></p>
                         <p>Can urban digital twins really help?</p>
                     </div>
                 </section>
@@ -120,7 +121,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <p>2. Challenges</p>
                     <p>3. The role of agent-based modelling</p>
                     <p>4. Progress towards Urban DTs</p>
-                    <p class="l2">Data, model synthesis, real-time modelling, emulation</p>
+                    <p class="l2">Data, model synthesis, emulation, real-time modelling</p>
                     <p>5. Are they worth it?</p>
                 </section>
 
@@ -171,9 +172,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 </section>
 
                 <section id="urban_dt">
-                    
-
-                    <h2>Urban DIgital Twins</h2>
+                    <h2>Urban Digital Twins</h2>
                     <figure class="right">
                         <img data-src="../figures/steve-johnson-BlKuLn9vHWo-unsplash.jpg" 
                              alt="Digital representation of a city" />
@@ -188,15 +187,22 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <p class="l2">Singapore</p>
                     <p class="l2">Bradford (!)</p>
                     <p>XXXX HERE look these up in more detail</p>
-
+                </section>
+                
+                <section id="urban_dt2">
+                    <h2>Urban Digital Twins</h2>
                     
+                    <h3>Potential (?)</h3>
+                    <p>Improved (public) transport &amp; mobility</p>
+                    <p>Rapid, evidence-based responses to events (emergencies, organised events, etc.)</p>
+                    <p>More effective use of front-line services</p>
+                    <p>Agile, responsive policy making</p>
+                    <p>XXXX Elaborate, esp. from benefits of others on previous slide.</p>
                 </section>
 
                 <section id="dt-turing">
-                    
                     <img src="../figures/digital_twins-turing.png"
                          alt="Pictures of some digital-twin-related projects at the Alan Turing Institute"/>
-                
                 </section>
 
     
@@ -210,6 +216,54 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <div class="whitebackground">
                         <h1>Challenges</h1>
                     </div>
+                </section>
+                
+                <section id="challenge-complex_systems"
+                         data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                         data-background-video-loop="loop" >
+                    <div class="whitebackground2">
+                        <h2>Challenges</h2>
+                        <h3>Complex Urban Systems</h3>
+                        <p>Non-linearity, emergence</p>
+                        <p>Behaviour and interactions of people</p>
+                        <p>Difficult to absract, risk of "smoothing out"</p>
+                        <p>Need models that can account for these complexities</p>
+                        <p class="l2">(Role for ABM?)</p>
+                    </div>
+                </section>
+                    
+                
+                <section id="challenge-uncertainty">
+                    
+                    <h2>Challenges - Uncertainty</h2>
+                    <p>Many sources of uncertainty (<a href="https://doi.org/10.1038/nature14541">Ghahramani, 2015</a>):</p>
+                    <p class="l2">Measurement noise / observation uncertainty</p>
+                    <p class="l2">Parameter uncertainty</p>
+                    <p class="l3">Related problems with identifiability / equifinality</p>
+                    <p class="l3">Also ensemble variance (model runs give different outcomes)</p>
+                    <p class="l2">Model structure uncertainty</p>
+                    <p class="l3">Model discrepancy and overfitting</p>
+                    <p>Need to <strong>understnad</strong> and be <strong>honest</strong> about uncertainties</p>
+                    <p>Uncertainty Quantification can help (but relevant to DT models?)</p>
+                    
+                
+                </section>
+                
+                <section id="challenge-data">
+                    
+                    <h2>Challenges - Data</h2>
+                    <h3>XXXX HERE</h3>
+                
+                </section>
+                
+                <section id="challenge-model_synthesis">
+                    
+                    <h2>Challenges</h2>
+                    <h3>Computation and Model synthesis</h3>
+                    
+                    <p>Computationally expensive models</p>
+                    <p>Technical challenges coupling models</p>
+                
                 </section>
 
 
@@ -247,6 +301,15 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 </section>
 
 
+                
+                
+                <section id="progress-uncertainty">
+                    
+                    <h2>Uncertainty</h2>
+                    
+                    <p>Use resources from Josie's talk: https://urban-analytics.github.io/dust/p/2021-09-23-Turing-MAS-Uncertainty-DA.html#/uq </p>
+                
+                </section>
 
                 <!-- ************************************************************
 *******************5. Are they worth it? ***********************

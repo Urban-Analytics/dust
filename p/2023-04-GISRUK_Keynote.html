@@ -128,6 +128,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                             Photo by <a href="https://unsplash.com/@steve_j?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Steve Johnson</a> on <a href="https://unsplash.com/photos/BlKuLn9vHWo?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
                         </figcaption>
                     </figure>
+                    <p>XXXX CHECK ORDER BELOW (swapped ABM and Challenges?)</p>
                     <p>1. Digital twins (of urban systems)</p>
                     <p>2. Challenges</p>
                     <p>3. The role of agent-based modelling</p>
@@ -136,6 +137,36 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <p>5. Are they worth it?</p>
                 </section>
 
+                <section id="acks" data-background-image="../figures/shutterstock_615414464-small.jpg">
+                    <div class="whitebackground2">
+                        <h2>Acknowledgements</h2>
+                        <a href="https://europa.eu/european-union/index_en">
+                            <img style="float:right; padding:20px 10px 10px 10px; width:100px; height:auto;" data-src="../figures/LOGO_EU.jpg"/>
+                        </a>
+
+                        <p>Josie McCulloch, Patricia Ternes, Robert Clay, Dan Tang,</p>
+                        <p>Jiaqi Ge, Jonathan Ward, Minh Kieu, Alison Heppenstall</p>
+                        <p>XXXX OTHERS?</p>
+                    
+
+                        <a href="https://erc.europa.eu/">
+                            <img style="float:right; padding:10px; width:100px; height:auto;" data-src="../figures/LOGO_ERC.jpg"/>
+                        </a>
+
+                        <a href="http://www.leeds.ac.uk/">
+                            <img style="float:left; padding:10px; width:300px; height:auto;" data-src="../figures/uol_logo.gif"/>
+                        </a>
+
+                        <a href="http://www.esrc.ac.uk/">
+                            <img style="float:center; padding:10px;width:90px; height:auto;" data-src="../figures/LOGO_ESRC.jpg"/>
+                        </a>
+
+                        <a href="http://www.turing.ac.uk/">
+                            <img style="float:right; padding:10px; width:150px; height:auto;" data-src="../figures/LOGO_TURING.png"/>
+                        </a>
+                        
+                    </div>
+                </section>
 
 
 
@@ -215,6 +246,129 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <img src="../figures/digital_twins-turing.png"
                          alt="Pictures of some digital-twin-related projects at the Alan Turing Institute"/>
                 </section>
+                
+                
+                
+                <!-- ************************************************************
+********************** 3. Role of ABM ***********************
+************************************************************ -->
+
+                <section class="title" id="abm"
+                         data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                    <div class="whitebackground">
+                        <h1>The Role of Agent-Based Modelling</h1>
+                    </div>
+                    <aside class="notes">
+                        Focus a lot on ABMs in this presentation.
+                        This is because I think they have an important role to play in urban digital twins
+                        and is probably the least well developed methodology (c.f. regression, ML, etc.).
+                        Methodological progress on ABMs will help to develop DTs.
+                    </aside>
+                </section>
+
+                <section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
+                         data-background-video-loop="loop">
+                    <div class="whitebackground2 fragment">
+                        <!--<img class="right" style="width:40%" data-src="../figures/sims.png"
+                         alt="Diagram of the sims" />-->
+                        <h2>Agent-Based Modelling</h2>
+                        <p>Systems are driven by individuals</p>
+                        <p class="l2">(cars, people, ants, trees, whatever)</p>
+                        <p>Individual-level modelling</p>
+                        <!--<p class="l2">An alternative approach to modelling</p>-->
+                        <p class="l2">Rather than controlling from the top, try to represent the individuals</p>
+                        <!--<p class="l2">Account for system behaviour directly</p>-->
+                        <p>Autonomous, interacting agents</p>
+                        <!--<p>Represent individuals or groups</p>-->
+                        <p>Situated in a virtual environment</p>
+                    </div>
+
+                </section>
+   
+                <section id="Emergence">
+                    <figure class="right" style="width:40%;">
+                        <img data-src="../figures/attribution/termite_mound.jpg" />
+                        <figcaption>A termite mound.<br/>Attribution: <a href="http://www.flickr.com/people/93452909@N00">JBrew</a> (<a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">CC BY-SA 2.0</a>).</figcaption>
+                    </figure>
+                    <h2>Why ABM?</h2>
+                    <h3>Emergence</h3>                    
+                    <p>"The whole is greater than the sum of its parts." (Aristotle?)</p>
+                        <p class="l2">Simple rules &#8594; complex outcomes</p>
+                        <p class="l2">E.g. who plans the air-conditioning in termite mounds?</p>
+                    <p>Hard to anticipate, and cannot be deduced from analysis of an <i>individual</i></p>
+                    <p>ABM uses simulation to (try to) understand how macro-level patterns emerge from micro-level behaviours</p>
+
+                
+                </section>
+
+                <section id="BetterTheoryAndSpace">
+                    <h2>Why ABM?</h2>
+                    <h3>Individual-level Representations of Theory</h3>
+                    <p>Implement individual behavioural rules into agents</p>
+                    
+                    <img class="right" data-src="../figures/mastermap_topography.png" alt="Example of GIS data" />
+                    <h3>Representating Space</h3>
+                    <p>Rich micro-level environments </p>
+                    
+                    <h3>Natural Description of a System</h3>
+                    <p>Describe the entities <i>directly</i>, rather than using aggregate equations</p>
+                </section>
+                
+                <section id="History">
+                    <img class="right" style="width:50%" data-src="../figures/burglar_behaviour-geotime.jpg"/>
+                    <h2>Why ABM?</h2>                    
+                    <h3>History of the Model Evolution</h3>
+                    <p>Rather than returning a single result, the model <i>evolves</i></p>
+                    <p>The evolution itself can be interesting</p>
+                    <p>Analyse <i>why</i> certain events occurred</p>
+                </section>
+
+                <section data-background-video="../videos/sim.mp4,../videos/sim.webm"
+                         data-background-video-loop="loop"
+                         id="abm-example-awareness_test"
+                          data-transition="fade">
+                     <div class="fragment" >
+                        <h2 style="background-color: white;">ABM Example</h2>
+                        <h3 style="background-color: white;">Awareness space test</h3>
+                     </div>
+                    <figure class="fragment">
+                        <img  style="width:70%" data-src="../figures/transport_results.png" />
+                    </figure>
+                </section>
+
+                
+                <section id="abm-Disadvantages">
+                    <h2>Agent-Based Modelling - Difficulties</h2>
+                    <figure class="right" >
+                        <img data-src="../figures/jacobs_choice.png" />
+                        <figcaption>Will I play with the truck, or the duck?<br/>
+                            (<i>actually he played with his trains...</i>)</figcaption>
+                    </figure>
+                    
+                    <p>Tendency towards minimal behavioural complexity</p>
+                    <p>Stochasticity</p>
+                    <p>Computationally expensive (not amenable to optimisation)</p>
+                    <p class="l2">Complicated agent decisions, lots of decisions, multiple model runs</p>
+                    <p>Modelling "soft" human factors</p>
+                    <p class="l2">Need detailed, high-resolution, individual-level data</p>
+                    <p>Individual-level data</p>
+
+                </section>
+                
+                <section id="ABMRole">
+                    <h2>The Role of Agent-Based Modelling in Urban DTs?</h2>
+                    <p>ABMs are ideal in some circumstances</p>
+                    <p class="l2">Interactions are important</p>
+                    <p class="l2">Individual heterogeneity</p>
+                    <p class="l2">Lots of individuals (but not too many...)</p>
+                    <p>But the wrong tool in other circumstances</p>
+                    <p class="l2">If a simpler model works - use that!</p>
+                    <p class="l3">(Spatial interaction models, (GW) regression, etc...)</p>
+                    <p>Most useful role in a DT as part of a <i>suite</i> of models?</p>
+                </section>
+                
+                
+                
 
     
 
@@ -225,7 +379,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 <section class="title" id="challenges"
                          data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
                     <div class="whitebackground">
-                        <h1>Challenges</h1>
+                        <h1>Challenges for Urban Digital Twins</h1>
                     </div>
                 </section>
                 
@@ -234,7 +388,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                          data-background-video-loop="loop" >
                     <div class="whitebackground2 fragment">
                         <h2>Challenges</h2>
-                        <h3>Complex Urban Systems</h3>
+                        <h3>Simulating Complex Urban Systems</h3>
                         <p>Non-linearity, emergence</p>
                         <p>Behaviour and interactions of people</p>
                         <p>Difficult to absract, risk of "smoothing out"</p>
@@ -270,34 +424,32 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <p>But typically only coarse data are available</p>
                     <p>How to calibrate and validate all model components?</p>
                     <p class="l2">c.f. Pattern Oriented Modelling (<a href="https://dx.doi.org/10.1126/science.1116681">Grimm at al., 2005</a>)</p>
+                    <p>And in real time ?!?</p>
                 
                 </section>
+                
                 
                 <section id="challenge-model_synthesis">
                     
                     <img class="left" style="width:30%;" src="../figures/Network_server_room_2.jpg" 
                          alt="Network server room"/>
 
-                    <h2>Challenges - Computation and Model synthesis</h2>
+                    <h2>Challenges</h2>
+                    <h3>Computation and Model Synthesis</h3>
                     <p>(Very!) computationally expensive models</p>
                     <p>Innovations in (e.g.) meteorology not necessarily applicable to urban DTs</p>
                     <p>Also technical challenges coupling models</p>
                     <p class="l2">Individual models are fragile, when combined ... &#9888; </p>
-                    <p>DTs are a "synthesis" of computer models etc.</p>
+                    <p>DTs are a "synthesis" of computer models</p>
                 </section>
 
+                
+                
+                
 
-                <!-- ************************************************************
-********************** 3. Role of ABM ***********************
-************************************************************ -->
-
-                <section class="title" id="abm"
-                         data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
-                    <div class="whitebackground">
-                        <h1>The Role of Agent-Based Modelling</h1>
-                    </div>
-                </section>
-
+                
+                
+                
 
 
 
@@ -318,15 +470,20 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 </section>
 
 
-                <section id="progress-data">
-                    
-                    <h2>Data</h2>
-                    
-                    <img data-src="../figures/Network%20server%20room_87108880.jpg" 
-                         class="right" style="width: 300px; height: 400px; overflow: hidden;" />
                 
+                <section id="progress-data">
+                    <h2>'Big' Data and Urban DTs</h2>
+                    <h3></h3>
+                    <p>Footfall mobility work (Molly) (role for sensor data &amp; ML) (and ref Annabel)</p>
+                    <p class="l2">XX</p>
                 </section>
                 
+                <section id="progress-model_synthesis">
+                    <h2>Model synthesis</h2>
+                    <h3>DyME: Dynamic Model for Epidemics</h3>
+                    <p>XX</p>
+                    <p class="l2">XX</p>
+                </section>
                 
                 <section id="progress-uncertainty">
                     
@@ -334,9 +491,38 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     
                     <p>Use resources from Josie's talk: https://urban-analytics.github.io/dust/p/2021-09-23-Turing-MAS-Uncertainty-DA.html#/uq </p>
                     
-                    <p> Talk about Probabilistic ABM</p>
+                    <p>Talk about Probabilistic ABM</p>
                 
                 </section>
+
+                
+                <section id="progress-emulators">
+                    <h2>Model Emulation</h2>
+                    <p>Minh's emulators work</p>
+                    <p class="l2">XX</p>
+                </section>
+
+                <section id="progress-da">
+                    <h2>Real-Time Modelling</h2>
+                    <p>XXXX See slides below</p>
+                    <p>DA (Patricia, Rob, Keiran) (ref Minh dealing with uncertainty)</p>
+                    <p>Dan (role for totally new maths?)</p>
+                    <p class="l2">XX</p>
+                </section>
+                
+
+                
+                <section id="progress-data">
+                    
+                    <h2>XXXX</h2>
+                    
+                    <!-- Example of zooming / cropping an image -->
+                    <img data-src="../figures/Network%20server%20room_87108880.jpg" 
+                         class="right" style="width: 300px; height: 400px; overflow: hidden;" />
+                
+                </section>
+                
+                
 
                 <!-- ************************************************************
 *******************5. Are they worth it? ***********************
@@ -357,232 +543,6 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 
                 
                 
-                
-                
-                
-                
-
-                <!-- ************************************************************
-*********************** VISION **********************************
-************************************************************ -->
-
-                <section data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
-                         data-background-video-loop="loop" id="Context-UrbanFlows">
-                    <div class="whitebackground2 fragment">
-                        <h3>Quantifying Real-Time Urban Dynamics</h3>
-
-                        <p><i>People</i> are the drivers of processes in cities</p>
-
-                        <p>We need to understand mobility patterns:</p>
-
-                        <p class="l2">Crime – how many possible victims?</p>
-                        <p class="l2">Pollution – who is being exposed? Where are the hotspots?</p>
-                        <p class="l2">Economy – can we attract more people to our city centres?</p>
-                        <!--<p class="l2">Health - can we encourage more active travel?</p>-->
-                        <p class="l2">Disease - which times / places have large numbers of interactions</p>
-
-                    </div>
-                </section>
-
-
-                <!--
-<section data-background-video="../videos/trafalgar_timelapse2-1280x720.mp4"
-data-background-video-loop="loop"
-id="Context-UrbanFlows2">
-<div class="whitebackground2 fragment" style="width:50%float:center;" >
-<img data-src="../figures/google_mobility_lockdown_data.png" 
-alt="Google Mobility Data: people spending much more time at home" />
-</div>
-</section>
--->
-
-
-                <!--
-<section id="Context-UrbanFlows2b">
-
-<video data-autoplay controls loop width="45%" height="auto" alt="Trafalgar square before COVID: busy">
-<source data-src="../videos/trafalgar_timelapse-1280×720.mp4" type="video/mp4" />
-Your browser does not support the video tag.
-</video>
-
-<video data-autoplay controls loop width="45%" height="auto" class="fragment"
-alt="Trafalgar square after COVID: quieter">
-<source data-src="../videos/trafalgar_timelapse2-1280x720.mp4" type="video/mp4" />
-Your browser does not support the video tag.
-</video>
-
-
-<img class="fragment" style="width:60%; float:center"
-data-src="../figures/google_mobility_lockdown_data.png"
-alt="Google Mobility Data: people spending much more time at home" />
-</section>
--->
-
-                <section id="vision" data-background-video="../videos/skylines_mov-long.mp4"
-                         data-background-video-loop="loop">
-                    <div class="whitebackground2 fragment">
-                        <h2>Vision</h2>
-                        <img class="right" style="width:40%" data-src="../figures/digital_twin_engineering.png"
-                             alt="A digital twin (in engineering)" />
-                        <p>An ABM that simulates urban processes</p>
-                        <p>Updated in real-time using <i>data assimilation</i></p>
-                        <p>A 'digital twin'?</p>
-                    </div>
-
-                </section>
-
-                <!-- ************************************************************
-*********************** OUTLINE *********************************
-************************************************************ -->
-
-                <section id="outline">
-                    <h2>Presentation Outline</h2>
-                    <p>Data assimilation and ABM challenges</p>
-                    <p>Latest research with a Particle Filter and a crowd simulation:</p>
-                    <p class="l2">'Vanilla' filter </p>
-                    <p class="l2">Estimating categorical parameters</p>
-                    <p>Other opportunities</p>
-                    <p class="l2">Unscented / Ensemble Kalman Filters</p>
-                    <p class="l2">MCMC sampling</p>
-                </section>
-
-                <section id="dust" data-background-image="../figures/the-roaming-platypus-310824-unsplash-small.jpg" >
-
-                    <div class="whitebackground2">
-
-                        <figure class="right" style="width:30%;">
-
-                            <a href="https://europa.eu/european-union/index_en">
-                                <img data-src="../figures/LOGO_EU.jpg" />
-                            </a>
-
-                            <!--
-<a href="http://www.leeds.ac.uk/">
-<img data-src="../figures/uol_logo.gif" />
-</a>
--->
-                        </figure>
-
-                        <h2>Data Assimilation for Agent-Based Modelling</h2>
-
-                        <p><a href="https://dust.leeds.ac.uk/">dust.leeds.ac.uk/</a></p>
-
-                        <h3>Thanks</h3>
-
-                        <p>Josie McCulloch, Alison Heppenstall, Keiran Suchak, Minh Kieu, Molly Asher,
-                            Kevin Minors, Andrew West, Dan Tang, Yannick Oswald, Robert Clay, 
-                            Annabel Whipp, Jon Ward, Thomas Crols</p>
-
-                    </div>
-
-                </section>
-
-
-                <!-- ************************************************************
-************** CONTEXT: NEW DATA & METHODS **********************
-************************************************************ -->
-
-                <!--
-<section id="Data">
-
-<figure class="right" style="width:40%;">
-<img data-src="../figures/paper_figures/census_mobile-correlation-map.png" alt="Comparing census daytime populations to aggregate mobile phone estimates" />
-<figcaption>Evaluating aggregate mobile phone population accuracy</figcaption>
-</figure>
-
-<h2>New Data</h2>
-
-<p>Abundance of (new) digital data that tell us about human systems</p>
-
-<h3>Macro</h3>
-<p>Cross-sectional surveys (e.g. the Census), longitudinal surveys (e.g. Born in Bradford; Millennium Cohort Study), 
-area-based (e.g. Indices of Multiple Deprivation), ...</p>
-
-<h3>Micro</h3>
-<p>Personal: Mobile phone apps, social media contributions, mobile phone use, 
-credit/debit card payments, loyalty cards, ...</p>
-<p>Anonymous: pedestrian counters, traffic counters, pollution sensors, ... </p>
-
-<h3>How to combine??</h3>
-
-</section>
--->
-
-
-                <!-- ************************************************************
-************************* ABM ***********************************
-************************************************************ -->
-
-                <!--
-<section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
-data-background-video-loop="loop">
-<div class="whitebackground2 fragment">
-<img class="right" style="width:40%" data-src="../figures/sims.png"
-alt="Diagram of the sims" />
-<h2>Agent-Based Modelling</h2>
-<p>Systems are driven by individuals</p>
-<p class="l2">(cars, people, ants, trees, whatever)</p>
-<p>Individual-level modelling</p>
-<p class="l2">An alternative approach to modelling</p>
-<p class="l2">Rather than controlling from the top, try to represent the individuals</p>
-<p class="l2">Account for system behaviour directly</p>
-<p>Autonomous, interacting agents</p>
-<p>Represent individuals or groups</p>
-<p>Situated in a virtual environment</p>
-</div>
-
-</section>
--->
-
-                <!--                
-<section id="abm-advantages">    
-<h2>Agent-Based Modelling - Appeal</h2>
-<img class="right" data-src="../figures/virtual_city.jpeg"/>
-<p>Modelling complexity, non-linearity, emergence</p>
-<p>Natural description of a system</p>
-<p>Bridge between verbal theories and mathematical models</p>
-<p>Produces a history of the evolution of the system</p>
-</section>
-
-<section id="abm-advantages-history">
-<figure>
-<img style="width:60%;" data-src="../figures/burglar_behaviour-geotime.jpg" />
-<figcaption>
-Malleson, N., A. Heppenstall, L. See, A. Evans (2013) Using an agent-based crime simulation to predict the effects of urban regeneration on individual household burglary risk. <i>Environment and Planning B: Planning and Design</i> 40 405-426.
-</figcaption>
-</figure>
-</section>
-
-<section id="abm-Disadvantages">
-<h2>Agent-Based Modelling - Difficulties</h2>
-<figure class="right" >
-<img data-src="../figures/jacobs_choice.png" />
-<figcaption>Will I play with the truck, or the duck?<br/><br/>
-(<i>actually he played with his trains...</i>)</figcaption>
-</figure>
-
-<p>Tendency towards minimal behavioural complexity</p>
-<p>Stochasticity</p>
-<p>Computationally expensive (not amenable to optimisation)</p>
-<p class="l2">Complicated agent decisions, lots of decisions, multiple model runs</p>
-<p>Modelling "soft" human factors</p>
-<p class="l2">Need detailed, high-resolution, individual-level data</p>
-<p>Individual-level data</p>
-
-</section>
--->
-
-
-
-                <!--<section id="IntroToABM4" data-background-video="../videos/skylines_mov-long.mp4"
-data-background-video-loop="loop">
-<div class="whitebackground2 fragment">
-<h2>City Simulation</h2>
-<p>Understanding <i>and predicting</i> the impact of short and long-term urban flows</p>
-</div>
-
-</section>-->
-
                 <!-- ************************************************************
 ********************* DATA ASSIMILATION *************************
 ************************************************************ -->

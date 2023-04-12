@@ -1,0 +1,1 @@
+M. Asher, Y. Oswald and N. Malleson (forthcoming) Predicting Pedestrian Counts using Machine Learning. <i>Agile 2023, 13-16 June, Delft, the Netherlands</i>.

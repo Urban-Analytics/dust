@@ -91,7 +91,7 @@
                          data-background-image="../figures/ready_player_one_stacks.jpg">
                     <div class="whitebackground2 fragment" >
                         <h2>Critical (urban?) social problems</h2>
-                        <p class="l2">Children in the most deprived neighbourhoods have <a href="https://arc-nenc.nihr.ac.uk/news/the-child-of-the-north-building-a-fairer-future-after-covid-19/">10 year shorter life expectancy</a>
+                        <p class="l2">Children in the most deprived neighbourhoods have <a href="https://arc-nenc.nihr.ac.uk/news/the-child-of-the-north-building-a-fairer-future-after-covid-19/">10 years shorter life expectancy</a>
                         than those born in affluent neighbourhoods.</p>
                         <p class="l2">The use of food banks has <a href="https://www.trusselltrust.org/news-and-blog/latest-stats/end-year-stats/">increase by 81% in five years</a></p>
                         <p class="l2">Rape has effectively been decriminalised (in 2021 <a href="https://victimscommissioner.org.uk/news/the-distressing-truth-is-that-if-you-are-raped-in-britain-today-your-chances-of-seeing-justice-are-slim/">only 5% of recorded rapes resulted in a charge</a>).</p>
@@ -101,9 +101,9 @@
                 </section>
                 
                 <section id="Motivation2">
-                    <img src="../figures/child_of_the_north1.png"  class="left" 
+                    <img data-src="../figures/child_of_the_north1.png"  class="left" 
                              alt="Child of the North report title page" />
-                    <img src="../figures/child_of_the_north2.png"  class="right"
+                    <img data-src="../figures/child_of_the_north2.png"  class="right"
                              alt="Child of the North report title page" />
                     
                     <aside class="notes">
@@ -208,7 +208,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 
                 <section id="dt_collection">
                     
-                    <img src="../figures/digital_twins_collection.png"
+                    <img data-src="../figures/digital_twins_collection.png"
                          alt="A picture of 5 different applications of digital twins (bridge, heart, machine, city, factory)"/>
                 
                 </section>
@@ -243,7 +243,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 </section>
 
                 <section id="dt-turing">
-                    <img src="../figures/digital_twins-turing.png"
+                    <img data-src="../figures/digital_twins-turing.png"
                          alt="Pictures of some digital-twin-related projects at the Alan Turing Institute"/>
                 </section>
                 
@@ -363,7 +363,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <p class="l2">Lots of individuals (but not too many...)</p>
                     <p>But the wrong tool in other circumstances</p>
                     <p class="l2">If a simpler model works - use that!</p>
-                    <p class="l3">(Spatial interaction models, (GW) regression, etc...)</p>
+                    <p class="l3">(Spatial interaction models, (GW) regression, dynamic microsimulation, etc...)</p>
                     <p>Most useful role in a DT as part of a <i>suite</i> of models?</p>
                 </section>
                 
@@ -416,7 +416,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     
                     <h2>Challenges - Data</h2>
                     
-                    <img class="right" style="width:30%" src="../figures/disk.jpeg" 
+                    <img class="right" style="width:30%" data-src="../figures/disk.jpeg" 
                          alt="A hard disk"/>
                     <p>Even in the Age of Data, there are huge unknowns</p>
                     <p>Models (DTs) can be extremley detailed</p>
@@ -431,7 +431,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 
                 <section id="challenge-model_synthesis">
                     
-                    <img class="left" style="width:30%;" src="../figures/Network_server_room_2.jpg" 
+                    <img class="left" style="width:30%;" data-src="../figures/Network_server_room_2.jpg" 
                          alt="Network server room"/>
 
                     <h2>Challenges</h2>
@@ -468,15 +468,71 @@ data-background-video="../videos/skylines_mov-long.mp4">
                         Data, model synthesis, real-time modelling, emulation
                     </aside>
                 </section>
-
-
+                
+                
+                
+                
+                <!--  *************** PROGRESS: DATA ***************  -->
                 
                 <section id="progress-data">
                     <h2>'Big' Data and Urban DTs</h2>
-                    <h3></h3>
-                    <p>Footfall mobility work (Molly) (role for sensor data &amp; ML) (and ref Annabel)</p>
-                    <p class="l2">XX</p>
+                    <figure class="right">
+                        <img data-src="../figures/paper_figures/2021-AmbientPop_IJGI/cell_towers.jpg" 
+                             alt="Map showing lots of cell tower locations in Leeds"/>
+                        <figcaption>
+                            Cell tower locations.<br/>
+                            <div style="font-size: 80%">Whipp, A., N. Malleson, J. Ward, A. Heppenstall (2021). Estimates of the Ambient Population: Assessing the Utility of Conventional and Novel Data Sources. <i>International Journal of Geo-Information</i> 10(3), 131. DOI: <a href="https://doi.org/10.3390/ijgi10030131">10.3390/ijgi10030131</a>.</div>
+                        </figcaption>
+                    </figure>
+                    <h3>Pedestrian Mobility</h3>
+                    <p>Growth in availability of data for quantifying the 'ambient population' (<a href="https://doi.org/10.3390/ijgi10030131">Whipp et al., 2021</a>)</p>
+                    <p class="l2">Census</p>
+                    <p class="l2">travel surveys</p>
+                    <p class="l2">mobile phone activity</p>
+                    <p class="l2">smart phone apps</p>
+                    <p class="l2">social media</p>
+                    <p class="l2">pedestrian counters (WiFi, CCTV)</p>
                 </section>
+
+                <section id="pedestrian_ml1">
+                    <h3>Pedestrian Mobility</h3>
+                    
+                    <figure class="right">
+                        <img data-src="../figures/paper_figures/2023-Pedestrial_ML/melbourne_open_data.png" 
+                             alt="Locations of population counters in Melbourne, Australia"/>
+                        <figcaption>
+                            Pedestrian-counting sensor locations<br/>
+                            <div style="font-size: 80%">M. Asher, Y. Oswald and N. Malleson (forthcoming) Predicting Pedestrian Counts using Machine Learning. <i>Agile 2023, 13-16 June, Delft, the Netherlands</i>.</div>
+                        </figcaption>
+                    </figure>
+                    <p>Melbourne pedestrian counters</p>
+                    <p class="l2">40+ sensors collecting over 8+ years</p>
+                    <p>ML (random forest) to estimate pedestrian volumes based on:</p>
+                    <p class="l2">Local street configuration (betweenness)</p>
+                    <p class="l2">Street furniture (benches, bins, lights...)</p>
+                    <p class="l2">Time (day, week, season, etc.)</p>
+                    <p class="l2">Weather</p>
+                    <p class="l2">...</p>
+                </section>
+                
+                <section id="pedestrian_ml2">
+                    <figure class="right">
+                        <!--<img data-src="../figures/paper_figures/2023-Pedestrial_ML/error-spatial-vert.png" style="width:45%;"-->
+                        <img data-src="../figures/paper_figures/2023-Pedestrial_ML/error-spatial-square.png" 
+                             
+                             alt="Map of absolute footfall and model predictions"/>
+                        <figcaption>
+                            Spatial footfall estimates and errors. Note the large <i>percentage</i> errors near the train station...
+                        </figcaption>
+                    </figure>
+                    <h3>Pedestrian Mobility</h3>
+                    <p>Model uses</p>
+                    <p class="l2">Prospective: Predict current and future (short-term) footfall (out of sample prediction)</p>
+                    <p class="l2">Retrospective: Quantify success of oganised events</p>
+                    <p class="l2">Theoretical: Build evidence base for drivers of population mobility</p>
+                    <p>Part of an urban digital twin?</p>
+                </section>
+                
                 
                 <section id="progress-model_synthesis">
                     <h2>Model synthesis</h2>
@@ -521,6 +577,26 @@ data-background-video="../videos/skylines_mov-long.mp4">
                          class="right" style="width: 300px; height: 400px; overflow: hidden;" />
                 
                 </section>
+                
+                
+                
+                
+                
+                <!-- ************************************************************
+******************* 4b. DT Vision *****************************
+************************************************************ -->
+                
+                <section class="title" id="dt-vision"
+                         data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                    <div class="whitebackground">
+                        <h1>What might an (urban) digital twin look like?</h1>
+                    </div>
+                </section>
+                
+                <section id="dt-vision2">
+                    <p>XXXX DIAGRAM OF WHAT AN URBAN DT MIGHT LOOK LIKE</p>
+                </section>
+
                 
                 
 

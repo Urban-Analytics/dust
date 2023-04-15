@@ -1,0 +1,1 @@
+M. Asher, N. Lomax, K. Morrissey, F. Spooner, N. Malleson (2023) Dynamic Calibration with Approximate Bayesian Computation for a Microsimulation of Disease Spread. <i>Nature Scientific Reports</i> (under review)

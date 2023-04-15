@@ -534,30 +534,202 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <p class="l2">Theoretical: Build evidence base for drivers of population mobility</p>
                     <p>Part of an urban digital twin?</p>
                 </section>
+   
                 
-                
-                <section id="progress-model_synthesis">
+                <section id="progress-model_synthesis-dyme">
+                    <figure class="right">
+                        <img src="../figures/paper_figures/2021-03-RAMP/RAMP_Workflow-with_GeoLytics.png"
+                             alt="Diagram of the ramp model components described in the slide text" />
+                        <figcaption>Spooner et al. (2021) A dynamic microsimulation model for epidemics. <em>Social Science &amp; Medicine</em> 291, 114461. DOI: <a href="https://doi.org/10.1016/j.socscimed.2021.114461">10.1016/j.socscimed.2021.114461</a></figcaption>
+                    </figure>
                     <h2>Model synthesis</h2>
                     <h3>DyME: Dynamic Model for Epidemics</h3>
-                    <p>XX</p>
-                    <p class="l2">XX</p>
+                    <!--<p>Part of the Royal Society Rapid Assistance in Modelling the Pandemic (RAMP) call</p>-->
+                    <p>COVID transmission model with components including:</p>
+                    <p class="l2">dynamic spatial microsimulation, spatial interaction model, data linkage (PSM), ...</p> 
+                    <p>Represents all individuals in a study area with activities: home, shopping, working, schooling</p>
+                    <p>Daily timestep</p>
+
                 </section>
                 
-                <section id="progress-uncertainty">
-                    
-                    <h2>Uncertainty</h2>
-                    
-                    <p>Use resources from Josie's talk: https://urban-analytics.github.io/dust/p/2021-09-23-Turing-MAS-Uncertainty-DA.html#/uq </p>
-                    
-                    <p>Talk about Probabilistic ABM</p>
                 
+                <section id="progress-model_synthesis-dyme-method">
+                    <img data-src="../figures/paper_figures/2021-03-RAMP/Dynamic_Workflow.png" 
+                         alt="Figure illustrates the process of COVID spreading as people visit places"/>
+                </section>
+                
+                <section id="progress-model_synthesis-dyme-results">
+                    
+                    <img data-src="../figures/paper_figures/2021-03-RAMP/week_earlier_scenario.png"
+                         att="Results of the model suggest that there would have been 50% fewer COVID cases"/>
+                    
+                    <aside class="notes">
+                        "For the baseline scenario daily infections peaks at 763 (266–1047, 95% CI) people per day, while the experimental (i.e. lockdown one week earlier) scenario shows a peak of 556 (137–718, 95% CI) people per day"
+                        
+                        This is am average 54% decrease across all age groups.
+                    </aside>
+                    
+                </section>
+                
+                
+                <section id="progress-model_synthesis-dyme-data">
+                    <h2>DyME Validation Drawback: Data</h2>
+                    <p>Incredible detailed model!</p>
+                    <p>BUT only data available for validation: COVID cases and hospital deaths</p>
+                    <p class="l2">Only quantify a tiny part of the transmission dynamics</p>
+                    <p class="l2">Huge uncertainties</p>
+                    <p class="l2">Building the model was the easy part ...</p>
+                    
+                    <img data-src="../figures/paper_figures/2021-03-RAMP/Disease_Status_Upates.png"
+                         style="width:80%;"
+                         alt="Different disease stages: susceptible, exposed (pre)(a)symptomatic, removed" />
+                </section>
+                
+                
+
+                <section id="uq">
+                    <h2>Progress: Uncertainty Quantification</h2>
+                    <img data-src="../figures/ensemble_uncertainty.png" style="width:70%;"
+                         alt="Model runs with large and small uncertainty. Other areas have well developed approaches to this" />
+                    <p>Many sources of uncertainty. Leverage <i>uncertainty quantification</i>?</p>
+                    <p>History Matching (HM)</p>
+					<p class="l2">Discards parameter regions found to be <i>implausible</i>, leaving a smaller non-implausible region</p>
+                    <p>Approximate Bayesian Computation (ABC)</p>
+					<p class="l2">ABC estimates a posterior distribution that quantifies the probability of specific parameter values given the observed data</p>
+                    
+                    <aside class="notes">
+                        <p class="l2">Measurement noise / observation uncertainty</p>
+                        <p class="l2">Parameter uncertainty</p>
+                        <p class="l2">Model structure uncertainty</p>
+                        <p class="l2">Scenario uncertainty (for predictions)</p>
+                    </aside>
                 </section>
 
+                <section id="combined1">
+                    <h2>HM + ABC</h2>
+                    <img data-src="../figures/socsimfest/hm_abc-steps.png" alt="Steps in using history matching and ABC" />
+                </section>
+                    
+                <section id="combined2">
+                    <img  
+                         data-src="../figures/paper_figures/2021-05-Uncertainty_JASSS/Diagram1.png" alt="Steps in using history matching and ABC" />
+                </section>
+
+                <!--
+                <section id="sugarscape">
+                    <h2>Sugarscape</h2>
+                    <img class="right" style="width:30%;" data-src="../figures/sugarscape.png" alt="Model results from sugarscape" />
+                    <p>Here we are looking at two parameters:</p>
+                    <p class="l2">Maximum possible metabolism of an agent</p>
+                    <p class="l2">Maximum possible vision of an agent</p>
+					<p>Outcome measure is <b>size of population</b> that the model can sustain (66).</p>
+					<p>Framework followed</p>
+                    <p class="l2">Define the parameter space to be explored</p>
+					<p class="l2">Quantify all uncertainties in the model and observation</p>
+					<p class="l2">Run HM on the parameter space</p>
+					<p class="l2">Run ABC, using the HM results as a prior</p>
+                </section>
+                --> 
+
+
+                <section id="sugarscape-hm">
+                    <h2>Sugarscape: HM</h2>
+                    <p>Very well known ABM (agents move around and consume 'sugar')</p>
+                    <p>Measure the implausibility of parameters <i>metabolism</i> and <i>vision</i></p>
+                    <p>10 waves performed – use plausible space from wave 1 as input to wave 2 and so forth</p>
+                    <img data-src="../figures/paper_figures/2021-05-Uncertainty_JASSS/sugarscape-hm.png" alt="history matching results: plausible parameter combinations" />
+                </section>
+
+                <section id="sugarscape-abc">
+                    <h2>Sugarscape: ABC</h2>
+                    <p>Parameters with the highest probability of matching the observation (i.e. sustaining a population of 66 agents) are where {metabolism, vision} are {4, 7}.</p>
+                    <figure>
+                        <img data-src="../figures/paper_figures/2021-05-Uncertainty_JASSS/sugarscape-abc.jpg" style="width:80%"
+                             alt="history matching results: most likely parameter combinations" />
+                        <figcaption>
+                            McCulloch, J., J. Ge, J.A. Ward, A. Heppenstall, J.G. Polhill, N. Malleson (2022) Calibrating agent-based models using uncertainty quantification methods. <em>Journal of Artificial Societies and Social Simulation</em> 25, 1. DOI: <a href="https://doi.org/10.18564/jasss.4791">10.18564/jasss.4791</a>
+                        </figcaption>
+                    </figure>
+                    <aside class="notes">
+                        Framework also applied to two empirical models (<a href="https://doi.org/10.18564/jasss.4791">McCulloch et al, 2022</a>): Movements of territorial birds (<a href="https://jasss.soc.surrey.ac.uk/17/3/11.html">Thiele et al. 2014</a>) and Brexit-related changes in Scottish cattle farms (<a href="https://doi.org/10.1371/journal.pone.0208451">Ge et al, 2018</a>)
+                    </aside>
+                </section>
+                
+                <section id="jasss-summary">
+                    <h2>HM and ABC advantages</h2>
+                    <p>Provides a <i>region</i> of parameters and their probabilities, after accounting for uncertainties in the model and data</p>
+                    <p>Rule out implausible models and help to explain observed trends (e.g. post-Brexit cattle farm scenarios (<a href="https://doi.org/10.18564/jasss.4791">McCulloch et al, 2022</a>))</p>
+                    <p>Overall: more information than point-estimation calibration methods (although still more computationally expensive)</p>
+                    
+                </section>
+
+
+                <section id='dyme-uncertainty'>
+                    
+                    <h2>Uncertainty in DyME</h2>
+                    <figure class="right">
+                        <img data-src="../figures/paper_figures/2021-03-RAMP/week_earlier_scenario.png"
+                         att="Results of the model suggest that there would have been 50% fewer COVID cases"/>
+                        <figcaption>
+                            Spooner et al. (2021) A dynamic microsimulation model for epidemics. <em>Social Science &amp; Medicine</em> 291, 114461. DOI: <a href="https://doi.org/10.1016/j.socscimed.2021.114461">10.1016/j.socscimed.2021.114461</a>
+                        </figcaption>
+                    </figure>
+                    
+                    <p>XXXX HERE TALK (again) ABOUT UNCERTAINTY IN DYME MODEL AND USE SOME EXAMPLES 
+                    FROM THE NATURE DS PAPER</p>
+                    
+                    <p>M. Asher, N. Lomax, K. Morrissey, F. Spooner, N. Malleson (2023) Dynamic Calibration with Approximate Bayesian Computation for a Microsimulation of Disease Spread. <i>Nature Scientific Reports</i> (under review)</p>
+                    
+                </section>
+
+                <section id='ramp-abc-parameter-posteriors'>
+
+                    <h2>RAMP: Urban Analytics</h2>
+                    <p>ABC Parameter posteriors</p>
+
+                    <img data-src="../figures/ramp/parameter_posteriors.png"
+                         style="width:70%;"
+                         alt="Posterior distributions of the model parameters" />
+
+                </section>
+
+                <section id='ramp-abc-model-uncertainty'>
+
+                    <h2>RAMP: Urban Analytics</h2>
+                    <p>ABC results uncertainty</p>
+
+                    <img data-src="../figures/ramp/model_posteriors.png"
+                         style="width:70%;"
+                         alt="Posterior distributions of the model parameters" />
+
+                </section>
+                    
+                
+                
+                <section>
+                    <h2>Talk about Probabilistic ABM</h2>                
+                </section>
+                
+                
+                
+                
+                
                 
                 <section id="progress-emulators">
                     <h2>Model Emulation</h2>
                     <p>Minh's emulators work</p>
                     <p class="l2">XX</p>
+                </section>
+                
+                <section id="progress-computation">
+                    <h2>Computational Efficiency</h2>
+                    <p>XXXX One slide on DyME OpenCL implementation speed up</p>
+                    <p class="l2">XX</p>
+                    <img class="left" data-src="../figures/ramp/ramp_gui_1.png"
+                         alt="Screenshot of the RAMP GUI" />
+
+                    <img class="right" data-src="../figures/ramp/ramp_gui_2.png"
+                         alt="Screenshot of the RAMP GUI" />
                 </section>
 
                 <section id="progress-da">

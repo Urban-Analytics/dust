@@ -704,9 +704,9 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 
                 <section id="probabilistic_abm">
                     <h2>Aside: Probabilistic ABM</h2>
-                    <img data-src="../figures/two_agents-b-1.png" style="width: 80%;"
+                    <img data-src="../figures/two_agents-b-1.png" style="width: 70%;"
                          alt="Example of two agents moving in a space and coliding"/>
-                    <img src="../figures/two_agents-b-2.png" style="width: 80%;"
+                    <img src="../figures/two_agents-b-2.png" style="width: 70%;"
                          data-alt="Hypothetical example of what might happen if the agents were
                               represented purely probabilistically."/>
                 </section>
@@ -723,10 +723,47 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 
                 <section id="progress-emulators">
                     <h2>Model Emulation</h2>
-                    <p>XXXX HERE</p>
-                    <p>Minh's emulators work</p>
-                    <p class="l2">XX</p>
+                    <p>Uncertainty quantification, etc., requires many, many model runs</p>
+                    <p>Difficult with computationally-expensive models, like ABMs</p>
+                    <p>Attempt to use <i>emulators</i>; simpler versions of the model that run quickly</p>
+                    <p>Scenario: pedestrian movement in a corridor</p>
+                    <p>Use an ABM to generate data to train an emulator:</p>
+                    <p class="l2">Regression emulator (Random Forest)</p>
+                    <p class="l2">Time-series emulator (Long Short-Term Memory neural network)</p>
+                    <p>Emulator can make real-time predictions quickly and predict directly from aggregate data</p>
                 </section>
+                
+                <section id="progress-emulators2">
+                    <h2>Model Emulation</h2>
+                    <p>Scenario: long corridor with 10 sensors</p>
+                    <figure>
+                        <figcaption>
+                            Kieu, M., H. Nguyen, J.A. Ward and N. Malleson (2022). Towards real-time predictions using emulators of agent-based models. <i>Journal of Simulation</i> 1–18. DOI: <a href="https://doi.org/10.1080/17477778.2022.2080008">10.1080/17477778.2022.2080008</a>.
+                        </figcaption>
+                        <img data-src="../figures/paper_figures/2019-ABMEmulators/corridor.png"
+                             class="left"
+                             style="width:50%;"
+                             alt="Model environment: a corridor that agents move along through."/>
+                        <img data-src="../figures/paper_figures/2019-ABMEmulators/Counts.png"
+                             class="right"
+                             style="width:40%;"
+                             alt="Counts of people passing each sensor become more variable further down the corridor as the agents spread out.."/>
+                    </figure>
+                </section>
+                
+                <section id="progress-emulators3">
+                    
+                    <figure>
+                        <img data-src="../figures/paper_figures/2019-ABMEmulators/TS_all_LSTM_pop500_delay.png"
+                             alt="Results showing how well the time-series model predicts delays with
+                                  different population sizes and look-back window"/>
+                    </figure>
+                    <p>XXXX HERE - finish emulator stuff by scanning papeer and adding some notes (e.g. 'step ahead')</p>
+                </section>
+                
+                
+                
+                
                 
                 <section id="progress-computation">
                     <h2>Computational Efficiency</h2>

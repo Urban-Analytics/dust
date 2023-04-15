@@ -664,52 +664,58 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 </section>
 
 
-                <section id='dyme-uncertainty'>
-                    
-                    <h2>Uncertainty in DyME</h2>
-                    <figure class="right">
-                        <img data-src="../figures/paper_figures/2021-03-RAMP/week_earlier_scenario.png"
-                         att="Results of the model suggest that there would have been 50% fewer COVID cases"/>
+                <section id='dyme-dynamic_calibration'>
+                    <h2>Dynamic Calibration for DyME</h2>
+                    <p>Recall: Very complicated COVID microsimulation, but large uncertainties and limitted data for validation </p>
+                    <p>Use ABC and Bayesian updating ('dynamic recalibration')</p>
+                    <figure >
+                        <img data-src="../figures/paper_figures/2022-RAMP_DA/model_workflow3.png"
+                         alt="Bayesian updating of the DyME model. The parameter posteriors from one window are
+                              used as priors in the next windowl"/>
+
+                    </figure>
+                    <p class="l2">Reduce uncertainty and produce more accurate future predictions</p>
+                    <p class="l2">Parameter posteriors might reveal information about the model / system</p>
+                </section>
+
+                <section id='dyme-abc-posteriors'>
+                    <figure>
+                        <img data-src="../figures/paper_figures/2022-RAMP_DA/parameter_evolution.png"
+                             style="width: 70%;"
+                            alt="Posterior parameter estimates for the DyME model"/>
                         <figcaption>
-                            Spooner et al. (2021) A dynamic microsimulation model for epidemics. <em>Social Science &amp; Medicine</em> 291, 114461. DOI: <a href="https://doi.org/10.1016/j.socscimed.2021.114461">10.1016/j.socscimed.2021.114461</a>
+                            M. Asher, N. Lomax, K. Morrissey, F. Spooner, N. Malleson (2023) Dynamic Calibration with Approximate Bayesian Computation for a Microsimulation of Disease Spread. <i>Nature Scientific Reports</i> (under review)
                         </figcaption>
                     </figure>
-                    
-                    <p>XXXX HERE TALK (again) ABOUT UNCERTAINTY IN DYME MODEL AND USE SOME EXAMPLES 
-                    FROM THE NATURE DS PAPER</p>
-                    
-                    <p>M. Asher, N. Lomax, K. Morrissey, F. Spooner, N. Malleson (2023) Dynamic Calibration with Approximate Bayesian Computation for a Microsimulation of Disease Spread. <i>Nature Scientific Reports</i> (under review)</p>
-                    
                 </section>
 
-                <section id='ramp-abc-parameter-posteriors'>
-
-                    <h2>RAMP: Urban Analytics</h2>
-                    <p>ABC Parameter posteriors</p>
-
-                    <img data-src="../figures/ramp/parameter_posteriors.png"
-                         style="width:70%;"
-                         alt="Posterior distributions of the model parameters" />
-
-                </section>
-
-                <section id='ramp-abc-model-uncertainty'>
-
-                    <h2>RAMP: Urban Analytics</h2>
-                    <p>ABC results uncertainty</p>
-
-                    <img data-src="../figures/ramp/model_posteriors.png"
-                         style="width:70%;"
-                         alt="Posterior distributions of the model parameters" />
-
+                <section id='dyme-abc-predictions'>
+                    <figure>
+                        <img data-src="../figures/paper_figures/2022-RAMP_DA/model_predictions.png"
+                             alt="Uncertain predictions made using the DyME parameter posteriors.
+                                  The certainty increases as more data become available."/>
+                        <figcaption>
+                            M. Asher, N. Lomax, K. Morrissey, F. Spooner, N. Malleson (2023) Dynamic Calibration with Approximate Bayesian Computation for a Microsimulation of Disease Spread. <i>Nature Scientific Reports</i> (under review)
+                        </figcaption>
+                    </figure>
                 </section>
                     
                 
                 
-                <section>
-                    <h2>Talk about Probabilistic ABM</h2>                
+                <section id="probabilistic_abm">
+                    <h2>Aside: Probabilistic ABM</h2>
+                    <img data-src="../figures/two_agents-b-1.png" style="width: 80%;"
+                         alt="Example of two agents moving in a space and coliding"/>
+                    <img src="../figures/two_agents-b-2.png" style="width: 80%;"
+                         data-alt="Hypothetical example of what might happen if the agents were
+                              represented purely probabilistically."/>
                 </section>
-                
+
+                <section id="probabilistic_abm2">
+                    <h2>Aside: Probabilistic ABM</h2>
+                    <img data-src="../figures/crying_emoji.png" style="width:50%"
+                         alt="Crying emoji :-("/>
+                </section>
                 
                 
                 
@@ -717,6 +723,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 
                 <section id="progress-emulators">
                     <h2>Model Emulation</h2>
+                    <p>XXXX HERE</p>
                     <p>Minh's emulators work</p>
                     <p class="l2">XX</p>
                 </section>

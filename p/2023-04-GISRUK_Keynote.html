@@ -492,6 +492,9 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <p class="l2">smart phone apps</p>
                     <p class="l2">social media</p>
                     <p class="l2">pedestrian counters (WiFi, CCTV)</p>
+                    <!-- Example of zooming / cropping an image -->
+                    <!--<img data-src="../figures/Network%20server%20room_87108880.jpg" class="right" style="width: 300px; height: 400px; overflow: hidden;" />-->
+
                 </section>
 
                 <section id="pedestrian_ml1">
@@ -726,7 +729,6 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <p>Uncertainty quantification, etc., requires many, many model runs</p>
                     <p>Difficult with computationally-expensive models, like ABMs</p>
                     <p>Attempt to use <i>emulators</i>; simpler versions of the model that run quickly</p>
-                    <p>Scenario: pedestrian movement in a corridor</p>
                     <p>Use an ABM to generate data to train an emulator:</p>
                     <p class="l2">Regression emulator (Random Forest)</p>
                     <p class="l2">Time-series emulator (Long Short-Term Memory neural network)</p>
@@ -735,7 +737,8 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 
                 <section id="progress-emulators2">
                     <h2>Model Emulation</h2>
-                    <p>Scenario: long corridor with 10 sensors</p>
+                    <p>Scenario: pedestrian movement along a long corridor with 10 sensors</p>
+                    <p>Try to predict sensor counts and total <i>delay</i></p>
                     <figure>
                         <figcaption>
                             Kieu, M., H. Nguyen, J.A. Ward and N. Malleson (2022). Towards real-time predictions using emulators of agent-based models. <i>Journal of Simulation</i> 1–18. DOI: <a href="https://doi.org/10.1080/17477778.2022.2080008">10.1080/17477778.2022.2080008</a>.
@@ -758,83 +761,54 @@ data-background-video="../videos/skylines_mov-long.mp4">
                              alt="Results showing how well the time-series model predicts delays with
                                   different population sizes and look-back window"/>
                     </figure>
-                    <p>XXXX HERE - finish emulator stuff by scanning papeer and adding some notes (e.g. 'step ahead')</p>
                 </section>
                 
                 
                 
                 
-                
-                <section id="progress-computation">
+                <section id="progress-computation-dyme">
+                    
+                    <figure class="right">
+
+                    <img  data-src="../figures/ramp/ramp_gui_1.png"
+                         alt="Screenshot of the RAMP GUI" />
+
+                    <img  data-src="../figures/ramp/ramp_gui_2.png"
+                         alt="Screenshot of the RAMP GUI" />
+                        </figure>
                     <h2>Computational Efficiency</h2>
-                    <p>XXXX One slide on DyME OpenCL implementation speed up</p>
-                    <p class="l2">XX</p>
-                    <img class="left" data-src="../figures/ramp/ramp_gui_1.png"
-                         alt="Screenshot of the RAMP GUI" />
-
-                    <img class="right" data-src="../figures/ramp/ramp_gui_2.png"
-                         alt="Screenshot of the RAMP GUI" />
-                </section>
-
-                <section id="progress-da">
-                    <h2>Real-Time Modelling</h2>
-                    <p>XXXX See slides below</p>
-                    <p>DA (Patricia, Rob, Keiran) (ref Minh dealing with uncertainty)</p>
-                    <p>Dan (role for totally new maths?)</p>
-                    <p class="l2">XX</p>
+                    <p>DyME (COVID microsimulation)</p>
+                    <p class="l2">A single model run (800,000 individuals, 90 days) took 2 hours</p>
+                    <p class="l2">ABC etc. would be impossible at that speed (need 1000s of runs)</p>
+                    <p class="l2">Big computers can help</p>
+                    <p class="l2">But maybe if I were better at programming ...</p>
                 </section>
                 
-
-                
-                <section id="progress-data">
-                    
-                    <h2>XXXX</h2>
-                    
-                    <!-- Example of zooming / cropping an image -->
-                    <img data-src="../figures/Network%20server%20room_87108880.jpg" 
-                         class="right" style="width: 300px; height: 400px; overflow: hidden;" />
-                
-                </section>
-                
-                
-                
-                
-                
-                <!-- ************************************************************
-******************* 4b. DT Vision *****************************
-************************************************************ -->
-                
-                <section class="title" id="dt-vision"
-                         data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
-                    <div class="whitebackground">
-                        <h1>What might an (urban) digital twin look like?</h1>
+                <section id="progress-computation-dyme-improbable"
+                         data-background-video="../videos/Ramp_UA_2020-08-28 12-29-25.mp4">
+                    <div class="whitebackground2 fragment">
+                        <img src="../figures/LOGO_Improbable.png" class="right" style="width:30%;"
+                             alt="Improbable company logo" />
+                        <p>Re-implemented numpy/pandas model using (py)OpenCL</p>
+                        <p>Run time went from 2 hours to a few seconds!</p>
+                        <p>Transforms the potential uses of the model</p>
                     </div>
+                
                 </section>
                 
-                <section id="dt-vision2">
-                    <p>XXXX DIAGRAM OF WHAT AN URBAN DT MIGHT LOOK LIKE</p>
-                </section>
-
-                
-                
-
-                <!-- ************************************************************
-*******************5. Are they worth it? ***********************
-************************************************************ -->
-
-                <section class="title" id="worthit"
+                <section class="title" id="recap"
                          data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
                     <div class="whitebackground">
-                        <h1>Are they worth it?</h1>
+                        <h1>Progress towards urban digital twins (recap)</h1>
+                        <p>Data (pedestrian mobility)</p>
+                        <p>Model synthesis (DyME)</p>
+                        <p>Uncertainty (UQ and dynamic calibration)</p>
+                        <p>Model emulation</p>
+                        <p>More efficient implementation</p>
                     </div>
                 </section>
 
 
-                
-                
-                
-                
-                
                 
                 
                 <!-- ************************************************************
@@ -923,12 +897,8 @@ data-background-video="../videos/skylines_mov-long.mp4">
 
                 </section>
 
-                <!-- ************************************************************
-**************************  PF STATIONSIM ***********************
-************************************************************ -->
-
                 <section id="pf-station-experiments">
-                    <h3>Particle Filter & Crowd Simulation</h3>
+                    <h3>Particle Filter &amp; Crowd Simulation</h3>
 
                     <img style="width:80%" data-src="../figures/pf_overview.png" alt="Station PF experimental design." />
 
@@ -946,15 +916,16 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <h3>Box Environment: More particles = lower error</h3>
                     <figure>
                         <img style="width:60%"
-                             data-src="../figures/paper_figures/2018-ParticleFilterFigs/median_abs_error.png" alt="median absolute error change with number of agents and particles: greater
-                                                                                                                   complexity caused by larger numbers of agents can be mitigated by increasing
-                                                                                                                   the numbers of particles." />
+                             data-src="../figures/paper_figures/2018-ParticleFilterFigs/median_abs_error.png" 
+                             alt="median absolute error change with number of agents and particles: greater
+                                  complexity caused by larger numbers of agents can be mitigated by increasing
+                                  the numbers of particles." />
                     </figure>
                     <figcaption>
                         Malleson, Nick, Kevin Minors, Le-Minh Kieu, Jonathan A. Ward, Andrew West, and Alison Heppenstall.
                         (2020) Simulating Crowds in Real Time with Agent-Based Modelling and a Particle Filter. <i>Journal
-                        of Artificial Societies and Social Simulation</i> 23(3) DOI: <a
-                                                                                        href="https://doi.org/10.18564/jasss.4266">10.18564/jasss.4266</a>.
+                        of Artificial Societies and Social Simulation</i> 23(3) DOI: 
+                        <a href="https://doi.org/10.18564/jasss.4266">10.18564/jasss.4266</a>.
                     </figcaption>
                 </section>
 
@@ -1105,7 +1076,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <h3>Unscented Kalman Filter (UKF)</h3>
                     <p>Observe a proportion of the agents</p>
                     <figure>
-                        <img style="width:80%;" data-src="../figures/paper_figures/2019-UKF/ukf_pairs050.png" 
+                        <img style="width:70%;" data-src="../figures/paper_figures/2019-UKF/ukf_pairs050.png" 
                              alt="Results of the UKF. Most agent positions are estimated reasonably well."/>
                         <figcaption>Clay, Robert, J. A. Ward, P. Ternes, Le-Minh Kieu, N. Malleson (2021) Real-time agent-based crowd simulation with the Reversible Jump Unscented Kalman Filter. <i>Simulation Modelling Practice and Theory</i> 113 (102386) DOI: <a href="https://dx.doi.org/10.1016/j.simpat.2021.102386">10.1016/j.simpat.2021.102386</a></figcaption>
                     </figure>
@@ -1145,57 +1116,62 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     </figure>
                 </section>
 
+                
+                
+                
+                
+                
+                
+                <!-- ************************************************************
+******************* 4b. DT Vision *****************************
+************************************************************ -->
+                
+                <section class="title" id="dt-vision"
+                         data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                    <div class="whitebackground">
+                        <h1>What might an (urban) digital twin look like?</h1>
+                    </div>
+                </section>
+                
+                
+                
+                <section id="dt-vision2">
+                    <p>XXXX DIAGRAM OF WHAT AN URBAN DT MIGHT LOOK LIKE</p>
+                </section>
 
-                <!--
-<section id="other_methods">
-<h2>Other Methods (ongoing)</h2>
-
-<p>Ensemble Kalman Filter</p>
-<p class="l2">Ward, Jonathan A., Andrew J. Evans, and Nicolas S. Malleson. (2016) Dynamic Calibration of
-Agent-Based Models Using Data Assimilation. <i>Royal Society Open Science</i> 3(4). DOI: <a
-href="https://doi.org/10.1098/rsos.150703">10.1098/rsos.150703</a>.</p>
-
-<p>Unscented Kalman Filter</p>
-<p class="l2">Clay, Robert, Le-Minh Kieu, Jonathan A. Ward, Alison Heppenstall, and Nick Malleson (2020)
-Towards Real-Time Crowd Simulation Under Uncertainty Using an Agent-Based Model and an Unscented
-Kalman Filter’. In <i>Advances in Practical Applications of Agents, Multi-Agent Systems, and
-Trustworthiness. The PAAMS Collection</i> 12092:68–79. <i>Lecture Notes in Computer Science</i>.
-DOI:<a href="https://doi.org/10.1007/978-3-030-49778-1_6">10.1007/978-3-030-49778-1_6</a>.</p>
-
-
-<p>Quantum Field Theory - Creation and Annihilation Operators</p>
-<p class="l2">Tang, Daniel. (2019) Data Assimilation in Agent-Based Models Using Creation and
-Annihilation Operators. <i>ArXiv:1910.09442 [Cs]</i>. <a
-href="http://arxiv.org/abs/1910.09442">arxiv.org/abs/1910.09442</a>.</p>
-</section>
--->
-
-
-
+                
+                
 
                 <!-- ************************************************************
-***************************  ETHICS  ************************
+*******************5. Are they worth it? ***********************
 ************************************************************ -->
 
+                <section class="title" id="worthit"
+                         data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                    <div class="whitebackground">
+                        <h1>Are they worth it?</h1>
+                    </div>
+                </section>
 
-
-
-                <!--
-<section id="big_brother" >
-<h2>Ethical Implications</h2>
-<p>Data Bias</p>
-<p class="l2">Need to be very careful: biased data -> biased models</p>
-<p class="l2">The digital divide</p>
-<p>Tracking People</p>
-<p class="l2">Advantage with these methods is we <i>don't need to track people</i></p>
-<p class="l2">Models work with counts of flows</p>
-</section>
--->
-
-
+                
+                
+                
+                
+                
+                
+                
                 <!-- ************************************************************
 ************** CONCLUSION / ACKNOWLEDGEMENTS ********************
 ************************************************************ -->
+
+
+<section id="GIScience2023">
+
+	<h2>Save the date! GIScience 2023</h2>
+
+	<p>XXXX</p>
+
+</section>
 
 
 

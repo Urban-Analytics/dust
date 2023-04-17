@@ -138,7 +138,7 @@
                         </a>
 
                         <p>Josie McCulloch, Patricia Ternes, Robert Clay, Dan Tang,</p>
-                        <p>Molly Asher, Yannisk Oswald, Keiran Suchak</p>
+                        <p>Molly Asher, Yannick Oswald, Keiran Suchak</p>
                         <p>Jiaqi Ge, Jonathan Ward, Minh Kieu, Alison Heppenstall</p>
                     
 
@@ -208,6 +208,8 @@
 
                 <section id="urban_dt">
                     <h2>Urban Digital Twins</h2>
+                    <p>Recent significant interest from government (and industry / academia)</p>
+
                     <figure class="right">
                         <img data-src="../figures/steve-johnson-BlKuLn9vHWo-unsplash.jpg" 
                              alt="Digital representation of a city" />
@@ -215,14 +217,18 @@
                             Photo by <a href="https://unsplash.com/@steve_j?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Steve Johnson</a> on <a href="https://unsplash.com/photos/BlKuLn9vHWo?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
                         </figcaption>
                     </figure>
-                    
-                    <p>Recent significant interest from government (and industry / academia)</p>
                     <p class="l2">National Digital Twin programme</p>
-                    <p class="l2">Alan Turing Institute digital twin programme</p>
+                    <p class="l3">e.g. Gemini Principles</p>
                     <p class="l2"><a href="https://www.connectedurbantwins.de/en/">Connected Urban Twins</a> (Hamburg, Leipzig, Munich)</p>
                     <p class="l2">Singapore</p>
-                    <p class="l2">Bradford (!)</p>
-                    <p>XXXX HERE look these up in more detail</p>
+                    <p class="l2"><a href="https://www.local.gov.uk/case-studies/bradford-district-council-digital-twin">Bradford</a></p>
+                    <p class="l2"><a href="https://www.iesve.com/discoveries/article/18419/glasgow-university-digital-twin">Glasgow</a> (University campus)</p>
+                    <p>But lots of 3D models. Few <i>twins</i></p>
+                </section>
+                
+                <section id="dt-turing">
+                    <img data-src="../figures/digital_twins-turing.png"
+                         alt="Pictures of some digital-twin-related projects at the Alan Turing Institute"/>
                 </section>
                 
                 <section id="urban_dt2">
@@ -230,16 +236,12 @@
                     
                     <h3>Potential (?)</h3>
                     <p>Improved (public) transport &amp; mobility</p>
-                    <p>Rapid, evidence-based responses to events (emergencies, organised events, etc.)</p>
+                    <p>Rapid, evidence-based responses to evolving urban state (emergencies, organised events, etc.)</p>
                     <p>More effective use of front-line services</p>
                     <p>Agile, responsive policy making</p>
-                    <p>XXXX Elaborate, esp. from benefits of others on previous slide.</p>
                 </section>
 
-                <section id="dt-turing">
-                    <img data-src="../figures/digital_twins-turing.png"
-                         alt="Pictures of some digital-twin-related projects at the Alan Turing Institute"/>
-                </section>
+
                 
                 
                 
@@ -327,7 +329,7 @@
                     <p>Implement individual behavioural rules into agents</p>
                     
                     <img class="right" data-src="../figures/mastermap_topography.png" alt="Example of GIS data" />
-                    <h3>Representating Space</h3>
+                    <h3>Representing Space</h3>
                     <p>Rich micro-level environments </p>
                     
                     <h3>Natural Description of a System</h3>
@@ -411,7 +413,7 @@
                         <h3>Simulating Complex Urban Systems</h3>
                         <p>Non-linearity, emergence</p>
                         <p>Behaviour and interactions of people</p>
-                        <p>Difficult to absract, risk of "smoothing out"</p>
+                        <p>Difficult to abstract, risk of "smoothing out"</p>
                         <p>Need models that can account for these complexities</p>
                         <p class="l2">(Role for ABM?)</p>
                     </div>
@@ -426,7 +428,7 @@
                     <p class="l3">Related problems with identifiability / equifinality</p>
                     <p class="l3">Also ensemble variance (model runs give different outcomes)</p>
                     <p class="l2">Model structure uncertainty</p>
-                    <p class="l3">Model discrepancy and overfitting</p>
+                    <p class="l3">Model discrepancy and over-fitting</p>
                     <p class="l2">Scenario uncertainty (for predictions)</p>
                     <p>Need to <strong>understand</strong> and be <strong>honest</strong> about uncertainties</p>
                     <p>Uncertainty Quantification can help (but relevant to DT models?)</p>
@@ -439,7 +441,7 @@
                     <img class="right" style="width:30%" data-src="../figures/disk.jpeg" 
                          alt="A hard disk"/>
                     <p>Even in the Age of Data, there are huge unknowns</p>
-                    <p>Models (DTs) can be extremley detailed</p>
+                    <p>Models (DTs) can be extremely detailed</p>
                     <p class="l2">Individual people / objects, interactions, etc.</p>
                     <p>But typically only coarse data are available</p>
                     <p>How to calibrate and validate all model components?</p>
@@ -553,7 +555,7 @@
                     <p class="l2">Suggest where footfall is more/less predictable</p>
                     <p>Model uses</p>
                     <p class="l2">Prospective: Predict current and future (short-term) footfall (out of sample prediction)</p>
-                    <p class="l2">Retrospective: Quantify success of oganised events</p>
+                    <p class="l2">Retrospective: Quantify success of organised events</p>
                     <p class="l2">Theoretical: Build evidence base for drivers of population mobility</p>
                     <p>Part of an urban digital twin?</p>
                 </section>
@@ -689,12 +691,12 @@
 
                 <section id='dyme-dynamic_calibration'>
                     <h2>Dynamic Calibration for DyME</h2>
-                    <p>Recall: Very complicated COVID microsimulation, but large uncertainties and limitted data for validation </p>
-                    <p>Use ABC and Bayesian updating ('dynamic recalibration')</p>
+                    <p>Recall: Very complicated COVID microsimulation, but large uncertainties and limited data for validation </p>
+                    <p>Use ABC and Bayesian updating ('dynamic re-calibration')</p>
                     <figure >
                         <img data-src="../figures/paper_figures/2022-RAMP_DA/model_workflow3.png"
                          alt="Bayesian updating of the DyME model. The parameter posteriors from one window are
-                              used as priors in the next windowl"/>
+                              used as priors in the next window"/>
 
                     </figure>
                     <p class="l2">Reduce uncertainty and produce more accurate future predictions</p>
@@ -728,7 +730,7 @@
                 <section id="probabilistic_abm">
                     <h2>Aside: Probabilistic ABM</h2>
                     <img data-src="../figures/two_agents-b-1.png" style="width: 70%;"
-                         alt="Example of two agents moving in a space and coliding"/>
+                         alt="Example of two agents moving in a space and colliding"/>
                     <img src="../figures/two_agents-b-2.png" style="width: 70%;"
                          data-alt="Hypothetical example of what might happen if the agents were
                               represented purely probabilistically."/>
@@ -1182,7 +1184,7 @@
                     <h2>Opportunities with connected data</h2>
 
                     <p>Glasses in Classes</p>
-                    <p class="l2">Connect education and health data to find children who had an ophthalmic deficict but had not had a followup appointment.</p>
+                    <p class="l2">Connect education and health data to find children who had an ophthalmic deficit but had not had a followup appointment.</p>
                     <p class="l2">Evidence for cause of lower reading skills.</p>
                     <p class="l2">Glasses provided to <strong>schools</strong></p>
                     <p>Undiagnosed Autism</p>

@@ -112,12 +112,6 @@
 
                 </section>
 
-                <!--<section id="Motivation2"
-data-background-video="../videos/skylines_mov-long.mp4">
-<div class="whitebackground2 fragment" >
-<h2>Can urban digital twins really help?</h2>
-</div>
-</section>-->
 
                 <section id="Outline">
                     <h2>Presentation Outline</h2>
@@ -128,10 +122,9 @@ data-background-video="../videos/skylines_mov-long.mp4">
                             Photo by <a href="https://unsplash.com/@steve_j?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Steve Johnson</a> on <a href="https://unsplash.com/photos/BlKuLn9vHWo?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
                         </figcaption>
                     </figure>
-                    <p>XXXX CHECK ORDER BELOW (swapped ABM and Challenges?)</p>
                     <p>1. Digital twins (of urban systems)</p>
-                    <p>2. Challenges</p>
-                    <p>3. The role of agent-based modelling</p>
+                    <p>2. The role of agent-based modelling</p>
+                    <p>3. Challenges for Urban Digital Twins</p>
                     <p>4. Progress towards Urban DTs</p>
                     <p class="l2">Data, model synthesis, emulation, real-time modelling</p>
                     <p>5. Are they worth it?</p>
@@ -145,8 +138,8 @@ data-background-video="../videos/skylines_mov-long.mp4">
                         </a>
 
                         <p>Josie McCulloch, Patricia Ternes, Robert Clay, Dan Tang,</p>
+                        <p>Molly Asher, Yannisk Oswald, Keiran Suchak</p>
                         <p>Jiaqi Ge, Jonathan Ward, Minh Kieu, Alison Heppenstall</p>
-                        <p>XXXX OTHERS?</p>
                     
 
                         <a href="https://erc.europa.eu/">
@@ -226,6 +219,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <p>Recent significant interest from government (and industry / academia)</p>
                     <p class="l2">National Digital Twin programme</p>
                     <p class="l2">Alan Turing Institute digital twin programme</p>
+                    <p class="l2"><a href="https://www.connectedurbantwins.de/en/">Connected Urban Twins</a> (Hamburg, Leipzig, Munich)</p>
                     <p class="l2">Singapore</p>
                     <p class="l2">Bradford (!)</p>
                     <p>XXXX HERE look these up in more detail</p>
@@ -246,6 +240,32 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <img data-src="../figures/digital_twins-turing.png"
                          alt="Pictures of some digital-twin-related projects at the Alan Turing Institute"/>
                 </section>
+                
+                
+                
+                
+                
+                                <!-- ************************************************************
+******************* 4b. DT Vision *****************************
+************************************************************ -->
+                
+                <section class="title" id="dt-vision"
+                         data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                    <div class="whitebackground">
+                        <h1>What might an (urban) digital twin look like?</h1>
+                    </div>
+                </section>
+                
+                
+                
+                <section id="dt-vision2" >
+                    <img data-src="../figures/digital_twin_concept.png"
+                         style="margin:1em;"
+                         alt="Different layers of data and models that may constitute a digital twin 
+                              (from individual to macro)" />
+                </section>
+
+                
                 
                 
                 
@@ -723,16 +743,52 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 
                 
                 
+                <section id="progress-computation-dyme">
+                    
+                    <h2>Computational Efficiency</h2>
+
+                    
+                    <p>Uncertainty quantification, etc., requires many, many model runs</p>
+                    <p>Difficult with computationally-expensive models, like ABMs</p>
+                    <figure class="right">
+                        <img  data-src="../figures/ramp/ramp_gui_1.png" alt="Screenshot of the RAMP GUI" />
+
+                        <!--<img  data-src="../figures/ramp/ramp_gui_2.png" alt="Screenshot of the RAMP GUI" /> -->
+                    </figure>
+                    <p>DyME (COVID microsimulation)</p>
+                    <p class="l2">A single model run (800,000 individuals, 90 days) took 2 hours</p>
+                    <p class="l2">ABC etc. would be impossible at that speed (need 1000s of runs)</p>
+                    <p class="l2">Big computers can help</p>
+                    <p class="l2">But maybe if I were better at programming ...</p>
+                </section>
+                
+                <section id="progress-computation-dyme-improbable"
+                         data-background-video="../videos/Ramp_UA_2020-08-28 12-29-25.mp4">
+                    <div class="whitebackground2 fragment">
+                        <img src="../figures/LOGO_Improbable.png" class="right" style="width:30%;"
+                             alt="Improbable company logo" />
+                        <p>Re-implemented numpy/pandas model using (py)OpenCL</p>
+                        <p>Run time went from 2 hours to a few seconds!</p>
+                        <p>Transforms the potential uses of the model</p>
+                    </div>
+                
+                </section>
+                
+    
+                
+                
+                
+                
                 
                 <section id="progress-emulators">
                     <h2>Model Emulation</h2>
-                    <p>Uncertainty quantification, etc., requires many, many model runs</p>
-                    <p>Difficult with computationally-expensive models, like ABMs</p>
-                    <p>Attempt to use <i>emulators</i>; simpler versions of the model that run quickly</p>
-                    <p>Use an ABM to generate data to train an emulator:</p>
+                    <p>But what if we can't speed up the model?</p>
+                    <p>Attempt to use <i>emulators</i> (aka 'surrogate models')</p>
+                    <p class="l2">Simpler versions of the model that run quickly</p>
+                    <p>Crowd modelling case study: use an ABM to generate data to train an emulator:</p>
                     <p class="l2">Regression emulator (Random Forest)</p>
                     <p class="l2">Time-series emulator (Long Short-Term Memory neural network)</p>
-                    <p>Emulator can make real-time predictions quickly and predict directly from aggregate data</p>
+                    <p>Emulator then makes real-time predictions quickly and can predict directly from aggregate data</p>
                 </section>
                 
                 <section id="progress-emulators2">
@@ -766,36 +822,6 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 
                 
                 
-                <section id="progress-computation-dyme">
-                    
-                    <figure class="right">
-
-                    <img  data-src="../figures/ramp/ramp_gui_1.png"
-                         alt="Screenshot of the RAMP GUI" />
-
-                    <img  data-src="../figures/ramp/ramp_gui_2.png"
-                         alt="Screenshot of the RAMP GUI" />
-                        </figure>
-                    <h2>Computational Efficiency</h2>
-                    <p>DyME (COVID microsimulation)</p>
-                    <p class="l2">A single model run (800,000 individuals, 90 days) took 2 hours</p>
-                    <p class="l2">ABC etc. would be impossible at that speed (need 1000s of runs)</p>
-                    <p class="l2">Big computers can help</p>
-                    <p class="l2">But maybe if I were better at programming ...</p>
-                </section>
-                
-                <section id="progress-computation-dyme-improbable"
-                         data-background-video="../videos/Ramp_UA_2020-08-28 12-29-25.mp4">
-                    <div class="whitebackground2 fragment">
-                        <img src="../figures/LOGO_Improbable.png" class="right" style="width:30%;"
-                             alt="Improbable company logo" />
-                        <p>Re-implemented numpy/pandas model using (py)OpenCL</p>
-                        <p>Run time went from 2 hours to a few seconds!</p>
-                        <p>Transforms the potential uses of the model</p>
-                    </div>
-                
-                </section>
-                
                 <section class="title" id="recap"
                          data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
                     <div class="whitebackground">
@@ -803,8 +829,8 @@ data-background-video="../videos/skylines_mov-long.mp4">
                         <p>Data (pedestrian mobility)</p>
                         <p>Model synthesis (DyME)</p>
                         <p>Uncertainty (UQ and dynamic calibration)</p>
-                        <p>Model emulation</p>
                         <p>More efficient implementation</p>
+                        <p>Model emulation</p>
                     </div>
                 </section>
 
@@ -955,14 +981,16 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <div class="whitebackground2 fragment">
                         <h2>Grand Central Terminal (New York)</h2>
 
-                        <p>Pedestrian traces</p>
-                        <p class="l2">B. Zhou, X. Wang and X. Tang. (2012) Understanding Collective Crowd Behaviors:
+                        <p>Pedestrian traces data</p>
+                        <p>B. Zhou, X. Wang and X. Tang. (2012) Understanding Collective Crowd Behaviors:
                             Learning a Mixture Model of Dynamic Pedestrian-Agents. In <i>Proceedings of IEEE Conference on
                             Computer Vision and Pattern Recognition (CVPR)</i> 2012</p>
                         <p class="l2"><a href="http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html">
                             http://www.ee.cuhk.edu.hk/~xgwang/grandcentral.html</a></p>
+                        <p>Cleaned and prepared by <a href="https://doi.org/10.12688/openreseurope.14144.1">Ternes et al. (2021)</a>.</p>
 
 
+                        <!--
                         <img class="left" , style="width:50%"
                              data-src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/grand_central_floorplan.png"
                              alt="Grand Central Terminal floor plan with entrances around the sides and an obstruction in the centre." />
@@ -970,7 +998,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                         <img class="right" style="width:30%"
                              data-src="../figures/paper_figures/2020-PhilTrans-GrandCentralStation/trajectories-structure.png"
                              alt="Pedestrian trajectories estimated from the video" />
-
+                        -->
 
                     </div>
                 </section>
@@ -997,7 +1025,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     </figure>
                 </section>
 
-                <section id="pf_dynimic">
+                <section id="pf_dynamic">
                     <h2>Particle Filter & Categorical Parameters</h2>
                     <video data-autoplay controls loop width="100%" height="auto" alt="Trafalgar square before COVID: busy">
                         <source data-src="../videos/20_particles_sirPF.mp4" type="video/mp4" />
@@ -1006,6 +1034,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                     <p class="l2"><a href="https://urban-analytics.github.io/dust/videos/20_particles_sirPF.mp4">(video)</a></p>
                 </section>
 
+                <!--
                 <section id="pf-difficultiesII">
                     <h2>Difficulties (II)</h2>
                     <ul>
@@ -1014,6 +1043,9 @@ data-background-video="../videos/skylines_mov-long.mp4">
                         <li>Non-linear trajectories (change in categorical parameters)</li>
                     </ul>
                 </section>
+                -->
+
+
 
                 <!-- ************************************************************
 ******************  GCS: Noise Particle Filter ******************
@@ -1098,10 +1130,10 @@ data-background-video="../videos/skylines_mov-long.mp4">
 
                 <section id="mcmc">
                     <h2>Other DA methods (ii)</h2>
-                    <h3>Monte-Carlo Markov Chain</h3>
-                    <p style="font-size:80%;">Tang, D. and N. Malleson (2022). Data assimilation with agent-based models using Markov chain sampling. <i>Open Research Europe</i> 2(70). DOI: <a href="https://dx.doi.org/10.12688/openreseurope.14800.1">10.12688/openreseurope.14800.1</a></p>
+                    <p>A new approach: Monte-Carlo Markov Chain sampling for ABM</p>
+                    <p class="l2">Tang, D. and N. Malleson (2022). Data assimilation with agent-based models using Markov chain sampling. <i>Open Research Europe</i> 2(70). DOI: <a href="https://dx.doi.org/10.12688/openreseurope.14800.1">10.12688/openreseurope.14800.1</a></p>
                     <p>Define an ABM using a particular scheme (similar to normal ABM definition)</p>
-                    <p>New algorithm to allow efficient sampling from the ABM</p>
+                    <p>New algorithm to allow efficient sampling from the space of all possible ABM trajectories</p>
                     <p>Use MCMC to combine the model with data to create a posterior</p>
                     <p></p>
                 </section>
@@ -1119,27 +1151,7 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 
                 
                 
-                
-                
-                
-                <!-- ************************************************************
-******************* 4b. DT Vision *****************************
-************************************************************ -->
-                
-                <section class="title" id="dt-vision"
-                         data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
-                    <div class="whitebackground">
-                        <h1>What might an (urban) digital twin look like?</h1>
-                    </div>
-                </section>
-                
-                
-                
-                <section id="dt-vision2">
-                    <p>XXXX DIAGRAM OF WHAT AN URBAN DT MIGHT LOOK LIKE</p>
-                </section>
 
-                
                 
 
                 <!-- ************************************************************
@@ -1150,7 +1162,25 @@ data-background-video="../videos/skylines_mov-long.mp4">
                          data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
                     <div class="whitebackground">
                         <h1>Are they worth it?</h1>
+                        
                     </div>
+                </section>
+                
+                <section id="worthit2">
+                    <h2>Critical (urban?) social problems</h2>
+                    <p>Can urban digital twins help?</p>
+                    <p class="l2">Life expectancy (can vary by 10 years)</p>
+                    <p class="l2">Food banks</p>
+                    <p class="l2">Pitifal rape (and others) prosecution and conviction rate</p>
+                    <p class="l2">Obesity</p>
+                    
+                    
+                </section>
+                
+                <section id="worthit3">
+                    
+                    <h2>XXXX MMW Papers</h2>
+                    
                 </section>
 
                 
@@ -1163,83 +1193,81 @@ data-background-video="../videos/skylines_mov-long.mp4">
                 <!-- ************************************************************
 ************** CONCLUSION / ACKNOWLEDGEMENTS ********************
 ************************************************************ -->
-
-
-<section id="GIScience2023">
-
-	<h2>Save the date! GIScience 2023</h2>
-
-	<p>XXXX</p>
-
-</section>
-
-
-
-
-
-                <section id="conclusion-future" data-background-image="../figures/digital_twin_engineering.png">
-
-                    <div class="whitebackground2 fragment">
-
-                        <img class="right" style="padding:1px; margin:1px;"
-                             data-src="../figures/make_more_digital_twins.jpg"
-                             alt="Nature article: Make more digital twins" />
-
-                        <h3>Conclusions</h3>
-                        <p>Feeding data into agent-based models is hard!</p>
-                        <p class="l2">Computational and <i>methodological</i> challenges</p>
-                        <p>Particle filters work on simple models, but naive filter breaks down</p>
-                        <h3>Future Work</h3>
-                        <p>Towards Digital Twins of Human Systems</p>
-                        <p class="l2">Join up simulations at multiple spatial and temporal resolutions</p>
-                        <p>Real-time analysis tools and virtual labs for policy development</p>
-
-
-                    </div>
-
+                
+                
+                
+                <section id="summary">
+                    <h2>Summary</h2>
+                    <figure class="right">
+                        <img src="../figures/skylines-day2.jpg" 
+                             alt="A screenshot of a city building computer game that I like to play" />
+                        
+                    </figure>
+                    <p>1. Digital twins (of urban systems)</p>
+                    <p>2. The role of agent-based modelling</p>
+                    <p>3. Challenges for Urban Digital Twins</p>
+                    <p>4. Progress towards Urban DTs</p>
+                    <p class="l2">Data, model synthesis, emulation, real-time modelling</p>
+                    <p>5. Are they worth it?</p>
                 </section>
+                
+
+
+                <section id="GIScience2023" >
+                    <h2>Save the Date: GIScience 2023 (Leeds)</h2>
+                    <img src="../figures/giscience_2023.png" class="right"/>
+                    <p>Short paper (5 pages) submission deadline</p>
+                    <p class="l2"><strong>Mon 8th May 2023</strong></p>
+                    <p>Early-bird registration deadline:</p>
+                    <p class="l2"><strong>Fri 14th July 2023</strong></p>
+                    <p>Conference:</p>
+                    <p class="l2"><strong>13-15 September 2023</strong> (workshops on Tuesday)</p>
+                    <p><a href="https://giscience.org/">giscience.org/</a></p>
+                </section>
+                
 
 
 
-                <section class="title" id="thanks"
-                         data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+               <section class="title" id="thanks"
+                         data-background-video="../videos/city_night.mp4"
+                         data-background-video-loop="loop">
                     <div class="whitebackground2">
 
-                        <h5>Workshop on Data-Driven Economic <br />
-                            Agent-Based Models (<a href="https://sites.google.com/view/wddeabm">DDEABM</a>) </h5>
-                        <h5 style="font-size: 18pt;">Sant'Anna School of Advanced Studies, Pisa,
-                            27-28 September 2022</h5>
 
+                        <h5>GISRUK 2023.
+                            University of Glasgow, 19-21 April 2023</h5>
                         <hr />
-                        <h1 style="font-size: 45px;">Data Assimilation for Agent-Based Models</h1>
+                        <h1 style="font-size: 45px;">Virtual Mirrors or Smoke and Mirrors? <br/> 
+                            <div style="font-size: 35px;">Can Urban Digital Twins Make Cities Better?</div></h1>
                         <hr />
 
-                        <h2 style="font-size: 35px;">
-                            <a href="http://nickmalleson.co.uk/">Nick Malleson</a> and
-                            <a href="https://www.linkedin.com/in/patricia-ternes/?originalSubdomain=uk">Patricia Ternes</a>
-
-                        </h2>
-
-                        <h4>University of Leeds, UK</h4>
-                        <h4><a href="mailto:n.s.malleson@leeds.ac.uk">n.s.malleson@leeds.ac.uk</a></h4>
+                        <h2 style="font-size: 25px;">
+                            <a href="http://nickmalleson.co.uk/">Nick Malleson</a>, University of Leeds, UK</h2>
+                        <!--<h4><a href="mailto:n.s.malleson@leeds.ac.uk">n.s.malleson@leeds.ac.uk</a>-->
                         <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
                         <hr />
-                        <p style="text-align:center;font-size:25px">Slides available at: <br /><a
-                                                                                                  href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a>
+                        <p style="text-align:center;font-size:20px">Slides available at: <br />
+                            <a href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a>
                         </p>
+                        <hr />
 
                         <a href="https://europa.eu/european-union/index_en">
-                            <img style="float:left;padding:10px 50px 10px 50px;width:70px; height:auto;"
+                            <img style="float:left;padding:5px;width:auto; height:60px;"
                                  data-src="../figures/LOGO_EU.jpg" />
                         </a>
 
                         <a href="http://www.leeds.ac.uk/">
-                            <img style="float:center;padding:10px;width:150px; height:auto;"
+                            <img style="float:center;padding:5px;width:auto; height:60px;"
                                  data-src="../figures/uol_logo.gif" />
                         </a>
 
-                        <a href="https://environment.leeds.ac.uk/geography">
-                            <img style="float:right;padding:10px;width:150px; height:auto;" data-src="../figures/LOGO_SOG.png" />
+                        <!--<a href="https://environment.leeds.ac.uk/geography">
+<img style="float:right;padding:10px;width:150px; height:auto;" data-src="../figures/LOGO_SOG.png" />
+</a>-->
+
+                        <a href="https://gisruk.org/">
+                            <img style="float:right;padding:5px; width:auto; height:60px;"
+                                 src="../figures/LOGO_GISRUK.png" />
                         </a>
 
                         <!-- <a href="http://www.turing.ac.uk/">

@@ -17,6 +17,8 @@ Contents
 
 ## Peer Reviewed Articles
 
+Molly Asher, Nik Lomax, Karyn Morrissey, Fiona Spooner, Nick Malleson (2023). Dynamic calibration with approximate Bayesian computation for a microsimulation of disease spread. _Nature Scientific Reports_ 13:8637. DOI: [10.1038/s41598-023-35580-z](https://dx.doi.org/10.1038/s41598-023-35580-z).
+
 N. Malleson, Birkin, M., Birks, D., Ge, J., Heppenstall, A., Manley, E., McCulloch, J., Ternes, P. (2022) Agent-based modelling for Urban Analytics: State of the art and challenges. _AI Communications_ 35, 393–406. DOI:
 [10.3233/AIC-220114](https://doi.org/10.3233/AIC-220114). [[PDF (open access)](https://arxiv.org/abs/2210.06955)]
 

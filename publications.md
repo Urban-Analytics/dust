@@ -52,6 +52,8 @@ Crols, T., and N. Malleson (2019) Quantifying the Ambient Population Using Hourl
 
 _For a full list of conference presentations, see the [presentations](./presentations.html) page._
 
+M. Asher, Y. Oswald, and N. Malleson (2023). Predicting Pedestrian Counts using Machine Learning. Proceedings of the 26th AGILE Conference on Geographic Information Science, "Spatial data for design". AGILE-GISS, 4, 18, 2023 DOI: [10.5194/agile-giss-4-18-2023](https://doi.org/10.5194/agile-giss-4-18-2023). 
+
 R. Clay, Le-Minh Kieu, J. A. Ward, A. Heppenstall, N. Malleson (2020) Towards Real-Time Crowd Simulation Under Uncertainty Using an Agent-Based Model and an Unscented Kalman Filter. In Demazeau Y., Holvoet T., Corchado J., Costantini S. (eds) _Advances in Practical Applications of Agents, Multi-Agent Systems, and Trustworthiness. The PAAMS Collection. PAAMS 2020._ Lecture Notes in Computer Science, vol 12092. Springer. [DOI: 10.1007/978-3-030-49778-1_6](https://doi.org/10.1007/978-3-030-49778-1_6) [Paper (pdf)]({{site.baseurl}}/papers/2020-PAAMS-UKF.pdf)
 
 D. Birks, A. Heppenstall and N. Malleson (2020). Towards the Development of Societal Twins. 24th European Conference on Artificial Intelligence - ECAI 2020. [Abstract (pdf)](http://ecai2020.eu/papers/1162_paper.pdf).

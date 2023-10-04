@@ -8,6 +8,8 @@ tagline: Presentations about, or relating to, the surf project
 
 **2023**
 
+ - Using Approximate Bayesian Computation to Infer Disease Parameter Uncertainty in a COVID-19 Microsimulation. Presentation to the [18th Social Simulation Conference](https://ssc23-sphsu.online/), 4-8 September, University of Glasgow, UK. [Slides (pdf)]({{site.baseurl}}/p/2023-09-SSC.pdf). Full paper: [https://www.nature.com/articles/s41598-023-35580-z](https://www.nature.com/articles/s41598-023-35580-z).
+
  - Economic prediction in real-time? Or an agent-based model with Ensemble Kalman Filter for the US wealth distribution. Presentation to the [Ninth Meeting of the German Network for New Economic Dynamics (GENED)](https://www.uni-bamberg.de/en/econ-rtg/events/ninth-meeting-of-the-german-network-for-new-economic-dynamics-gened/), 4th-6th October, Bamberg. [Slides (pdf)]({{site.baseurl}}/p/2023-10-GENED.pdf).
 
  - Predicting Pedestrian Counts using Machine Learning. Presentation to the Association of Geographic Information Laboratories in Europe (AGILE) annual conference. Delft, the Netherlands, 13-16 June 2023. [Slides (pdf)]({{site.baseurl}}/p/2023-07-AGILE_ML.pdf). DOI: [10.5194/agile-giss-4-18-2023](https://doi.org/10.5194/agile-giss-4-18-2023)

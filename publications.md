@@ -29,7 +29,7 @@ Kieu, M., H. Nguyen, J.A. Ward and N. Malleson (2022). Towards real-time predict
 
 Ternes, P., J.A. Ward, A. Heppenstall, V. Kumar, L.-M. Kieu, N. Malleson (2021) Data assimilation and agent-based modelling: towards the incorporation of categorical agent parameters. _Open Research Europe_ 1, 131. DOI:[10.12688/openreseurope.14144.1](https://doi.org/10.12688/openreseurope.14144.1)
 
-Li An, Volker Grimm, Abigail Sullivan, B.L. Turner II, Nicolas Malleson, Alison Heppenstall, Christian Vincenot, Derek Robinson, Xinyue Ye, Jianguo Liu, Emilie Lindkvist, Wenwu Tang (2021) Challenges, tasks, and opportunities in modeling agent-based complex systems, _Ecological Modelling_ 457(1):109685. DOI: [10.1016/j.ecolmodel.2021.109685](https://doi.org/10.1016/j.ecolmodel.2021.109685)
+An, Li, Volker Grimm, Abigail Sullivan, B.L. Turner II, Nicolas Malleson, Alison Heppenstall, Christian Vincenot, Derek Robinson, Xinyue Ye, Jianguo Liu, Emilie Lindkvist, Wenwu Tang (2021) Challenges, tasks, and opportunities in modeling agent-based complex systems, _Ecological Modelling_ 457(1):109685. DOI: [10.1016/j.ecolmodel.2021.109685](https://doi.org/10.1016/j.ecolmodel.2021.109685)
 
 Clay, Robert, J. A. Ward, P. Ternes, Le-Minh Kieu, N. Malleson (2021) Real-time agent-based crowd simulation with the Reversible Jump Unscented Kalman Filter. _Simulation Modelling Practice and Theory_ 113 (102386) DOI: [10.1016/j.simpat.2021.102386](https://doi.org/10.1016/j.simpat.2021.102386)
 

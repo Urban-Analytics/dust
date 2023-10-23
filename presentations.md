@@ -15,7 +15,7 @@ tagline: Presentations about, or relating to, the surf project
  - Predicting Pedestrian Counts using Machine Learning. Presentation to the Association of Geographic Information Laboratories in Europe (AGILE) annual conference. Delft, the Netherlands, 13-16 June 2023. [Slides (pdf)]({{site.baseurl}}/p/2023-07-AGILE_ML.pdf). DOI: [10.5194/agile-giss-4-18-2023](https://doi.org/10.5194/agile-giss-4-18-2023)
 
 
- - [Virtual Mirrors or Smoke and Mirrors? Can Urban Digital Twins Make Cities Better?]({{site.baseurl}}/p/2023-04-GISRUK_Keynote.html). Keynote presentation to GIS Research UK ([GISRUK '23](https://gisruk.org/gisruk-2023/)), University of Glasgow, 19-21 April 2023.
+ - [Virtual Mirrors or Smoke and Mirrors? Can Urban Digital Twins Make Cities Better?]({{site.baseurl}}/p/2023-04-GISRUK_Keynote.html). Keynote presentation to GIS Research UK ([GISRUK '23](https://gisruk.org/gisruk-2023/)), University of Glasgow, 19-21 April 2023. (Shorter version also presented at the [CDRC Data Partner Forum on 23rd October 2013]({{site.baseurl}}/p/2023-10-CDRC-Data_Partner_Forum.html)).
 
 **2022**
 

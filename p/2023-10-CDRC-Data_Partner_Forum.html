@@ -1,0 +1,464 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="author" content="Nick Malleson">
+    <meta name="keywords"
+        content="digital twins, ABM, data assimilation, city simulation, particle filter, uncertainty">
+
+    <title>Virtual Mirrors or Smoke and Mirrors? Can Urban Digital Twins Make Cities Better?</title>
+
+    <link rel="stylesheet" href="reveal/css/reveal.css">
+    <link rel="stylesheet" href="reveal/css/theme/white.css">
+
+    <!-- Some extra bits added by Nick -->
+    <link rel="stylesheet" href="reveal/css/nick.css">
+
+    <!-- Theme used for syntax highlighting of code -->
+    <link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+
+    <!-- Pr,inting and PDF exports -->
+    <script>
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = window.location.search.match(/print-pdf/gi) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
+        document.getElementsByTagName('head')[0].appendChild(link);
+    </script>
+</head>
+
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <section class="title" id="index" data-background-video="../videos/city_night.mp4"
+                data-background-video-loop="loop">
+                <div class="whitebackground2">
+
+
+                    <h5>CDRC Data Partner Forum.<br />
+                        University of Leeds, 31st October 2023</h5>
+                    <hr />
+                    <h1 style="font-size: 45px;">Virtual Mirrors or Smoke and Mirrors? <br />
+                        <div style="font-size: 35px;">Can Urban Digital Twins Make Cities Better?</div>
+                    </h1>
+                    <hr />
+
+                    <h2 style="font-size: 25px;">
+                        <a href="http://nickmalleson.co.uk/">Nick Malleson</a>, University of Leeds, UK
+                    </h2>
+                    <!--<h4><a href="mailto:n.s.malleson@leeds.ac.uk">n.s.malleson@leeds.ac.uk</a>-->
+                    <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
+                    <hr />
+                    <p style="text-align:center;font-size:20px">Slides available at: <br />
+                        <a
+                            href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a>
+                    </p>
+                    <hr />
+
+                    <a href="https://europa.eu/european-union/index_en">
+                        <img style="float:left;padding:5px;width:auto; height:60px;"
+                            data-src="../figures/LOGO_EU.jpg" />
+                    </a>
+
+                    <a href="http://www.leeds.ac.uk/">
+                        <img style="float:center;padding:5px;width:auto; height:60px;"
+                            data-src="../figures/uol_logo.gif" />
+                    </a>
+
+                    <a href="https://environment.leeds.ac.uk/geography">
+                        <img style="float:right;padding:10px;width:150px; height:auto;"
+                            data-src="../figures/LOGO_SOG.png" />
+                    </a>
+
+                    <!-- <a href="http://www.turing.ac.uk/">
+<img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_TURING.png"/>
+</a> -->
+                </div>
+
+            </section>
+
+
+            <!-- ************************************************************
+*********************** MOTIVATION **************************
+************************************************************ -->
+
+
+            <section id="Motivation1" data-background-image="../figures/ready_player_one_stacks.jpg">
+                <div class="whitebackground2 fragment">
+                    <h2>Critical (urban?) social problems</h2>
+                    <p class="l2">Children in the most deprived neighbourhoods have <a
+                            href="https://arc-nenc.nihr.ac.uk/news/the-child-of-the-north-building-a-fairer-future-after-covid-19/">10
+                            years shorter life expectancy</a>
+                        than those born in affluent neighbourhoods.</p>
+                    <p class="l2">The use of food banks has <a
+                            href="https://www.trusselltrust.org/news-and-blog/latest-stats/end-year-stats/">increase by
+                            81% in five years</a></p>
+                    <p class="l2">Rape has effectively been decriminalised (in 2021 <a
+                            href="https://victimscommissioner.org.uk/news/the-distressing-truth-is-that-if-you-are-raped-in-britain-today-your-chances-of-seeing-justice-are-slim/">only
+                            5% of recorded rapes resulted in a charge</a>).</p>
+                    <p class="l2"><a href="https://fingertips.phe.org.uk/profile/national-child-measurement-programme">A
+                            third</a> of English children leaving primary school are overweight or living with obesity
+                    </p>
+                    <p>Can urban digital twins help?</p>
+                </div>
+            </section>
+
+            <!-- ************************************************************
+*********************** WHAT ARE DTs? **************************
+************************************************************ -->
+
+            <section id="what_are_dt">
+
+                <h2>What are Digital Twins?</h2>
+
+                <p>A synthesis of computer models, sensor networks, visualisations, etc., that mirror a real-world
+                    system, product or process</p>
+
+                <figure class="right" style="width:40%;">
+                    <img data-src="../figures/make_more_digital_twins.png" style="width:80%;"
+                        alt="Make More Digital Twins nature article " />
+                    <figcaption>
+                        <a href="https://doi.org/10.1038/d41586-019-02849-1">Tao and Qi (2019)</a>
+                    </figcaption>
+                </figure>
+
+                <p>"Precise, virtual copies of machines or systems"</p>
+
+                <p>Examples:</p>
+                <p class="l2">Machines / products;<br />
+                    Manufacturing (factories);<br />
+                    Health / hospitals;<br />
+                    Smart Cities (e.g. Singapore, Victoria, Bradford);<br />
+                    ... many others ... </p>
+                <p>But lots of 3D models. Few <i>twins</i></p>
+
+            </section>
+
+
+
+
+            <!-- ************************************************************
+******************* 4b. DT Vision *****************************
+************************************************************ -->
+
+            <section class="title" id="dt-vision"
+                data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                <div class="whitebackground">
+                    <h1>What might an (urban) digital twin look like?</h1>
+                </div>
+            </section>
+
+
+
+            <section id="dt-vision2">
+                <img data-src="../figures/digital_twin_concept.png" style="margin:1em;" alt="Different layers of data and models that may constitute a digital twin 
+                              (from individual to macro)" />
+            </section>
+
+
+
+
+
+
+            <!-- ************************************************************
+*********************** 2. Challenges  ***********************
+************************************************************ -->
+
+            <section class="title" id="challenges"
+                data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                <div class="whitebackground">
+                    <h1>Challenges for Urban Digital Twins</h1>
+                </div>
+            </section>
+
+            <section id="challenge-complex_systems" data-background-video="../videos/trafalgar_timelapse-1280×720.mp4"
+                data-background-video-loop="loop">
+                <div class="whitebackground2 fragment">
+                    <h2>Challenges</h2>
+                    <h3>Simulating Complex Urban Systems</h3>
+                    <p>Non-linearity, emergence</p>
+                    <p>Behaviour and interactions of people</p>
+                    <p>Difficult to abstract, risk of "smoothing out"</p>
+                    <p>Need models that can account for these complexities</p>
+                    <p class="l2">(Role for ABM?)</p>
+                </div>
+            </section>
+
+
+            <section id="challenge-uncertainty-data">
+                <h2>Challenges</h2>
+                <h3>Uncertainty</h3>
+                <p>Many sources of uncertainty (<a href="https://doi.org/10.1038/nature14541">Ghahramani, 2015</a>; <a
+                        href="https://doi.org/10.1038/s43588-021-00028-9">Edeling, et al., 2021</a>):</p>
+                <p>Need to <strong>understand</strong> and be <strong>honest</strong> about uncertainties</p>
+                <p>Uncertainty Quantification can help (but relevant to DT models?)</p>
+                <h3>Data</h3>
+
+                <p>Even in the 'Age of Data', there are huge unknowns</p>
+                <p>Models (DTs) can be extremely detailed, but typically only coarse data are available</p>
+
+            </section>
+
+
+            <section id="challenge-model_synthesis">
+
+                <h2>Challenges</h2>
+                <img class="right" style="width:25%;" data-src="../figures/Network_server_room_2.jpg"
+                    alt="Network server room" />
+                <h3>Computation and Model Synthesis</h3>
+                <p>DTs are a "synthesis" of computer models</p>
+                <p>BUT: (Very!) computationally expensive models</p>
+                <p>Innovations in (e.g.) meteorology not necessarily applicable to urban DTs</p>
+                <p>Also technical challenges coupling models</p>
+                <p class="l2">Individual models are fragile, when combined ... &#9888; </p>
+                
+            </section>
+
+
+
+
+            <!-- ************************************************************
+******************* 4. Progress *****************************
+************************************************************ -->
+
+            <section class="title" id="progress"
+                data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                <div class="whitebackground">
+                    <h1>Progress towards urban digital twins</h1>
+                </div>
+
+                <aside class="notes">
+                    Data, model synthesis, real-time modelling, emulation
+                </aside>
+            </section>
+
+
+
+
+            <!--  *************** PROGRESS: DATA ***************  -->
+
+            <section id="progress-data">
+                <h2>'Big' Data and Urban DTs</h2>
+                <h3>Pedestrian Mobility</h3>
+                <p>Growth in availability of data for quantifying the 'ambient population'</p>
+                <p class="l2">Census, travel surveys, mobile phone activity, card payments,
+                    smart phone apps, social media, pedestrian counters (WiFi, CCTV)</p>
+                <figure>
+                    <img data-src="../figures/paper_figures/2023-Pedestrial_ML/2015-04-25_lines_spatial.png"
+                        alt="Map and graph of model predictions" style="width:80%;" />
+                    <figcaption>
+                        Model estimates of the success of public events compared to a 'normal' day.
+                    </figcaption>
+                </figure>
+            </section>
+
+            <section id="progress-model_synthesis-dyme">
+                <figure class="right">
+                    <img src="../figures/paper_figures/2021-03-RAMP/RAMP_Workflow-with_GeoLytics.png"
+                        alt="Diagram of the ramp model components described in the slide text" />
+                    <figcaption>Spooner et al. (2021) A dynamic microsimulation model for epidemics. <em>Social Science
+                            &amp; Medicine</em> 291, 114461. DOI: <a
+                            href="https://doi.org/10.1016/j.socscimed.2021.114461">10.1016/j.socscimed.2021.114461</a>
+                    </figcaption>
+                </figure>
+                <h2>Model synthesis</h2>
+                <h3>DyME: Dynamic Model for Epidemics</h3>
+                <!--<p>Part of the Royal Society Rapid Assistance in Modelling the Pandemic (RAMP) call</p>-->
+                <p>COVID transmission model with components including:</p>
+                <p class="l2">dynamic spatial microsimulation, spatial interaction model, data linkage (PSM), ...</p>
+                <p>Represents all individuals in a study area with activities: home, shopping, working, schooling</p>
+                <p>Daily timestep</p>
+
+            </section>
+
+
+
+
+            <section id="progress-model_synthesis-dyme-data">
+                <h2>DyME Validation Drawback: Data</h2>
+                <p>Incredible detailed model!</p>
+                <p>BUT only data available for validation: COVID cases and hospital deaths</p>
+                <p class="l2">Only quantify a tiny part of the transmission dynamics</p>
+                <p class="l2">Huge uncertainties</p>
+                <p class="l2">Building the model was the easy part ...</p>
+
+                <img data-src="../figures/paper_figures/2021-03-RAMP/Disease_Status_Upates.png" style="width:80%;"
+                    alt="Different disease stages: susceptible, exposed (pre)(a)symptomatic, removed" />
+            </section>
+
+
+
+            <section id="uq">
+                <h2>Progress: Uncertainty Quantification</h2>
+                <img data-src="../figures/ensemble_uncertainty.png" style="width:70%;"
+                    alt="Model runs with large and small uncertainty. Other areas have well developed approaches to this" />
+                <p>Many sources of uncertainty. Leverage <i>uncertainty quantification</i>?</p>
+                <figure>
+                    <img data-src="../figures/paper_figures/2021-05-Uncertainty_JASSS/sugarscape-abc.jpg"
+                        style="width:80%" alt="history matching results: most likely parameter combinations" />
+                    <figcaption>
+                        McCulloch, J., J. Ge, J.A. Ward, A. Heppenstall, J.G. Polhill, N. Malleson (2022) Calibrating
+                        agent-based models using uncertainty quantification methods. <em>Journal of Artificial Societies
+                            and Social Simulation</em> 25, 1. DOI: <a
+                            href="https://doi.org/10.18564/jasss.4791">10.18564/jasss.4791</a>
+                    </figcaption>
+                </figure>
+            </section>
+
+
+            <section id='dyme-dynamic_calibration'>
+                <h2>Dynamic Calibration for DyME</h2>
+
+                <figure>
+                    <img data-src="../figures/paper_figures/2022-RAMP_DA/model_predictions2.png"
+                        alt="Uncertain predictions made using the DyME parameter posteriors. The certainty increases as more data become available."
+                        style="width:80%;" />
+                    <figcaption>
+                        Source: M. Asher, N. Lomax, K. Morrissey, F. Spooner, N. Malleson (2023)
+                        Dynamic Calibration with Approximate Bayesian Computation for a Microsimulation of Disease
+                        Spread.
+                        <i>Nature Scientific Reports</i> 13:8637. DOI: <a
+                            href="https://dx.doi.org/10.1038/s41598-023-35580-z">10.1038/s41598-023-35580-z</a>.
+                    </figcaption>
+                </figure>
+            </section>
+
+
+            <!-- ************************************************************
+********************* DATA ASSIMILATION *************************
+************************************************************ -->
+
+            <section id="prob-divergence" data-background-video="../videos/starlings1-short.mp4"
+                data-background-video-muted data-background-video-loop="loop">
+
+                <div class="whitebackground fragment">
+                    <h2>Why we need Data Assimilation</h2>
+                    <p>Complex models will always diverge</p>
+                    <p class="l2">(due to inherent uncertainties in inputs, parameter values, model structure, etc.)</p>
+                    <p>Possible Solution: Data Assimilation</p>
+                    <p>Used in meteorology and hydrology to bring models closer to reality. Combines:</p>
+                    <p class="l2">Noisy, real-world observations</p>
+                    <p class="l2">Model estimates of the system state</p>
+                </div>
+            </section>
+
+            <section id="dda-vs-calibration">
+
+                <h2>Data assimilation v.s. calibration</h2>
+
+                <img data-src="../figures/data-assimilation2.png" style="width:70%;"
+                    alt="Example of optimising the model state using observations and data assimilation" />
+
+                <p>For more information: <a
+                        href="https://urban-analytics.github.io/dust/">urban-analytics.github.io/dust/</a>.</p>
+
+            </section>
+
+
+
+            <!-- ************************************************************
+*******************5. Are they worth it? ***********************
+************************************************************ -->
+
+            <section class="title" id="worthit"
+                data-background-image="../figures/the-roaming-platypus-310824-unsplash.jpg">
+                <div class="whitebackground">
+                    <h1>Are they worth it?</h1>
+
+                </div>
+            </section>
+
+            <section id="worthit2">
+                <h2>Are they worth it?</h2>
+                <p>Can urban digital twins help? Or should we focus on lower-hanging fruit?</p>
+                <p>Who will use them?</p>
+                <p>Will they help with ... </p>
+                <p class="l2">Life expectancy (can vary by 10 years)</p>
+                <p class="l2">Food banks</p>
+                <p class="l2">Pitiful rape (and others) prosecution and conviction rate</p>
+                <p class="l2">Obesity</p>
+            </section>
+
+
+
+            <section class="title" id="thanks" data-background-video="../videos/city_night.mp4"
+                data-background-video-loop="loop">
+                <div class="whitebackground2">
+
+
+                    <h5>CDRC Data Partner Forum.<br />
+                        University of Leeds, 31st October 2023</h5>
+                    <hr />
+                    <h1 style="font-size: 45px;">Virtual Mirrors or Smoke and Mirrors? <br />
+                        <div style="font-size: 35px;">Can Urban Digital Twins Make Cities Better?</div>
+                    </h1>
+                    <hr />
+
+                    <h2 style="font-size: 25px;">
+                        <a href="http://nickmalleson.co.uk/">Nick Malleson</a>, University of Leeds, UK
+                    </h2>
+                    <!--<h4><a href="mailto:n.s.malleson@leeds.ac.uk">n.s.malleson@leeds.ac.uk</a>-->
+                    <!--<h4><a href="http://dust.leeds.ac.uk">dust.leeds.ac.uk</a></h4>-->
+                    <hr />
+                    <p style="text-align:center;font-size:20px">Slides available at: <br />
+                        <a
+                            href="https://urban-analytics.github.io/dust/presentations.html">https://urban-analytics.github.io/dust/presentations.html</a>
+                    </p>
+                    <hr />
+
+                    <a href="https://europa.eu/european-union/index_en">
+                        <img style="float:left;padding:5px;width:auto; height:60px;"
+                            data-src="../figures/LOGO_EU.jpg" />
+                    </a>
+
+                    <a href="http://www.leeds.ac.uk/">
+                        <img style="float:center;padding:5px;width:auto; height:60px;"
+                            data-src="../figures/uol_logo.gif" />
+                    </a>
+
+                    <a href="https://environment.leeds.ac.uk/geography">
+                        <img style="float:right;padding:10px;width:150px; height:auto;"
+                            data-src="../figures/LOGO_SOG.png" />
+                    </a>
+
+                    <!-- <a href="http://www.turing.ac.uk/">
+<img style="float:right;padding:10px;width:150px; height:auto;" src="../figures/LOGO_TURING.png"/>
+</a> -->
+                </div>
+
+            </section>
+
+
+
+
+
+
+
+
+
+        </div>
+    </div>
+
+    <script src="reveal/lib/js/head.min.js"></script>
+    <script src="reveal/js/reveal.js"></script>
+
+    <script>
+        // More info https://github.com/hakimel/reveal.js#configuration
+        Reveal.initialize({
+            history: true,
+
+            // More info https://github.com/hakimel/reveal.js#dependencies
+            dependencies: [
+                { src: 'reveal/plugin/markdown/marked.js' },
+                { src: 'reveal/plugin/markdown/markdown.js' },
+                { src: 'reveal/plugin/notes/notes.js', async: true },
+                { src: 'reveal/plugin/highlight/highlight.js', async: true, callback: function () { hljs.initHighlightingOnLoad(); } }
+            ]
+        });
+    </script>
+</body>
+
+</html>

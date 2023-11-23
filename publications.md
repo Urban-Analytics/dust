@@ -26,6 +26,7 @@ Tang, D. and N. Malleson (2022). Data assimilation with agent-based models using
 
 Kieu, M., H. Nguyen, J.A. Ward and N. Malleson (2022). Towards real-time predictions using emulators of agent-based models. _Journal of Simulation_ 1–18. DOI: [10.1080/17477778.2022.2080008](https://doi.org/10.1080/17477778.2022.2080008) [[PDF](https://www.nickmalleson.co.uk/papers/2022-06-Emulators_Minh.pdf)].
 
+McCulloch, J., J. Ge, J.A. Ward, A. Heppenstall, J.G. Polhill, N. Malleson (2022) Calibrating agent-based models using uncertainty quantification methods. _Journal of Artificial Societies and Social Simulation_ 25, 1. DOI: [10.18564/jasss.4791](https://doi.org/10.18564/jasss.4791)
 
 Ternes, P., J.A. Ward, A. Heppenstall, V. Kumar, L.-M. Kieu, N. Malleson (2021) Data assimilation and agent-based modelling: towards the incorporation of categorical agent parameters. _Open Research Europe_ 1, 131. DOI:[10.12688/openreseurope.14144.1](https://doi.org/10.12688/openreseurope.14144.1)
 

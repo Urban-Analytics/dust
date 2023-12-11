@@ -8,6 +8,16 @@ tagline: Presentations about, or relating to, the surf project
 
 **2023**
 
+[XX]({{site.baseurl}}/p/2023-10-StAndrews/XX)
+
+ - Presentations to the _Sustainable and equitable cities and regions for a net zero world_ conference, University of St Andrews and the Alan Turing Institute. 17-18 October, St Andrews, UK.
+   - Yanhua Xu: [Time Series Clustering for Analysing Pedestrian Footfall Patterns]({{site.baseurl}}/p/2023-10-StAndrews/Yanhua.pptx).
+   - Molly Asher: [Predicting Pedestrian Counts using Machine Learning]({{site.baseurl}}/p/2023-10-StAndrews/Molly.pptx).
+   - Jayita Chakraborty: [Impact of demand-supply dynamics on the empty travel distance of ridesourcing drivers in an urban environment](({{site.baseurl}}/p/2023-10-StAndrews/Jayita.pptx).
+   - Keiran Suchak. [Real-Time Pedestrian Simulation](https://ksuchak1990.github.io/presentations/2023/turing_presentation/Turing_presentation.html)
+   - Jack Liddle: [Melbourne Pedestrian Counts. What do have? What can we do with this?]({{site.baseurl}}/p/2023-10-StAndrews/Jack.pptx).
+   - Nick Malleson: [Real-Time Forecasting of Uncertian ABMs with Approximate Bayesian Computation]({{site.baseurl}}/p/2023-10-StAndrews/Nick.pptx).
+
  - Using Approximate Bayesian Computation to Infer Disease Parameter Uncertainty in a COVID-19 Microsimulation. Presentation to the [18th Social Simulation Conference](https://ssc23-sphsu.online/), 4-8 September, University of Glasgow, UK. [Slides (pdf)]({{site.baseurl}}/p/2023-09-SSC.pdf). Full paper: [https://www.nature.com/articles/s41598-023-35580-z](https://www.nature.com/articles/s41598-023-35580-z).
 
  - Economic prediction in real-time? Or an agent-based model with Ensemble Kalman Filter for the US wealth distribution. Presentation to the [Ninth Meeting of the German Network for New Economic Dynamics (GENED)](https://www.uni-bamberg.de/en/econ-rtg/events/ninth-meeting-of-the-german-network-for-new-economic-dynamics-gened/), 4th-6th October, Bamberg. [Slides (pdf)]({{site.baseurl}}/p/2023-10-GENED.pdf).

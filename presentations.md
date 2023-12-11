@@ -12,7 +12,7 @@ tagline: Presentations about, or relating to, the surf project
  - Presentations to the _Sustainable and equitable cities and regions for a net zero world_ conference, University of St Andrews and the Alan Turing Institute. 17-18 October, St Andrews, UK.
    - Yanhua Xu: [Time Series Clustering for Analysing Pedestrian Footfall Patterns]({{site.baseurl}}/p/2023-10-StAndrews/Yanhua.pptx).
    - Molly Asher: [Predicting Pedestrian Counts using Machine Learning]({{site.baseurl}}/p/2023-10-StAndrews/Molly.pptx).
-   - Jayita Chakraborty: [Impact of demand-supply dynamics on the empty travel distance of ridesourcing drivers in an urban environment](({{site.baseurl}}/p/2023-10-StAndrews/Jayita.pptx).
+   - Jayita Chakraborty: [Impact of demand-supply dynamics on the empty travel distance of ridesourcing drivers in an urban environment]({{site.baseurl}}/p/2023-10-StAndrews/Jayita.pptx).
    - Keiran Suchak. [Real-Time Pedestrian Simulation](https://ksuchak1990.github.io/presentations/2023/turing_presentation/Turing_presentation.html)
    - Jack Liddle: [Melbourne Pedestrian Counts. What do have? What can we do with this?]({{site.baseurl}}/p/2023-10-StAndrews/Jack.pptx).
    - Nick Malleson: [Real-Time Forecasting of Uncertian ABMs with Approximate Bayesian Computation]({{site.baseurl}}/p/2023-10-StAndrews/Nick.pptx).

@@ -8,7 +8,6 @@ tagline: Presentations about, or relating to, the surf project
 
 **2023**
 
-
  - Presentations to the _Sustainable and equitable cities and regions for a net zero world_ conference, University of St Andrews and the Alan Turing Institute. 17-18 October, St Andrews, UK.
    - Yanhua Xu: [Time Series Clustering for Analysing Pedestrian Footfall Patterns]({{site.baseurl}}/p/2023-10-StAndrews/Yanhua.pptx).
    - Molly Asher: [Predicting Pedestrian Counts using Machine Learning]({{site.baseurl}}/p/2023-10-StAndrews/Molly.pptx).

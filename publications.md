@@ -69,6 +69,8 @@ Malleson, N., A. Tapper, J. Ward, A. Evans (2017). Forecasting Short-Term Urban 
 
 ## Preprints
 
+Y. Oswald, N. Malleson, K. Suchak (2023). An agent-based model of the 2020 international policy diffusion in response to the COVID-19 pandemic with particle filter. [arXiv:2302.11277 [cs.MA]](https://arxiv.org/abs/2302.11277)
+
 Tang, D. and N. Malleson (2022). Data assimilation with agent-based models using Markov chain sampling. [arXiv:2205.01616 [cs.MA]](https://doi.org/10.48550/arXiv.2205.01616).
 
 A. Whipp, N. Malleson, Jonathan Ward, Alison Heppenstall (2021). Towards a Comprehensive Measure of the Ambient Population: Building Estimates Using Geographically Weighted Regression _Preprint_: [10.31235/osf.io/pquvy](https://doi.org/10.31235/osf.io/pquvy).

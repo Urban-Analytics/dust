@@ -17,8 +17,6 @@ Contents
 
 ## Peer Reviewed Articles
 
-Kieu, Minh, Alexis Comber, Hang Nguyen Thi Thuy, Thanh Bui Quang, Phe Hoang Huu, and Nick Malleson (2024). An Open Dataset on Individual Perceptions of Transport Policies. _Nature Scientific Data_ 11 (1): 104. DOI: [10.1038/s41597-024-02950-9)(https://doi.org/10.1038/s41597-024-02950-9)
-
 Kieu, M., H. Nguyen, J. A. Ward, and N. Malleson (2024). Towards Real-Time Predictions Using Emulators of Agent-Based Models. _Journal of Simulation_ 18 (1): 29–46. DOI: [10.1080/17477778.2022.2080008](https://doi.org/10.1080/17477778.2022.2080008)
 
 Molly Asher, Nik Lomax, Karyn Morrissey, Fiona Spooner, Nick Malleson (2023). Dynamic calibration with approximate Bayesian computation for a microsimulation of disease spread. _Nature Scientific Reports_ 13:8637. DOI: [10.1038/s41598-023-35580-z](https://dx.doi.org/10.1038/s41598-023-35580-z)

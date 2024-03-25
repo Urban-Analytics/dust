@@ -6,6 +6,11 @@ tagline: Presentations about, or relating to, the surf project
 
 ### Presentations about, or relating to, the dust project (most recent first)
 
+**2024**
+
+Y. Oswald, N. Malleson and K. Suchak (2024). An Agent-Based Model of the 2020 International Policy Diffusion in Response to the COVID-19 Pandemic with Particle Filter. _Journal of Artificial Societies and Social Simulation_ 27(2) 3. [https://www.jasss.org/27/2/3.html](https://www.jasss.org/27/2/3.html). DOI: [10.18564/jasss.5342](https://dx.doi.org/10.18564/jasss.5342)
+
+
 **2023**
 
  - Presentations to the _Sustainable and equitable cities and regions for a net zero world_ conference, University of St Andrews and the Alan Turing Institute. 17-18 October, St Andrews, UK.

@@ -17,6 +17,10 @@ Contents
 
 ## Peer Reviewed Articles
 
+
+Oswald, Y., N. Malleson and K. Suchak (2024). An Agent-Based Model of the 2020 International Policy Diffusion in Response to the COVID-19 Pandemic with Particle Filter. _Journal of Artificial Societies and Social Simulation_ 27(2) 3. [https://www.jasss.org/27/2/3.html](https://www.jasss.org/27/2/3.html). DOI: [10.18564/jasss.5342](https://dx.doi.org/10.18564/jasss.5342)
+
+
 Kieu, M., H. Nguyen, J. A. Ward, and N. Malleson (2024). Towards Real-Time Predictions Using Emulators of Agent-Based Models. _Journal of Simulation_ 18 (1): 29–46. DOI: [10.1080/17477778.2022.2080008](https://doi.org/10.1080/17477778.2022.2080008)
 
 Molly Asher, Nik Lomax, Karyn Morrissey, Fiona Spooner, Nick Malleson (2023). Dynamic calibration with approximate Bayesian computation for a microsimulation of disease spread. _Nature Scientific Reports_ 13:8637. DOI: [10.1038/s41598-023-35580-z](https://dx.doi.org/10.1038/s41598-023-35580-z)

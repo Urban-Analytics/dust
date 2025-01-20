@@ -17,9 +17,9 @@ Contents
 
 ## Peer Reviewed Articles
 
+Suchak, K., M. Kieu, Y. Oswald, J. A. Ward, and N. Malleson (2024), Coupling an Agent-Based Model and an Ensemble Kalman Filter for Real-Time Crowd Modelling. _Royal Society Open Science_ 11 (4): 231553. DOI: [10.1098/rsos.231553](https://doi.org/10.1098/rsos.231553).
 
 Oswald, Y., N. Malleson and K. Suchak (2024). An Agent-Based Model of the 2020 International Policy Diffusion in Response to the COVID-19 Pandemic with Particle Filter. _Journal of Artificial Societies and Social Simulation_ 27(2) 3. [https://www.jasss.org/27/2/3.html](https://www.jasss.org/27/2/3.html). DOI: [10.18564/jasss.5342](https://dx.doi.org/10.18564/jasss.5342)
-
 
 Kieu, M., H. Nguyen, J. A. Ward, and N. Malleson (2024). Towards Real-Time Predictions Using Emulators of Agent-Based Models. _Journal of Simulation_ 18 (1): 29–46. DOI: [10.1080/17477778.2022.2080008](https://doi.org/10.1080/17477778.2022.2080008)
 
